@@ -189,7 +189,7 @@ The full PRG-19 text (Lectures I–VIII) is now transcribed in `sources/PRG19_vi
 numbering has now begun in Lecture IV with the **Fixed-point Theorem 4.1** and the approximability
 of **`fix` (Theorem 4.2)** in `Scott1980/Neighborhood/Theorem41.lean` (choice-free constructions). The
 remaining IV–VIII items are inventoried below; some fixed-point and domain-equation material is also
-*separately* explored in the `Domain/ContinuousLattice/*` track (e.g. `FunctionSpaceTower.lean`,
+*separately* explored in the `Scott1972/ContinuousLattice/*` track (e.g. `FunctionSpaceTower.lean`,
 `InverseLimits.lean`, `Theorem212.lean`), not yet keyed to the PRG-19 numbering.
 
 | Item | Type | Lines | Statement | Lean |
@@ -475,7 +475,7 @@ Peano-model material **Definition 4.5 + Theorem 4.6** (`Theorem46.lean`), and **
 `Dₐ`), **4.12** (no maximum fixed point), **4.18** (the assertions about `N`), and **4.20**
 (`fix(f∘g)=f(fix(g∘f))`). The remaining IV–VIII items are not yet formalized; the domain-equation
 material is also explored separately in the
-`Domain/ContinuousLattice/*` track (e.g. `FunctionSpaceTower.lean`, `InverseLimits.lean`), not yet
+`Scott1972/ContinuousLattice/*` track (e.g. `FunctionSpaceTower.lean`, `InverseLimits.lean`), not yet
 keyed to the PRG-19 numbering. Lean roots for the formalized spine: `Approximable.lean` (§2),
 `Product.lean` + `FunctionSpace.lean` (§3), `Theorem41.lean` (§4 fixed points).
 
