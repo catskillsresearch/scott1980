@@ -107,7 +107,7 @@ Already done (DO NOT REPROVE):
 
 **READ:** `Domain/Neighborhood/Exercise722Decide.lean` (lines 105–130)  
 **EDIT:** `Domain/Neighborhood/Exercise722Decide.lean`  
-**BUILD:** `lake build Domain.Neighborhood.Exercise722Decide`
+**BUILD:** `lake build Scott1980.Neighborhood.Exercise722Decide`
 
 ```
 SESSION C1 — instDecidableEqAutState
@@ -143,7 +143,7 @@ instance instDecidableEqAutState : (e : SExpr) → DecidableEq (autState e)
 
 **READ:** `Domain/Neighborhood/Exercise722Decide.lean` (`autState`, `instFintypeAutState`)  
 **EDIT:** `Domain/Neighborhood/Exercise722Decide.lean`  
-**BUILD:** `lake build Domain.Neighborhood.Exercise722Decide`  
+**BUILD:** `lake build Scott1980.Neighborhood.Exercise722Decide`  
 **Needs:** C1
 
 ```
@@ -193,7 +193,7 @@ theorem autStateCard_le_card (e : SExpr) : autStateCard e ≤ Fintype.card (autS
 
 **READ:** `Domain/Neighborhood/Exercise722Regular.lean` (`matchesB`, `matchesB_iff`)  
 **EDIT:** **NEW** `Domain/Neighborhood/Exercise722Words.lean`, wire in `Domain.lean`  
-**BUILD:** `lake build Domain.Neighborhood.Exercise722Words`  
+**BUILD:** `lake build Scott1980.Neighborhood.Exercise722Words`  
 **Independent** of C1–C2 (can run in parallel)
 
 ```
@@ -215,9 +215,9 @@ HANDOFF: append "C3 wordsUpTo green".
 ### Skeleton (C3)
 
 ```lean
-import Domain.Neighborhood.Exercise722Regular
+import Scott1980.Neighborhood.Exercise722Regular
 
-namespace Domain.Neighborhood.Exercise722
+namespace Scott1980.Neighborhood.Exercise722
 
 /-- All words over `{false,true}` of length ≤ `n`. -/
 def wordsUpTo : ℕ → List (List Bool)
@@ -247,7 +247,7 @@ end Exercise722
 - **Proof skeleton below** in this playbook
 
 **EDIT:** `Domain/Neighborhood/Exercise722Decide.lean` (or `Exercise722Words.lean`)  
-**BUILD:** `lake build Domain.Neighborhood.Exercise722Decide`  
+**BUILD:** `lake build Scott1980.Neighborhood.Exercise722Decide`  
 **Needs:** C2, C3
 
 ```
@@ -281,11 +281,11 @@ So some accepted word has length `< Fintype.card σ`.
 **Lean skeleton** (put in `Exercise722Decide.lean` or `Exercise722Words.lean`):
 
 ```lean
-import Domain.Neighborhood.Exercise722Words
+import Scott1980.Neighborhood.Exercise722Words
 import Mathlib.Computability.NFA
 import Mathlib.Data.Fintype.Card
 
-namespace Domain.Neighborhood.Exercise722
+namespace Scott1980.Neighborhood.Exercise722
 
 open Computability
 
@@ -352,7 +352,7 @@ end Exercise722
 
 **READ:** C4 theorems, `Exercise722Regular.lean` (`matchesB_iff`)  
 **EDIT:** `Domain/Neighborhood/Exercise722Decide.lean` or `Exercise722Words.lean`  
-**BUILD:** `lake build Domain.Neighborhood.Exercise722Decide`  
+**BUILD:** `lake build Scott1980.Neighborhood.Exercise722Decide`  
 **Needs:** C4
 
 ```
@@ -497,11 +497,11 @@ HANDOFF: append "C8 SsysX enumeration green".
 ### Skeleton (C8)
 
 ```lean
-import Domain.Neighborhood.Exercise722
-import Domain.Neighborhood.Exercise722Decide
-import Domain.Neighborhood.Definition71
+import Scott1980.Neighborhood.Exercise722
+import Scott1980.Neighborhood.Exercise722Decide
+import Scott1980.Neighborhood.Definition71
 
-namespace Domain.Neighborhood.Exercise722
+namespace Scott1980.Neighborhood.Exercise722
 
 /-- Gödel-style size for enumeration (keep simple). -/
 def sexprSize : SExpr → ℕ
@@ -681,8 +681,8 @@ Run **C11** anytime. Zero dependency on decider.
 Create `Domain/Audit722Decide.lean` temporarily:
 
 ```lean
-import Domain.Neighborhood.Exercise722Decide
-open Domain.Neighborhood.Exercise722
+import Scott1980.Neighborhood.Exercise722Decide
+open Scott1980.Neighborhood.Exercise722
 #print axioms decideEmptyB_iff
 #print axioms consistentB_iff
 -- delete file after audit

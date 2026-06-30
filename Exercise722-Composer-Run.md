@@ -97,7 +97,7 @@ lake build Domain 2>&1 | grep -vE 'LEAN_PATH|trace:' | tail -5
 
 **READ:** `Domain/Neighborhood/Exercise722Decide.lean` (lines 105–130)  
 **EDIT:** `Domain/Neighborhood/Exercise722Decide.lean`  
-**BUILD:** `lake build Domain.Neighborhood.Exercise722Decide`
+**BUILD:** `lake build Scott1980.Neighborhood.Exercise722Decide`
 
 **TASK:** Add `instDecidableEqAutState : (e : SExpr) → DecidableEq (autState e)` mirroring `instFintypeAutState`. Two `example` lines for `.sigma` and `.single [true, false]`.
 
@@ -121,7 +121,7 @@ instance instDecidableEqAutState : (e : SExpr) → DecidableEq (autState e)
 
 **READ:** `Domain/Neighborhood/Exercise722Decide.lean`  
 **EDIT:** `Domain/Neighborhood/Exercise722Decide.lean`  
-**BUILD:** `lake build Domain.Neighborhood.Exercise722Decide`  
+**BUILD:** `lake build Scott1980.Neighborhood.Exercise722Decide`  
 **Needs:** C1 ☑
 
 **TASK:** Define `autStateCard` (sigma→1, single→|σ|+2, cap→product, cat→sum). Prove `autStateCard_le_card`.
@@ -153,16 +153,16 @@ theorem autStateCard_le_card (e : SExpr) : autStateCard e ≤ Fintype.card (autS
 
 **READ:** `Domain/Neighborhood/Exercise722Regular.lean` (`matchesB`, `matchesB_iff`)  
 **EDIT:** **NEW** `Domain/Neighborhood/Exercise722Words.lean`, wire `Domain.lean`  
-**BUILD:** `lake build Domain.Neighborhood.Exercise722Words`
+**BUILD:** `lake build Scott1980.Neighborhood.Exercise722Words`
 
 **TASK:** `wordsUpTo n`, `anyMatchesB`, prove `mem_wordsUpTo`. `#eval anyMatchesB .sigma (wordsUpTo 0)` = true.
 
 **Skeleton:**
 
 ```lean
-import Domain.Neighborhood.Exercise722Regular
+import Scott1980.Neighborhood.Exercise722Regular
 
-namespace Domain.Neighborhood.Exercise722
+namespace Scott1980.Neighborhood.Exercise722
 
 def wordsUpTo : ℕ → List (List Bool)
   | 0 => [[]]
@@ -184,7 +184,7 @@ end Exercise722
 
 **READ:** `.lake/packages/mathlib/Mathlib/Computability/NFA.lean` (263–334), `Exercise722Decide.lean`, `Exercise722Words.lean`  
 **EDIT:** `Exercise722Decide.lean` and/or `Exercise722Words.lean`  
-**BUILD:** `lake build Domain.Neighborhood.Exercise722Decide`  
+**BUILD:** `lake build Scott1980.Neighborhood.Exercise722Decide`  
 **Needs:** C2 ☑, C3 ☑
 
 **TASK:** Prove `nfa_accepts_nonempty_iff_short` and `denote_nonempty_iff_short`. Audit choice-free.
@@ -229,7 +229,7 @@ theorem denote_nonempty_iff_short (e : SExpr) :
 
 **READ:** C4 theorems, `Exercise722Regular.lean`  
 **EDIT:** `Exercise722Decide.lean` or `Exercise722Words.lean`  
-**BUILD:** `lake build Domain.Neighborhood.Exercise722Decide`  
+**BUILD:** `lake build Scott1980.Neighborhood.Exercise722Decide`  
 **Needs:** C4 ☑
 
 **TASK:** `decideNonemptyB`, `decideEmptyB`, iff theorems, `Decidable (denote e = ∅)`. Sanity: `#eval decideEmptyB (.cap (.single [false]) (.single [true]))` = true.
@@ -260,7 +260,7 @@ instance decidableEmptyDenote (e : SExpr) : Decidable (denote e = ∅) :=
 
 **READ:** `Exercise722Regular.lean`, `Exercise722.lean` (`Ssys_isPositive`)  
 **EDIT:** `Exercise722Decide.lean`  
-**BUILD:** `lake build Domain.Neighborhood.Exercise722Decide`  
+**BUILD:** `lake build Scott1980.Neighborhood.Exercise722Decide`  
 **Needs:** C5 ☑
 
 **TASK:** `consistentB a b := !decideEmptyB (.cap a b)`. Prove `consistentB_iff`. Link to Def 7.1 (ii).
@@ -278,7 +278,7 @@ theorem consistentB_iff (a b : SExpr) :
 
 **READ:** `Exercise722Regular.lean` (`interEq_iff`, `sigma_ne_containsZero`)  
 **EDIT:** `Exercise722Decide.lean` (docstring)  
-**BUILD:** `lake build Domain.Neighborhood.Exercise722Decide`  
+**BUILD:** `lake build Scott1980.Neighborhood.Exercise722Decide`  
 **Needs:** C5 ☑
 
 **TASK:** Docstring: relation (i) = language equivalence; emptiness insufficient (`sigma_ne_containsZero`); full decider needs complement + C7b.
@@ -295,7 +295,7 @@ Do not execute unless user explicitly requests and budget allows.
 
 **READ:** `Definition71.lean`, `Exercise722Regular.lean` (`inS_iff_exists_denote`)  
 **EDIT:** **NEW** `Exercise722Presentation.lean`, `Domain.lean`  
-**BUILD:** `lake build Domain.Neighborhood.Exercise722Presentation`  
+**BUILD:** `lake build Scott1980.Neighborhood.Exercise722Presentation`  
 **Needs:** C5 ☑
 
 **TASK:** `SsysX : ℕ → Set (List Bool)`, `SsysX_mem`, `SsysX_surj`. Use `decideEmptyB` to skip empty. Encode/decode SExpr from ℕ.
@@ -306,7 +306,7 @@ Do not execute unless user explicitly requests and budget allows.
 
 **READ:** `Recursive.lean`, `Example78.lean` (`PNpres.cons_computable`)  
 **EDIT:** `Exercise722Presentation.lean`  
-**BUILD:** `lake build Domain.Neighborhood.Exercise722Presentation`  
+**BUILD:** `lake build Scott1980.Neighborhood.Exercise722Presentation`  
 **Needs:** C6 ☑, C8 ☑
 
 **TASK:** `Ssys_cons_computable : RecDecidable₂ (fun n m => ∃ k, SsysX k ⊆ SsysX n ∩ SsysX m)` via `RecDecidable.of_iff` + `ssysConsistentB` + a **`Nat.Primrec`** char (not just `Bool`). Import **`Exercise722Presentation`** decode — do **not** duplicate encode/decode in a monolith. Reuse **`Recursive.lean`** `bExistsFn` / `primrec_ite`. **If stuck >30 min:** STOP, HANDOFF "C9 BLOCKED".
@@ -317,7 +317,7 @@ Do not execute unless user explicitly requests and budget allows.
 
 **READ:** `Definition71.lean`, `Example78.lean`  
 **EDIT:** `Exercise722Presentation.lean`  
-**BUILD:** `lake build Domain.Neighborhood.Exercise722Presentation`  
+**BUILD:** `lake build Scott1980.Neighborhood.Exercise722Presentation`  
 **Needs:** C9 ☑
 
 **TASK:** `SsysPres : ComputablePresentation …` with (ii). interEq only if C7b done; else `Ssys_partially_effectively_given`.
@@ -328,7 +328,7 @@ Do not execute unless user explicitly requests and budget allows.
 
 **READ:** `Exercise722.lean` docstring, `sources/PRG19_vision.md` (grep 7.22)  
 **EDIT:** `Exercise722.lean` docstring only  
-**BUILD:** `lake build Domain.Neighborhood.Exercise722`
+**BUILD:** `lake build Scott1980.Neighborhood.Exercise722`
 
 **TASK:** Answer Scott's equations in prose. Define σ⃗ as `{X ∈ S | ∀n, σⁿ ∈ X}`. Likely: σ⃗σ⃗=σ⃗ YES; 01⃗…=01⃗01⃗ NO.
 
@@ -362,8 +362,8 @@ Do not execute unless user explicitly requests and budget allows.
 Temp file `Domain/Audit722Decide.lean`:
 
 ```lean
-import Domain.Neighborhood.Exercise722Decide
-open Domain.Neighborhood.Exercise722
+import Scott1980.Neighborhood.Exercise722Decide
+open Scott1980.Neighborhood.Exercise722
 #print axioms decideEmptyB_iff
 #print axioms consistentB_iff
 ```
