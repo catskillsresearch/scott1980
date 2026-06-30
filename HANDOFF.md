@@ -18,19 +18,20 @@ A session may begin after a context reset; chat memory is not durable, these fil
 5. Follow `.cursor/rules/handoff-discipline.mdc` (choice discipline, axiom audits, and the
    end-of-item checklist that keeps this file + `arxiv.md` current).
 6. **Exercise 7.22 (split inventory):** Scott's construction is **formalized** — grep `Exercise 7.22`
-   in `arxiv.md`: rows **7.22a–h** are **Pass**; **7.22i–l** are **Not Yet** (PR certification +
+   in `arxiv.md`: rows **7.22a–h** are **Pass**; **7.22i(a)–l** are **Not Yet** (PR certification +
    optional extensions). Remaining Composer work is **interface repair** between the automata Bool
    layer and `Recursive.lean`, not unfinished Scott mathematics. **`@Exercise722-Composer-Run.md`**
    only (one @ per session). **Composer tracker:** C1–C8 ☑, C11 ☑, C12 ☑; **next eligible ☐:**
-   **C9a** (first missing generic `Nat.Primrec` lemma in `Recursive.lean`), then **C9b**
-   (`primrec_ssysConsChar` + `Ssys_cons_computable`), then **C10** → **7.22j**; **C7b** → **7.22k**
-   (optional, does not block paper). Do **not** duplicate encode/decode in a monolith
-   (`Exercise722Primrec.lean` was abandoned 2026-06-29).
+   **C9a** → **7.22i(a)** (first missing generic `Nat.Primrec` lemma in `Recursive.lean`), then
+   **C9b** → **7.22i(b)** (`primrec_ssysConsChar` + `Ssys_cons_computable`), then **C10** → **7.22j**;
+   **C7b** → **7.22k** (optional, does not block paper). Do **not** duplicate encode/decode in a
+   monolith (`Exercise722Primrec.lean` was abandoned 2026-06-29).
 
 **Exercise 7.22 — Scott formalized; PR certification open (2026-06-30).** Inventory split in
 `arxiv.md`: **7.22a–h Pass** (LFP `InS`, positive `Ssys`, semigroup/embedding, regular events,
-automata, Bool deciders, `SsysX`, infinite-word prose). **7.22i–l Not Yet:** (i) `RecDecidable₂`
-via generic primrec lemmas + instantiation (**C9a–C9b**); (j) `ComputablePresentation` (**C10**);
+automata, Bool deciders, `SsysX`, infinite-word **`streamElem`** + conditional idempotency).
+**7.22i(a)–l Not Yet:** (i)(a) generic primrec lemma (**C9a**); (i)(b) `RecDecidable₂` instantiation
+(**C9b**); (j) `ComputablePresentation` (**C10**);
 (k) relation (i) `interEq` (**C7b**, optional); (l) formal infinite-word equations (optional).
 See `Exercise722-Composer-Run.md` for next Composer session.
 
@@ -4254,3 +4255,21 @@ infinite words optional). Updated **Methodology**, **`HANDOFF.md`** Resume Proto
 `Recursive.lean`) + **C9b** (instantiation); C7b no longer DEFER—optional ☐. Framing: remaining
 work is **interface repair** between automata executables and `Recursive.lean`, not unfinished Scott
 mathematics. **Next Composer session:** **C9a**.
+
+---
+
+**2026-06-30 — Exercise 7.22h: infinite-word equations mechanized.** Added **`streamElem`**
+(`w⃗` = filter `{Z \| InS Z ∧ ∀n, wⁿ∈Z}`), **`powerLang`**, **`streamElem_powers_of_mul`**,
+**`streamElem_idempotent`** (`w⃗·w⃗=w⃗` when `InS (powerLang w)`), and Scott **`example`** checks
+(empty word unconditional; triple/`σ++[true]`/`01` four-fold conditional). **`InS_powerLang_empty`**
+for `[]`. **`lake build Scott1980.Neighborhood.Exercise722`** green; axioms
+`streamElem_idempotent` / `streamElem_powers_of_mul` ⊆ `{propext, Quot.sound}`. **`arxiv.md`**
+**7.22h** → **Pass** (mechanized); **7.22l** notes open `InS (powerLang w)` + Scott `01⃗⁴≠01⃗²`
+reconciliation.
+
+---
+
+**2026-06-30 — Exercise 7.22 inventory: split 7.22i → 7.22i(a) + 7.22i(b).** Book-keeping only:
+**7.22i(a)** = Composer **C9a** (generic primrec in `Recursive.lean`); **7.22i(b)** = **C9b**
+(`primrec_ssysConsChar` + `Ssys_cons_computable`). Updated **`arxiv.md`**, **`HANDOFF.md`** Resume
+Protocol, **`Exercise722-Composer-Run.md`**, **`Exercise722-Composer-Playbook.md`**. No Lean changes.

@@ -2,8 +2,9 @@
 
 > **Framing (2026-06-30):** Scott's Exercise 7.22 is **formalized** (`arxiv.md` rows **7.22a–h**
 > Pass). Remaining sessions certify the existing Bool deciders as **`RecDecidable₂`** inside
-> `Recursive.lean`—**interface repair**, not new domain theory. Inventory open rows: **7.22i** (C9a–C9b),
-> **7.22j** (C10), **7.22k** (C7b, optional), **7.22l** (formal infinite words, optional).
+> `Recursive.lean`—**interface repair**, not new domain theory. Inventory open rows: **7.22i(a)**
+> (C9a), **7.22i(b)** (C9b), **7.22j** (C10), **7.22k** (C7b, optional), **7.22l** (formal
+> infinite words, optional).
 
 > **You (the agent) were invoked with `@Exercise722-Composer-Run.md` only.**
 > **The user will not paste anything else.** Follow § AUTORUN below.
@@ -76,13 +77,13 @@ You are a Lean 4 proof engineer in `/home/catskills/Desktop/scott1980` (mathlib 
 | C7a | document interEq gap | ☑ | C5 | 7.22k |
 | C7b | full equivalence | ☐ optional | C5 | 7.22k |
 | C8 | `SsysX` enumeration | ☑ | C5 | 7.22g |
-| **C9a** | first missing **generic** `Nat.Primrec` lemma in `Recursive.lean` | ☐ | C6, C8 | 7.22i |
-| **C9b** | `primrec_ssysConsChar` + `Ssys_cons_computable` | ☐ | C9a | 7.22i |
+| **C9a** | first missing **generic** `Nat.Primrec` lemma in `Recursive.lean` | ☐ | C6, C8 | 7.22i(a) |
+| **C9b** | `primrec_ssysConsChar` + `Ssys_cons_computable` | ☐ | C9a | 7.22i(b) |
 | C10 | `ComputablePresentation` | ☐ | C9b | 7.22j |
 | C11 | infinite-word prose | ☑ | — | 7.22h |
 | C12 | arxiv + audit | ☑ | C6+ | — |
 
-**Targets:** **7.22a–h** = Scott construction formalized (Pass). **7.22i–j** = Def 7.1 (ii) in
+**Targets:** **7.22a–h** = Scott construction formalized (Pass). **7.22i(a)–j** = Def 7.1 (ii) in
 `Recursive.lean` via C9a–C10. **7.22k–l** = optional extensions.
 
 **C9 rule:** Do **not** assign "finish C9" as one monolith. **C9a** proves one reusable primrec
@@ -319,7 +320,7 @@ Do not execute unless user explicitly requests and budget allows.
 **EDIT:** `Recursive.lean` only (unless audit proves the gap is elsewhere—then STOP and report)  
 **BUILD:** `lake build Scott1980.Neighborhood.Recursive`  
 **Needs:** C6 ☑, C8 ☑  
-**arxiv:** 7.22i
+**arxiv:** 7.22i(a)
 
 **TASK:** Audit the Exercise 7.22 Bool stack vs existing `Recursive.lean` primrec infrastructure.
 Prove the **first missing generic** lemma that reusable future exercises will need—e.g. fuel-bounded
@@ -336,7 +337,7 @@ missing lemma identified.
 **EDIT:** `Exercise722Presentation.lean` (instantiation only; keep generic lemmas in `Recursive.lean`)  
 **BUILD:** `lake build Scott1980.Neighborhood.Exercise722Presentation`  
 **Needs:** C9a ☑  
-**arxiv:** 7.22i
+**arxiv:** 7.22i(b)
 
 **TASK:** `primrec_ssysConsChar : Nat.Primrec ssysConsChar` using C9a lemmas; then
 `Ssys_cons_computable := Ssys_cons_computable_of_primrec_ssysConsChar primrec_ssysConsChar`.
@@ -369,7 +370,7 @@ Use shallow char lemmas for iff links—do not unfold `ssys_cons_char_iff` chain
 
 ## Session C12 — arxiv + audit
 
-**READ:** HANDOFF tail; `grep "Exercise 7.22" arxiv.md` (rows 7.22a–l)  
+**READ:** HANDOFF tail; `grep "Exercise 7.22" arxiv.md` (rows 7.22a–h, 7.22i(a)–l)  
 **EDIT:** `arxiv.md` (Exercise 7.22 sub-rows), HANDOFF Resume Protocol  
 **BUILD:** `lake build Domain`  
 **Needs:** C6 ☑ minimum

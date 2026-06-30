@@ -1,13 +1,13 @@
 # Exercise 7.22 — Composer Playbook
 
 > **Status (2026-06-30):** Scott's construction is **formalized** (`arxiv.md` **7.22a–h** Pass).
-> Remaining work (**7.22i–l**) is PR certification in `Recursive.lean` + optional extensions.
+> Remaining work (**7.22i(a)–l**) is PR certification in `Recursive.lean` + optional extensions.
 > **Authoritative tracker:** `Exercise722-Composer-Run.md` (this file's progress table may be stale).
 
 > **For zero-paste usage, `@Exercise722-Composer-Run.md` instead** — it includes autorun
 > instructions and the progress tracker Composer updates. This file is extended reference.
 
-Use this file as extended reference for **7.22i–j** (PR certification of the existing Bool deciders
+Use this file as extended reference for **7.22i(a)–j** (PR certification of the existing Bool deciders
 into `RecDecidable₂` / `ComputablePresentation`). Scott's construction (**7.22a–h**) is already Pass;
 see `Exercise722-Composer-Run.md` for the authoritative tracker.
 
@@ -34,9 +34,10 @@ Mark sessions as you go. **Do not skip ahead** if a prerequisite is unchecked.
 | **C7a** | document why interEq needs complement | ☐ | needs C5 |
 | **C7b** | full equivalence decider | ☐ DEFER | Opus / post-reset |
 | **C8** | `SsysX` enumeration | ☐ | needs C5 |
-| **C9** | `RecDecidable₂` consistency | ☐ | needs C6, C8 |
-| **C10** | `ComputablePresentation` | ☐ | needs C9 |
-| **C11** | infinite-word prose | ☐ | independent |
+| **C9a** | generic `Nat.Primrec` lemma (`Recursive.lean`) | ☐ | 7.22i(a); needs C6, C8 |
+| **C9b** | `RecDecidable₂` consistency (instantiation) | ☐ | 7.22i(b); needs C9a |
+| **C10** | `ComputablePresentation` | ☐ | 7.22j; needs C9b |
+| **C11** | infinite-word equations | ☑ | 7.22h |
 | **C12** | arxiv + final audit | ☐ | needs C6+ at minimum |
 
 **Minimum for Scott B+ → A− on "effectively given":** C1–C6 + C11.  
