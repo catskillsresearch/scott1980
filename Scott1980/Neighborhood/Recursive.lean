@@ -2015,4 +2015,39 @@ theorem primrec_decodeFuelOkChar : ∀ fuel, Nat.Primrec (fun c => decodeFuelOkC
     simpa [decodeFuelOkChar] using
       primrec_decodeFuelOkCharBody (primrec_decodeFuelOkChar fuel)
 
+/-! ## Exercise 7.22 C9b2 — coded list length
+
+`listLenChar c` = `(decodeList c).length`, via a `foldCode` counter (**7.22i(b)2**). -/
+
+/-- Length fold step: ignore head/params, increment accumulator. -/
+def listLenStp (w : ℕ) : ℕ := w.unpair.2.unpair.1 + 1
+
+theorem listLenStp_eq (acc x p : ℕ) :
+    listLenStp (Nat.pair x (Nat.pair acc p)) = acc + 1 := by
+  unfold listLenStp; simp only [unpair_pair_fst, unpair_pair_snd]
+
+/-- Coded list length: `(decodeList c).length`. -/
+def listLenChar (c : ℕ) : ℕ := foldCode listLenStp 0 0 c
+
+theorem listLenChar_eq (c : ℕ) : listLenChar c = (decodeList c).length := by
+  have hfun : (fun acc x => listLenStp (Nat.pair x (Nat.pair acc 0))) = fun acc _ => acc + 1 := by
+    funext acc x; simp [listLenStp_eq]
+  have hfold : ∀ (k : ℕ) (l : List ℕ),
+      List.foldl (fun acc _ => acc + 1) k l = k + l.length := by
+    intro k l
+    induction l generalizing k with
+    | nil => simp
+    | cons _ xs ih => simp [List.foldl_cons, ih, List.length_cons]; omega
+  unfold listLenChar
+  rw [foldCode_eq', hfun]
+  simp [hfold]
+
+theorem primrec_listLenStp : Nat.Primrec listLenStp :=
+  primrec_add₂ (Nat.Primrec.left.comp Nat.Primrec.right) (Nat.Primrec.const 1)
+
+theorem primrec_listLenChar : Nat.Primrec listLenChar := by
+  unfold listLenChar
+  exact (primrec_foldCode primrec_listLenStp (Nat.Primrec.const 0) (Nat.Primrec.const 0)
+    primrec_id).of_eq fun _ => rfl
+
 end Domain.Recursive

@@ -100,7 +100,7 @@ within `Recursive.lean`—not to further domain theory. See appendices A and B.
 | **C9b1c** | dispatch lemmas (`Body_eq`, `selectFn_isOne_…`) | ☑ | 7.22i(b)1(c) |
 | **C9b1d** | `decodeListBool_isSome_iff` | ☑ | 7.22i(b)1(d) |
 | **C9b1e** | `decodeFuelOkChar_eq_one_iff` | ☑ | 7.22i(b)1(e) |
-| **C9b2** | `listLenChar` + `primrec` | Not Yet | 7.22i(b)2 |
+| **C9b2** | `listLenChar` + `primrec` | ☑ | 7.22i(b)2 |
 | **C9b3** | `listEqChar` + `primrec` | Need Advice | 7.22i(b)3 |
 | **C9b4** | `appendListCode`, `takeCode`, `dropCode` + `primrec` | Not Yet | 7.22i(b)4 |
 | **C9b5** | `autStateCardFuelChar`, `matchesBChar` + `primrec` | Not Yet | 7.22i(b)5 |
@@ -1687,8 +1687,8 @@ delivered **7.22a–h** and **7.22i(a)**; **7.22i(b)1–8** (Composer **C9b1–C
 #### Exercise 7.22i(b)2
 * **Mathematical Target:** coded list length — **`listLenChar`** + **`primrec_listLenChar`**
 * **Lean File:** `Scott1980/Neighborhood/Recursive.lean`
-* **Proof Notes:** **`foldCode`** / **`listLenStp`**; **`listLenChar_eq : listLenChar c = (decodeList c).length`**. Needed for bounds in **7.22i(b)4–6**.
-* **Status:** Not Yet
+* **Proof Notes:** **`listLenStp`** increments accumulator; **`listLenChar = foldCode listLenStp 0 0`**. **`listLenChar_eq`**: `(decodeList c).length`. Green; zero `sorry`; **`primrec_listLenChar` ⊆ {propext, Quot.sound}**.
+* **Status:** Pass
 
 #### Exercise 7.22i(b)3
 * **Mathematical Target:** coded list equality — **`listEqChar`** + **`primrec_listEqChar`**
