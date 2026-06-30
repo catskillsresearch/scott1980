@@ -97,7 +97,7 @@ within `Recursive.lean`—not to further domain theory. See appendices A and B.
 | **C9b1** | `decodeFuelOkChar` umbrella (**7.22i(b)1(a–e)**) | Not Yet | 7.22i(b)1 |
 | **C9b1a** | `mulBit` + `primrec` | ☑ | 7.22i(b)1(a) |
 | **C9b1b** | `decodeFuelOkChar` + `primrec` | ☑ | 7.22i(b)1(b) |
-| **C9b1c** | dispatch lemmas (`Body_eq`, `selectFn_isOne_…`) | ☐ | 7.22i(b)1(c) |
+| **C9b1c** | dispatch lemmas (`Body_eq`, `selectFn_isOne_…`) | ☑ | 7.22i(b)1(c) |
 | **C9b1d** | `decodeListBool_isSome_iff` | ☐ | 7.22i(b)1(d) |
 | **C9b1e** | `decodeFuelOkChar_eq_one_iff` | ☐ | 7.22i(b)1(e) |
 | **C9b2** | `listLenChar` + `primrec` | Not Yet | 7.22i(b)2 |
@@ -1669,8 +1669,8 @@ delivered **7.22a–h** and **7.22i(a)**; **7.22i(b)1–8** (Composer **C9b1–C
 #### Exercise 7.22i(b)1(c)
 * **Mathematical Target:** tag-dispatch infrastructure for correctness link — **`decodeFuelOkCharBody_eq`**, **`selectFn_isOne_one_sub_sigma`**, **`isOne_one`/`isOne_zero`/`isOne_of_ne_one`**
 * **Lean File:** `Scott1980/Neighborhood/Recursive.lean`
-* **Proof Notes:** **Strategy:** Re-add lemmas **without** `simp [isOne]` (WHNF blow-up). Prove **`decodeFuelOkCharBody_eq`** by **`match c.unpair.1`** with concrete **`Nat.sub`** facts per tag; add **`@[simp] isOne_one`/`isOne_zero`** and **`isOne_of_ne_one`** for reductions only on **constant** arguments. **`selectFn_isOne_one_sub_sigma`**: tag-0 link **`u = 0 ↔ char = 1`**. **Not in tree** until **(c)** Pass.
-* **Status:** Not Yet
+* **Proof Notes:** **`@[simp] isOne_one`/`isOne_zero`** + **`isOne_of_ne_one`** (no global **`simp [isOne]`**). **`decodeFuelOkCharBody_eq`**: **`match c.unpair.1`** with concrete **`Nat.sub`** per tag (0→σ-flag, 1→**`allBinDigitsChar`**, 2/3→**`mulBit`**, else 0). **`selectFn_isOne_one_sub_sigma`**: tag-0 bridge **`u = 0 ↔ char = 1`**. Green; zero `sorry`; all five ⊆ {propext, Quot.sound}.
+* **Status:** Pass
 
 #### Exercise 7.22i(b)1(d)
 * **Mathematical Target:** list decode ok ↔ bin-digit char — **`decodeListBool_isSome_iff`** (`(decodeListBool n).isSome = true ↔ allBinDigitsChar n = 1`)

@@ -18,13 +18,13 @@ A session may begin after a context reset; chat memory is not durable, these fil
 5. Follow `.cursor/rules/handoff-discipline.mdc` (choice discipline, axiom audits, and the
    end-of-item checklist that keeps this file + `arxiv.md` current).
 6. **Exercise 7.22 (split inventory):** Scott's construction is **formalized** — grep `Exercise 7.22`
-   in `arxiv.md`: rows **7.22a–h**, **7.22i(a)** are **Pass**; **7.22i(b)1(a–b)** **Pass**;
-   **7.22i(b)1(c–e)** and **7.22i(b)2–8** are **Not Yet** (one **Need Advice**: **7.22i(b)3**);
+   in `arxiv.md`: rows **7.22a–h**, **7.22i(a)** are **Pass**;    **7.22i(b)1(a–c)** **Pass**;
+   **7.22i(b)1(d–e)** and **7.22i(b)2–8** are **Not Yet** (one **Need Advice**: **7.22i(b)3**);
    **7.22i(b)** umbrella and **7.22j–l** are **Not Yet** (PR
    certification + optional extensions). Remaining Composer work is **interface repair** between the
    automata Bool layer and `Recursive.lean`, not unfinished Scott mathematics. **`@Exercise722-Composer-Run.md`**
    only (one @ per session). **Composer tracker:** C1–C8 ☑, C11 ☑, C12 ☑; **C9a** → **7.22i(a)** ☑;
-   **next eligible ☐:** **C9b1c** / **7.22i(b)1(c)** (dispatch lemmas), then **C9b1d–e**; **C9b2** unblocked after **7.22i(b)1(b)** ☑
+   **next eligible ☐:** **C9b1d** / **7.22i(b)1(d)** (`decodeListBool_isSome_iff`), then **C9b1e**; **C9b2** unblocked after **7.22i(b)1(b)** ☑
    (see **`arxiv.md`** rows **7.22i(b)1–8**); **C10** → **7.22j** after **C9b8**; **C7b** → **7.22k**
    (optional, does not block paper). Do **not** duplicate encode/decode in a monolith
    (`Exercise722Primrec.lean` was abandoned 2026-06-29).
@@ -4289,4 +4289,4 @@ session:** **C9b1** only (`decodeFuelOkChar` in `Recursive.lean`).
 
 ---
 
-**2026-06-30 — C9b1 / 7.22i(b)1 split into (a–e); (a)(b) Pass in tree.** **`Recursive.lean`:** **(a)** **`mulBit`**, **`primrec_mulBit`**; **(b)** **`decodeFuelOkChar`**, **`decodeFuelOkCharBody`**, **`primrec_decodeFuelOkChar`**. Link infrastructure **(c–e)** **not checked in** (see **`arxiv.md` 7.22i(b)1(c–e)** strategy notes). **`lake build Scott1980.Neighborhood.Recursive`** green. **Next:** **C9b1c** / **7.22i(b)1(c)**, then **1(d–e)**; **C9b2** may proceed in parallel with link work (needs **1(b)** only).
+**2026-06-30 — C9b1c / 7.22i(b)1(c) Pass.** **`Recursive.lean`:** **`isOne_one`**, **`isOne_zero`**, **`isOne_of_ne_one`**, **`decodeFuelOkCharBody_eq`**, **`selectFn_isOne_one_sub_sigma`**. Tag dispatch by **`match c.unpair.1`** + concrete **`Nat.sub`** (avoids **`simp [isOne]`** WHNF blow-up). **`lake build Scott1980.Neighborhood.Recursive`** green; five theorems ⊆ {propext, Quot.sound}. **Next:** **C9b1d** / **7.22i(b)1(d)** (`decodeListBool_isSome_iff`), then **1(e)**.

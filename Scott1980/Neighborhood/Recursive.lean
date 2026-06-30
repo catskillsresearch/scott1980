@@ -862,6 +862,14 @@ theorem isOne_le_one (v : ℕ) : isOne v ≤ 1 := by unfold isOne; omega
 theorem isOne_eq_one_iff (v : ℕ) : isOne v = 1 ↔ v = 1 := by
   unfold isOne; constructor <;> (intro h; omega)
 
+@[simp] theorem isOne_one : isOne 1 = 1 := (isOne_eq_one_iff 1).2 rfl
+
+@[simp] theorem isOne_zero : isOne 0 = 0 := by unfold isOne; omega
+
+theorem isOne_of_ne_one {v : ℕ} (h : v ≠ 1) : isOne v = 0 := by
+  unfold isOne
+  omega
+
 theorem primrec_isOne : Nat.Primrec isOne :=
   primrec_sub₂ (Nat.Primrec.const 1)
     (primrec_add₂ (primrec_sub₂ primrec_id (Nat.Primrec.const 1))
@@ -1910,7 +1918,7 @@ theorem primrec_tagCase4 {f0 f1 f2 f3 fdef : ℕ → ℕ}
 /-! ## Exercise 7.22 C9b1 — fuel-bounded `SExpr` decode ok flag
 
 Mirrors tag dispatch on `c.unpair.1 ∈ {0,1,2,3}`; at `fuel + 1` recurses at `fuel` on sub-codes
-for `.cat`/`.cap`. Shallow correctness link ↔ `decodeFuel` (**7.22i(b)1(c–e)**) not yet in tree. -/
+for `.cat`/`.cap`. Shallow link **7.22i(b)1(d–e)** uses dispatch lemmas from **7.22i(b)1(c)**. -/
 
 /-- `{0,1}` AND on flags (both must be `1`). -/
 def mulBit (a b : ℕ) : ℕ := a * b
@@ -1929,6 +1937,53 @@ def decodeFuelOkCharBody (prev : ℕ → ℕ) (c : ℕ) : ℕ :=
     (selectFn (isOne (2 - c.unpair.1)) (allBinDigitsChar c.unpair.2)
       (selectFn (isOne (3 - c.unpair.1)) sub
         (selectFn (isOne (4 - c.unpair.1)) sub 0)))
+
+/-- Tag-dispatch form of `decodeFuelOkCharBody` (**7.22i(b)1(c)**). -/
+theorem decodeFuelOkCharBody_eq (prev : ℕ → ℕ) (c : ℕ) :
+    decodeFuelOkCharBody prev c =
+      match c.unpair.1 with
+      | 0 => selectFn (isOne (1 - c.unpair.2)) 1 0
+      | 1 => allBinDigitsChar c.unpair.2
+      | 2 | 3 => mulBit (prev c.unpair.2.unpair.1) (prev c.unpair.2.unpair.2)
+      | _ => 0 := by
+  unfold decodeFuelOkCharBody mulBit
+  match tag : c.unpair.1 with
+  | 0 =>
+    have h10 : (1 - 0 : ℕ) = 1 := rfl
+    simp only [tag, h10, isOne_one, selectFn_one]
+  | 1 =>
+    have h01 : (1 - 1 : ℕ) = 0 := rfl
+    have h12 : (2 - 1 : ℕ) = 1 := rfl
+    simp only [tag, h01, h12, isOne_zero, isOne_one, selectFn_zero, selectFn_one]
+  | 2 =>
+    have h01 : (1 - 2 : ℕ) = 0 := Nat.sub_eq_zero_of_le (by omega)
+    have h12 : (2 - 2 : ℕ) = 0 := rfl
+    have h23 : (3 - 2 : ℕ) = 1 := rfl
+    simp only [tag, h01, h12, h23, isOne_zero, isOne_one, selectFn_zero, selectFn_one]
+  | 3 =>
+    have h01 : (1 - 3 : ℕ) = 0 := Nat.sub_eq_zero_of_le (by omega)
+    have h12 : (2 - 3 : ℕ) = 0 := Nat.sub_eq_zero_of_le (by omega)
+    have h23 : (3 - 3 : ℕ) = 0 := rfl
+    have h34 : (4 - 3 : ℕ) = 1 := rfl
+    simp only [tag, h01, h12, h23, h34, isOne_zero, isOne_one, selectFn_zero, selectFn_one]
+  | t + 4 =>
+    have hne1 : isOne (1 - (t + 4)) = 0 := isOne_of_ne_one (by omega)
+    have hne2 : isOne (2 - (t + 4)) = 0 := isOne_of_ne_one (by omega)
+    have hne3 : isOne (3 - (t + 4)) = 0 := isOne_of_ne_one (by omega)
+    have hne4 : isOne (4 - (t + 4)) = 0 := isOne_of_ne_one (by omega)
+    simp only [tag, hne1, hne2, hne3, hne4, selectFn_zero]
+
+theorem selectFn_isOne_one_sub_sigma (u : ℕ) :
+    selectFn (isOne (1 - u)) 1 0 = 1 ↔ u = 0 := by
+  constructor
+  · intro h
+    by_cases hu : u = 0
+    · exact hu
+    · have : isOne (1 - u) = 0 := isOne_of_ne_one (by omega)
+      simp [this, selectFn_zero] at h
+  · intro hu
+    subst hu
+    simp [isOne_one, selectFn_one]
 
 /-- `{0,1}` flag: `1` iff fuel-bounded `SExpr` decode succeeds on code `c`. -/
 def decodeFuelOkChar : ℕ → ℕ → ℕ

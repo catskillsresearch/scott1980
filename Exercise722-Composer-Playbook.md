@@ -39,7 +39,8 @@ Mark sessions as you go. **Do not skip ahead** if a prerequisite is unchecked.
 | **C9b1** | `decodeFuelOkChar` umbrella (**7.22i(b)1(a–e)**) | Not Yet | 7.22i(b)1 |
 | **C9b1a** | `mulBit` + `primrec` | ☑ | 7.22i(b)1(a) |
 | **C9b1b** | `decodeFuelOkChar` + `primrec` | ☑ | 7.22i(b)1(b) |
-| **C9b1c–e** | link lemmas + `decodeFuelOkChar_eq_one_iff` | ☐ | 7.22i(b)1(c–e) |
+| **C9b1c** | dispatch lemmas (`Body_eq`, `selectFn_isOne_…`) | ☑ | 7.22i(b)1(c) |
+| **C9b1d–e** | `decodeListBool_isSome_iff` + `decodeFuelOkChar_eq_one_iff` | ☐ | 7.22i(b)1(d–e) |
 | **C9b2** | `listLenChar` + `primrec` | Not Yet | 7.22i(b)2 |
 | **C9b3** | `listEqChar` + `primrec` | Need Advice | 7.22i(b)3 |
 | **C9b4** | `appendListCode`, `takeCode`, `dropCode` + `primrec` | Not Yet | 7.22i(b)4 |
