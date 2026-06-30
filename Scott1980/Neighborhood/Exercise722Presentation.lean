@@ -24,6 +24,12 @@ open Set Domain.Recursive
 
 private def boolNat (b : Bool) : ℕ := if b then 1 else 0
 
+theorem boolNat_eq_one_iff (b : Bool) : boolNat b = 1 ↔ b := by
+  cases b <;> simp [boolNat]
+
+theorem boolNat_zero_one (b : Bool) : boolNat b = 0 ∨ boolNat b = 1 := by
+  cases b <;> simp [boolNat]
+
 private def natBool (n : ℕ) : Option Bool :=
   match n with | 0 => some false | 1 => some true | _ => none
 
@@ -223,10 +229,10 @@ theorem safeDecodeActive_nonempty (n : ℕ) : (denote (safeDecodeActive n)).None
   cases hdec : SExpr.decode n with
   | none => exact Set.univ_nonempty
   | some e =>
-    by_cases hb : decideNonemptyB e
-    · simp [hdec, hb]
-      exact (decideNonemptyB_iff e).1 hb
-    · simp [hdec, hb, denote_sigma]
+    by_cases hb : decideNonemptyB e = true
+    · have hne : (denote e).Nonempty := (decideNonemptyB_iff e).1 hb
+      simpa [hdec, hb] using hne
+    · simpa [hdec, hb, denote_sigma] using Set.univ_nonempty
 
 theorem consistentB_sigma_safe (m : ℕ) : consistentB .sigma (safeDecodeActive m) = true := by
   rw [consistentB_iff, denote_cap, denote_sigma, Set.univ_inter]
@@ -256,14 +262,14 @@ theorem ssysConsistentB_iff (n m : ℕ) :
             rw [hsa, hsb]
             have heq : ssysConsistentB n m = consistentB a b := by
               unfold ssysConsistentB
-              simp [hn, hm, hdecn, hdecm, Bool.not_eq_true, Bool.or_false]
+              simp [hn, hm, hdecn, hdecm]
             rw [heq] at h
             exact h
           · intro hcons
             rw [hsa, hsb] at hcons
             have heq : ssysConsistentB n m = consistentB a b := by
               unfold ssysConsistentB
-              simp [hn, hm, hdecn, hdecm, Bool.not_eq_true, Bool.or_false]
+              simp [hn, hm, hdecn, hdecm]
             rw [heq]
             exact hcons
     · have hm' : ssysActive m = false := by simpa using hm
@@ -279,19 +285,54 @@ theorem ssys_cons_char_iff (n m : ℕ) :
     ssysConsistentB n m = true ↔ ∃ k, SsysX k ⊆ SsysX n ∩ SsysX m := by
   rw [ssysConsistentB_iff, ssys_cons_iff]
 
-/-! ### Session C9 — `RecDecidable₂` (BLOCKED)
+/-- Scott's consistency relation (Definition 7.1 (ii)) on the `SsysX` indices is decidable via
+`ssysConsistentB` (choice-free on the `Bool` side; see axiom audit of `decideNonemptyB_iff`). -/
+instance decidableSsysCons (n m : ℕ) :
+    Decidable (∃ k, SsysX k ⊆ SsysX n ∩ SsysX m) :=
+  decidable_of_iff (ssysConsistentB n m = true) (ssys_cons_char_iff n m)
 
-Scott's consistency on indices is already equivalent to the **Bool** decider `ssysConsistentB`
-(`ssys_cons_char_iff`). What remains is a **`Nat.Primrec` `{0,1}` characteristic function**
-`Ssys_consChar` with `Ssys_consChar (pair n m) = 1 ↔ ssysConsistentB n m`, then
-`Ssys_cons_computable` via `RecDecidable.of_iff` + `ssys_cons_char_iff` (pattern: `Example78.lean`
-`PNpres.cons_computable`).
+/-! ### Session C9 — `RecDecidable₂` (primitive-recursive bridge)
 
-**Blocker:** `decideNonemptyB` / `consistentB` are computable on `SExpr` but not yet primitive-recursive
-on Gödel-coded indices. **`Recursive.lean`** now has **`bExistsFn`**, **`primrec_ite`**, **`primrec_max`**
-(engine for bounded search); the failed all-in-one port in `Exercise722Primrec.lean` was removed
-(2026-06-29). **Next retry:** small primrec layer importing *this file's* `SExpr.decode` / `ssysActive`
-— not a duplicate encode/decode tower. See `HANDOFF.md` checkpoint **2026-06-29**. -/
+The mathematics is finished (`ssys_cons_char_iff`). The generic packaging lemma is
+`RecDecidable₂.of_paired_zero_one_char` in `Recursive.lean`: once a `{0,1}`-valued characteristic is
+`Nat.Primrec`, `RecDecidable₂` follows immediately.
+
+**Numeric characteristic** for the existing Bool decider (no new algorithm).
+
+Unfolding `ssys_cons_char_iff` (which chains through `ssys_cons_iff` / `consistentB_iff`) can exceed
+the default 200000 heartbeat budget; raise the limit for this section only. -/
+
+set_option maxHeartbeats 5000000
+
+/-- `{0,1}` packaging of `ssysConsistentB` on `Nat.pair`-coded index pairs. -/
+def ssysConsChar (t : ℕ) : ℕ := boolNat (ssysConsistentB t.unpair.1 t.unpair.2)
+
+theorem ssysConsChar_eq_one_iff (t : ℕ) :
+    ssysConsChar t = 1 ↔ ssysConsistentB t.unpair.1 t.unpair.2 = true := by
+  simp [ssysConsChar, boolNat_eq_one_iff]
+
+theorem ssysConsChar_zero_one (t : ℕ) : ssysConsChar t = 0 ∨ ssysConsChar t = 1 :=
+  boolNat_zero_one _
+
+theorem ssys_cons_char_eq_one_iff (n m : ℕ) :
+    (∃ k, SsysX k ⊆ SsysX n ∩ SsysX m) ↔ ssysConsChar (Nat.pair n m) = 1 := by
+  rw [ssysConsChar_eq_one_iff, ssys_cons_char_iff, unpair_pair_fst, unpair_pair_snd]
+
+/-- **Conditional C9 closure.** Instantiated once the sole missing primitive-recursive link below
+is proved. -/
+theorem Ssys_cons_computable_of_primrec_ssysConsChar (hf : Nat.Primrec ssysConsChar) :
+    RecDecidable₂ (fun n m => ∃ k, SsysX k ⊆ SsysX n ∩ SsysX m) :=
+  RecDecidable₂.of_paired_zero_one_char hf ssysConsChar_zero_one ssys_cons_char_eq_one_iff
+
+-- TODO (Scott Exercise 7.22 C9): `primrec_ssysConsChar : Nat.Primrec ssysConsChar`
+-- TODO (Scott Exercise 7.22 C9): `Ssys_cons_computable` via
+--   `Ssys_cons_computable_of_primrec_ssysConsChar primrec_ssysConsChar`
+--
+-- The mathematics is finished (`ssys_cons_char_iff`). The only missing piece is the
+-- primitive-recursive realization of `ssysConsChar` (no new algorithm). Dependency chain:
+-- 1. `primrec_SExpr_decodeChar` — numeric simulation of `SExpr.decode`;
+-- 2. `primrec_decideNonemptyBChar` — first non-trivial step (`decideNonemptyB` / `matchesB`);
+-- 3. `primrec_consistentBChar`; 4. `primrec_ssysConsistentBChar`; 5. `primrec_ssysConsChar`.
 
 end Exercise722
 

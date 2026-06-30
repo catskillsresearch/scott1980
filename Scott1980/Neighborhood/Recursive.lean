@@ -372,6 +372,26 @@ theorem RecDecidable.and {p q : ℕ → Prop} (hp : RecDecidable p) (hq : RecDec
 theorem recDecidable_of_forall {p : ℕ → Prop} (h : ∀ n, p n) : RecDecidable p :=
   ⟨fun _ => 1, Nat.Primrec.const 1, fun n => ⟨fun _ => rfl, fun _ => h n⟩⟩
 
+/-- **From a primitive-recursive `{0,1}` characteristic to `RecDecidable`.** This is the standard
+bridge when an executable Bool decider has already been realized as a numeric `{0,1}` function; the
+logical equivalence is supplied separately (do not reprove the mathematics). -/
+theorem RecDecidable.of_zero_one_char {p : ℕ → Prop} {f : ℕ → ℕ} (hf : Nat.Primrec f)
+    (h01 : ∀ n, f n = 0 ∨ f n = 1) (hfe : ∀ n, p n ↔ f n = 1) : RecDecidable p :=
+  ⟨f, hf, hfe⟩
+
+/-- **Paired `{0,1}` characteristic.** When the Bool decider has been packaged as a unary
+primitive-recursive function on `Nat.pair n m`, reindex to `RecDecidable₂`. -/
+theorem RecDecidable₂.of_paired_zero_one_char {r : ℕ → ℕ → Prop} {f : ℕ → ℕ} (hf : Nat.Primrec f)
+    (h01 : ∀ t, f t = 0 ∨ f t = 1) (hfe : ∀ n m, r n m ↔ f (Nat.pair n m) = 1) :
+    RecDecidable₂ r := by
+  unfold RecDecidable₂
+  refine RecDecidable.of_zero_one_char hf h01 (fun t => ?_)
+  rw [hfe, pair_unpair]
+
+/-- An always-true binary relation is recursively decidable (constant decider `1`). -/
+theorem recDecidable₂_of_forall {r : ℕ → ℕ → Prop} (h : ∀ n m, r n m) : RecDecidable₂ r :=
+  recDecidable_of_forall (fun t => h t.unpair.1 t.unpair.2)
+
 /-- **Equality of two primitive-recursive functions is recursively decidable.** The `{0,1}`-valued
 characteristic function is `1 - ((a t - b t) + (b t - a t))` (truncated subtraction), which is `1`
 exactly when `a t = b t`; primitive recursive via `primrec_sub`/`primrec_add`, and the biconditional
