@@ -168,6 +168,87 @@ theorem decodeFuel_encode {fuel : ℕ} {e : SExpr} (h : sexprDepth e ≤ fuel) :
         omega
       simp [decodeFuel, SExpr.encode, iha ha, ihb hb]
 
+private theorem decodeFuel_succ_sigma (fuel c : ℕ) (h : c.unpair.1 = 0) (hσ : c.unpair.2 = 0) :
+    decodeFuel (fuel + 1) c = some .sigma := by simp [decodeFuel, h, hσ]
+
+private theorem decodeFuel_succ_not_sigma (fuel c : ℕ) (h : c.unpair.1 = 0) (hσ : c.unpair.2 ≠ 0) :
+    decodeFuel (fuel + 1) c = none := by simp [decodeFuel, h, hσ]
+
+private theorem decodeFuel_succ_single (fuel c : ℕ) (h : c.unpair.1 = 1) :
+    decodeFuel (fuel + 1) c = (decodeListBool c.unpair.2).map (.single ·) := by
+  simp [decodeFuel, h]
+
+private theorem decodeFuel_succ_cat (fuel c : ℕ) (h : c.unpair.1 = 2) :
+    decodeFuel (fuel + 1) c =
+      match decodeFuel fuel c.unpair.2.unpair.1, decodeFuel fuel c.unpair.2.unpair.2 with
+      | some a, some b => some (.cat a b)
+      | _, _ => none := by simp [decodeFuel, h]
+
+private theorem decodeFuel_succ_cap (fuel c : ℕ) (h : c.unpair.1 = 3) :
+    decodeFuel (fuel + 1) c =
+      match decodeFuel fuel c.unpair.2.unpair.1, decodeFuel fuel c.unpair.2.unpair.2 with
+      | some a, some b => some (.cap a b)
+      | _, _ => none := by simp [decodeFuel, h]
+
+private theorem decodeFuel_succ_junk (fuel c : ℕ) (h : 4 ≤ c.unpair.1) :
+    decodeFuel (fuel + 1) c = none := by
+  match tag : c.unpair.1 with
+  | 0 | 1 | 2 | 3 => omega
+  | t + 4 => simp [decodeFuel, tag]
+
+private theorem decodeFuel_pair_cat_isSome_iff (fuel c : ℕ) :
+    (match decodeFuel fuel c.unpair.2.unpair.1, decodeFuel fuel c.unpair.2.unpair.2 with
+      | some a, some b => some (SExpr.cat a b) | _, _ => none).isSome = true ↔
+      (decodeFuel fuel c.unpair.2.unpair.1).isSome = true ∧
+        (decodeFuel fuel c.unpair.2.unpair.2).isSome = true := by
+  cases decodeFuel fuel c.unpair.2.unpair.1 <;> cases decodeFuel fuel c.unpair.2.unpair.2 <;> simp
+
+private theorem decodeFuel_pair_cap_isSome_iff (fuel c : ℕ) :
+    (match decodeFuel fuel c.unpair.2.unpair.1, decodeFuel fuel c.unpair.2.unpair.2 with
+      | some a, some b => some (SExpr.cap a b) | _, _ => none).isSome = true ↔
+      (decodeFuel fuel c.unpair.2.unpair.1).isSome = true ∧
+        (decodeFuel fuel c.unpair.2.unpair.2).isSome = true := by
+  cases decodeFuel fuel c.unpair.2.unpair.1 <;> cases decodeFuel fuel c.unpair.2.unpair.2 <;> simp
+
+/-- **7.22i(b)1(e):** shallow link between fuel-bounded char decode and `decodeFuel`. -/
+theorem decodeFuelOkChar_eq_one_iff (fuel c : ℕ) :
+    decodeFuelOkChar fuel c = 1 ↔ (decodeFuel fuel c).isSome = true := by
+  induction fuel generalizing c with
+  | zero =>
+    simp [decodeFuelOkChar, decodeFuel]
+  | succ fuel ih =>
+    simp only [decodeFuelOkChar]
+    rw [decodeFuelOkCharBody_eq]
+    match tag : c.unpair.1 with
+    | 0 =>
+      rw [show decodeFuel (fuel + 1) c = if c.unpair.2 = 0 then some .sigma else none from by
+        by_cases hσ : c.unpair.2 = 0 <;> simp [decodeFuel, tag, hσ]]
+      simp [selectFn_isOne_one_sub_sigma]
+    | 1 =>
+      rw [decodeFuel_succ_single fuel c tag]
+      simp [decodeListBool_isSome_iff, Option.isSome_map]
+    | 2 =>
+      rw [decodeFuel_succ_cat fuel c tag, mulBit_eq_one_iff, decodeFuel_pair_cat_isSome_iff]
+      have ih1 := ih c.unpair.2.unpair.1
+      have ih2 := ih c.unpair.2.unpair.2
+      constructor
+      · intro ⟨h1, h2⟩
+        exact ⟨ih1.mp h1, ih2.mp h2⟩
+      · intro ⟨h1, h2⟩
+        exact ⟨ih1.mpr h1, ih2.mpr h2⟩
+    | 3 =>
+      rw [decodeFuel_succ_cap fuel c tag, mulBit_eq_one_iff, decodeFuel_pair_cap_isSome_iff]
+      have ih1 := ih c.unpair.2.unpair.1
+      have ih2 := ih c.unpair.2.unpair.2
+      constructor
+      · intro ⟨h1, h2⟩
+        exact ⟨ih1.mp h1, ih2.mp h2⟩
+      · intro ⟨h1, h2⟩
+        exact ⟨ih1.mpr h1, ih2.mpr h2⟩
+    | t + 4 =>
+      rw [decodeFuel_succ_junk fuel c (by omega)]
+      simp [tag]
+
 /-- Index for the enumeration: code plus depth (fuel for decoding). -/
 def SExpr.index (e : SExpr) : ℕ := Nat.pair (encode e) (sexprDepth e)
 
@@ -386,7 +467,7 @@ theorem Ssys_cons_computable_of_primrec_ssysConsChar (hf : Nat.Primrec ssysConsC
 -- primitive-recursive realization of `ssysConsChar` (no new algorithm). Slices (C9b / 7.22i(b)):
 -- 0. `isBinDigit` / `allBinDigitsChar` in `Recursive.lean` (C9a / 7.22i(a) ☑)
 -- 1. C9b1 / 7.22i(b)1 — (a) mulBit ☑ (b) decodeFuelOkChar+primrec ☑;
---    (c) dispatch lemmas ☑ (d) decodeListBool_isSome_iff ☑ (e) decodeFuelOkChar_eq_one_iff — Not Yet
+--    (c) dispatch lemmas ☑ (d) decodeListBool_isSome_iff ☑ (e) decodeFuelOkChar_eq_one_iff ☑
 --    See `arxiv.md` rows **7.22i(b)1(a–e)**.
 -- 2. `listLenChar` + primrec (C9b2 / 7.22i(b)2) — Not Yet
 -- 3. `listEqChar` + primrec (C9b3 / 7.22i(b)3) — Need Advice

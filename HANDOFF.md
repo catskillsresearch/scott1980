@@ -18,14 +18,13 @@ A session may begin after a context reset; chat memory is not durable, these fil
 5. Follow `.cursor/rules/handoff-discipline.mdc` (choice discipline, axiom audits, and the
    end-of-item checklist that keeps this file + `arxiv.md` current).
 6. **Exercise 7.22 (split inventory):** Scott's construction is **formalized** — grep `Exercise 7.22`
-   in `arxiv.md`: rows **7.22a–h**, **7.22i(a)** are **Pass**; **7.22i(b)1(a–d)** **Pass**;
-   **7.22i(b)1(e)** and **7.22i(b)2–8** are **Not Yet** (one **Need Advice**: **7.22i(b)3**);
+   in `arxiv.md`: rows **7.22a–h**, **7.22i(a)** are **Pass**; **7.22i(b)1(a–e)** **Pass**;
+   **7.22i(b)2–8** are **Not Yet** (one **Need Advice**: **7.22i(b)3**);
    **7.22i(b)** umbrella and **7.22j–l** are **Not Yet** (PR
    certification + optional extensions). Remaining Composer work is **interface repair** between the
    automata Bool layer and `Recursive.lean`, not unfinished Scott mathematics. **`@Exercise722-Composer-Run.md`**
    only (one @ per session). **Composer tracker:** C1–C8 ☑, C11 ☑, C12 ☑; **C9a** → **7.22i(a)** ☑;
-   **next eligible ☐:** **C9b1e** / **7.22i(b)1(e)** (`decodeFuelOkChar_eq_one_iff`); **C9b2** unblocked after **7.22i(b)1(b)** ☑
-   (see **`arxiv.md`** rows **7.22i(b)1–8**); **C10** → **7.22j** after **C9b8**; **C7b** → **7.22k**
+   **next eligible ☐:** **C9b2** / **7.22i(b)2** (`listLenChar`); see **`arxiv.md`** rows **7.22i(b)2–8**; **C10** → **7.22j** after **C9b8**; **C7b** → **7.22k**
    (optional, does not block paper). Do **not** duplicate encode/decode in a monolith
    (`Exercise722Primrec.lean` was abandoned 2026-06-29).
 
@@ -4289,4 +4288,4 @@ session:** **C9b1** only (`decodeFuelOkChar` in `Recursive.lean`).
 
 ---
 
-**2026-06-30 — C9b1d / 7.22i(b)1(d) Pass.** **`Exercise722Presentation.lean`:** **`decodeListBool_isSome_iff`** via **`mapM_natBool_isSome_iff`** (list induction + **`List.mapM_cons`** case split). **`lake build Scott1980.Neighborhood.Exercise722Presentation`** green; **`decodeListBool_isSome_iff` ⊆ {propext, Classical.choice, Quot.sound}** (choice inherited from **`allBinDigitsChar_eq_one_iff`**). **Next:** **C9b1e** / **7.22i(b)1(e)**.
+**2026-06-30 — C9b1e / 7.22i(b)1(e) Pass; C9b1 umbrella closed.** **`Exercise722Presentation.lean`:** **`decodeFuelOkChar_eq_one_iff`** (fuel induction + tag cases using **(c)**/**(d)**). **`lake build Scott1980.Neighborhood.Exercise722Presentation`** green; **`decodeFuelOkChar_eq_one_iff` ⊆ {propext, Classical.choice, Quot.sound}**. **7.22i(b)1(a–e)** all **Pass**. **Next:** **C9b2** / **7.22i(b)2** (`listLenChar`).

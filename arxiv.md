@@ -94,12 +94,12 @@ within `Recursive.lean`—not to further domain theory. See appendices A and B.
 | C12 | Inventory + axiom audit | ☑ | — |
 | **C9a** | First missing **generic** `Nat.Primrec` lemma in `Recursive.lean` | ☑ | 7.22i(a) |
 | **C9b** | `primrec_ssysConsChar` + `Ssys_cons_computable` (umbrella) | Not Yet | 7.22i(b) |
-| **C9b1** | `decodeFuelOkChar` umbrella (**7.22i(b)1(a–e)**) | Not Yet | 7.22i(b)1 |
+| **C9b1** | `decodeFuelOkChar` umbrella (**7.22i(b)1(a–e)**) | ☑ | 7.22i(b)1 |
 | **C9b1a** | `mulBit` + `primrec` | ☑ | 7.22i(b)1(a) |
 | **C9b1b** | `decodeFuelOkChar` + `primrec` | ☑ | 7.22i(b)1(b) |
 | **C9b1c** | dispatch lemmas (`Body_eq`, `selectFn_isOne_…`) | ☑ | 7.22i(b)1(c) |
 | **C9b1d** | `decodeListBool_isSome_iff` | ☑ | 7.22i(b)1(d) |
-| **C9b1e** | `decodeFuelOkChar_eq_one_iff` | ☐ | 7.22i(b)1(e) |
+| **C9b1e** | `decodeFuelOkChar_eq_one_iff` | ☑ | 7.22i(b)1(e) |
 | **C9b2** | `listLenChar` + `primrec` | Not Yet | 7.22i(b)2 |
 | **C9b3** | `listEqChar` + `primrec` | Need Advice | 7.22i(b)3 |
 | **C9b4** | `appendListCode`, `takeCode`, `dropCode` + `primrec` | Not Yet | 7.22i(b)4 |
@@ -1651,8 +1651,8 @@ delivered **7.22a–h** and **7.22i(a)**; **7.22i(b)1–8** (Composer **C9b1–C
 #### Exercise 7.22i(b)1
 * **Mathematical Target:** fuel-bounded decode ok flag — **`decodeFuelOkChar`** + **`primrec_decodeFuelOkChar`**, then shallow link ↔ **`decodeFuel`**.**`isSome`**
 * **Lean File:** `Scott1980/Neighborhood/Recursive.lean` (char + primrec); `Exercise722Presentation.lean` (link)
-* **Proof Notes:** **Umbrella closes when sub-rows 7.22i(b)1(a–e) all Pass.** Completed slices in tree; link infrastructure deferred to **(c–e)**.
-* **Status:** Not Yet
+* **Proof Notes:** **All sub-rows (a–e) Pass.** Char + primrec in **`Recursive.lean`**; shallow link **`decodeFuelOkChar_eq_one_iff`** in **`Exercise722Presentation.lean`** (fuel induction + tag dispatch via **(c)**, tag-1 via **(d)**, tags 2/3 via **`mulBit_eq_one_iff`** + pair-**`isSome`** lemmas).
+* **Status:** Pass
 
 #### Exercise 7.22i(b)1(a)
 * **Mathematical Target:** `{0,1}` AND — **`mulBit`**, **`mulBit_eq_one_iff`**, **`primrec_mulBit`**
@@ -1681,8 +1681,8 @@ delivered **7.22a–h** and **7.22i(a)**; **7.22i(b)1–8** (Composer **C9b1–C
 #### Exercise 7.22i(b)1(e)
 * **Mathematical Target:** shallow decode link — **`decodeFuelOkChar_eq_one_iff`** (`decodeFuelOkChar fuel c = 1 ↔ (decodeFuel fuel c).isSome = true`)
 * **Lean File:** `Scott1980/Neighborhood/Exercise722Presentation.lean`
-* **Proof Notes:** **Strategy:** Fuel induction; one step via **(c)** **`decodeFuelOkCharBody_eq`** + **`rcases c.unpair`**. Tag 0: **(c)** **`selectFn_isOne_one_sub_sigma`**. Tag 1: **(d)** + **`Option.map` isSome**. Tags 2/3: **`mulBit_eq_one_iff`** + pair-**`isSome`** lemma. Tag ≥4: both sides **`false`**. **Depends on (c)+(d)**. **Not in tree** until **(e)** Pass.
-* **Status:** Not Yet
+* **Proof Notes:** Fuel induction; **`decodeFuelOkCharBody_eq`** + **`match c.unpair.1`**. Tag 0: **`selectFn_isOne_one_sub_sigma`**; tag 1: **(d)** + **`Option.isSome_map`**; tags 2/3: **`mulBit_eq_one_iff`** + **`decodeFuel_pair_*_isSome_iff`**; tag ≥4: both **`false`**. Green; zero `sorry`; **`decodeFuelOkChar_eq_one_iff` ⊆ {propext, Classical.choice, Quot.sound}** (choice inherited).
+* **Status:** Pass
 
 #### Exercise 7.22i(b)2
 * **Mathematical Target:** coded list length — **`listLenChar`** + **`primrec_listLenChar`**

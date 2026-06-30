@@ -79,12 +79,12 @@ You are a Lean 4 proof engineer in `/home/catskills/Desktop/scott1980` (mathlib 
 | C8 | `SsysX` enumeration | ☑ | C5 | 7.22g |
 | **C9a** | first missing **generic** `Nat.Primrec` lemma in `Recursive.lean` | ☑ | C6, C8 | 7.22i(a) |
 | **C9b** | `primrec_ssysConsChar` + `Ssys_cons_computable` (umbrella) | Not Yet | C9a | 7.22i(b) |
-| **C9b1** | `decodeFuelOkChar` umbrella (**7.22i(b)1(a–e)**) | Not Yet | C9a | 7.22i(b)1 |
+| **C9b1** | `decodeFuelOkChar` umbrella (**7.22i(b)1(a–e)**) | ☑ | C9a | 7.22i(b)1 |
 | **C9b1a** | `mulBit` + `primrec` | ☑ | C9a | 7.22i(b)1(a) |
 | **C9b1b** | `decodeFuelOkChar` + `primrec` | ☑ | C9b1a | 7.22i(b)1(b) |
 | **C9b1c** | dispatch lemmas (`Body_eq`, …) | ☑ | C9b1b | 7.22i(b)1(c) |
 | **C9b1d** | `decodeListBool_isSome_iff` | ☑ | C9b1b | 7.22i(b)1(d) |
-| **C9b1e** | `decodeFuelOkChar_eq_one_iff` | ☐ | C9b1c, C9b1d | 7.22i(b)1(e) |
+| **C9b1e** | `decodeFuelOkChar_eq_one_iff` | ☑ | C9b1c, C9b1d | 7.22i(b)1(e) |
 | **C9b2** | `listLenChar` + `primrec` | Not Yet | C9b1b | 7.22i(b)2 |
 | **C9b3** | `listEqChar` + `primrec` | Need Advice | C9b2 | 7.22i(b)3 |
 | **C9b4** | `appendListCode`, `takeCode`, `dropCode` + `primrec` | Not Yet | C9b3 | 7.22i(b)4 |
@@ -359,12 +359,12 @@ only
 
 | Slice | Target | Status | arxiv |
 |-------|--------|--------|-------|
-| **C9b1** | umbrella (closes when **1(a–e)** Pass) | Not Yet | 7.22i(b)1 |
+| **C9b1** | umbrella (closes when **1(a–e)** Pass) | ☑ | 7.22i(b)1 |
 | **C9b1a** | `mulBit` + `primrec` | ☑ | 7.22i(b)1(a) |
 | **C9b1b** | `decodeFuelOkChar` + `primrec` | ☑ | 7.22i(b)1(b) |
 | **C9b1c** | `decodeFuelOkCharBody_eq` + tag-0 helpers | ☑ | 7.22i(b)1(c) |
 | **C9b1d** | `decodeListBool_isSome_iff` | ☑ | 7.22i(b)1(d) |
-| **C9b1e** | `decodeFuelOkChar_eq_one_iff` | ☐ | 7.22i(b)1(e) |
+| **C9b1e** | `decodeFuelOkChar_eq_one_iff` | ☑ | 7.22i(b)1(e) |
 | **C9b2** | `listLenChar` + `primrec` | Not Yet | 7.22i(b)2 |
 | **C9b3** | `listEqChar` + `primrec` | Need Advice | 7.22i(b)3 |
 | **C9b4** | `appendListCode`, `takeCode`, `dropCode` + `primrec` | Not Yet | 7.22i(b)4 |
