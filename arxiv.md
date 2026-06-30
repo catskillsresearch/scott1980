@@ -98,7 +98,7 @@ within `Recursive.lean`—not to further domain theory. See appendices A and B.
 | **C9b1a** | `mulBit` + `primrec` | ☑ | 7.22i(b)1(a) |
 | **C9b1b** | `decodeFuelOkChar` + `primrec` | ☑ | 7.22i(b)1(b) |
 | **C9b1c** | dispatch lemmas (`Body_eq`, `selectFn_isOne_…`) | ☑ | 7.22i(b)1(c) |
-| **C9b1d** | `decodeListBool_isSome_iff` | ☐ | 7.22i(b)1(d) |
+| **C9b1d** | `decodeListBool_isSome_iff` | ☑ | 7.22i(b)1(d) |
 | **C9b1e** | `decodeFuelOkChar_eq_one_iff` | ☐ | 7.22i(b)1(e) |
 | **C9b2** | `listLenChar` + `primrec` | Not Yet | 7.22i(b)2 |
 | **C9b3** | `listEqChar` + `primrec` | Need Advice | 7.22i(b)3 |
@@ -1674,9 +1674,9 @@ delivered **7.22a–h** and **7.22i(a)**; **7.22i(b)1–8** (Composer **C9b1–C
 
 #### Exercise 7.22i(b)1(d)
 * **Mathematical Target:** list decode ok ↔ bin-digit char — **`decodeListBool_isSome_iff`** (`(decodeListBool n).isSome = true ↔ allBinDigitsChar n = 1`)
-* **Lean File:** `Scott1980/Neighborhood/Exercise722Presentation.lean` (or move **`natBool`/`decodeListBool`** to **`Recursive.lean`**)
-* **Proof Notes:** **Strategy (preferred):** prove **`(decodeList n).mapM natBool`**.**`isSome` ↔ ∀ x ∈ decodeList n, x = 0 ∨ x = 1** by induction on **`decodeList n`** with **`by_cases`** on validity of head (avoid dependent **`cases`** on **`mapM.loop`**). Forward: from **`some σ`** extract digits via **`List.mapM`** bind structure. Backward: build witness **`List.map (fun x => x == 1) …`**. **Alternative:** duplicate **`natBool`** in **`Recursive.lean`** and tie to **`allListChar`**/`**foldCode_eq**` (same predicate as **`allBinDigitsChar`**). Tag-1 blocker for **(e)**.
-* **Status:** Not Yet
+* **Lean File:** `Scott1980/Neighborhood/Exercise722Presentation.lean`
+* **Proof Notes:** **`mapM_natBool_isSome_iff`**: induction on coded list with **`List.mapM_cons`** + case split on **`natBool`**/`**mapM**`. Links via **`allBinDigitsChar_eq_one_iff`**. Green; zero `sorry`; **`decodeListBool_isSome_iff` ⊆ {propext, Classical.choice, Quot.sound}** (choice inherited from C9a).
+* **Status:** Pass
 
 #### Exercise 7.22i(b)1(e)
 * **Mathematical Target:** shallow decode link — **`decodeFuelOkChar_eq_one_iff`** (`decodeFuelOkChar fuel c = 1 ↔ (decodeFuel fuel c).isSome = true`)

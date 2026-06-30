@@ -46,6 +46,60 @@ private theorem decodeListBool_encodeListBool (σ : List Bool) :
   | cons b bs ih =>
     cases b <;> simp [boolNat, natBool, ih]
 
+private theorem natBool_isSome_iff (n : ℕ) :
+    (natBool n).isSome = true ↔ n = 0 ∨ n = 1 := by
+  match n with
+  | 0 => simp [natBool]
+  | 1 => simp [natBool]
+  | n + 2 => simp [natBool]
+
+private theorem natBinDigit_of_natBool_some (n : ℕ) {b : Bool} (h : natBool n = some b) :
+    n = 0 ∨ n = 1 := by
+  match n with
+  | 0 => simp [natBool] at h; exact Or.inl rfl
+  | 1 => simp [natBool] at h; exact Or.inr rfl
+  | n + 2 => simp [natBool] at h
+
+private theorem mapM_natBool_isSome_iff (l : List ℕ) :
+    (l.mapM natBool).isSome = true ↔ ∀ x ∈ l, x = 0 ∨ x = 1 := by
+  induction l with
+  | nil => simp
+  | cons x xs ih =>
+    rw [List.mapM_cons]
+    constructor
+    · intro h
+      cases hnx : natBool x with
+      | none => simp [hnx] at h
+      | some b =>
+        cases htx : xs.mapM natBool with
+        | none => simp [hnx, htx] at h
+        | some ts =>
+          have hxs' : (xs.mapM natBool).isSome = true := by simp [htx, h]
+          intro y hy
+          rcases List.mem_cons.mp hy with hEq | hyTail
+          · rw [hEq]
+            exact natBinDigit_of_natBool_some x hnx
+          · exact ih.mp hxs' y hyTail
+    · intro h
+      have hx : (natBool x).isSome = true :=
+        (natBool_isSome_iff x).2 (h x (List.mem_cons_self ..))
+      have hxs : (xs.mapM natBool).isSome = true :=
+        ih.mpr fun y hy => h y (List.mem_cons_of_mem x hy)
+      cases hnx : natBool x with
+      | none =>
+        rcases h x (List.mem_cons_self ..) with h0 | h1
+        · subst h0; simp [natBool] at hnx
+        · subst h1; simp [natBool] at hnx
+      | some b =>
+        cases htx : xs.mapM natBool with
+        | none => simp [htx] at hxs
+        | some ts => simp [hnx, htx, hx, hxs]
+
+/-- **7.22i(b)1(d):** list decode succeeds iff every coded entry is a binary digit. -/
+theorem decodeListBool_isSome_iff (n : ℕ) :
+    (decodeListBool n).isSome = true ↔ allBinDigitsChar n = 1 := by
+  simp only [decodeListBool, mapM_natBool_isSome_iff, allBinDigitsChar_eq_one_iff]
+
 /-- Subexpression depth (for fuelled decoding). -/
 def sexprDepth : SExpr → ℕ
   | .sigma => 1
@@ -332,7 +386,7 @@ theorem Ssys_cons_computable_of_primrec_ssysConsChar (hf : Nat.Primrec ssysConsC
 -- primitive-recursive realization of `ssysConsChar` (no new algorithm). Slices (C9b / 7.22i(b)):
 -- 0. `isBinDigit` / `allBinDigitsChar` in `Recursive.lean` (C9a / 7.22i(a) ☑)
 -- 1. C9b1 / 7.22i(b)1 — (a) mulBit ☑ (b) decodeFuelOkChar+primrec ☑;
---    (c) dispatch lemmas (d) decodeListBool_isSome_iff (e) decodeFuelOkChar_eq_one_iff — Not Yet
+--    (c) dispatch lemmas ☑ (d) decodeListBool_isSome_iff ☑ (e) decodeFuelOkChar_eq_one_iff — Not Yet
 --    See `arxiv.md` rows **7.22i(b)1(a–e)**.
 -- 2. `listLenChar` + primrec (C9b2 / 7.22i(b)2) — Not Yet
 -- 3. `listEqChar` + primrec (C9b3 / 7.22i(b)3) — Need Advice
