@@ -324,18 +324,24 @@ theorem Ssys_cons_computable_of_primrec_ssysConsChar (hf : Nat.Primrec ssysConsC
     RecDecidable₂ (fun n m => ∃ k, SsysX k ⊆ SsysX n ∩ SsysX m) :=
   RecDecidable₂.of_paired_zero_one_char hf ssysConsChar_zero_one ssys_cons_char_eq_one_iff
 
--- TODO (Scott Exercise 7.22 C9): `primrec_ssysConsChar : Nat.Primrec ssysConsChar`
--- TODO (Scott Exercise 7.22 C9): `Ssys_cons_computable` via
+-- TODO (Scott Exercise 7.22 C9b8): `primrec_ssysConsChar : Nat.Primrec ssysConsChar`
+-- TODO (Scott Exercise 7.22 C9b8): `Ssys_cons_computable` via
 --   `Ssys_cons_computable_of_primrec_ssysConsChar primrec_ssysConsChar`
 --
 -- The mathematics is finished (`ssys_cons_char_iff`). The only missing piece is the
--- primitive-recursive realization of `ssysConsChar` (no new algorithm). Dependency chain:
+-- primitive-recursive realization of `ssysConsChar` (no new algorithm). Slices (C9b / 7.22i(b)):
 -- 0. `isBinDigit` / `allBinDigitsChar` in `Recursive.lean` (C9a / 7.22i(a) ☑)
--- 1. `primrec_decodeFuelOkChar` — fuel-bounded decode ok flag;
--- 2. generic list ops in `Recursive.lean` as needed (`listLenChar`, `listEqChar`, …);
--- 3. `primrec_decideNonemptyBChar` / `primrec_consistentBChar`;
--- 4. `primrec_ssysConsistentBChar`; 5. `primrec_ssysConsChar`.
--- See `arxiv.md` row **7.22i(b)** for C9b slice strategy (avoid monolith).
+-- 1. C9b1 / 7.22i(b)1 — (a) mulBit ☑ (b) decodeFuelOkChar+primrec ☑;
+--    (c) dispatch lemmas (d) decodeListBool_isSome_iff (e) decodeFuelOkChar_eq_one_iff — Not Yet
+--    See `arxiv.md` rows **7.22i(b)1(a–e)**.
+-- 2. `listLenChar` + primrec (C9b2 / 7.22i(b)2) — Not Yet
+-- 3. `listEqChar` + primrec (C9b3 / 7.22i(b)3) — Need Advice
+-- 4. `appendListCode`, `takeCode`, `dropCode` + primrec (C9b4 / 7.22i(b)4) — Not Yet
+-- 5. `autStateCardFuelChar`, `matchesBChar` + primrec (C9b5 / 7.22i(b)5) — Not Yet
+-- 6. `decideNonemptyBChar`, `consistentBChar` + primrec (C9b6 / 7.22i(b)6) — Not Yet
+-- 7. `ssysConsistentBChar` + shallow Bool `_eq` lemmas (C9b7 / 7.22i(b)7) — Not Yet
+-- 8. `primrec_ssysConsChar` → `Ssys_cons_computable` (C9b8 / 7.22i(b)8) — Not Yet
+-- See `arxiv.md` rows **7.22i(b)1–8** (one slice per session; avoid monolith).
 
 end Exercise722
 

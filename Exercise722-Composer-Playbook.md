@@ -35,8 +35,19 @@ Mark sessions as you go. **Do not skip ahead** if a prerequisite is unchecked.
 | **C7b** | full equivalence decider | ☐ DEFER | Opus / post-reset |
 | **C8** | `SsysX` enumeration | ☐ | needs C5 |
 | **C9a** | generic `Nat.Primrec` lemma (`Recursive.lean`) | ☑ | 7.22i(a); needs C6, C8 |
-| **C9b** | `RecDecidable₂` consistency (instantiation) | ☐ | 7.22i(b); needs C9a |
-| **C10** | `ComputablePresentation` | ☐ | 7.22j; needs C9b |
+| **C9b** | `RecDecidable₂` consistency (umbrella) | Not Yet | 7.22i(b); needs C9a |
+| **C9b1** | `decodeFuelOkChar` umbrella (**7.22i(b)1(a–e)**) | Not Yet | 7.22i(b)1 |
+| **C9b1a** | `mulBit` + `primrec` | ☑ | 7.22i(b)1(a) |
+| **C9b1b** | `decodeFuelOkChar` + `primrec` | ☑ | 7.22i(b)1(b) |
+| **C9b1c–e** | link lemmas + `decodeFuelOkChar_eq_one_iff` | ☐ | 7.22i(b)1(c–e) |
+| **C9b2** | `listLenChar` + `primrec` | Not Yet | 7.22i(b)2 |
+| **C9b3** | `listEqChar` + `primrec` | Need Advice | 7.22i(b)3 |
+| **C9b4** | `appendListCode`, `takeCode`, `dropCode` + `primrec` | Not Yet | 7.22i(b)4 |
+| **C9b5** | `autStateCardFuelChar`, `matchesBChar` + `primrec` | Not Yet | 7.22i(b)5 |
+| **C9b6** | `decideNonemptyBChar`, `consistentBChar` + `primrec` | Not Yet | 7.22i(b)6 |
+| **C9b7** | `ssysConsistentBChar` + shallow Bool links | Not Yet | 7.22i(b)7 |
+| **C9b8** | `primrec_ssysConsChar` → `Ssys_cons_computable` | Not Yet | 7.22i(b)8 |
+| **C10** | `ComputablePresentation` | ☐ | 7.22j; needs C9b8 |
 | **C11** | infinite-word equations | ☑ | 7.22h |
 | **C12** | arxiv + final audit | ☐ | needs C6+ at minimum |
 

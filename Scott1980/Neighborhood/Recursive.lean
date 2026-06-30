@@ -1907,4 +1907,57 @@ theorem primrec_tagCase4 {f0 f1 f2 f3 fdef : ℕ → ℕ}
       (primrec_selectFn h23 hf2
         (primrec_selectFn h34 hf3 hfdef)))).of_eq fun e => rfl
 
+/-! ## Exercise 7.22 C9b1 — fuel-bounded `SExpr` decode ok flag
+
+Mirrors tag dispatch on `c.unpair.1 ∈ {0,1,2,3}`; at `fuel + 1` recurses at `fuel` on sub-codes
+for `.cat`/`.cap`. Shallow correctness link ↔ `decodeFuel` (**7.22i(b)1(c–e)**) not yet in tree. -/
+
+/-- `{0,1}` AND on flags (both must be `1`). -/
+def mulBit (a b : ℕ) : ℕ := a * b
+
+theorem mulBit_eq_one_iff (a b : ℕ) : mulBit a b = 1 ↔ a = 1 ∧ b = 1 := by
+  simpa [mulBit] using nat_mul_eq_one
+
+theorem primrec_mulBit : Nat.Primrec (fun t => mulBit t.unpair.1 t.unpair.2) :=
+  primrec_mul₂ Nat.Primrec.left Nat.Primrec.right
+
+/-- One step of fuel-bounded decode-ok (previous fuel level supplied as `prev`). -/
+def decodeFuelOkCharBody (prev : ℕ → ℕ) (c : ℕ) : ℕ :=
+  let sub := mulBit (prev c.unpair.2.unpair.1) (prev c.unpair.2.unpair.2)
+  selectFn (isOne (1 - c.unpair.1))
+    (selectFn (isOne (1 - c.unpair.2)) 1 0)
+    (selectFn (isOne (2 - c.unpair.1)) (allBinDigitsChar c.unpair.2)
+      (selectFn (isOne (3 - c.unpair.1)) sub
+        (selectFn (isOne (4 - c.unpair.1)) sub 0)))
+
+/-- `{0,1}` flag: `1` iff fuel-bounded `SExpr` decode succeeds on code `c`. -/
+def decodeFuelOkChar : ℕ → ℕ → ℕ
+  | 0, _ => 0
+  | fuel + 1, c => decodeFuelOkCharBody (decodeFuelOkChar fuel) c
+
+private theorem primrec_decodeFuelOkCharBody {prev : ℕ → ℕ} (hprev : Nat.Primrec prev) :
+    Nat.Primrec (fun c => decodeFuelOkCharBody prev c) := by
+  unfold decodeFuelOkCharBody
+  have hleft : Nat.Primrec (fun c => prev c.unpair.2.unpair.1) :=
+    (hprev.comp (Nat.Primrec.left.comp Nat.Primrec.right)).of_eq fun c => by
+      simp only [unpair_pair_fst, unpair_pair_snd]
+  have hright : Nat.Primrec (fun c => prev c.unpair.2.unpair.2) :=
+    (hprev.comp (Nat.Primrec.right.comp Nat.Primrec.right)).of_eq fun c => by
+      simp only [unpair_pair_fst, unpair_pair_snd]
+  have hsub : Nat.Primrec (fun c => mulBit (prev c.unpair.2.unpair.1) (prev c.unpair.2.unpair.2)) :=
+    primrec_mul₂ hleft hright
+  have hf0 : Nat.Primrec (fun c => selectFn (isOne (1 - c.unpair.2)) 1 0) :=
+    primrec_selectFn
+      (primrec_isOne.comp (primrec_sub₂ (Nat.Primrec.const 1) Nat.Primrec.right))
+      (Nat.Primrec.const 1) (Nat.Primrec.const 0)
+  have hf1 : Nat.Primrec (fun c => allBinDigitsChar c.unpair.2) :=
+    primrec_allBinDigitsChar.comp Nat.Primrec.right
+  exact primrec_tagCase4 hf0 hf1 hsub hsub (Nat.Primrec.const 0)
+
+theorem primrec_decodeFuelOkChar : ∀ fuel, Nat.Primrec (fun c => decodeFuelOkChar fuel c)
+  | 0 => Nat.Primrec.const 0
+  | fuel + 1 => by
+    simpa [decodeFuelOkChar] using
+      primrec_decodeFuelOkCharBody (primrec_decodeFuelOkChar fuel)
+
 end Domain.Recursive

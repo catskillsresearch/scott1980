@@ -3,7 +3,7 @@
 > **Framing (2026-06-30):** Scott's Exercise 7.22 is **formalized** (`arxiv.md` rows **7.22a–h**,
 > **7.22i(a)** Pass). Remaining sessions certify the existing Bool deciders as **`RecDecidable₂`**
 > inside `Recursive.lean`—**interface repair**, not new domain theory. Inventory open rows:
-> **7.22i(b)** (C9b), **7.22j** (C10), **7.22k** (C7b, optional), **7.22l** (formal infinite
+> **7.22i(b)1–8** (C9b1–C9b8), **7.22j** (C10), **7.22k** (C7b, optional), **7.22l** (formal infinite
 > words, optional).
 >
 > **You (the agent) were invoked with `@Exercise722-Composer-Run.md` only.**
@@ -78,8 +78,21 @@ You are a Lean 4 proof engineer in `/home/catskills/Desktop/scott1980` (mathlib 
 | C7b | full equivalence | ☐ optional | C5 | 7.22k |
 | C8 | `SsysX` enumeration | ☑ | C5 | 7.22g |
 | **C9a** | first missing **generic** `Nat.Primrec` lemma in `Recursive.lean` | ☑ | C6, C8 | 7.22i(a) |
-| **C9b** | `primrec_ssysConsChar` + `Ssys_cons_computable` | ☐ | C9a | 7.22i(b) |
-| C10 | `ComputablePresentation` | ☐ | C9b | 7.22j |
+| **C9b** | `primrec_ssysConsChar` + `Ssys_cons_computable` (umbrella) | Not Yet | C9a | 7.22i(b) |
+| **C9b1** | `decodeFuelOkChar` umbrella (**7.22i(b)1(a–e)**) | Not Yet | C9a | 7.22i(b)1 |
+| **C9b1a** | `mulBit` + `primrec` | ☑ | C9a | 7.22i(b)1(a) |
+| **C9b1b** | `decodeFuelOkChar` + `primrec` | ☑ | C9b1a | 7.22i(b)1(b) |
+| **C9b1c** | dispatch lemmas (`Body_eq`, …) | ☐ | C9b1b | 7.22i(b)1(c) |
+| **C9b1d** | `decodeListBool_isSome_iff` | ☐ | C9b1b | 7.22i(b)1(d) |
+| **C9b1e** | `decodeFuelOkChar_eq_one_iff` | ☐ | C9b1c, C9b1d | 7.22i(b)1(e) |
+| **C9b2** | `listLenChar` + `primrec` | Not Yet | C9b1b | 7.22i(b)2 |
+| **C9b3** | `listEqChar` + `primrec` | Need Advice | C9b2 | 7.22i(b)3 |
+| **C9b4** | `appendListCode`, `takeCode`, `dropCode` + `primrec` | Not Yet | C9b3 | 7.22i(b)4 |
+| **C9b5** | `autStateCardFuelChar`, `matchesBChar` + `primrec` | Not Yet | C9b4 | 7.22i(b)5 |
+| **C9b6** | `decideNonemptyBChar`, `consistentBChar` + `primrec` | Not Yet | C9b5 | 7.22i(b)6 |
+| **C9b7** | `ssysConsistentBChar` + shallow Bool `_eq` lemmas | Not Yet | C9b6 | 7.22i(b)7 |
+| **C9b8** | `primrec_ssysConsChar` → `Ssys_cons_computable` | Not Yet | C9b7 | 7.22i(b)8 |
+| C10 | `ComputablePresentation` | ☐ | C9b8 | 7.22j |
 | C11 | infinite-word prose | ☑ | — | 7.22h |
 | C12 | arxiv + audit | ☑ | C6+ | — |
 
@@ -88,7 +101,9 @@ You are a Lean 4 proof engineer in `/home/catskills/Desktop/scott1980` (mathlib 
 
 **C9 rule:** Do **not** assign "finish C9" as one monolith. **C9a** proves one reusable primrec
 closure (decode, bounded fold, or similar)—whichever is the **first missing generic** lemma after
-auditing `Recursive.lean` vs the Exercise 7.22 Bool stack. **C9b** is a short instantiation only.
+auditing `Recursive.lean` vs the Exercise 7.22 Bool stack. **C9b** is **eight slices** (**C9b1–C9b8** /
+inventory **7.22i(b)1–8**); land each green before the next; **C9b8** is the short Presentation
+instantiation only.
 
 ---
 
@@ -331,18 +346,48 @@ missing lemma identified.
 
 ---
 
-## Session C9b — `Ssys_cons_computable` instantiation
+## Session C9b — `Ssys_cons_computable` (eight slices)
 
-**READ:** `Example78.lean` (`PNpres.cons_computable`), `Exercise722Presentation.lean` (C9 section)  
-**EDIT:** `Exercise722Presentation.lean` (instantiation only; keep generic lemmas in `Recursive.lean`)  
-**BUILD:** `lake build Scott1980.Neighborhood.Exercise722Presentation`  
+**READ:** `Example78.lean` (`PNpres.cons_computable`), `Exercise722Presentation.lean` (C9 section),
+`arxiv.md` rows **7.22i(b)1–8**  
+**EDIT:** **`Recursive.lean`** for **C9b1–C9b6**; **`Exercise722Presentation.lean`** for **C9b7–C9b8**
+only  
+**BUILD:** `lake build Scott1980.Neighborhood.Recursive` (slices 1–6) or
+`lake build Scott1980.Neighborhood.Exercise722Presentation` (slices 7–8)  
 **Needs:** C9a ☑  
-**arxiv:** 7.22i(b)
+**arxiv:** 7.22i(b) umbrella; one sub-row per session
 
-**TASK:** `primrec_ssysConsChar : Nat.Primrec ssysConsChar` using C9a lemmas; then
+| Slice | Target | Status | arxiv |
+|-------|--------|--------|-------|
+| **C9b1** | umbrella (closes when **1(a–e)** Pass) | Not Yet | 7.22i(b)1 |
+| **C9b1a** | `mulBit` + `primrec` | ☑ | 7.22i(b)1(a) |
+| **C9b1b** | `decodeFuelOkChar` + `primrec` | ☑ | 7.22i(b)1(b) |
+| **C9b1c** | `decodeFuelOkCharBody_eq` + tag-0 helpers | ☐ | 7.22i(b)1(c) |
+| **C9b1d** | `decodeListBool_isSome_iff` | ☐ | 7.22i(b)1(d) |
+| **C9b1e** | `decodeFuelOkChar_eq_one_iff` | ☐ | 7.22i(b)1(e) |
+| **C9b2** | `listLenChar` + `primrec` | Not Yet | 7.22i(b)2 |
+| **C9b3** | `listEqChar` + `primrec` | Need Advice | 7.22i(b)3 |
+| **C9b4** | `appendListCode`, `takeCode`, `dropCode` + `primrec` | Not Yet | 7.22i(b)4 |
+| **C9b5** | `autStateCardFuelChar`, `matchesBChar` + `primrec` | Not Yet | 7.22i(b)5 |
+| **C9b6** | `decideNonemptyBChar`, `consistentBChar` + `primrec` | Not Yet | 7.22i(b)6 |
+| **C9b7** | `ssysConsistentBChar` + shallow Bool `_eq` lemmas | Not Yet | 7.22i(b)7 |
+| **C9b8** | `primrec_ssysConsChar` → `Ssys_cons_computable` | Not Yet | 7.22i(b)8 |
+
+**One slice per session.** Use shallow char lemmas for iff links—do not unfold `ssys_cons_char_iff`
+chains at WHNF. **If stuck >30 min:** STOP, HANDOFF "C9bN BLOCKED" (N = slice number). **7.22i(b)3**
+already flagged **Need Advice** after bulk WIP WHNF/tabulation failure—confirm witness design before
+re-implementing `listEqChar`.
+
+### Session C9b1 — `decodeFuelOkChar` (sub-slices **1(a–e)**)
+
+**TASK:** **(a–b)** in `Recursive.lean` (in tree ☑). **(c–e)** shallow link ↔ `decodeFuel` — see
+**`arxiv.md` rows 7.22i(b)1(c–e)** for strategy; land **(c)** then **(d)** then **(e)**; one
+sub-slice per session.
+
+### Session C9b8 — close umbrella
+
+**TASK:** `primrec_ssysConsChar : Nat.Primrec ssysConsChar`; then
 `Ssys_cons_computable := Ssys_cons_computable_of_primrec_ssysConsChar primrec_ssysConsChar`.
-Use shallow char lemmas for iff links—do not unfold `ssys_cons_char_iff` chains at WHNF.
-**If stuck >30 min:** STOP, HANDOFF "C9b BLOCKED".
 
 ---
 
