@@ -34,7 +34,7 @@ Mark sessions as you go. **Do not skip ahead** if a prerequisite is unchecked.
 | **C7a** | document why interEq needs complement | ☐ | needs C5 |
 | **C7b** | full equivalence decider | ☐ DEFER | Opus / post-reset |
 | **C8** | `SsysX` enumeration | ☐ | needs C5 |
-| **C9a** | generic `Nat.Primrec` lemma (`Recursive.lean`) | ☐ | 7.22i(a); needs C6, C8 |
+| **C9a** | generic `Nat.Primrec` lemma (`Recursive.lean`) | ☑ | 7.22i(a); needs C6, C8 |
 | **C9b** | `RecDecidable₂` consistency (instantiation) | ☐ | 7.22i(b); needs C9a |
 | **C10** | `ComputablePresentation` | ☐ | 7.22j; needs C9b |
 | **C11** | infinite-word equations | ☑ | 7.22h |

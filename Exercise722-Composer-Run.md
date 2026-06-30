@@ -1,11 +1,11 @@
 # Exercise 7.22 — Composer Autorun (single @ file)
 
-> **Framing (2026-06-30):** Scott's Exercise 7.22 is **formalized** (`arxiv.md` rows **7.22a–h**
-> Pass). Remaining sessions certify the existing Bool deciders as **`RecDecidable₂`** inside
-> `Recursive.lean`—**interface repair**, not new domain theory. Inventory open rows: **7.22i(a)**
-> (C9a), **7.22i(b)** (C9b), **7.22j** (C10), **7.22k** (C7b, optional), **7.22l** (formal
-> infinite words, optional).
-
+> **Framing (2026-06-30):** Scott's Exercise 7.22 is **formalized** (`arxiv.md` rows **7.22a–h**,
+> **7.22i(a)** Pass). Remaining sessions certify the existing Bool deciders as **`RecDecidable₂`**
+> inside `Recursive.lean`—**interface repair**, not new domain theory. Inventory open rows:
+> **7.22i(b)** (C9b), **7.22j** (C10), **7.22k** (C7b, optional), **7.22l** (formal infinite
+> words, optional).
+>
 > **You (the agent) were invoked with `@Exercise722-Composer-Run.md` only.**
 > **The user will not paste anything else.** Follow § AUTORUN below.
 
@@ -77,7 +77,7 @@ You are a Lean 4 proof engineer in `/home/catskills/Desktop/scott1980` (mathlib 
 | C7a | document interEq gap | ☑ | C5 | 7.22k |
 | C7b | full equivalence | ☐ optional | C5 | 7.22k |
 | C8 | `SsysX` enumeration | ☑ | C5 | 7.22g |
-| **C9a** | first missing **generic** `Nat.Primrec` lemma in `Recursive.lean` | ☐ | C6, C8 | 7.22i(a) |
+| **C9a** | first missing **generic** `Nat.Primrec` lemma in `Recursive.lean` | ☑ | C6, C8 | 7.22i(a) |
 | **C9b** | `primrec_ssysConsChar` + `Ssys_cons_computable` | ☐ | C9a | 7.22i(b) |
 | C10 | `ComputablePresentation` | ☐ | C9b | 7.22j |
 | C11 | infinite-word prose | ☑ | — | 7.22h |

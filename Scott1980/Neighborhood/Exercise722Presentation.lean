@@ -330,9 +330,12 @@ theorem Ssys_cons_computable_of_primrec_ssysConsChar (hf : Nat.Primrec ssysConsC
 --
 -- The mathematics is finished (`ssys_cons_char_iff`). The only missing piece is the
 -- primitive-recursive realization of `ssysConsChar` (no new algorithm). Dependency chain:
--- 1. `primrec_SExpr_decodeChar` — numeric simulation of `SExpr.decode`;
--- 2. `primrec_decideNonemptyBChar` — first non-trivial step (`decideNonemptyB` / `matchesB`);
--- 3. `primrec_consistentBChar`; 4. `primrec_ssysConsistentBChar`; 5. `primrec_ssysConsChar`.
+-- 0. `isBinDigit` / `allBinDigitsChar` in `Recursive.lean` (C9a / 7.22i(a) ☑)
+-- 1. `primrec_decodeFuelOkChar` — fuel-bounded decode ok flag;
+-- 2. generic list ops in `Recursive.lean` as needed (`listLenChar`, `listEqChar`, …);
+-- 3. `primrec_decideNonemptyBChar` / `primrec_consistentBChar`;
+-- 4. `primrec_ssysConsistentBChar`; 5. `primrec_ssysConsChar`.
+-- See `arxiv.md` row **7.22i(b)** for C9b slice strategy (avoid monolith).
 
 end Exercise722
 

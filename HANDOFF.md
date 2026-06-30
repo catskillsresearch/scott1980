@@ -18,20 +18,19 @@ A session may begin after a context reset; chat memory is not durable, these fil
 5. Follow `.cursor/rules/handoff-discipline.mdc` (choice discipline, axiom audits, and the
    end-of-item checklist that keeps this file + `arxiv.md` current).
 6. **Exercise 7.22 (split inventory):** Scott's construction is **formalized** — grep `Exercise 7.22`
-   in `arxiv.md`: rows **7.22a–h** are **Pass**; **7.22i(a)–l** are **Not Yet** (PR certification +
+   in `arxiv.md`: rows **7.22a–h**, **7.22i(a)** are **Pass**; **7.22i(b)–l** are **Not Yet** (PR certification +
    optional extensions). Remaining Composer work is **interface repair** between the automata Bool
    layer and `Recursive.lean`, not unfinished Scott mathematics. **`@Exercise722-Composer-Run.md`**
    only (one @ per session). **Composer tracker:** C1–C8 ☑, C11 ☑, C12 ☑; **next eligible ☐:**
-   **C9a** → **7.22i(a)** (first missing generic `Nat.Primrec` lemma in `Recursive.lean`), then
-   **C9b** → **7.22i(b)** (`primrec_ssysConsChar` + `Ssys_cons_computable`), then **C10** → **7.22j**;
+   **C9a** → **7.22i(a)** ☑; **next eligible ☐:** **C9b** → **7.22i(b)**
+   (`primrec_ssysConsChar` + `Ssys_cons_computable`), then **C10** → **7.22j**;
    **C7b** → **7.22k** (optional, does not block paper). Do **not** duplicate encode/decode in a
    monolith (`Exercise722Primrec.lean` was abandoned 2026-06-29).
 
 **Exercise 7.22 — Scott formalized; PR certification open (2026-06-30).** Inventory split in
 `arxiv.md`: **7.22a–h Pass** (LFP `InS`, positive `Ssys`, semigroup/embedding, regular events,
 automata, Bool deciders, `SsysX`, infinite-word **`streamElem`** + conditional idempotency).
-**7.22i(a)–l Not Yet:** (i)(a) generic primrec lemma (**C9a**); (i)(b) `RecDecidable₂` instantiation
-(**C9b**); (j) `ComputablePresentation` (**C10**);
+**7.22i(a) Pass; i(b)–l Not Yet:** (i)(b) `RecDecidable₂` instantiation (**C9b**); (j) `ComputablePresentation` (**C10**);
 (k) relation (i) `interEq` (**C7b**, optional); (l) formal infinite-word equations (optional).
 See `Exercise722-Composer-Run.md` for next Composer session.
 
@@ -4269,7 +4268,14 @@ reconciliation.
 
 ---
 
-**2026-06-30 — Exercise 7.22 inventory: split 7.22i → 7.22i(a) + 7.22i(b).** Book-keeping only:
-**7.22i(a)** = Composer **C9a** (generic primrec in `Recursive.lean`); **7.22i(b)** = **C9b**
-(`primrec_ssysConsChar` + `Ssys_cons_computable`). Updated **`arxiv.md`**, **`HANDOFF.md`** Resume
-Protocol, **`Exercise722-Composer-Run.md`**, **`Exercise722-Composer-Playbook.md`**. No Lean changes.
+**2026-06-30 — Exercise 7.22i(a) / C9a Pass.** Audit: first missing generic primrec gap for the
+Exercise 7.22 Bool stack is **`{0,1}` validation over `decodeList`** (for `decodeListBool`). Added
+**`isBinDigit`**, **`allBinDigitsChar`**, **`primrec_isBinDigit`**, **`primrec_allBinDigitsChar`**
+in `Recursive.lean` (reusing **`allListChar`**). **`lake build Scott1980.Neighborhood.Recursive`**
+green; primrec theorems `⊆ {propext, Quot.sound}`. **Checked in** with matching docs. **Next:**
+**C9b** / **7.22i(b)** — see **`arxiv.md` row 7.22i(b)** for slice strategy.
+
+**2026-06-30 — SESSION C9b BLOCKED (not checked in).** Bulk WIP (~400 lines) for
+`primrec_ssysConsChar` did not build (list-append/tabulation/`listEqChar` proof failures + one
+`sorry`). **Do not** merge monolith-style; retry one **`Recursive.lean`** lemma per session per
+**7.22i(b)** notes in **`arxiv.md`**. WIP preserved locally in git stash `c9-wip` if needed.

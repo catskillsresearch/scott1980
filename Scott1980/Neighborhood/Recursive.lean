@@ -1589,6 +1589,36 @@ theorem primrec_existsListChar {g : ℕ → ℕ} (hg : Nat.Primrec g) :
   (primrec_foldCode (primrec_existsListStp hg) Nat.Primrec.right (Nat.Primrec.const 0)
     Nat.Primrec.left).of_eq fun _ => rfl
 
+/-- `{0,1}` flag: `1` iff `n` encodes a binary digit (`0` or `1`). -/
+def isBinDigit (n : ℕ) : ℕ :=
+  selectFn (isOne (1 - n)) 1 (selectFn (isOne (2 - n)) 1 0)
+
+theorem isBinDigit_eq_one_iff (n : ℕ) : isBinDigit n = 1 ↔ n = 0 ∨ n = 1 := by
+  unfold isBinDigit selectFn isOne
+  match n with | 0 | 1 => simp | n + 2 => simp
+
+theorem primrec_isBinDigit : Nat.Primrec isBinDigit := by
+  have h01 := primrec_isOne.comp (primrec_sub₂ (Nat.Primrec.const 1) primrec_id)
+  have h12 := primrec_isOne.comp (primrec_sub₂ (Nat.Primrec.const 2) primrec_id)
+  refine (primrec_selectFn h01 (Nat.Primrec.const 1)
+    (primrec_selectFn h12 (Nat.Primrec.const 1) (Nat.Primrec.const 0))).of_eq fun _ => rfl
+
+/-- `{0,1}` flag: every entry of `decodeList c` is a binary digit. -/
+def allBinDigitsChar (c : ℕ) : ℕ :=
+  allListChar (fun t => isBinDigit t.unpair.1) 0 c
+
+theorem allBinDigitsChar_eq_one_iff (c : ℕ) :
+    allBinDigitsChar c = 1 ↔ ∀ x ∈ decodeList c, x = 0 ∨ x = 1 := by
+  unfold allBinDigitsChar
+  rw [allListChar_eq_one_iff]
+  simp [unpair_pair_fst, unpair_pair_snd, isBinDigit_eq_one_iff]
+
+set_option maxHeartbeats 800000 in
+theorem primrec_allBinDigitsChar : Nat.Primrec allBinDigitsChar := by
+  unfold allBinDigitsChar
+  exact (primrec_foldCode (primrec_allListStp (primrec_isBinDigit.comp Nat.Primrec.left))
+    (Nat.Primrec.const 0) (Nat.Primrec.const 1) primrec_id).of_eq fun _ => rfl
+
 /-- **Bounded `∀` over a coded list preserves recursive decidability.** If `q` is a recursively
 decidable binary relation then `fun c p => ∀ e ∈ decodeList c, q e p` is too (the list is coded by
 the first argument, `p` is a free parameter). Choice-free. -/
