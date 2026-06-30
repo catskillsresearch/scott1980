@@ -1,5 +1,10 @@
 # Exercise 7.22 — Composer Autorun (single @ file)
 
+> **Framing (2026-06-30):** Scott's Exercise 7.22 is **formalized** (`arxiv.md` rows **7.22a–h**
+> Pass). Remaining sessions certify the existing Bool deciders as **`RecDecidable₂`** inside
+> `Recursive.lean`—**interface repair**, not new domain theory. Inventory open rows: **7.22i** (C9a–C9b),
+> **7.22j** (C10), **7.22k** (C7b, optional), **7.22l** (formal infinite words, optional).
+
 > **You (the agent) were invoked with `@Exercise722-Composer-Run.md` only.**
 > **The user will not paste anything else.** Follow § AUTORUN below.
 
@@ -7,14 +12,14 @@
 
 ## AUTORUN — execute this now
 
-You are a Lean 4 proof engineer in `/home/catskills/Desktop/domain_theory` (mathlib v4.30.0).
+You are a Lean 4 proof engineer in `/home/catskills/Desktop/scott1980` (mathlib v4.30.0).
 
 ### Step 0 — orient (minimal reads)
 
 1. Read `HANDOFF.md` lines 1–18 (Resume Protocol only).
 2. Read **this file's Progress tracker** (next section). Find the **first row with status `☐`** whose prerequisites are all `☑` (or empty). That is **YOUR SESSION** — execute **only that one**.
 3. If every session is `☑` or `DEFER`, report DONE and stop.
-4. If the next session is **C7b** (marked DEFER), skip it and take the next eligible `☐`.
+4. If the next session is **C7b** (optional, **7.22k**), skip it unless the user explicitly requests it; take the next eligible `☐`.
 5. If **C4** is blocked in HANDOFF, you may run **C11** instead if still `☐`.
 
 ### Step 1 — rules (non-negotiable)
@@ -60,23 +65,29 @@ You are a Lean 4 proof engineer in `/home/catskills/Desktop/domain_theory` (math
 
 **Agent: after success, edit `☐` → `☑` in this table.**
 
-| Session | Goal | Status | Needs |
-|---------|------|--------|-------|
-| C1 | `instDecidableEqAutState` | ☑ | — |
-| C2 | `autStateCard` + bound | ☑ | C1 |
-| C3 | `wordsUpTo` + `anyMatchesB` | ☑ | — |
-| C4 | short-word bound (pumping) | ☑ | C2, C3 |
-| C5 | `decideEmptyB` + `Decidable` | ☑ | C4 |
-| C6 | `consistentB` (relation ii) | ☑ | C5 |
-| C7a | document interEq gap | ☑ | C5 |
-| C7b | full equivalence | DEFER | Opus |
-| C8 | `SsysX` enumeration | ☑ | C5 |
-| C9 | `RecDecidable₂` consistency | ☐ | C6, C8 |
-| C10 | `ComputablePresentation` | ☐ | C9 |
-| C11 | infinite-word prose | ☑ | — |
-| C12 | arxiv + audit | ☑ | C6+ |
+| Session | Goal | Status | Needs | arxiv |
+|---------|------|--------|-------|-------|
+| C1 | `instDecidableEqAutState` | ☑ | — | 7.22e |
+| C2 | `autStateCard` + bound | ☑ | C1 | 7.22e |
+| C3 | `wordsUpTo` + `anyMatchesB` | ☑ | — | 7.22f |
+| C4 | short-word bound (pumping) | ☑ | C2, C3 | 7.22f |
+| C5 | `decideEmptyB` + `Decidable` | ☑ | C4 | 7.22f |
+| C6 | `consistentB` (relation ii) | ☑ | C5 | 7.22f |
+| C7a | document interEq gap | ☑ | C5 | 7.22k |
+| C7b | full equivalence | ☐ optional | C5 | 7.22k |
+| C8 | `SsysX` enumeration | ☑ | C5 | 7.22g |
+| **C9a** | first missing **generic** `Nat.Primrec` lemma in `Recursive.lean` | ☐ | C6, C8 | 7.22i |
+| **C9b** | `primrec_ssysConsChar` + `Ssys_cons_computable` | ☐ | C9a | 7.22i |
+| C10 | `ComputablePresentation` | ☐ | C9b | 7.22j |
+| C11 | infinite-word prose | ☑ | — | 7.22h |
+| C12 | arxiv + audit | ☑ | C6+ | — |
 
-**Targets:** C1–C6 + C11 = Scott A−. C1–C6 + C8–C10 = Def 7.1 (ii) mechanized.
+**Targets:** **7.22a–h** = Scott construction formalized (Pass). **7.22i–j** = Def 7.1 (ii) in
+`Recursive.lean` via C9a–C10. **7.22k–l** = optional extensions.
+
+**C9 rule:** Do **not** assign "finish C9" as one monolith. **C9a** proves one reusable primrec
+closure (decode, bounded fold, or similar)—whichever is the **first missing generic** lemma after
+auditing `Recursive.lean` vs the Exercise 7.22 Bool stack. **C9b** is a short instantiation only.
 
 ---
 
@@ -85,10 +96,10 @@ You are a Lean 4 proof engineer in `/home/catskills/Desktop/domain_theory` (math
 STOP when: 3 build failures on same error · 30 min no green · need file outside EDIT · need `Classical.choice` in proof.
 
 ```bash
-cd /home/catskills/Desktop/domain_theory
+cd /home/catskills/Desktop/scott1980
 git status --short
-git checkout -- Domain/Neighborhood/Exercise722Decide.lean  # example
-lake build Domain 2>&1 | grep -vE 'LEAN_PATH|trace:' | tail -5
+git checkout -- Scott1980/Neighborhood/Exercise722Decide.lean  # example
+lake build Scott1980 2>&1 | grep -vE 'LEAN_PATH|trace:' | tail -5
 ```
 
 ---
@@ -302,14 +313,35 @@ Do not execute unless user explicitly requests and budget allows.
 
 ---
 
-## Session C9 — `RecDecidable₂`
+## Session C9a — generic `Nat.Primrec` closure (interface)
 
-**READ:** `Recursive.lean`, `Example78.lean` (`PNpres.cons_computable`)  
-**EDIT:** `Exercise722Presentation.lean`  
+**READ:** `Recursive.lean` (`foldCode`, `existsListChar`, `primrec_selectFn`, `RecDecidable₂.of_paired_zero_one_char`); skim `Exercise722Presentation.lean` C9 TODO  
+**EDIT:** `Recursive.lean` only (unless audit proves the gap is elsewhere—then STOP and report)  
+**BUILD:** `lake build Scott1980.Neighborhood.Recursive`  
+**Needs:** C6 ☑, C8 ☑  
+**arxiv:** 7.22i
+
+**TASK:** Audit the Exercise 7.22 Bool stack vs existing `Recursive.lean` primrec infrastructure.
+Prove the **first missing generic** lemma that reusable future exercises will need—e.g. fuel-bounded
+decode primrec, bounded `∃`/`∀` over word indices via `foldCode`/`bExistsFn`, or list-of-Bool encoding.
+**Do not** duplicate `SExpr` encode/decode in a monolith. **Do not** prove `primrec_ssysConsChar`
+in this session—that is **C9b**. **If stuck >30 min:** STOP, HANDOFF "C9a BLOCKED" with the exact
+missing lemma identified.
+
+---
+
+## Session C9b — `Ssys_cons_computable` instantiation
+
+**READ:** `Example78.lean` (`PNpres.cons_computable`), `Exercise722Presentation.lean` (C9 section)  
+**EDIT:** `Exercise722Presentation.lean` (instantiation only; keep generic lemmas in `Recursive.lean`)  
 **BUILD:** `lake build Scott1980.Neighborhood.Exercise722Presentation`  
-**Needs:** C6 ☑, C8 ☑
+**Needs:** C9a ☑  
+**arxiv:** 7.22i
 
-**TASK:** `Ssys_cons_computable : RecDecidable₂ (fun n m => ∃ k, SsysX k ⊆ SsysX n ∩ SsysX m)` via `RecDecidable.of_iff` + `ssysConsistentB` + a **`Nat.Primrec`** char (not just `Bool`). Import **`Exercise722Presentation`** decode — do **not** duplicate encode/decode in a monolith. Reuse **`Recursive.lean`** `bExistsFn` / `primrec_ite`. **If stuck >30 min:** STOP, HANDOFF "C9 BLOCKED".
+**TASK:** `primrec_ssysConsChar : Nat.Primrec ssysConsChar` using C9a lemmas; then
+`Ssys_cons_computable := Ssys_cons_computable_of_primrec_ssysConsChar primrec_ssysConsChar`.
+Use shallow char lemmas for iff links—do not unfold `ssys_cons_char_iff` chains at WHNF.
+**If stuck >30 min:** STOP, HANDOFF "C9b BLOCKED".
 
 ---
 
@@ -318,9 +350,10 @@ Do not execute unless user explicitly requests and budget allows.
 **READ:** `Definition71.lean`, `Example78.lean`  
 **EDIT:** `Exercise722Presentation.lean`  
 **BUILD:** `lake build Scott1980.Neighborhood.Exercise722Presentation`  
-**Needs:** C9 ☑
+**Needs:** C9b ☑  
+**arxiv:** 7.22j
 
-**TASK:** `SsysPres : ComputablePresentation …` with (ii). interEq only if C7b done; else `Ssys_partially_effectively_given`.
+**TASK:** `SsysPres : ComputablePresentation …` with (ii). `interEq_computable` only if C7b done; else `Ssys_partially_effectively_given`.
 
 ---
 
@@ -336,8 +369,8 @@ Do not execute unless user explicitly requests and budget allows.
 
 ## Session C12 — arxiv + audit
 
-**READ:** HANDOFF tail; `grep "Exercise 7.22" arxiv.md` (one row)  
-**EDIT:** `arxiv.md` (row 7.22), HANDOFF Resume Protocol  
+**READ:** HANDOFF tail; `grep "Exercise 7.22" arxiv.md` (rows 7.22a–l)  
+**EDIT:** `arxiv.md` (Exercise 7.22 sub-rows), HANDOFF Resume Protocol  
 **BUILD:** `lake build Domain`  
 **Needs:** C6 ☑ minimum
 
@@ -351,7 +384,8 @@ Do not execute unless user explicitly requests and budget allows.
 |------|------------|
 | `Exercise722Decide.lean` | C1–C2, C4–C7a |
 | `Exercise722Words.lean` | C3–C5 (new in C3) |
-| `Exercise722Presentation.lean` | C8–C10 (new in C8) |
+| `Exercise722Presentation.lean` | C8, C9b, C10 |
+| `Recursive.lean` | C9a |
 | `Exercise722.lean` | C11 docstring only |
 | `arxiv.md`, `HANDOFF.md` | C12 + every success |
 

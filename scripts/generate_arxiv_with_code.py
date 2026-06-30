@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Expand Lean hyperlinks in arxiv.md → arxiv_with_code.md (build artifact)."""
+"""Expand Lean hyperlinks and appendix markdown in arxiv.md → arxiv_with_code.md."""
 
 from __future__ import annotations
 
@@ -16,6 +16,23 @@ LEAN_LINK_RE = re.compile(
     r"https://github\.com/[^/]+/[^/]+/blob/[^/]+/"
     r"([^)]+)\)\s*$",
     re.MULTILINE,
+)
+
+# Standalone appendix links under ## Appendix A / B, e.g.
+# [Exercise722-Composer-Run.md](https://github.com/.../blob/main/Exercise722-Composer-Run.md)
+APPENDIX_LINK_RE = re.compile(
+    r"^\[([^\]]+\.md)\]\("
+    r"https://github\.com/[^/]+/[^/]+/blob/[^/]+/"
+    r"([^)]+\.md)\)\s*$",
+    re.MULTILINE,
+)
+
+# Markdown files inlined when generating arxiv_with_code.md (see arxiv.md appendices A–B).
+APPENDIX_INLINE_FILES = frozenset(
+    {
+        "Exercise722-Composer-Run.md",
+        "Exercise722-Composer-Playbook.md",
+    }
 )
 
 
@@ -53,8 +70,8 @@ def lean_files_from_root() -> list[str]:
     return files
 
 
-def sanitize_lean_fence(content: str) -> str:
-    # Nested ``` in docstrings would break markdown lean fences in arxiv_with_code.md.
+def sanitize_fence_content(content: str) -> str:
+    # Nested ``` in docstrings would break markdown fences in arxiv_with_code.md.
     return content.replace("```", "'''")
 
 
@@ -65,7 +82,7 @@ def expand_lean_links(text: str) -> str:
         fpath = ROOT / relpath
         if not fpath.is_file():
             raise FileNotFoundError(f"Lean link target missing: {relpath} (from [{name}])")
-        content = sanitize_lean_fence(fpath.read_text().rstrip()) + "\n"
+        content = sanitize_fence_content(fpath.read_text().rstrip()) + "\n"
         n = len(content.splitlines())
         return (
             f"* **{name}** (`{relpath}`) — {n} lines\n\n"
@@ -85,14 +102,53 @@ def expand_lean_links(text: str) -> str:
     return expanded
 
 
+def expand_appendix_links(text: str) -> str:
+    """Inline appendix markdown (arxiv.md appendices A–B) for the PDF/review artifact."""
+    matches = [
+        m
+        for m in APPENDIX_LINK_RE.finditer(text)
+        if Path(m.group(2)).name in APPENDIX_INLINE_FILES
+    ]
+    if len(matches) != len(APPENDIX_INLINE_FILES):
+        found = {Path(m.group(2)).name for m in matches}
+        missing = APPENDIX_INLINE_FILES - found
+        raise RuntimeError(
+            f"Expected {len(APPENDIX_INLINE_FILES)} appendix link(s) in arxiv.md "
+            f"(appendices A–B); found {len(matches)}. Missing: {sorted(missing)}."
+        )
+
+    def repl(match: re.Match[str]) -> str:
+        name = match.group(1)
+        relpath = match.group(2)
+        if Path(relpath).name not in APPENDIX_INLINE_FILES:
+            return match.group(0)
+        fpath = ROOT / relpath
+        if not fpath.is_file():
+            raise FileNotFoundError(f"Appendix link target missing: {relpath} (from [{name}])")
+        content = fpath.read_text().rstrip() + "\n"
+        n = len(content.splitlines())
+        return (
+            f"*Inlined from `{relpath}` ({n} lines):*\n\n"
+            f"{content}"
+        )
+
+    expanded, _ = APPENDIX_LINK_RE.subn(repl, text)
+    return expanded
+
+
 def main() -> None:
     arxiv_path = ROOT / "arxiv.md"
     arxiv = arxiv_path.read_text()
     title = paper_title(arxiv)
-    body = expand_lean_links(narrative_body(arxiv))
+    body = narrative_body(arxiv)
+    body = expand_appendix_links(body)
+    body = expand_lean_links(body)
     files = lean_files_from_root()
 
     total_lines = sum(len((ROOT / f).read_text().splitlines()) for f in files)
+    appendix_lines = sum(
+        len((ROOT / name).read_text().splitlines()) for name in APPENDIX_INLINE_FILES
+    )
 
     parts: list[str] = []
     parts.append(
@@ -107,13 +163,14 @@ def main() -> None:
     )
     parts.append(
         f"*Generated {date.today().isoformat()} from `arxiv.md` (Lean Code hyperlinks "
-        f"expanded inline) and {len(files)} library `.lean` files "
-        f"({total_lines} lines total).*\n\n"
+        f"expanded inline; appendices A–B inlined) and {len(files)} library `.lean` files "
+        f"({total_lines} lines total; appendices {appendix_lines} lines).*\n\n"
     )
     parts.append(
         "**Review copy.** The narrative body matches [`arxiv.md`](arxiv.md) "
         "(excluding the title block through the first `---`), with every "
-        "**Lean Code** GitHub hyperlink replaced by the verbatim source file.\n\n"
+        "**Lean Code** GitHub hyperlink replaced by the verbatim source file, and "
+        "**Appendix A/B** markdown links replaced by the verbatim playbook files.\n\n"
     )
     parts.append("---\n\n")
     parts.append("# Narrative + Lean source (from arxiv.md)\n\n")

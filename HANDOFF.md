@@ -17,10 +17,22 @@ A session may begin after a context reset; chat memory is not durable, these fil
 4. Build with `lake build Domain` (filter output: `| grep -vE 'LEAN_PATH|trace:' | tail`).
 5. Follow `.cursor/rules/handoff-discipline.mdc` (choice discipline, axiom audits, and the
    end-of-item checklist that keeps this file + `arxiv.md` current).
-6. **To finish Exercise 7.22 decider in Composer bites:** `@Exercise722-Composer-Run.md` only
-   (one @ per session, no pasting — agent picks next ☐ from progress tracker). Reference:
-   `Exercise722-Composer-Playbook.md` (extended notes, same content). **Composer tracker (2026-06-28):**
-   C1–C8 ☑, C11 ☑, C12 ☑; **C9 BLOCKED** (needs `Nat.Primrec` char for `ssysConsistentB`; monolith `Exercise722Primrec.lean` abandoned 2026-06-29); C10 waits on C9; C7b DEFER.
+6. **Exercise 7.22 (split inventory):** Scott's construction is **formalized** — grep `Exercise 7.22`
+   in `arxiv.md`: rows **7.22a–h** are **Pass**; **7.22i–l** are **Not Yet** (PR certification +
+   optional extensions). Remaining Composer work is **interface repair** between the automata Bool
+   layer and `Recursive.lean`, not unfinished Scott mathematics. **`@Exercise722-Composer-Run.md`**
+   only (one @ per session). **Composer tracker:** C1–C8 ☑, C11 ☑, C12 ☑; **next eligible ☐:**
+   **C9a** (first missing generic `Nat.Primrec` lemma in `Recursive.lean`), then **C9b**
+   (`primrec_ssysConsChar` + `Ssys_cons_computable`), then **C10** → **7.22j**; **C7b** → **7.22k**
+   (optional, does not block paper). Do **not** duplicate encode/decode in a monolith
+   (`Exercise722Primrec.lean` was abandoned 2026-06-29).
+
+**Exercise 7.22 — Scott formalized; PR certification open (2026-06-30).** Inventory split in
+`arxiv.md`: **7.22a–h Pass** (LFP `InS`, positive `Ssys`, semigroup/embedding, regular events,
+automata, Bool deciders, `SsysX`, infinite-word prose). **7.22i–l Not Yet:** (i) `RecDecidable₂`
+via generic primrec lemmas + instantiation (**C9a–C9b**); (j) `ComputablePresentation` (**C10**);
+(k) relation (i) `interEq` (**C7b**, optional); (l) formal infinite-word equations (optional).
+See `Exercise722-Composer-Run.md` for next Composer session.
 
 **Just completed — Exercise 7.22 (algebraic core) is DONE** (`Exercise722.lean` green, wired, zero
 `sorry`, **fully choice-free `⊆{propext,Quot.sound}`**). Scott's domain over `Σ={0,1}*=List Bool`
@@ -4230,3 +4242,15 @@ lemmas; **C5 `decideEmptyB` stays computable** via `matchesB`. C4 ☑. **Next:**
 ---
 
 **2026-06-29 — Exercise 7.22 C9: failed monolith removed; situation restated.** **Deleted** untracked **`Exercise722Primrec.lean`** (~840 lines, never green, ~88 errors): duplicated `SExpr` encode/decode from **`Exercise722Presentation.lean`**, attempted full **`matchesBCode`/`decideNonemptyBCode`** stack — blocked by `List.mapM` API drift, `Nat.pair` bounds, cascading `primrec_*` errors. **Not wired** into `Domain.lean`. **Kept (green):** **`Recursive.lean`** additions — **`isZero`/`primrec_isZero`**, **`primrec_le`**, **`primrec_max`**, **`primrec_ite`**, **`bExistsFn`** (+ lemmas); **`lake build Domain`** green. **Still green:** C1–C8, C11, C12; Presentation logical C9 layer (`ssys_cons_char_iff`). **Still open:** `Ssys_cons_computable`, C10, C7b. **Viable C9 retry:** small primrec char in/after **`Exercise722Presentation.lean`**, importing existing decode — not a monolith. C9/C10 tracker ☐.
+
+---
+
+**2026-06-30 — Exercise 7.22 inventory reframed; Scott formalized, PR certification open.**
+Split **`arxiv.md`** Exercise 7.22 into sub-rows **7.22a–l**: **a–h Pass** (Scott construction + Bool
+deciders + `SsysX` + infinite-word prose); **i–l Not Yet** with plans (**i** C9a–C9b
+`RecDecidable₂`, **j** C10 `ComputablePresentation`, **k** C7b `interEq` optional, **l** formal
+infinite words optional). Updated **Methodology**, **`HANDOFF.md`** Resume Protocol, and
+**`Exercise722-Composer-Run.md`**: C9 split into **C9a** (generic `Nat.Primrec` in
+`Recursive.lean`) + **C9b** (instantiation); C7b no longer DEFER—optional ☐. Framing: remaining
+work is **interface repair** between automata executables and `Recursive.lean`, not unfinished Scott
+mathematics. **Next Composer session:** **C9a**.

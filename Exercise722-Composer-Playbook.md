@@ -1,10 +1,15 @@
 # Exercise 7.22 — Composer Playbook
 
+> **Status (2026-06-30):** Scott's construction is **formalized** (`arxiv.md` **7.22a–h** Pass).
+> Remaining work (**7.22i–l**) is PR certification in `Recursive.lean` + optional extensions.
+> **Authoritative tracker:** `Exercise722-Composer-Run.md` (this file's progress table may be stale).
+
 > **For zero-paste usage, `@Exercise722-Composer-Run.md` instead** — it includes autorun
 > instructions and the progress tracker Composer updates. This file is extended reference.
 
-Use this file to finish Scott's **effectively given** decider for `Ssys` in small, revert-safe
-Composer sessions. Everything is checked in; if a session fails, revert and retry that chunk only.
+Use this file as extended reference for **7.22i–j** (PR certification of the existing Bool deciders
+into `RecDecidable₂` / `ComputablePresentation`). Scott's construction (**7.22a–h**) is already Pass;
+see `Exercise722-Composer-Run.md` for the authoritative tracker.
 
 **How to run (legacy):** `@Exercise722-Composer-Run.md` — recommended, no pasting.
 Or `@Exercise722-Composer-Playbook.md` + paste session prompt below.
