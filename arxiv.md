@@ -1660,12 +1660,6 @@ delivered **7.22a–h** and **7.22i(a)**; **7.22i(b)1–8** (Composer **C9b1–C
 * **Proof Notes:** Used by `.cat`/`.cap` branches of **`decodeFuelOkCharBody`**. Green; **`primrec_mulBit` ⊆ {propext, Quot.sound}**.
 * **Status:** Pass
 
-#### Exercise 7.22i(b)1(b)
-* **Mathematical Target:** fuel-bounded decode ok char — **`decodeFuelOkChar`**, **`decodeFuelOkCharBody`**, **`primrec_decodeFuelOkChar`**
-* **Lean File:** `Scott1980/Neighborhood/Recursive.lean`
-* **Proof Notes:** Tag dispatch via **`primrec_tagCase4`**; tag-0 uses **`isOne (1 - u)`** (matches **`decodeFuel`**); tag-1 reuses **7.22i(a)** **`allBinDigitsChar`**; tags 2/3 use **7.22i(b)1(a)** **`mulBit`**. Fuel induction on first argument. Green; zero `sorry`; **`primrec_decodeFuelOkChar` ⊆ {propext, Quot.sound}**.
-* **Status:** Pass
-
 #### Exercise 7.22i(b)1(c)
 * **Mathematical Target:** tag-dispatch infrastructure for correctness link — **`decodeFuelOkCharBody_eq`**, **`selectFn_isOne_one_sub_sigma`**, **`isOne_one`/`isOne_zero`/`isOne_of_ne_one`**
 * **Lean File:** `Scott1980/Neighborhood/Recursive.lean`
@@ -1725,6 +1719,12 @@ delivered **7.22a–h** and **7.22i(a)**; **7.22i(b)1–8** (Composer **C9b1–C
 * **Lean File:** `Scott1980/Neighborhood/Exercise722Presentation.lean`
 * **Proof Notes:** **`primrec_ssysConsChar : Nat.Primrec ssysConsChar`** (or **`ssysConsistentBChar`** packaged as **`ssysConsChar`**) then **`Ssys_cons_computable := Ssys_cons_computable_of_primrec_ssysConsChar primrec_ssysConsChar`**. Depends on **7.22i(b)7**.
 * **Status:** Not Yet
+
+#### Exercise 7.22i(b)1(b)
+* **Mathematical Target:** fuel-bounded decode ok char — **`decodeFuelOkChar`**, **`decodeFuelOkCharBody`**, **`primrec_decodeFuelOkChar`**
+* **Lean File:** `Scott1980/Neighborhood/Recursive.lean`
+* **Proof Notes:** Tag dispatch via **`primrec_tagCase4`**; tag-0 uses **`isOne (1 - u)`** (matches **`decodeFuel`**); tag-1 reuses **7.22i(a)** **`allBinDigitsChar`**; tags 2/3 use **7.22i(b)1(a)** **`mulBit`**. Fuel induction on first argument. Green; zero `sorry`; **`primrec_decodeFuelOkChar` ⊆ {propext, Quot.sound}**.
+* **Status:** Pass
 
 #### Exercise 7.22j
 * **Mathematical Target:** `ComputablePresentation Ssys` / `Ssys.IsEffectivelyGiven` (Def 7.1 packaging)
