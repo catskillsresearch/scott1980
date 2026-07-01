@@ -103,7 +103,7 @@ within `Recursive.lean`—not to further domain theory. See appendices A and B.
 | **C9b2** | `listLenChar` + `primrec` | ☑ | 7.22i(b)2 |
 | **C9b3** | `listEqChar` + `primrec` | ☑ | 7.22i(b)3 |
 | **C9b4** | `appendListCode`, `takeCode`, `dropCode` + `primrec` | Pass | 7.22i(b)4 |
-| **C9b5** | `autStateCardFuelChar`, `matchesBChar` + `primrec` | Not Yet | 7.22i(b)5 |
+| **C9b5** | `autStateCardFuelChar`, `matchesBChar` + `primrec` | Pass | 7.22i(b)5 |
 | **C9b6** | `decideNonemptyBChar`, `consistentBChar` + `primrec` | Not Yet | 7.22i(b)6 |
 | **C9b7** | `ssysConsistentBChar` + shallow Bool `_eq` lemmas | Not Yet | 7.22i(b)7 |
 | **C9b8** | `primrec_ssysConsChar` → `Ssys_cons_computable` | Not Yet | 7.22i(b)8 |
@@ -1704,9 +1704,9 @@ delivered **7.22a–h** and **7.22i(a)**; **7.22i(b)1–8** (Composer **C9b1–C
 
 #### Exercise 7.22i(b)5
 * **Mathematical Target:** numeric **`matchesB`** / state-card bound — **`autStateCardFuelChar`**, **`matchesBChar`** + `primrec`
-* **Lean File:** `Scott1980/Neighborhood/Recursive.lean` (generic); mirrors **`Exercise722Regular.matchesB`**
-* **Proof Notes:** Structural tag dispatch; **`matchesBCatChar`** via **`bExistsFn`** over cut points; uses **7.22i(b)1**, **7.22i(b)3–4**.
-* **Status:** Not Yet
+* **Lean File:** `Scott1980/Neighborhood/Recursive.lean` (generic); mirrors **`Exercise722Regular.matchesB`** / **`Exercise722Decide.autStateCard`**
+* **Proof Notes:** **`primrec_tagCase4`** fuel dispatch (tags 0–3); **`autStateCardFuelChar`** (sigma→1, single→**`listLenChar`+2**, cat→add, cap→mul); **`matchesBChar`** (sigma→1; single→**`listEqChar`**; cat→**`bExistsFn`** over **`takeCode`**/**`dropCode`** cut points via **`matchesBCatG`**+**`mulBit`**; cap→**`mulBit`** on packed subcode+word); local **`c9b5_sexprGodelEncode`**/**`c9b5_sexprDepth`** (Presentation link deferred). Correctness **`autStateCardFuelChar_eq_autStateCard`**, **`matchesBChar_eq_one_iff`** by SExpr induction. **`primrec_autStateCardFuelChar`**, **`primrec_matchesBChar`**. **`⊆{propext,Classical.choice,Quot.sound}`** (choice from list extensionality layer). Depends on **7.22i(b)1**, **7.22i(b)3–4**.
+* **Status:** Pass
 
 #### Exercise 7.22i(b)6
 * **Mathematical Target:** emptiness / cap consistency chars — **`decideNonemptyBChar`**, **`consistentBChar`** + `primrec`

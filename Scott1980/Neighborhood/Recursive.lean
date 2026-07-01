@@ -1,8 +1,11 @@
 import Mathlib.Data.Nat.Sqrt
 import Mathlib.Data.Nat.Pairing
 import Mathlib.Data.Nat.Bitwise
+import Mathlib.Data.List.Basic
 import Mathlib.Computability.Partrec
 import Mathlib.Tactic.Ring
+import Scott1980.Neighborhood.Exercise722Regular
+import Scott1980.Neighborhood.Exercise722Decide
 
 /-!
 # A choice-free recursion theory for Lecture VII (Scott 1981, PRG-19)
@@ -2461,5 +2464,385 @@ theorem primrec_dropCode : Nat.Primrec (fun t => dropCode t.unpair.1 t.unpair.2)
   have hr := (hB.pair hp).pair hB
   refine ((primrec_tabCode primrec_dropListTabFn).comp hr).of_eq fun t => by
     simp [dropCode, unpair_pair_fst, unpair_pair_snd]
+
+/-! ## Exercise 7.22 C9b5 — `autStateCardFuelChar`, `matchesBChar`
+
+Fuel-bounded numeric mirrors of `autStateCard` / `matchesB` with tag dispatch like
+`decodeFuelOkCharBody`. Gödel coding matches `SExpr.encode` in `Exercise722Presentation.lean`
+(tags `0..3`, payloads at `c.unpair.2` / nested pairs). -/
+
+open Scott1980.Neighborhood Exercise722
+
+private def c9b5_boolNat (b : Bool) : ℕ := if b then 1 else 0
+
+private def c9b5_encodeListBool (σ : List Bool) : ℕ := encodeList (σ.map c9b5_boolNat)
+
+private def c9b5_sexprDepth : SExpr → ℕ
+  | .sigma => 1
+  | .single _ => 1
+  | .cat a b => 1 + max (c9b5_sexprDepth a) (c9b5_sexprDepth b)
+  | .cap a b => 1 + max (c9b5_sexprDepth a) (c9b5_sexprDepth b)
+
+/-- Gödel code mirroring `SExpr.encode` in `Exercise722Presentation.lean`. -/
+private def c9b5_sexprGodelEncode : SExpr → ℕ
+  | .sigma => Nat.pair 0 0
+  | .single σ => Nat.pair 1 (c9b5_encodeListBool σ)
+  | .cat a b => Nat.pair 2 (Nat.pair (c9b5_sexprGodelEncode a) (c9b5_sexprGodelEncode b))
+  | .cap a b => Nat.pair 3 (Nat.pair (c9b5_sexprGodelEncode a) (c9b5_sexprGodelEncode b))
+
+private theorem c9b5_decodeList_encodeListBool (σ : List Bool) :
+    decodeList (c9b5_encodeListBool σ) = σ.map c9b5_boolNat := by
+  simp [c9b5_encodeListBool, decodeList_encodeList]
+
+private theorem c9b5_boolNat_injective : Function.Injective c9b5_boolNat := by
+  intro b c h
+  cases b <;> cases c <;> first | rfl | simp [c9b5_boolNat] at h
+
+private theorem c9b5_decodeList_injective {c1 c2 : ℕ} (h : decodeList c1 = decodeList c2) : c1 = c2 := by
+  have := congrArg encodeList h
+  rwa [encodeList_decodeList, encodeList_decodeList] at this
+
+private theorem c9b5_map_boolNat_eq_iff (w σ : List Bool) :
+    w.map c9b5_boolNat = σ.map c9b5_boolNat ↔ w = σ := by
+  constructor
+  · intro h
+    revert σ
+    induction w with
+    | nil =>
+      intro σ h
+      cases σ with
+      | nil => rfl
+      | cons _ _ => simp at h
+    | cons b w ih =>
+      intro σ h
+      cases σ with
+      | nil => simp at h
+      | cons c σ =>
+        simp only [List.map_cons] at h
+        obtain ⟨hb, ht⟩ := List.cons.inj h
+        have hb' : b = c := by
+          cases b <;> cases c <;> first | rfl | simp [c9b5_boolNat] at hb
+        exact hb' ▸ congrArg (List.cons c) (ih σ ht)
+  · intro h; rw [h]
+
+private theorem c9b5_takeCode_encodeListBool (w : List Bool) (i : ℕ) :
+    takeCode i (c9b5_encodeListBool w) = c9b5_encodeListBool (w.take i) := by
+  apply c9b5_decodeList_injective
+  rw [takeCode_eq, c9b5_decodeList_encodeListBool, ← List.map_take]
+  rw [c9b5_decodeList_encodeListBool (σ := w.take i)]
+
+private theorem c9b5_dropCode_encodeListBool (w : List Bool) (i : ℕ) :
+    dropCode i (c9b5_encodeListBool w) = c9b5_encodeListBool (w.drop i) := by
+  apply c9b5_decodeList_injective
+  rw [dropCode_eq, c9b5_decodeList_encodeListBool, ← List.map_drop]
+  rw [c9b5_decodeList_encodeListBool (σ := w.drop i)]
+
+private theorem c9b5_listEqChar_encodeListBool (w σ : List Bool) :
+    listEqChar (c9b5_encodeListBool w) (c9b5_encodeListBool σ) = 1 ↔ w = σ := by
+  simp only [listEqChar_eq_one_iff, c9b5_decodeList_encodeListBool, c9b5_map_boolNat_eq_iff]
+
+/-- One fuel step of state-card counting (previous fuel level as `prev`). -/
+def autStateCardFuelCharBody (prev : ℕ → ℕ) (c : ℕ) : ℕ :=
+  let subAdd := prev c.unpair.2.unpair.1 + prev c.unpair.2.unpair.2
+  let subMul := prev c.unpair.2.unpair.1 * prev c.unpair.2.unpair.2
+  selectFn (isOne (1 - c.unpair.1))
+    1
+    (selectFn (isOne (2 - c.unpair.1))
+      (listLenChar c.unpair.2 + 2)
+      (selectFn (isOne (3 - c.unpair.1))
+        subAdd
+        (selectFn (isOne (4 - c.unpair.1)) subMul 0)))
+
+theorem autStateCardFuelCharBody_eq (prev : ℕ → ℕ) (c : ℕ) :
+    autStateCardFuelCharBody prev c =
+      match c.unpair.1 with
+      | 0 => 1
+      | 1 => listLenChar c.unpair.2 + 2
+      | 2 => prev c.unpair.2.unpair.1 + prev c.unpair.2.unpair.2
+      | 3 => prev c.unpair.2.unpair.1 * prev c.unpair.2.unpair.2
+      | _ => 0 := by
+  unfold autStateCardFuelCharBody
+  match tag : c.unpair.1 with
+  | 0 =>
+    have h10 : (1 - 0 : ℕ) = 1 := rfl
+    simp only [tag, h10, isOne_one, selectFn_one]
+  | 1 =>
+    have h01 : (1 - 1 : ℕ) = 0 := rfl
+    have h12 : (2 - 1 : ℕ) = 1 := rfl
+    simp only [tag, h01, h12, isOne_zero, isOne_one, selectFn_zero, selectFn_one]
+  | 2 =>
+    have h01 : (1 - 2 : ℕ) = 0 := Nat.sub_eq_zero_of_le (by omega)
+    have h12 : (2 - 2 : ℕ) = 0 := rfl
+    have h23 : (3 - 2 : ℕ) = 1 := rfl
+    simp only [tag, h01, h12, h23, isOne_zero, isOne_one, selectFn_zero, selectFn_one]
+  | 3 =>
+    have h01 : (1 - 3 : ℕ) = 0 := Nat.sub_eq_zero_of_le (by omega)
+    have h12 : (2 - 3 : ℕ) = 0 := Nat.sub_eq_zero_of_le (by omega)
+    have h23 : (3 - 3 : ℕ) = 0 := rfl
+    have h34 : (4 - 3 : ℕ) = 1 := rfl
+    simp only [tag, h01, h12, h23, h34, isOne_zero, isOne_one, selectFn_zero, selectFn_one]
+  | t + 4 =>
+    have hne1 : isOne (1 - (t + 4)) = 0 := isOne_of_ne_one (by omega)
+    have hne2 : isOne (2 - (t + 4)) = 0 := isOne_of_ne_one (by omega)
+    have hne3 : isOne (3 - (t + 4)) = 0 := isOne_of_ne_one (by omega)
+    have hne4 : isOne (4 - (t + 4)) = 0 := isOne_of_ne_one (by omega)
+    simp only [tag, hne1, hne2, hne3, hne4, selectFn_zero]
+
+/-- Fuel-bounded mirror of `autStateCard` on Gödel codes. -/
+def autStateCardFuelChar : ℕ → ℕ → ℕ
+  | 0, _ => 0
+  | fuel + 1, c => autStateCardFuelCharBody (autStateCardFuelChar fuel) c
+
+theorem autStateCardFuelChar_eq_autStateCard {fuel : ℕ} {e : SExpr}
+    (h : c9b5_sexprDepth e ≤ fuel) :
+    autStateCardFuelChar fuel (c9b5_sexprGodelEncode e) = autStateCard e := by
+  induction e generalizing fuel with
+  | sigma =>
+    cases fuel with
+    | zero => simp [c9b5_sexprDepth] at h
+    | succ fuel =>
+      simp [autStateCardFuelChar, autStateCardFuelCharBody_eq, c9b5_sexprGodelEncode, autStateCard]
+  | single σ =>
+    cases fuel with
+    | zero => simp [c9b5_sexprDepth] at h
+    | succ fuel =>
+      simp [autStateCardFuelChar, autStateCardFuelCharBody_eq, c9b5_sexprGodelEncode, autStateCard,
+        listLenChar_eq, c9b5_decodeList_encodeListBool, List.length_map]
+  | cat a b iha ihb =>
+    cases fuel with
+    | zero => simp [c9b5_sexprDepth] at h
+    | succ fuel =>
+      have ha : c9b5_sexprDepth a ≤ fuel := by
+        simp only [c9b5_sexprDepth] at h ⊢; omega
+      have hb : c9b5_sexprDepth b ≤ fuel := by
+        simp only [c9b5_sexprDepth] at h ⊢; omega
+      simp [autStateCardFuelChar, autStateCardFuelCharBody_eq, c9b5_sexprGodelEncode, autStateCard,
+        iha ha, ihb hb]
+  | cap a b iha ihb =>
+    cases fuel with
+    | zero => simp [c9b5_sexprDepth] at h
+    | succ fuel =>
+      have ha : c9b5_sexprDepth a ≤ fuel := by
+        simp only [c9b5_sexprDepth] at h ⊢; omega
+      have hb : c9b5_sexprDepth b ≤ fuel := by
+        simp only [c9b5_sexprDepth] at h ⊢; omega
+      simp [autStateCardFuelChar, autStateCardFuelCharBody_eq, c9b5_sexprGodelEncode, autStateCard,
+        iha ha, ihb hb]
+
+private theorem primrec_autStateCardFuelCharBody {prev : ℕ → ℕ} (hprev : Nat.Primrec prev) :
+    Nat.Primrec (fun c => autStateCardFuelCharBody prev c) := by
+  unfold autStateCardFuelCharBody
+  have hleft : Nat.Primrec (fun c => prev c.unpair.2.unpair.1) :=
+    (hprev.comp (Nat.Primrec.left.comp Nat.Primrec.right)).of_eq fun c => by
+      simp only [unpair_pair_fst, unpair_pair_snd]
+  have hright : Nat.Primrec (fun c => prev c.unpair.2.unpair.2) :=
+    (hprev.comp (Nat.Primrec.right.comp Nat.Primrec.right)).of_eq fun c => by
+      simp only [unpair_pair_fst, unpair_pair_snd]
+  have hadd := primrec_add₂ hleft hright
+  have hmul := primrec_mul₂ hleft hright
+  have hf1 := primrec_add₂ (primrec_listLenChar.comp Nat.Primrec.right) (Nat.Primrec.const 2)
+  exact primrec_tagCase4 (Nat.Primrec.const 1) hf1 hadd hmul (Nat.Primrec.const 0)
+
+theorem primrec_autStateCardFuelChar : ∀ fuel, Nat.Primrec (fun c => autStateCardFuelChar fuel c)
+  | 0 => Nat.Primrec.const 0
+  | fuel + 1 => by
+    simpa [autStateCardFuelChar] using
+      primrec_autStateCardFuelCharBody (primrec_autStateCardFuelChar fuel)
+
+/-- Cat-branch step for `matchesBCharBody` (`p` = `pair cutPoint (pair c cw)`). -/
+def matchesBCatG (prev : ℕ → ℕ) (p : ℕ) : ℕ :=
+  let i := p.unpair.1
+  let c := p.unpair.2.unpair.1
+  let cw := p.unpair.2.unpair.2
+  mulBit (prev (Nat.pair c.unpair.2.unpair.1 (takeCode i cw)))
+        (prev (Nat.pair c.unpair.2.unpair.2 (dropCode i cw)))
+
+/-- One fuel step of `matchesB` (packed subcode+word at `prev`). -/
+def matchesBCharBody (prev : ℕ → ℕ) (c cw : ℕ) : ℕ :=
+  let catExist := bExistsFn (matchesBCatG prev) (Nat.pair c cw) (listLenChar cw + 1)
+  let capAnd := mulBit (prev (Nat.pair c.unpair.2.unpair.1 cw))
+                    (prev (Nat.pair c.unpair.2.unpair.2 cw))
+  selectFn (isOne (1 - c.unpair.1))
+    1
+    (selectFn (isOne (2 - c.unpair.1))
+      (listEqChar cw c.unpair.2)
+      (selectFn (isOne (3 - c.unpair.1))
+        catExist
+        (selectFn (isOne (4 - c.unpair.1)) capAnd 0)))
+
+theorem matchesBCharBody_eq (prev : ℕ → ℕ) (c cw : ℕ) :
+    matchesBCharBody prev c cw =
+      match c.unpair.1 with
+      | 0 => 1
+      | 1 => listEqChar cw c.unpair.2
+      | 2 =>
+        bExistsFn (matchesBCatG prev) (Nat.pair c cw) (listLenChar cw + 1)
+      | 3 =>
+        mulBit (prev (Nat.pair c.unpair.2.unpair.1 cw))
+              (prev (Nat.pair c.unpair.2.unpair.2 cw))
+      | _ => 0 := by
+  unfold matchesBCharBody matchesBCatG
+  match tag : c.unpair.1 with
+  | 0 =>
+    have h10 : (1 - 0 : ℕ) = 1 := rfl
+    simp only [tag, h10, isOne_one, selectFn_one]
+  | 1 =>
+    have h01 : (1 - 1 : ℕ) = 0 := rfl
+    have h12 : (2 - 1 : ℕ) = 1 := rfl
+    simp only [tag, h01, h12, isOne_zero, isOne_one, selectFn_zero, selectFn_one]
+  | 2 =>
+    have h01 : (1 - 2 : ℕ) = 0 := Nat.sub_eq_zero_of_le (by omega)
+    have h12 : (2 - 2 : ℕ) = 0 := rfl
+    have h23 : (3 - 2 : ℕ) = 1 := rfl
+    simp only [tag, h01, h12, h23, isOne_zero, isOne_one, selectFn_zero, selectFn_one]
+  | 3 =>
+    have h01 : (1 - 3 : ℕ) = 0 := Nat.sub_eq_zero_of_le (by omega)
+    have h12 : (2 - 3 : ℕ) = 0 := Nat.sub_eq_zero_of_le (by omega)
+    have h23 : (3 - 3 : ℕ) = 0 := rfl
+    have h34 : (4 - 3 : ℕ) = 1 := rfl
+    simp only [tag, h01, h12, h23, h34, isOne_zero, isOne_one, selectFn_zero, selectFn_one]
+  | t + 4 =>
+    have hne1 : isOne (1 - (t + 4)) = 0 := isOne_of_ne_one (by omega)
+    have hne2 : isOne (2 - (t + 4)) = 0 := isOne_of_ne_one (by omega)
+    have hne3 : isOne (3 - (t + 4)) = 0 := isOne_of_ne_one (by omega)
+    have hne4 : isOne (4 - (t + 4)) = 0 := isOne_of_ne_one (by omega)
+    simp only [tag, hne1, hne2, hne3, hne4, selectFn_zero]
+
+/-- Fuel-bounded `{0,1}` mirror of `matchesB`. -/
+def matchesBChar : ℕ → ℕ → ℕ → ℕ
+  | 0, _, _ => 0
+  | fuel + 1, c, cw =>
+      matchesBCharBody (fun p => matchesBChar fuel p.unpair.1 p.unpair.2) c cw
+
+private theorem c9b5_matchesBCatG_char (fuel : ℕ) (a b : SExpr) (w : List Bool) (i : ℕ) :
+    matchesBCatG (fun p => matchesBChar fuel p.unpair.1 p.unpair.2)
+        (Nat.pair i
+          (Nat.pair (Nat.pair 2 (Nat.pair (c9b5_sexprGodelEncode a) (c9b5_sexprGodelEncode b)))
+            (c9b5_encodeListBool w))) =
+      mulBit (matchesBChar fuel (c9b5_sexprGodelEncode a) (takeCode i (c9b5_encodeListBool w)))
+        (matchesBChar fuel (c9b5_sexprGodelEncode b) (dropCode i (c9b5_encodeListBool w))) := by
+  simp [matchesBCatG, unpair_pair_fst, unpair_pair_snd]
+
+set_option maxHeartbeats 1600000 in
+theorem matchesBChar_eq_one_iff {fuel : ℕ} {e : SExpr} {w : List Bool}
+    (h : c9b5_sexprDepth e ≤ fuel) :
+    matchesBChar fuel (c9b5_sexprGodelEncode e) (c9b5_encodeListBool w) = 1 ↔
+      matchesB e w = true := by
+  induction e generalizing fuel w with
+  | sigma =>
+    cases fuel with
+    | zero => simp [c9b5_sexprDepth] at h
+    | succ fuel => simp [matchesBChar, matchesBCharBody_eq, matchesB, c9b5_sexprGodelEncode]
+  | single σ =>
+    cases fuel with
+    | zero => simp [c9b5_sexprDepth] at h
+    | succ fuel =>
+      simp [matchesBChar, matchesBCharBody_eq, c9b5_sexprGodelEncode, matchesB,
+        c9b5_listEqChar_encodeListBool w σ, decide_eq_true_eq]
+  | cat a b iha ihb =>
+    cases fuel with
+    | zero => simp [c9b5_sexprDepth] at h
+    | succ fuel =>
+      have ha : c9b5_sexprDepth a ≤ fuel := by
+        simp only [c9b5_sexprDepth] at h ⊢; omega
+      have hb : c9b5_sexprDepth b ≤ fuel := by
+        simp only [c9b5_sexprDepth] at h ⊢; omega
+      have hbody := matchesBCharBody_eq (fun p => matchesBChar fuel p.unpair.1 p.unpair.2)
+          (c9b5_sexprGodelEncode (.cat a b)) (c9b5_encodeListBool w)
+      rw [matchesBChar, hbody]
+      simp only [c9b5_sexprGodelEncode, unpair_pair_fst, matchesB, List.any_eq_true]
+      rw [bExistsFn_eq_one_iff]
+      have hlen : listLenChar (c9b5_encodeListBool w) + 1 = w.length + 1 := by
+        simp [listLenChar_eq, c9b5_decodeList_encodeListBool, List.length_map]
+      constructor
+      · intro ⟨i, hi, hg⟩
+        rw [c9b5_matchesBCatG_char, mulBit_eq_one_iff] at hg
+        obtain ⟨h1, h2⟩ := hg
+        have hi' : i < w.length + 1 := by rw [← hlen]; exact hi
+        refine ⟨i, (List.mem_range).2 hi', ?_⟩
+        simp only [Bool.and_eq_true]
+        exact ⟨(iha ha).mp (by rw [← c9b5_takeCode_encodeListBool w i]; exact h1),
+          (ihb hb).mp (by rw [← c9b5_dropCode_encodeListBool w i]; exact h2)⟩
+      · intro ⟨i, hi, hfg⟩
+        have hi' : i < listLenChar (c9b5_encodeListBool w) + 1 := by
+          rw [hlen]; exact (List.mem_range).1 hi
+        refine ⟨i, hi', ?_⟩
+        rw [c9b5_matchesBCatG_char, mulBit_eq_one_iff]
+        simp [Bool.and_eq_true] at hfg
+        refine And.intro ?h1 ?h2
+        · simpa [c9b5_takeCode_encodeListBool w i] using (iha ha).mpr hfg.1
+        · simpa [c9b5_dropCode_encodeListBool w i] using (ihb hb).mpr hfg.2
+  | cap a b iha ihb =>
+    cases fuel with
+    | zero => simp [c9b5_sexprDepth] at h
+    | succ fuel =>
+      have ha : c9b5_sexprDepth a ≤ fuel := by
+        simp only [c9b5_sexprDepth] at h ⊢; omega
+      have hb : c9b5_sexprDepth b ≤ fuel := by
+        simp only [c9b5_sexprDepth] at h ⊢; omega
+      have hbody := matchesBCharBody_eq (fun p => matchesBChar fuel p.unpair.1 p.unpair.2)
+          (c9b5_sexprGodelEncode (.cap a b)) (c9b5_encodeListBool w)
+      rw [matchesBChar, hbody]
+      simp only [c9b5_sexprGodelEncode, unpair_pair_fst, unpair_pair_snd, matchesB, mulBit_eq_one_iff]
+      constructor
+      · intro ⟨h1, h2⟩
+        rw [Bool.and_eq_true]
+        exact ⟨(iha ha).mp h1, (ihb hb).mp h2⟩
+      · intro hfg
+        rw [Bool.and_eq_true] at hfg
+        exact ⟨(iha ha).mpr hfg.1, (ihb hb).mpr hfg.2⟩
+
+set_option maxHeartbeats 800000 in
+private theorem primrec_matchesBCatG {prev : ℕ → ℕ} (hprev : Nat.Primrec prev) :
+    Nat.Primrec (fun p => matchesBCatG prev p) := by
+  have hc := Nat.Primrec.left.comp Nat.Primrec.right
+  have ha := Nat.Primrec.left.comp (Nat.Primrec.right.comp hc)
+  have hb := Nat.Primrec.right.comp (Nat.Primrec.right.comp hc)
+  have hcw := Nat.Primrec.right.comp Nat.Primrec.right
+  have hi := Nat.Primrec.left
+  have h1 := hprev.comp (Nat.Primrec.pair ha (primrec_takeCode.comp (hi.pair hcw)))
+  have h2 := hprev.comp (Nat.Primrec.pair hb (primrec_dropCode.comp (hi.pair hcw)))
+  exact (primrec_mul₂ h1 h2).of_eq fun p => by
+    dsimp [matchesBCatG, mulBit]
+    simp only [unpair_pair_fst, unpair_pair_snd]
+
+set_option maxHeartbeats 800000 in
+private theorem primrec_matchesBCharBody {prev : ℕ → ℕ} (hprev : Nat.Primrec prev) :
+    Nat.Primrec (fun t => matchesBCharBody prev t.unpair.1 t.unpair.2) := by
+  have htag : Nat.Primrec (fun t => (t.unpair.1).unpair.1) := Nat.Primrec.left.comp Nat.Primrec.left
+  have h01 := primrec_isOne.comp (primrec_sub₂ (Nat.Primrec.const 1) htag)
+  have h12 := primrec_isOne.comp (primrec_sub₂ (Nat.Primrec.const 2) htag)
+  have h23 := primrec_isOne.comp (primrec_sub₂ (Nat.Primrec.const 3) htag)
+  have h34 := primrec_isOne.comp (primrec_sub₂ (Nat.Primrec.const 4) htag)
+  have hf1 := primrec_listEqChar.comp (Nat.Primrec.pair Nat.Primrec.right
+    (Nat.Primrec.right.comp Nat.Primrec.left))
+  have hpack : Nat.Primrec (fun t => Nat.pair t (listLenChar t.unpair.2 + 1)) :=
+    Nat.Primrec.pair primrec_id
+      (primrec_add₂ (primrec_listLenChar.comp Nat.Primrec.right) (Nat.Primrec.const 1))
+  have hcat := (primrec_bExistsFn (primrec_matchesBCatG hprev)).comp hpack
+  have hc := Nat.Primrec.left
+  have ha := Nat.Primrec.left.comp (Nat.Primrec.right.comp hc)
+  have hb := Nat.Primrec.right.comp (Nat.Primrec.right.comp hc)
+  have hcw := Nat.Primrec.right
+  have hcap := primrec_mulBit.comp (Nat.Primrec.pair
+    (hprev.comp (Nat.Primrec.pair ha hcw)) (hprev.comp (Nat.Primrec.pair hb hcw)))
+  exact (primrec_selectFn h01 (Nat.Primrec.const 1)
+    (primrec_selectFn h12 hf1
+      (primrec_selectFn h23 hcat
+        (primrec_selectFn h34 hcap (Nat.Primrec.const 0))))).of_eq fun t => by
+    rw [matchesBCharBody_eq]
+    match tag : (t.unpair.1).unpair.1 with
+    | 0 | 1 | 2 | 3 =>
+      simp [tag, selectFn, isOne, min, Nat.sub_eq_zero_iff_le, mulBit, unpair_pair_fst,
+        unpair_pair_snd]
+    | _ + 4 =>
+      simp [selectFn, isOne, min, Nat.sub_eq_zero_iff_le, mulBit, unpair_pair_fst, unpair_pair_snd]
+      all_goals try omega
+
+theorem primrec_matchesBChar : ∀ fuel, Nat.Primrec (fun t => matchesBChar fuel t.unpair.1 t.unpair.2)
+  | 0 => Nat.Primrec.const 0
+  | fuel + 1 => by
+    simpa [matchesBChar] using
+      primrec_matchesBCharBody (primrec_matchesBChar fuel)
 
 end Domain.Recursive
