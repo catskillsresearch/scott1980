@@ -104,7 +104,7 @@ within `Recursive.lean`—not to further domain theory. See appendices A and B.
 | **C9b3** | `listEqChar` + `primrec` | ☑ | 7.22i(b)3 |
 | **C9b4** | `appendListCode`, `takeCode`, `dropCode` + `primrec` | Pass | 7.22i(b)4 |
 | **C9b5** | `autStateCardFuelChar`, `matchesBChar` + `primrec` | Pass | 7.22i(b)5 |
-| **C9b6** | `decideNonemptyBChar`, `consistentBChar` + `primrec` | Not Yet | 7.22i(b)6 |
+| **C9b6** | `decideNonemptyBChar`, `consistentBChar` + `primrec` | Pass | 7.22i(b)6 |
 | **C9b7** | `ssysConsistentBChar` + shallow Bool `_eq` lemmas | Not Yet | 7.22i(b)7 |
 | **C9b8** | `primrec_ssysConsChar` → `Ssys_cons_computable` | Not Yet | 7.22i(b)8 |
 | **C10** | `ComputablePresentation Ssys` / `IsEffectivelyGiven` | ☐ | 7.22j |
@@ -1711,8 +1711,8 @@ delivered **7.22a–h** and **7.22i(a)**; **7.22i(b)1–8** (Composer **C9b1–C
 #### Exercise 7.22i(b)6
 * **Mathematical Target:** emptiness / cap consistency chars — **`decideNonemptyBChar`**, **`consistentBChar`** + `primrec`
 * **Lean File:** `Scott1980/Neighborhood/Recursive.lean`
-* **Proof Notes:** Bounded search over **`wordsUpToCode`** (numeric **`wordsUpTo`**) via **`existsListChar`** / **`bExistsFn`**; **`consistentBChar`** = nonempty cap. Depends on **7.22i(b)5**.
-* **Status:** Not Yet
+* **Proof Notes:** Bounded *index* search, not a materialized **`wordsUpToCode`** (avoids the map/flatMap-over-coded-list combinator that sank **C9b3**'s first attempt). **`codeBound n`** (`0↦1`, `n+1↦pair 1 (codeBound n)+1`) is a closed-form certificate that any **`{0,1}`**-list of length `≤n` has Gödel code `<codeBound n` (**`codeBound_ge`**, induction via `decodeList_succ`/`_zero` + mathlib's `Nat.pair_lt_pair_left`/`_right`, cited not reproved); **`decideNonemptyBChar fuel c_e`** = **`bExistsFn`** over `mulBit (allBinDigitsChar i) (matchesBChar fuel c_e i)` for `i<codeBound (autStateCardFuelChar fuel c_e)`, with `i`/`c_e` threaded through `bExistsFn`'s own `n`-slot (`n:=c_e`) so the `primrec` proof composes directly (a fixed-`0`-slot design needed a costly defeq bridge that hit a `whnf` timeout). **`decideNonemptyBChar_eq_one_iff`** cites `denote_nonempty_iff_short` + `matchesB_iff` + `matchesBChar_eq_one_iff` (C9b5) as black boxes, bridging char↔Bool only; **`codeBound_ge`** is used solely for the ⟸ direction (a short word's code lies inside `bExistsFn`'s search range), the ⟹ direction needs no length bound. **`capCode a b:=pair 3 (pair a b)`** confirmed `rfl`-equal to `SExpr.encode`'s own `.cap` tag; **`consistentBChar fuel c1 c2:=decideNonemptyBChar fuel (capCode c1 c2)`**; **`consistentBChar_eq_one_iff`** takes a single fuel hypothesis on the *outer* `.cap a b` (matches the fuel convention elsewhere: `c9b5_sexprDepth(.cap a b)=1+max(depth a)(depth b)`, one more than either child alone needs) and reduces directly to `decideNonemptyBChar_eq_one_iff`. **`⊆{propext,Classical.choice,Quot.sound}`** (choice inherited from list extensionality layer, same as C9b4/C9b5). Depends on **7.22i(b)5**.
+* **Status:** Pass
 
 #### Exercise 7.22i(b)7
 * **Mathematical Target:** index-level consistency char — **`ssysActiveChar`**, **`ssysConsistentBChar`** + shallow Bool links

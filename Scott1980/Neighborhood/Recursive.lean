@@ -2845,4 +2845,175 @@ theorem primrec_matchesBChar : ∀ fuel, Nat.Primrec (fun t => matchesBChar fuel
     simpa [matchesBChar] using
       primrec_matchesBCharBody (primrec_matchesBChar fuel)
 
+/-! ## Exercise 7.22 C9b6 — `decideNonemptyBChar`, `consistentBChar`
+
+Bounded index search over valid bit-list codes (via `codeBound`) instead of materializing
+`wordsUpToCode`. -/
+
+/-- Upper bound on Gödel codes of `{0,1}`-lists of length at most `n`. -/
+def codeBound : ℕ → ℕ
+  | 0 => 1
+  | n + 1 => Nat.pair 1 (codeBound n) + 1
+
+theorem codeBound_zero : codeBound 0 = 1 := rfl
+
+theorem codeBound_succ (n : ℕ) : codeBound (n + 1) = Nat.pair 1 (codeBound n) + 1 := rfl
+
+/-- `Nat.pair 0 t < Nat.pair 1 b` whenever `t < b`, via mathlib's `Nat.pair` monotonicity
+in each argument (`pair_lt_pair_right` then `pair_lt_pair_left`). -/
+private theorem pair_lt_pair_zero_right {t b : ℕ} (ht : t < b) :
+    Nat.pair 0 t < Nat.pair 1 b :=
+  lt_trans (Nat.pair_lt_pair_right 0 ht) (Nat.pair_lt_pair_left b Nat.zero_lt_one)
+
+theorem codeBound_ge (n c : ℕ) (hlen : (decodeList c).length ≤ n)
+    (hbin : ∀ x ∈ decodeList c, x ≤ 1) : c < codeBound n := by
+  induction n generalizing c with
+  | zero =>
+    have hc : c = 0 := by
+      cases c with
+      | zero => rfl
+      | succ c' => simp [decodeList_succ, List.length_cons] at hlen
+    simp [hc, codeBound]
+  | succ n ih =>
+    cases c with
+    | zero => simp [codeBound]
+    | succ d =>
+      simp only [decodeList_succ, List.length_cons] at hlen
+      simp only [decodeList_succ] at hbin
+      have htlen : (decodeList d.unpair.2).length ≤ n := by omega
+      have htbin : ∀ x ∈ decodeList d.unpair.2, x ≤ 1 := fun x hx =>
+        hbin x (List.mem_cons.mpr (Or.inr hx))
+      have ht := ih d.unpair.2 htlen htbin
+      have hh : d.unpair.1 ≤ 1 := hbin d.unpair.1 (List.mem_cons.mpr (Or.inl rfl))
+      have hpair : Nat.pair d.unpair.1 d.unpair.2 < Nat.pair 1 (codeBound n) := by
+        rcases (show d.unpair.1 = 0 ∨ d.unpair.1 = 1 by omega) with h0 | h1
+        · rw [h0]; exact pair_lt_pair_zero_right ht
+        · rw [h1]; exact Nat.pair_lt_pair_right 1 ht
+      rw [Nat.pair_unpair] at hpair
+      simp only [codeBound]
+      omega
+
+theorem primrec_codeBound : Nat.Primrec codeBound := by
+  have hstep : Nat.Primrec (fun w => Nat.pair 1 w.unpair.2 + 1) :=
+    primrec_add₂ (Nat.Primrec.pair (Nat.Primrec.const 1) Nat.Primrec.right)
+      (Nat.Primrec.const 1)
+  have haux : ∀ n, Nat.rec (motive := fun _ => ℕ) 1
+      (fun y IH => Nat.pair 1 (Nat.pair y IH).unpair.2 + 1) n = codeBound n := by
+    intro n
+    induction n with
+    | zero => simp [codeBound]
+    | succ n ih =>
+      simp only [unpair_pair_snd] at ih ⊢
+      simp [codeBound, ih]
+  exact (Nat.Primrec.prec1 1 hstep).of_eq haux
+
+private theorem c9b6_allBinDigitsChar_encodeListBool (w : List Bool) :
+    allBinDigitsChar (c9b5_encodeListBool w) = 1 := by
+  rw [allBinDigitsChar_eq_one_iff]
+  intro x hx
+  rw [c9b5_decodeList_encodeListBool] at hx
+  simp only [List.mem_map] at hx
+  obtain ⟨b, _, hb⟩ := hx
+  cases b <;> simp [c9b5_boolNat] at hb <;> omega
+
+private theorem c9b6_encodeListBool_lt_codeBound {n : ℕ} {w : List Bool} (hw : w.length ≤ n) :
+    c9b5_encodeListBool w < codeBound n := by
+  apply codeBound_ge n (c9b5_encodeListBool w)
+  · rw [c9b5_decodeList_encodeListBool, List.length_map]; exact hw
+  · intro x hx
+    rw [c9b5_decodeList_encodeListBool] at hx
+    simp only [List.mem_map] at hx
+    obtain ⟨b, _, hb⟩ := hx
+    cases b <;> simp [c9b5_boolNat] at hb <;> omega
+
+private def c9b6_decodeListBool (c : ℕ) : List Bool :=
+  (decodeList c).map fun n => decide (n = 1)
+
+private theorem c9b6_boolNat_decide_eq (x : ℕ) (hx : x = 0 ∨ x = 1) :
+    c9b5_boolNat (decide (x = 1)) = x := by
+  rcases hx with rfl | rfl <;> simp [c9b5_boolNat]
+
+/-- Round-trip through `c9b5_encodeListBool`/`c9b6_decodeListBool` for a code known to consist
+only of binary digits (i.e. `allBinDigitsChar c = 1`). -/
+private theorem c9b6_encodeListBool_decodeListBool_of_allBin {c : ℕ}
+    (hall : allBinDigitsChar c = 1) :
+    c9b5_encodeListBool (c9b6_decodeListBool c) = c := by
+  rw [allBinDigitsChar_eq_one_iff] at hall
+  apply c9b5_decodeList_injective
+  rw [c9b5_decodeList_encodeListBool, c9b6_decodeListBool, List.map_map]
+  conv_rhs => rw [← List.map_id (decodeList c)]
+  exact List.map_congr_left (fun x hx => c9b6_boolNat_decide_eq x (hall x hx))
+
+private theorem c9b6_matchesBChar_of_allBin {fuel : ℕ} {e : SExpr} {c : ℕ}
+    (h : c9b5_sexprDepth e ≤ fuel) (hall : allBinDigitsChar c = 1)
+    (hmatch : matchesBChar fuel (c9b5_sexprGodelEncode e) c = 1) :
+    matchesB e (c9b6_decodeListBool c) = true := by
+  apply (matchesBChar_eq_one_iff (w := c9b6_decodeListBool c) h).1
+  rwa [c9b6_encodeListBool_decodeListBool_of_allBin hall]
+
+/-- `{0,1}` non-emptiness decider: bounded search over valid bit-list codes. The candidate
+word's Gödel code `i` and the target `c_e` are threaded through `bExistsFn`'s own parameter slot
+(`n := c_e`) rather than a fixed `0`, so `primrec_decideNonemptyBChar` composes directly out of
+`primrec_bExistsFn`. -/
+def decideNonemptyBChar (fuel : ℕ) (c_e : ℕ) : ℕ :=
+  bExistsFn (fun p =>
+      mulBit (allBinDigitsChar p.unpair.1) (matchesBChar fuel p.unpair.2 p.unpair.1))
+    c_e (codeBound (autStateCardFuelChar fuel c_e))
+
+theorem decideNonemptyBChar_eq_one_iff {fuel : ℕ} {e : SExpr}
+    (h : c9b5_sexprDepth e ≤ fuel) :
+    decideNonemptyBChar fuel (c9b5_sexprGodelEncode e) = 1 ↔ (denote e).Nonempty := by
+  simp only [decideNonemptyBChar, bExistsFn_eq_one_iff, unpair_pair_fst, unpair_pair_snd,
+    mulBit_eq_one_iff]
+  constructor
+  · rintro ⟨i, -, hall, hmatch⟩
+    exact ⟨c9b6_decodeListBool i, (matchesB_iff e _).mp (c9b6_matchesBChar_of_allBin h hall hmatch)⟩
+  · intro hne
+    obtain ⟨w, hwmem, hmatch⟩ := (denote_nonempty_iff_short e).mp hne
+    refine ⟨c9b5_encodeListBool w, ?_, c9b6_allBinDigitsChar_encodeListBool w,
+      (matchesBChar_eq_one_iff h).2 hmatch⟩
+    rw [autStateCardFuelChar_eq_autStateCard h]
+    exact c9b6_encodeListBool_lt_codeBound (by rwa [mem_wordsUpTo] at hwmem)
+
+theorem primrec_decideNonemptyBChar (fuel : ℕ) :
+    Nat.Primrec (fun c_e => decideNonemptyBChar fuel c_e) := by
+  have hg : Nat.Primrec (fun w =>
+      mulBit (allBinDigitsChar w.unpair.1) (matchesBChar fuel w.unpair.2 w.unpair.1)) :=
+    (primrec_mulBit.comp (Nat.Primrec.pair (primrec_allBinDigitsChar.comp Nat.Primrec.left)
+      ((primrec_matchesBChar fuel).comp (Nat.Primrec.pair Nat.Primrec.right Nat.Primrec.left)))).of_eq
+      fun w => by simp
+  have hpack : Nat.Primrec (fun c_e =>
+      Nat.pair c_e (codeBound (autStateCardFuelChar fuel c_e))) :=
+    Nat.Primrec.pair Nat.Primrec.id
+      (primrec_codeBound.comp (primrec_autStateCardFuelChar fuel))
+  refine ((primrec_bExistsFn hg).comp hpack).of_eq fun c_e => ?_
+  simp [decideNonemptyBChar]
+
+/-- Tag-3 cap code matching `SExpr.encode` / `c9b5_sexprGodelEncode`. -/
+def capCode (a b : ℕ) : ℕ := Nat.pair 3 (Nat.pair a b)
+
+private theorem c9b6_sexprGodelEncode_cap (a b : SExpr) :
+    c9b5_sexprGodelEncode (.cap a b) = capCode (c9b5_sexprGodelEncode a) (c9b5_sexprGodelEncode b) :=
+  rfl
+
+/-- `{0,1}` cap-consistency decider on Gödel codes. -/
+def consistentBChar (fuel : ℕ) (c1 c2 : ℕ) : ℕ :=
+  decideNonemptyBChar fuel (capCode c1 c2)
+
+/-- Fuel is sized for the *outer* `.cap a b` expression (matching the convention of
+`decideNonemptyBChar_eq_one_iff` / `matchesBChar_eq_one_iff`), one more than either child alone
+needs, since `c9b5_sexprDepth (.cap a b) = 1 + max (c9b5_sexprDepth a) (c9b5_sexprDepth b)`. -/
+theorem consistentBChar_eq_one_iff {fuel : ℕ} {a b : SExpr}
+    (h : c9b5_sexprDepth (.cap a b) ≤ fuel) :
+    consistentBChar fuel (c9b5_sexprGodelEncode a) (c9b5_sexprGodelEncode b) = 1 ↔
+      (denote (.cap a b)).Nonempty := by
+  simp only [consistentBChar, ← c9b6_sexprGodelEncode_cap]
+  exact decideNonemptyBChar_eq_one_iff h
+
+theorem primrec_consistentBChar (fuel : ℕ) :
+    Nat.Primrec (fun t => consistentBChar fuel t.unpair.1 t.unpair.2) :=
+  (primrec_decideNonemptyBChar fuel).comp
+    (Nat.Primrec.pair (Nat.Primrec.const 3)
+      (Nat.Primrec.pair Nat.Primrec.left Nat.Primrec.right))
+
 end Domain.Recursive
