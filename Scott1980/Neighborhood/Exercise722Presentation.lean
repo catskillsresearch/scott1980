@@ -791,6 +791,152 @@ theorem primrec_ssysConsChar : Nat.Primrec ssysConsChar :=
 theorem Ssys_cons_computable : RecDecidable₂ (fun n m => ∃ k, SsysX k ⊆ SsysX n ∩ SsysX m) :=
   Ssys_cons_computable_of_primrec_ssysConsChar primrec_ssysConsChar
 
+/-! ### Session C7b — `ssysInterEqChar` (Exercise 7.22k)
+
+Definition 7.1 relation (i) — `SsysX n ∩ SsysX m = SsysX k` — via the `Exercise722Equiv.lean` /
+`Recursive.lean` language-equivalence decider `interEqChar`. `safeDecodeActive` already gives a
+uniform canonical `SExpr` representative for every index (junk/inactive ↦ `.sigma`,
+`SsysX_eq_denote_safe`), so unlike `ssysConsistentBChar` (where inactive indices are *trivially*
+consistent with anything, since `Σ` is the top element) there is no active/inactive case split
+here: equality is genuinely about the canonical representative in every case. -/
+
+/-- The Gödel code of `safeDecodeActive n` (`ssysCanonicalCode_eq`): `n`'s own decoded code if
+active, else the code of `.sigma` (matching `safeDecodeActive`'s junk fallback). -/
+@[irreducible] def ssysCanonicalCode (n : ℕ) : ℕ :=
+  Domain.Recursive.selectFn (ssysActiveChar n) n.unpair.1 (SExpr.encode .sigma)
+
+theorem ssysCanonicalCode_eq (n : ℕ) : ssysCanonicalCode n = SExpr.encode (safeDecodeActive n) := by
+  unfold ssysCanonicalCode
+  by_cases hn : ssysActive n = true
+  · rw [(ssysActiveChar_eq_one_iff n).mpr hn, Domain.Recursive.selectFn_one]
+    obtain ⟨e, hdec⟩ := ssysActive_exists_decode hn
+    have hac : n.unpair.1 = SExpr.encode e := decodeFuel_sound hdec
+    rw [hac]
+    congr 1
+    unfold safeDecodeActive
+    rw [hdec]
+    have : decideNonemptyB e = true := by
+      unfold ssysActive at hn; rw [hdec] at hn; exact hn
+    simp [this]
+  · have hn0 : ssysActiveChar n = 0 := by
+      have hle := ssysActiveChar_le_one n
+      have hne : ssysActiveChar n ≠ 1 := fun h => hn ((ssysActiveChar_eq_one_iff n).mp h)
+      omega
+    have hnf : ssysActive n = false := by
+      cases hAn : ssysActive n with
+      | false => rfl
+      | true => exact absurd hAn hn
+    rw [hn0, Domain.Recursive.selectFn_zero, safeDecodeActive_inactive n hnf]
+
+theorem sexprDepth_safeDecodeActive_le (n : ℕ) : sexprDepth (safeDecodeActive n) ≤ n.unpair.2 + 1 := by
+  by_cases hn : ssysActive n = true
+  · obtain ⟨e, hdec⟩ := ssysActive_exists_decode hn
+    have hda : sexprDepth e ≤ n.unpair.2 + 1 := decodeFuel_depth_le hdec
+    have heq : safeDecodeActive n = e := by
+      unfold safeDecodeActive
+      rw [hdec]
+      have : decideNonemptyB e = true := by
+        unfold ssysActive at hn; rw [hdec] at hn; exact hn
+      simp [this]
+    rw [heq]; exact hda
+  · have hnf : ssysActive n = false := by
+      cases hAn : ssysActive n with
+      | false => rfl
+      | true => exact absurd hAn hn
+    rw [safeDecodeActive_inactive n hnf]
+    simp [sexprDepth]
+
+theorem ssys_interEq_iff (n m k : ℕ) :
+    SsysX n ∩ SsysX m = SsysX k ↔
+      denote (.cap (safeDecodeActive n) (safeDecodeActive m)) = denote (safeDecodeActive k) := by
+  rw [SsysX_eq_denote_safe, SsysX_eq_denote_safe, SsysX_eq_denote_safe, denote_cap]
+
+/-- **Exercise 7.22k.** `{0,1}` decider for Definition 7.1 relation (i) on `SsysX` indices,
+`Nat.pair`-coded as `pair n (pair m k)`. -/
+def ssysInterEqChar (t : ℕ) : ℕ :=
+  let n := t.unpair.1
+  let m := t.unpair.2.unpair.1
+  let k := t.unpair.2.unpair.2
+  Domain.Recursive.interEqChar (n.unpair.2 + m.unpair.2 + k.unpair.2 + 3)
+    (Domain.Recursive.capCode (ssysCanonicalCode n) (ssysCanonicalCode m)) (ssysCanonicalCode k)
+
+theorem ssysInterEqChar_le_one (t : ℕ) : ssysInterEqChar t ≤ 1 := by
+  unfold ssysInterEqChar
+  exact Domain.Recursive.interEqChar_le_one _ _ _
+
+theorem ssysInterEqChar_eq_one_iff (n m k : ℕ) :
+    ssysInterEqChar (Nat.pair n (Nat.pair m k)) = 1 ↔ SsysX n ∩ SsysX m = SsysX k := by
+  unfold ssysInterEqChar
+  simp only [unpair_pair_fst, unpair_pair_snd]
+  rw [ssys_interEq_iff]
+  have hfuel : n.unpair.2 + m.unpair.2 + k.unpair.2 + 3 ≥
+      c9b5_sexprDepth (.cap (safeDecodeActive n) (safeDecodeActive m)) ∧
+      n.unpair.2 + m.unpair.2 + k.unpair.2 + 3 ≥ c9b5_sexprDepth (safeDecodeActive k) := by
+    rw [c9b5_sexprDepth_eq, c9b5_sexprDepth_eq]
+    have hn := sexprDepth_safeDecodeActive_le n
+    have hm := sexprDepth_safeDecodeActive_le m
+    have hk := sexprDepth_safeDecodeActive_le k
+    simp only [sexprDepth]
+    omega
+  rw [show Domain.Recursive.capCode (ssysCanonicalCode n) (ssysCanonicalCode m) =
+      c9b5_sexprGodelEncode (.cap (safeDecodeActive n) (safeDecodeActive m)) from ?_,
+    show ssysCanonicalCode k = c9b5_sexprGodelEncode (safeDecodeActive k) from ?_,
+    Domain.Recursive.interEqChar_eq_one_iff hfuel.1 hfuel.2]
+  · rw [c9b5_sexprGodelEncode_eq]; exact ssysCanonicalCode_eq k
+  · unfold Domain.Recursive.capCode
+    rw [ssysCanonicalCode_eq, ssysCanonicalCode_eq, ← c9b5_sexprGodelEncode_eq,
+      ← c9b5_sexprGodelEncode_eq]
+    rfl
+
+theorem primrec_ssysInterEqChar : Nat.Primrec ssysInterEqChar := by
+  have hn : Nat.Primrec (fun t : ℕ => t.unpair.1) := Nat.Primrec.left
+  have hm : Nat.Primrec (fun t : ℕ => t.unpair.2.unpair.1) :=
+    Nat.Primrec.left.comp Nat.Primrec.right
+  have hk : Nat.Primrec (fun t : ℕ => t.unpair.2.unpair.2) :=
+    Nat.Primrec.right.comp Nat.Primrec.right
+  have hcanon : Nat.Primrec (fun n : ℕ => ssysCanonicalCode n) := by
+    have := primrec_ssysActiveChar
+    refine (Domain.Recursive.primrec_selectFn this Nat.Primrec.left
+      (Nat.Primrec.const (SExpr.encode .sigma))).of_eq fun n => ?_
+    unfold ssysCanonicalCode; rfl
+  have hcn : Nat.Primrec (fun t : ℕ => ssysCanonicalCode t.unpair.1) := hcanon.comp hn
+  have hcm : Nat.Primrec (fun t : ℕ => ssysCanonicalCode t.unpair.2.unpair.1) := hcanon.comp hm
+  have hck : Nat.Primrec (fun t : ℕ => ssysCanonicalCode t.unpair.2.unpair.2) := hcanon.comp hk
+  have hfuel : Nat.Primrec (fun t : ℕ =>
+      t.unpair.1.unpair.2 + t.unpair.2.unpair.1.unpair.2 + t.unpair.2.unpair.2.unpair.2 + 3) :=
+    Domain.Recursive.primrec_add₂
+      (Domain.Recursive.primrec_add₂
+        (Domain.Recursive.primrec_add₂
+          (Nat.Primrec.right.comp hn) (Nat.Primrec.right.comp hm))
+        (Nat.Primrec.right.comp hk))
+      (Nat.Primrec.const 3)
+  have hcap : Nat.Primrec (fun t : ℕ =>
+      Domain.Recursive.capCode (ssysCanonicalCode t.unpair.1)
+        (ssysCanonicalCode t.unpair.2.unpair.1)) := by
+    have hp : Nat.Primrec (fun t : ℕ => Nat.pair 3 (Nat.pair (ssysCanonicalCode t.unpair.1)
+        (ssysCanonicalCode t.unpair.2.unpair.1))) :=
+      Nat.Primrec.pair (Nat.Primrec.const 3) (Nat.Primrec.pair hcn hcm)
+    refine hp.of_eq fun t => ?_
+    unfold Domain.Recursive.capCode; rfl
+  have hpack : Nat.Primrec (fun t : ℕ => Nat.pair
+      (t.unpair.1.unpair.2 + t.unpair.2.unpair.1.unpair.2 + t.unpair.2.unpair.2.unpair.2 + 3)
+      (Nat.pair (Domain.Recursive.capCode (ssysCanonicalCode t.unpair.1)
+          (ssysCanonicalCode t.unpair.2.unpair.1))
+        (ssysCanonicalCode t.unpair.2.unpair.2))) :=
+    Nat.Primrec.pair hfuel (Nat.Primrec.pair hcap hck)
+  refine (Domain.Recursive.primrec_interEqChar.comp hpack).of_eq fun t => ?_
+  unfold ssysInterEqChar
+  simp only [unpair_pair_fst, unpair_pair_snd]
+
+/-- **Exercise 7.22k.** Definition 7.1 relation (i) is recursively decidable for `Ssys`. -/
+theorem Ssys_interEq_computable :
+    RecDecidable₃ (fun n m k => SsysX n ∩ SsysX m = SsysX k) :=
+  RecDecidable₃.of_triple_zero_one_char primrec_ssysInterEqChar
+    (fun t => by
+      rcases (show ssysInterEqChar t = 0 ∨ ssysInterEqChar t = 1 from by
+        have := ssysInterEqChar_le_one t; omega) with h | h <;> simp [h])
+    (fun n m k => (ssysInterEqChar_eq_one_iff n m k).symm)
+
 /-! ### Session C10 — Definition 7.1 packaging for `Ssys` (Exercise 7.22j)
 
 A full `ComputablePresentation` also needs relation (i) — `Xₙ ∩ Xₘ = X_k`, i.e. whether two

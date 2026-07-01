@@ -6,6 +6,7 @@ import Mathlib.Computability.Partrec
 import Mathlib.Tactic.Ring
 import Scott1980.Neighborhood.Exercise722Regular
 import Scott1980.Neighborhood.Exercise722Decide
+import Scott1980.Neighborhood.Exercise722Equiv
 
 /-!
 # A choice-free recursion theory for Lecture VII (Scott 1981, PRG-19)
@@ -390,6 +391,16 @@ theorem RecDecidable₂.of_paired_zero_one_char {r : ℕ → ℕ → Prop} {f : 
   unfold RecDecidable₂
   refine RecDecidable.of_zero_one_char hf h01 (fun t => ?_)
   rw [hfe, pair_unpair]
+
+/-- **Triple `{0,1}` characteristic.** When the Bool decider has been packaged as a unary
+primitive-recursive function on `Nat.pair n (Nat.pair m k)`, reindex to `RecDecidable₃`. -/
+theorem RecDecidable₃.of_triple_zero_one_char {r : ℕ → ℕ → ℕ → Prop} {f : ℕ → ℕ}
+    (hf : Nat.Primrec f) (h01 : ∀ t, f t = 0 ∨ f t = 1)
+    (hfe : ∀ n m k, r n m k ↔ f (Nat.pair n (Nat.pair m k)) = 1) :
+    RecDecidable₃ r := by
+  unfold RecDecidable₃
+  refine RecDecidable.of_zero_one_char hf h01 (fun t => ?_)
+  rw [hfe, pair_unpair, pair_unpair]
 
 /-- An always-true binary relation is recursively decidable (constant decider `1`). -/
 theorem recDecidable₂_of_forall {r : ℕ → ℕ → Prop} (h : ∀ n m, r n m) : RecDecidable₂ r :=
@@ -825,6 +836,12 @@ theorem primrec_pow : Nat.Primrec (Nat.unpaired fun b e => b ^ e) := by
   simp only [Nat.unpaired, unpair_pair_fst, unpair_pair_snd]
   exact recPow_eq p.unpair.1 p.unpair.2
 
+/-- `fun n => f n ^ g n` is primitive recursive. -/
+theorem primrec_pow₂ {f g : ℕ → ℕ} (hf : Nat.Primrec f) (hg : Nat.Primrec g) :
+    Nat.Primrec (fun n => f n ^ g n) :=
+  (primrec_pow.comp (hf.pair hg)).of_eq fun n => by
+    simp only [Nat.unpaired, unpair_pair_fst, unpair_pair_snd]
+
 /-- `n ↦ 2 ^ g n` is primitive recursive when `g` is. -/
 theorem primrec_two_pow {g : ℕ → ℕ} (hg : Nat.Primrec g) : Nat.Primrec (fun n => 2 ^ g n) :=
   (primrec_pow.comp ((Nat.Primrec.const 2).pair hg)).of_eq fun n => by
@@ -904,6 +921,8 @@ def isZero (n : ℕ) : ℕ := 1 - min n 1
 
 theorem isZero_eq_one_iff (n : ℕ) : isZero n = 1 ↔ n = 0 := by
   unfold isZero; omega
+
+theorem isZero_le_one (n : ℕ) : isZero n ≤ 1 := by unfold isZero; omega
 
 theorem primrec_isZero : Nat.Primrec isZero := by
   have hmin : Nat.Primrec (fun n => min n 1) :=
@@ -1062,6 +1081,26 @@ theorem primrec_bExistsFn_param {g : ℕ → ℕ} (hg : Nat.Primrec g) :
           (Nat.Primrec.pair (Nat.Primrec.left.comp Nat.Primrec.right)
             (Nat.Primrec.right.comp Nat.Primrec.left)))))
   have hprec := Nat.Primrec.prec (Nat.Primrec.const 0) hGfn
+  refine (hprec.comp (Nat.Primrec.left.pair Nat.Primrec.right)).of_eq fun t => ?_
+  simp only [Nat.unpaired, unpair_pair_fst, unpair_pair_snd]
+  rfl
+
+/-- Parametrized variant of `bForallFn`'s joint primrec (mirrors `primrec_bExistsFn_param`,
+swapping `selectFn`'s branches to match `bForallFn`'s `1`-base / AND-style step). -/
+theorem primrec_bForallFn_param {g : ℕ → ℕ} (hg : Nat.Primrec g) :
+    Nat.Primrec (fun t => bForallFn (fun p => g (Nat.pair t.unpair.1.unpair.1 p))
+      t.unpair.1.unpair.2 t.unpair.2) := by
+  have hGfn : Nat.Primrec (fun w =>
+      selectFn w.unpair.2.unpair.2
+        (isOne (g (Nat.pair w.unpair.1.unpair.1
+          (Nat.pair w.unpair.2.unpair.1 w.unpair.1.unpair.2)))) 0) :=
+    primrec_selectFn (Nat.Primrec.right.comp Nat.Primrec.right)
+      (primrec_isOne.comp (hg.comp
+        (Nat.Primrec.pair (Nat.Primrec.left.comp Nat.Primrec.left)
+          (Nat.Primrec.pair (Nat.Primrec.left.comp Nat.Primrec.right)
+            (Nat.Primrec.right.comp Nat.Primrec.left)))))
+      (Nat.Primrec.const 0)
+  have hprec := Nat.Primrec.prec (Nat.Primrec.const 1) hGfn
   refine (hprec.comp (Nat.Primrec.left.pair Nat.Primrec.right)).of_eq fun t => ?_
   simp only [Nat.unpaired, unpair_pair_fst, unpair_pair_snd]
   rfl
@@ -2485,6 +2524,36 @@ theorem listEqChar_eq_one_iff (c1 c2 : ℕ) :
     mulBit_eq_one_iff]
   exact (listEq_foldl_end_iff (decodeList c1) 1 c2 (Or.inr rfl)).trans (by simp)
 
+private theorem listEq_foldl_flag_le_one : ∀ (l : List ℕ) (z : ℕ), z.unpair.1 ≤ 1 →
+    (List.foldl listEqStep z l).unpair.1 ≤ 1 := by
+  intro l
+  induction l with
+  | nil => intro z hz; exact hz
+  | cons x xs ih =>
+    intro z hz
+    simp only [List.foldl_cons]
+    apply ih
+    show (listEqStp (Nat.pair x (Nat.pair z 0))).unpair.1 ≤ 1
+    have hkey := listEqStp_acc z.unpair.1 z.unpair.2 x
+    rw [Nat.pair_unpair] at hkey
+    rw [hkey]
+    rcases (show isZero z.unpair.2 = 0 ∨ isZero z.unpair.2 = 1 from by
+      have := isZero_le_one z.unpair.2; omega) with h0 | h1
+    · rw [h0, selectFn_zero, unpair_pair_fst]
+      rcases (show z.unpair.1 = 0 ∨ z.unpair.1 = 1 from by omega) with hf0 | hf1
+      · rw [hf0, selectFn_zero]; exact Nat.zero_le 1
+      · rw [hf1, selectFn_one]
+        have := natEqChar_le_one x (z.unpair.2 - 1).unpair.1
+        omega
+    · rw [h1, selectFn_one, unpair_pair_fst]; exact Nat.zero_le 1
+
+theorem listEqChar_le_one (c1 c2 : ℕ) : listEqChar c1 c2 ≤ 1 := by
+  unfold listEqChar
+  rw [foldCode_eq', show (fun acc x => listEqStp (Nat.pair x (Nat.pair acc 0))) = listEqStep from rfl]
+  exact mulBit_le_one
+    (listEq_foldl_flag_le_one (decodeList c1) (Nat.pair 1 c2) (by simp))
+    (isZero_le_one _)
+
 set_option maxHeartbeats 800000 in
 theorem primrec_listEqStpNonzero : Nat.Primrec listEqStpNonzero := by
   have hflag := Nat.Primrec.left.comp (Nat.Primrec.left.comp Nat.Primrec.right)
@@ -3288,6 +3357,19 @@ theorem primrec_matchesBChar : ∀ fuel, Nat.Primrec (fun t => matchesBChar fuel
     simpa [matchesBChar] using
       primrec_matchesBCharBody (primrec_matchesBChar fuel)
 
+theorem matchesBChar_le_one : ∀ fuel c cw, matchesBChar fuel c cw ≤ 1
+  | 0, _, _ => by simp [matchesBChar]
+  | fuel + 1, c, cw => by
+    rw [matchesBChar, matchesBCharBody_eq]
+    match tag : c.unpair.1 with
+    | 0 => simp
+    | 1 => exact listEqChar_le_one _ _
+    | 2 => exact bExistsFn_le_one _ _ _
+    | 3 =>
+      dsimp only
+      exact mulBit_le_one (matchesBChar_le_one fuel _ _) (matchesBChar_le_one fuel _ _)
+    | _ + 4 => simp
+
 /-! ### `matchesBChar` jointly primitive recursive in `(fuel, code)`, `code := pair c cw`
 
 Harder than `decodeFuelOkChar`/`autStateCardFuelChar`: the cat branch's recursive calls are at
@@ -3684,5 +3766,223 @@ theorem primrec_consistentBChar2 :
           (Nat.Primrec.right.comp Nat.Primrec.right)))
   exact (primrec_decideNonemptyBChar2.comp hpack).of_eq fun s => by
     simp only [unpair_pair_fst, unpair_pair_snd, consistentBChar, capCode]
+
+/-! ## Exercise 7.22k (Session C7b, optional) — `subsetBChar`, `interEqChar`
+
+`Exercise722Equiv.lean` builds a *Bool-level* decider `interEqB` for language equivalence
+(`denote e₁ = denote e₂`), via a choice-free `Finset`-valued subset-construction simulation of
+`toNFA e` (needed since `.cat` makes `toNFA e` genuinely nondeterministic — "e₂ rejects w" is a
+universal statement over nondeterministic paths, which doesn't pump the way existential
+acceptance does). That construction is cited here **only** for its length bound
+(`exists_diff_word_short`, wrapped in `subsetB_iff`/`interEqB_iff`); the numeric mirror below does
+**not** re-encode `Finset (autState e)` at all — `interEqB`'s own definition is just a bounded
+search calling `matchesB`, which already has a joint `(fuel, code)`-primitive-recursive mirror
+(`matchesBChar`, C9b5/C9b8). Only the *bound formula* and the *bounded-forall* wiring are new. -/
+
+/-- Numeric mirror of `Fintype.card (Finset (autState e₁) × Finset (autState e₂))`
+(`exists_diff_word_short`'s state-count bound), via `autStateCard_eq_card` +
+`Fintype.card_finset`/`card_prod`. -/
+def subsetBoundChar (fuel c1 c2 : ℕ) : ℕ :=
+  2 ^ (autStateCardFuelChar fuel c1) * 2 ^ (autStateCardFuelChar fuel c2)
+
+/-- `{0,1}` gate: code `i` is a valid bit-string of length `≤ subsetBoundChar fuel c1 c2`. Screens
+out both non-bit-string codes (`allBinDigitsChar`) and over-long ones (`listLenChar` vs the bound),
+so the bounded-forall search below never needs the (false) converse of `codeBound_ge`. -/
+def subsetGuardChar (fuel c1 c2 i : ℕ) : ℕ :=
+  mulBit (allBinDigitsChar i) (isOne (1 - (listLenChar i - subsetBoundChar fuel c1 c2)))
+
+theorem subsetGuardChar_le_one (fuel c1 c2 i : ℕ) : subsetGuardChar fuel c1 c2 i ≤ 1 :=
+  mulBit_le_one (allBinDigitsChar_le_one _) (isOne_le_one _)
+
+/-- `{0,1}` mirror of `subsetB`: bounded-forall over valid short bit-string codes `i`, checking
+"`i` matches `c1` ⟹ `i` matches `c2`" via `matchesBChar`. -/
+@[irreducible] def subsetBChar (fuel c1 c2 : ℕ) : ℕ :=
+  bForallFn (fun p =>
+      selectFn (subsetGuardChar fuel p.unpair.2.unpair.1 p.unpair.2.unpair.2 p.unpair.1)
+        (selectFn (matchesBChar fuel p.unpair.2.unpair.1 p.unpair.1)
+          (matchesBChar fuel p.unpair.2.unpair.2 p.unpair.1) 1)
+        1)
+    (Nat.pair c1 c2) (codeBound (subsetBoundChar fuel c1 c2))
+
+set_option maxHeartbeats 800000 in
+theorem subsetBChar_eq_one_iff {fuel : ℕ} {e1 e2 : SExpr}
+    (h1 : c9b5_sexprDepth e1 ≤ fuel) (h2 : c9b5_sexprDepth e2 ≤ fuel) :
+    subsetBChar fuel (c9b5_sexprGodelEncode e1) (c9b5_sexprGodelEncode e2) = 1 ↔
+      denote e1 ⊆ denote e2 := by
+  rw [← subsetB_iff]
+  have hbound : subsetBoundChar fuel (c9b5_sexprGodelEncode e1) (c9b5_sexprGodelEncode e2) =
+      Fintype.card (Finset (autState e1) × Finset (autState e2)) := by
+    unfold subsetBoundChar
+    rw [autStateCardFuelChar_eq_autStateCard h1, autStateCardFuelChar_eq_autStateCard h2,
+      autStateCard_eq_card, autStateCard_eq_card, Fintype.card_prod, Fintype.card_finset,
+      Fintype.card_finset]
+  unfold subsetB subsetBChar
+  rw [List.all_eq_true, bForallFn_eq_one_iff]
+  simp only [unpair_pair_fst, unpair_pair_snd, hbound]
+  constructor
+  · intro h w hwmem
+    rw [mem_wordsUpTo] at hwmem
+    have hi := h (c9b5_encodeListBool w) (c9b6_encodeListBool_lt_codeBound hwmem)
+    have hguard1 : subsetGuardChar fuel (c9b5_sexprGodelEncode e1) (c9b5_sexprGodelEncode e2)
+        (c9b5_encodeListBool w) = 1 := by
+      unfold subsetGuardChar
+      rw [c9b6_allBinDigitsChar_encodeListBool, mulBit, one_mul, listLenChar_eq,
+        c9b5_decodeList_encodeListBool, List.length_map, hbound,
+        Nat.sub_eq_zero_of_le hwmem]
+      exact isOne_one
+    rw [hguard1, selectFn_one] at hi
+    by_cases hc1 : matchesBChar fuel (c9b5_sexprGodelEncode e1) (c9b5_encodeListBool w) = 1
+    · rw [hc1, selectFn_one] at hi
+      simp only [Bool.or_eq_true, Bool.not_eq_true]
+      exact Or.inr ((matchesBChar_eq_one_iff h2).mp hi)
+    · have hc1' : matchesBChar fuel (c9b5_sexprGodelEncode e1) (c9b5_encodeListBool w) = 0 := by
+        have := matchesBChar_le_one fuel (c9b5_sexprGodelEncode e1) (c9b5_encodeListBool w)
+        omega
+      simp only [Bool.or_eq_true, Bool.not_eq_true]
+      refine Or.inl ?_
+      by_contra hcontra
+      exact hc1 ((matchesBChar_eq_one_iff h1).mpr (by simpa using hcontra))
+  · intro h i _
+    rcases (show subsetGuardChar fuel (c9b5_sexprGodelEncode e1) (c9b5_sexprGodelEncode e2) i = 0 ∨
+        subsetGuardChar fuel (c9b5_sexprGodelEncode e1) (c9b5_sexprGodelEncode e2) i = 1 from by
+      have := subsetGuardChar_le_one fuel (c9b5_sexprGodelEncode e1) (c9b5_sexprGodelEncode e2) i
+      omega) with hguard | hguard
+    · rw [hguard, selectFn_zero]
+    · rw [hguard, selectFn_one]
+      unfold subsetGuardChar at hguard
+      rw [mulBit_eq_one_iff, isOne_eq_one_iff] at hguard
+      obtain ⟨hallbin, hlen0⟩ := hguard
+      have hlenle : listLenChar i ≤
+          Fintype.card (Finset (autState e1) × Finset (autState e2)) := by omega
+      have hieq : c9b5_encodeListBool (c9b6_decodeListBool i) = i :=
+        c9b6_encodeListBool_decodeListBool_of_allBin hallbin
+      have hwlen : (c9b6_decodeListBool i).length ≤
+          Fintype.card (Finset (autState e1) × Finset (autState e2)) := by
+        unfold c9b6_decodeListBool
+        rw [List.length_map]
+        rwa [listLenChar_eq] at hlenle
+      have hwmem := (mem_wordsUpTo _).mpr hwlen
+      have hspec := h (c9b6_decodeListBool i) hwmem
+      rw [← hieq]
+      by_cases hc1 : matchesBChar fuel (c9b5_sexprGodelEncode e1) (c9b5_encodeListBool
+          (c9b6_decodeListBool i)) = 1
+      · rw [hc1, selectFn_one]
+        have hc1matches : matchesB e1 (c9b6_decodeListBool i) = true :=
+          (matchesBChar_eq_one_iff h1).mp hc1
+        simp only [Bool.or_eq_true, Bool.not_eq_true] at hspec
+        rcases hspec with hf | ht
+        · rw [hc1matches] at hf; simp at hf
+        · exact (matchesBChar_eq_one_iff h2).mpr ht
+      · have hc1' : matchesBChar fuel (c9b5_sexprGodelEncode e1)
+            (c9b5_encodeListBool (c9b6_decodeListBool i)) = 0 := by
+          have := matchesBChar_le_one fuel (c9b5_sexprGodelEncode e1)
+            (c9b5_encodeListBool (c9b6_decodeListBool i))
+          omega
+        rw [hc1', selectFn_zero]
+
+theorem subsetBChar_le_one (fuel c1 c2 : ℕ) : subsetBChar fuel c1 c2 ≤ 1 := by
+  unfold subsetBChar; exact bForallFn_le_one _ _ _
+
+theorem primrec_subsetBChar :
+    Nat.Primrec (fun s => subsetBChar s.unpair.1 s.unpair.2.unpair.1 s.unpair.2.unpair.2) := by
+  have hg : Nat.Primrec (fun u => selectFn
+      (subsetGuardChar u.unpair.1 u.unpair.2.unpair.2.unpair.1 u.unpair.2.unpair.2.unpair.2
+        u.unpair.2.unpair.1)
+      (selectFn (matchesBChar u.unpair.1 u.unpair.2.unpair.2.unpair.1 u.unpair.2.unpair.1)
+        (matchesBChar u.unpair.1 u.unpair.2.unpair.2.unpair.2 u.unpair.2.unpair.1) 1) 1) := by
+    have hfuel : Nat.Primrec (fun u : ℕ => u.unpair.1) := Nat.Primrec.left
+    have hi : Nat.Primrec (fun u : ℕ => u.unpair.2.unpair.1) :=
+      Nat.Primrec.left.comp Nat.Primrec.right
+    have hc1 : Nat.Primrec (fun u : ℕ => u.unpair.2.unpair.2.unpair.1) :=
+      Nat.Primrec.left.comp (Nat.Primrec.right.comp Nat.Primrec.right)
+    have hc2 : Nat.Primrec (fun u : ℕ => u.unpair.2.unpair.2.unpair.2) :=
+      Nat.Primrec.right.comp (Nat.Primrec.right.comp Nat.Primrec.right)
+    have hguard : Nat.Primrec (fun u => subsetGuardChar u.unpair.1 u.unpair.2.unpair.2.unpair.1
+        u.unpair.2.unpair.2.unpair.2 u.unpair.2.unpair.1) := by
+      have hbound : Nat.Primrec (fun u => subsetBoundChar u.unpair.1
+          u.unpair.2.unpair.2.unpair.1 u.unpair.2.unpair.2.unpair.2) := by
+        have h1 : Nat.Primrec (fun u => autStateCardFuelChar u.unpair.1
+            u.unpair.2.unpair.2.unpair.1) := by
+          have := primrec_autStateCardFuelChar2
+          exact (this.comp (Nat.Primrec.pair hfuel hc1)).of_eq fun u => by
+            simp only [unpair_pair_fst, unpair_pair_snd]
+        have h2 : Nat.Primrec (fun u => autStateCardFuelChar u.unpair.1
+            u.unpair.2.unpair.2.unpair.2) := by
+          have := primrec_autStateCardFuelChar2
+          exact (this.comp (Nat.Primrec.pair hfuel hc2)).of_eq fun u => by
+            simp only [unpair_pair_fst, unpair_pair_snd]
+        exact (primrec_mul₂ (primrec_pow₂ (Nat.Primrec.const 2) h1)
+          (primrec_pow₂ (Nat.Primrec.const 2) h2))
+      exact (primrec_mulBit.comp (Nat.Primrec.pair
+        (primrec_allBinDigitsChar.comp hi)
+        (primrec_isOne.comp (primrec_sub₂ (Nat.Primrec.const 1)
+          (primrec_sub₂ (primrec_listLenChar.comp hi) hbound))))).of_eq fun u => by
+        simp only [unpair_pair_fst, unpair_pair_snd, subsetGuardChar, mulBit]
+    have hm1 : Nat.Primrec (fun u => matchesBChar u.unpair.1 u.unpair.2.unpair.2.unpair.1
+        u.unpair.2.unpair.1) := by
+      have := primrec_matchesBChar2
+      exact (this.comp (Nat.Primrec.pair hfuel (Nat.Primrec.pair hc1 hi))).of_eq fun u => by
+        simp only [unpair_pair_fst, unpair_pair_snd]
+    have hm2 : Nat.Primrec (fun u => matchesBChar u.unpair.1 u.unpair.2.unpair.2.unpair.2
+        u.unpair.2.unpair.1) := by
+      have := primrec_matchesBChar2
+      exact (this.comp (Nat.Primrec.pair hfuel (Nat.Primrec.pair hc2 hi))).of_eq fun u => by
+        simp only [unpair_pair_fst, unpair_pair_snd]
+    exact primrec_selectFn hguard (primrec_selectFn hm1 hm2 (Nat.Primrec.const 1))
+      (Nat.Primrec.const 1)
+  have hb := primrec_bForallFn_param hg
+  have hpack : Nat.Primrec (fun s => Nat.pair
+      (Nat.pair s.unpair.1 (Nat.pair s.unpair.2.unpair.1 s.unpair.2.unpair.2))
+      (codeBound (subsetBoundChar s.unpair.1 s.unpair.2.unpair.1 s.unpair.2.unpair.2))) := by
+    have hfuel : Nat.Primrec (fun s : ℕ => s.unpair.1) := Nat.Primrec.left
+    have hc1 : Nat.Primrec (fun s : ℕ => s.unpair.2.unpair.1) :=
+      Nat.Primrec.left.comp Nat.Primrec.right
+    have hc2 : Nat.Primrec (fun s : ℕ => s.unpair.2.unpair.2) :=
+      Nat.Primrec.right.comp Nat.Primrec.right
+    have h1 : Nat.Primrec (fun s => autStateCardFuelChar s.unpair.1 s.unpair.2.unpair.1) := by
+      have := primrec_autStateCardFuelChar2
+      exact (this.comp (Nat.Primrec.pair hfuel hc1)).of_eq fun s => by
+        simp only [unpair_pair_fst, unpair_pair_snd]
+    have h2 : Nat.Primrec (fun s => autStateCardFuelChar s.unpair.1 s.unpair.2.unpair.2) := by
+      have := primrec_autStateCardFuelChar2
+      exact (this.comp (Nat.Primrec.pair hfuel hc2)).of_eq fun s => by
+        simp only [unpair_pair_fst, unpair_pair_snd]
+    have hbnd : Nat.Primrec (fun s => subsetBoundChar s.unpair.1 s.unpair.2.unpair.1
+        s.unpair.2.unpair.2) :=
+      primrec_mul₂ (primrec_pow₂ (Nat.Primrec.const 2) h1) (primrec_pow₂ (Nat.Primrec.const 2) h2)
+    exact Nat.Primrec.pair (Nat.Primrec.pair hfuel (Nat.Primrec.pair hc1 hc2))
+      (primrec_codeBound.comp hbnd)
+  exact (hb.comp hpack).of_eq fun s => by
+    simp only [unpair_pair_fst, unpair_pair_snd, subsetBChar]
+
+/-- **Exercise 7.22k (optional).** `{0,1}` mirror of `interEqB`: relation (i) — language
+equivalence — via `subsetBChar` in both directions. -/
+@[irreducible] def interEqChar (fuel c1 c2 : ℕ) : ℕ :=
+  mulBit (subsetBChar fuel c1 c2) (subsetBChar fuel c2 c1)
+
+theorem interEqChar_le_one (fuel c1 c2 : ℕ) : interEqChar fuel c1 c2 ≤ 1 := by
+  unfold interEqChar; exact mulBit_le_one (subsetBChar_le_one _ _ _) (subsetBChar_le_one _ _ _)
+
+theorem interEqChar_eq_one_iff {fuel : ℕ} {e1 e2 : SExpr}
+    (h1 : c9b5_sexprDepth e1 ≤ fuel) (h2 : c9b5_sexprDepth e2 ≤ fuel) :
+    interEqChar fuel (c9b5_sexprGodelEncode e1) (c9b5_sexprGodelEncode e2) = 1 ↔
+      denote e1 = denote e2 := by
+  unfold interEqChar
+  rw [mulBit_eq_one_iff, subsetBChar_eq_one_iff h1 h2, subsetBChar_eq_one_iff h2 h1,
+    ← Set.Subset.antisymm_iff]
+
+theorem primrec_interEqChar :
+    Nat.Primrec (fun s => interEqChar s.unpair.1 s.unpair.2.unpair.1 s.unpair.2.unpair.2) := by
+  have hswap : Nat.Primrec (fun s : ℕ =>
+      Nat.pair s.unpair.1 (Nat.pair s.unpair.2.unpair.2 s.unpair.2.unpair.1)) :=
+    Nat.Primrec.pair Nat.Primrec.left
+      (Nat.Primrec.pair (Nat.Primrec.right.comp Nat.Primrec.right)
+        (Nat.Primrec.left.comp Nat.Primrec.right))
+  have h1 := primrec_subsetBChar
+  have h2 : Nat.Primrec (fun s => subsetBChar s.unpair.1 s.unpair.2.unpair.2 s.unpair.2.unpair.1) :=
+    (primrec_subsetBChar.comp hswap).of_eq fun s => by
+      simp only [unpair_pair_fst, unpair_pair_snd]
+  exact (primrec_mulBit.comp (Nat.Primrec.pair h1 h2)).of_eq fun s => by
+    simp only [unpair_pair_fst, unpair_pair_snd, interEqChar]
 
 end Domain.Recursive

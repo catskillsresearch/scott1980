@@ -1,10 +1,9 @@
 # Exercise 7.22 — Composer Autorun (single @ file)
 
-> **Framing (2026-06-30):** Scott's Exercise 7.22 is **formalized** (`arxiv.md` rows **7.22a–h**,
-> **7.22i(a)** Pass). Remaining sessions certify the existing Bool deciders as **`RecDecidable₂`**
-> inside `Recursive.lean`—**interface repair**, not new domain theory. Inventory open rows:
-> **7.22i(b)1–8** (C9b1–C9b8), **7.22j** (C10), **7.22k** (C7b, optional), **7.22l** (formal infinite
-> words, optional).
+> **Framing (2026-07-01):** Scott's Exercise 7.22 is **formalized** (`arxiv.md` rows **7.22a–h**,
+> **7.22i(a)–(b)8**, **7.22j**, **7.22k** all Pass). Only optional **7.22l** (formal infinite-word
+> equations) remains, plus optionally upgrading `Ssys_partially_effectively_given` to a full
+> `ComputablePresentation` (`inter`/`inter_primrec`/`inter_spec`/`masterIdx`).
 >
 > **You (the agent) were invoked with `@Exercise722-Composer-Run.md` only.**
 > **The user will not paste anything else.** Follow § AUTORUN below.
@@ -75,7 +74,7 @@ You are a Lean 4 proof engineer in `/home/catskills/Desktop/scott1980` (mathlib 
 | C5 | `decideEmptyB` + `Decidable` | ☑ | C4 | 7.22f |
 | C6 | `consistentB` (relation ii) | ☑ | C5 | 7.22f |
 | C7a | document interEq gap | ☑ | C5 | 7.22k |
-| C7b | full equivalence | ☐ optional | C5 | 7.22k |
+| C7b | full equivalence | Pass | C5 | 7.22k |
 | C8 | `SsysX` enumeration | ☑ | C5 | 7.22g |
 | **C9a** | first missing **generic** `Nat.Primrec` lemma in `Recursive.lean` | ☑ | C6, C8 | 7.22i(a) |
 | **C9b** | `primrec_ssysConsChar` + `Ssys_cons_computable` (umbrella) | Pass | C9a | 7.22i(b) |
@@ -312,9 +311,13 @@ theorem consistentB_iff (a b : SExpr) :
 
 ---
 
-## Session C7b — DEFER
+## Session C7b — DONE (2026-07-01)
 
-Do not execute unless user explicitly requests and budget allows.
+Completed: `Exercise722Equiv.lean` (choice-free `Finset`-subset-construction simulation of `toNFA e`,
+`interEqB`) + `Recursive.lean` (`interEqChar` primrec mirror, routed through the existing
+`matchesBChar` joint fuel/code primrec rather than a new automaton-level encoding) +
+`Exercise722Presentation.lean` (`Ssys_interEq_computable`). See `arxiv.md` 7.22k and `HANDOFF.md`
+2026-07-01 checkpoint for the full design/perf-pitfall notes.
 
 ---
 

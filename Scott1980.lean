@@ -156,4 +156,5 @@ import Scott1980.Neighborhood.Exercise722DFA
 import Scott1980.Neighborhood.Exercise722Cat
 import Scott1980.Neighborhood.Exercise722Decide
 import Scott1980.Neighborhood.Exercise722Words
+import Scott1980.Neighborhood.Exercise722Equiv
 import Scott1980.Neighborhood.Exercise722Presentation

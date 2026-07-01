@@ -19,15 +19,29 @@ A session may begin after a context reset; chat memory is not durable, these fil
    end-of-item checklist that keeps this file + `arxiv.md` current).
 6. **Exercise 7.22 (split inventory):** Scott's construction is **formalized** — grep `Exercise 7.22`
    in `arxiv.md`: rows **7.22a–h**, **7.22i(a)**, **7.22i(b)1(a–e)**, **7.22i(b)2–8**, the
-   **7.22i(b)** umbrella, and **7.22j** are **all Pass** (`Ssys_cons_computable` proved — Definition
-   7.1 (ii) consistency is recursively decidable; `Ssys_partially_effectively_given` packages this
-   as a `ConsistencyPresentation`, choice-free save for the inherited list-extensionality
-   `Classical.choice`). **7.22k–l** are **Not Yet**, both **optional** (do not block the paper).
-   **`@Exercise722-Composer-Run.md`** only (one @ per session). **Composer tracker:** C1–C8 ☑,
-   C11 ☑, C12 ☑; **C9a** → **7.22i(a)** ☑; **C9b1–C9b8** → **7.22i(b)1–8** ☑ (umbrella **C9b** ☑);
-   **C10** → **7.22j** ☑; **next eligible ☐ (optional only):** **C7b** → **7.22k** (full relation
-   (i) `interEq` decider, needs complement automaton machinery). Do **not** duplicate encode/decode in a monolith
-   (`Exercise722Primrec.lean` was abandoned 2026-06-29).
+   **7.22i(b)** umbrella, **7.22j**, and **7.22k** are **all Pass** (`Ssys_cons_computable`:
+   Definition 7.1 (ii) consistency recursively decidable; `Ssys_interEq_computable`: Definition
+   7.1 (i) language-equivalence recursively decidable; both choice-free save for the inherited
+   list-extensionality `Classical.choice`). **7.22l** is **Not Yet**, **optional** (infinite-word
+   equations; does not block the paper). **`@Exercise722-Composer-Run.md`** only (one @ per
+   session). **Composer tracker:** C1–C8 ☑, C11 ☑, C12 ☑; **C9a** → **7.22i(a)** ☑; **C9b1–C9b8**
+   → **7.22i(b)1–8** ☑ (umbrella **C9b** ☑); **C10** → **7.22j** ☑; **C7b** → **7.22k** ☑
+   (`Exercise722Equiv.lean`: choice-free `Finset`-subset-construction simulation of `toNFA e`
+   proving `interEqB`/`interEqChar`; `Ssys_interEq_computable` in `Exercise722Presentation.lean`).
+   **Remaining optional:** upgrading `Ssys_partially_effectively_given` (`ConsistencyPresentation`)
+   to a full `Ssys_effectively_given` (`ComputablePresentation`) additionally needs `inter`/
+   `inter_primrec`/`inter_spec`/`masterIdx` fields (Definition71.lean) — not yet attempted, now
+   unblocked since `interEq_computable`'s hard math is done. Do **not** duplicate encode/decode in
+   a monolith (`Exercise722Primrec.lean` was abandoned 2026-06-29).
+   **Perf pitfall (2026-07-01):** large recursive `Nat → Nat` "Char" definitions (`subsetBChar`,
+   `interEqChar`) MUST be marked `@[irreducible]` if they're ever composed **more than once** inside
+   another `def`'s body (e.g. two calls wrapped in `capCode`/`+`) — without it, the elaborator's
+   implicit unification tries to WHNF-unfold the whole call graph and blows up
+   super-linearly (minutes → hours, doesn't even respect `maxHeartbeats`, since the hang is inside a
+   single non-yielding `whnf`/`isDefEq` call). Diagnosed by bisecting a `def`'s body down to a
+   2-line reproduction and timing `lake env lean <file>.lean` directly (bypasses `lake build`'s
+   dependency-graph noise). `unfold`/`show ... from` still work fine on `@[irreducible]` defs inside
+   tactic proofs; only *automatic* elaboration-time unfolding is blocked.
 
 **Exercise 7.22 — Scott formalized; PR certification open (2026-06-30).** Inventory split in
 `arxiv.md`: **7.22a–h Pass** (LFP `InS`, positive `Ssys`, semigroup/embedding, regular events,
@@ -4374,3 +4388,68 @@ exercise's closing theorem. `lake build` (whole workspace) green; zero `sorry`;
 7.22j Pass.** **Next:** optional **C7b** / **7.22k** (full relation (i) `interEq` decider via
 complement automaton + product construction, or Myhill–Nerode bisimulation on `autState`) —
 does not block the paper; otherwise the Exercise 7.22 inventory is **done**.
+
+---
+
+**2026-07-01 — C7b / 7.22k Pass (optional, done anyway).** Full Definition 7.1 relation (i) —
+`Xₙ ∩ Xₘ = X_k`, i.e. `SExpr` language equivalence — is now recursively decidable. Two-phase build,
+**both phases needed** (the Bool-level decider alone would not satisfy `RecDecidable₃`'s literal
+type):
+
+**Phase 1 (`Exercise722Equiv.lean`, new file) — Bool-level `interEqB`.** `toNFA e` (`autState e`,
+`Exercise722Decide.lean`) is genuinely nondeterministic once `.cat` is involved (ε-closure fans one
+state to several live states), so "e₂ rejects w" — needed for `⊆` — is a *universal* statement over
+nondeterministic paths that doesn't pump the way existential acceptance does
+(`exists_accepted_word_short`). Fix: a **choice-free `Finset`-valued subset-construction simulation**
+of `toNFA e` — `acceptFin`/`startFin`/`stepFinSingle`/`stepFin`/`evalFin`, each proved to agree with
+`toNFA e`'s actual `Set`-valued semantics (`coe_acceptFin` etc.), built by recursion mirroring
+`toNFA` exactly (the `.cat` case's ε-closure handled via one-hop `if`-gating on
+`catEps_mem_εClosure_iff`, matching how `startFin`/`stepFinSingle` already had to reason about it).
+A **`diffNFA e₁ e₂ : NFA Bool (Finset (autState e₁) × Finset (autState e₂))`** tracks both sides'
+live-state-`Finset`s *simultaneously* via a deterministic (singleton-step) NFA, so the **generic**
+`exists_accepted_word_short` (never previously reused outside its own file — genuinely stated for
+any `Fintype`-state `NFA`, not just `toNFA e`) bounds the length of a shortest `denote e₁ ⊄ denote
+e₂` witness by `Fintype.card (Finset (autState e₁) × Finset (autState e₂))`. `subsetB`/`interEqB`
+then do an ordinary `wordsUpTo`-bounded search calling `matchesB` (`subsetB_iff`/`interEqB_iff`).
+**No new automaton-level Nat.Primrec mirror was needed for Phase 2** — the payoff of routing
+through `matchesB` (which already has a joint `(fuel,code)`-primrec mirror, `matchesBChar`,
+C9b5/C9b8) rather than a bespoke DFA/complement construction.
+
+**Phase 2 (`Recursive.lean`) — `Nat.Primrec` mirror.** `primrec_bForallFn_param` (mirrors
+`primrec_bExistsFn_param`, swapped `selectFn` branches for `bForallFn`'s AND-style step).
+`autStateCard_eq_card` (exact equality, not just `_le_card`) already existed, giving
+`Fintype.card (Finset (autState e₁) × Finset (autState e₂)) = 2^(autStateCardFuelChar …) ×
+2^(autStateCardFuelChar …)` as a plain Nat formula — reusing `autStateCardFuelChar`'s existing joint
+primrec (C9b8), no new course-of-values infrastructure required (the earlier scope estimate that
+this phase would need one was wrong: the Finset-NFA of Phase 1 is *only* a proof device for the
+length bound, never re-encoded numerically). New: `listEqChar_le_one`/`matchesBChar_le_one`
+(boundedness, needed for `selectFn` chains to behave correctly — didn't exist before since nothing
+previously needed them outside `_eq_one_iff` characterisations), `subsetGuardChar` (screens
+non-bit-string *and* over-long codes via `allBinDigitsChar` + `listLenChar` vs the bound, so the
+bounded-forall search never needs the false converse of `codeBound_ge`), `subsetBChar`/
+`interEqChar` + `_eq_one_iff` + joint primrec, `RecDecidable₃.of_triple_zero_one_char` (ternary
+analogue of `RecDecidable₂.of_paired_zero_one_char`, didn't exist).
+
+**Wiring (`Exercise722Presentation.lean`).** `safeDecodeActive`/`SsysX_eq_denote_safe` already gave
+a uniform canonical `SExpr` per index (junk → `.sigma`) — unlike `ssysConsistentBChar` (inactive
+trivially consistent with anything, since `Σ` is top), interEq genuinely needs the *real* canonical
+representative in every case, so `ssysCanonicalCode`/`ssysCanonicalCode_eq` bridge to it uniformly
+(no active/inactive case split needed downstream). `ssysInterEqChar` + `_eq_one_iff` + primrec +
+`Ssys_interEq_computable : RecDecidable₃ (fun n m k => SsysX n ∩ SsysX m = SsysX k)`.
+
+**Perf bug hunted and fixed** (see Resume Protocol note above): `ssysCanonicalCode`/`subsetBChar`/
+`interEqChar` all needed `@[irreducible]` once called ≥2× inside one `def` body, else elaboration
+hung for 10+ minutes (not a `maxHeartbeats`-catchable slowdown). Diagnosed via `lake env lean
+Exercise722Presentation.lean` directly + bisecting `ssysInterEqChar`'s body down to `ssysCanonicalCode
+n + ssysCanonicalCode m` (2 calls: hangs; 1 call: 4.6s) — `git stash`/`pop` mid-session also
+corrupted `lake`'s mtime-based cache once and caused a red herring full-project rebuild; don't stash
+uncommitted multi-file WIP with a live build in flight.
+
+`lake build` (whole workspace, 3120 jobs) green; zero `sorry`. Axiom audit:
+`interEqB_iff`/`subsetB_iff`/`exists_diff_word_short`/`interEqChar_eq_one_iff`/
+`primrec_interEqChar`/`ssysInterEqChar_eq_one_iff`/`primrec_ssysInterEqChar`/
+`Ssys_interEq_computable` all `⊆ {propext, Classical.choice, Quot.sound}` (same inherited-choice
+profile as the rest of the C9/C10 arc). New file `Exercise722Equiv.lean` wired into `Scott1980.lean`.
+**Exercise 7.22k Pass.** **Next:** optional — full `ComputablePresentation Ssys` (add `inter`/
+`inter_primrec`/`inter_spec`/`masterIdx` to upgrade `Ssys_partially_effectively_given` to
+`Ssys_effectively_given`), or **7.22l** (infinite-word equations); neither blocks the paper.
