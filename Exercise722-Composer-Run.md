@@ -1,8 +1,8 @@
 # Exercise 7.22 — Composer Autorun (single @ file)
 
-> **Framing (2026-07-01):** Scott's Exercise 7.22 is **formalized** (`arxiv.md` rows **7.22a–h**,
-> **7.22i(a)–(b)8**, **7.22j**, **7.22k** all Pass). Only optional **7.22l** (formal infinite-word
-> equations) remains, plus optionally upgrading `Ssys_partially_effectively_given` to a full
+> **Framing (2026-07-01):** Scott's Exercise 7.22 is **formalized**, and the inventory is
+> **complete** (`arxiv.md` rows **7.22a–h**, **7.22i(a)–(b)8**, **7.22j**, **7.22k**, **7.22l** all
+> Pass). Only an optional extension remains: upgrading `Ssys_partially_effectively_given` to a full
 > `ComputablePresentation` (`inter`/`inter_primrec`/`inter_spec`/`masterIdx`).
 >
 > **You (the agent) were invoked with `@Exercise722-Composer-Run.md` only.**
@@ -412,6 +412,18 @@ sub-slice per session.
 **BUILD:** `lake build Scott1980.Neighborhood.Exercise722`
 
 **TASK:** Answer Scott's equations in prose. Define σ⃗ as `{X ∈ S | ∀n, σⁿ ∈ X}`. Likely: σ⃗σ⃗=σ⃗ YES; 01⃗…=01⃗01⃗ NO.
+
+---
+
+## Session C13 — `streamArrow` (DONE, 2026-07-01)
+
+Completed: `Exercise722.lean` — Scott's infinite words `σ⃗`, defined *literally as he asks*, as a
+genuine least fixed point `σ⃗ = σσ⃗` in the domain `|S|` (`Theorem41.lean`'s `fixElement`, applied to
+a new approximable self-map `prependMap σ`, mirroring `Example44.lean`'s `a = 0(1a)`). All four of
+Scott's equations hold unconditionally (`streamArrow_mul_self` and friends), superseding the
+`streamElem`/`powerLang` proxy's open side-question (`InS (powerLang w)`, kept for reference, not
+part of Scott's actual question). Fully choice-free (`⊆ {propext, Quot.sound}`). See `arxiv.md`
+7.22l and `HANDOFF.md`'s 2026-07-01 checkpoint for the full design.
 
 ---
 

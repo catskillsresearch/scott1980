@@ -2690,7 +2690,7 @@ private theorem appendListTabFn_eq (c1 c2 len1 i : ℕ) :
       else
         (decodeList c2).getD (i - len1) 0 := by
   by_cases hlt : i < len1
-  · simp [appendListTabFn, unpair_pair_fst, unpair_pair_snd, hlt,
+  · simp [appendListTabFn, unpair_pair_fst, unpair_pair_snd, hlt, isZero,
       (isZero_succ_sub_len1 i len1).2 hlt, selectFn_one, nthCode_eq]
   · simp [appendListTabFn, unpair_pair_fst, unpair_pair_snd, hlt,
       isZero_succ_sub_len1_zero i len1 (Nat.le_of_not_gt hlt), selectFn_zero, nthCode_eq]

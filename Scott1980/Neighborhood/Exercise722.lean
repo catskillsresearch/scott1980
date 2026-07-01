@@ -1,4 +1,5 @@
 import Scott1980.Neighborhood.Basic
+import Scott1980.Neighborhood.Theorem41
 import Mathlib.Data.Set.Insert
 
 /-!
@@ -30,41 +31,47 @@ This file formalises the **algebraic core** of the exercise, fully and choice-fr
 * the **multiplication** `xy` on the domain `|S|` and the proof that it is **associative**, so `|S|`
   is a semigroup (`mulElem`, `mulElem_assoc`);
 * the **embedding** `σ ↦ {X ∈ S ∣ σ ∈ X}` of the free monoid into `|S|`, proved a semigroup
-  **homomorphism** (`emb_mul`) and **injective** (`emb_injective`).
+  **homomorphism** (`emb_mul`) and **injective** (`emb_injective`);
+* Scott's **infinite words** `σ⃗`, as genuine least fixed points `σ⃗ = σ · σ⃗` (Theorem 4.1) of
+  `x ↦ σ·x` realised as an approximable self-map `prependMap σ` on `|S|`, and **all four of Scott's
+  equations**, proved unconditionally (`streamArrow_mul_self` and friends, **Exercise 7.22l**).
 
-## On "effectively given" and the infinite-word equations (discussion)
+## Effective givenness (mechanised elsewhere in the project)
 
-Two parts of Scott's exercise are *not* mechanised here, and are discussed in prose rather than left
-as `sorry` (the file is `sorry`-free):
+Every member of `S` is a *regular event* (Scott's hint), and effective givenness is **fully
+mechanised** (not a gap): `Exercise722Regular.lean` (regularity), `Exercise722Decide.lean` /
+`Exercise722Cat.lean` / `Exercise722Equiv.lean` (explicit finite automata; emptiness and language
+equivalence deciders), `Recursive.lean` (the choice-free primitive-recursive `Nat.Primrec` mirrors),
+and `Exercise722Presentation.lean` (`Ssys_cons_computable`, `Ssys_interEq_computable`: Definition 7.1
+relations (ii) and (i) are recursively decidable). See `arxiv.md`, Exercise 7.22a–k (all Pass).
 
-* **Effective givenness.** Every member of `S` is a *regular event* (Scott's hint): `Σ = {0,1}*` and
-  every singleton `{σ}` is regular, and regular languages are closed under concatenation `XY` and
-  intersection `X ∩ Y`. An enumeration `X : ℕ → Set Σ` of `S` is obtained by Gödel-numbering the
-  finite *syntax* of `S`-terms (the four generators `Σ`, `{σ}`, `·` for `XY`, `∩`). Scott's two
-  decidability relations (Definition 7.1) — `Xₙ ∩ Xₘ = X_k` and the consistency `∃k. X_k ⊆ Xₙ ∩ Xₘ`
-  (which by **positivity** is just non-emptiness of `Xₙ ∩ Xₘ`) — are decidable because the *set
-  algebra of regular events* is decidable (emptiness and equivalence of regular languages are
-  decidable, e.g. via minimal DFAs / Myhill–Nerode, cf. `Example62Regular.lean`). Mechanising that
-  decision procedure inside this project's bespoke **choice-free** recursion theory
-  (`Recursive.lean`) would require building the automata-theoretic decision algorithms primitively;
-  that is a separate, large undertaking and is left as the documented gap. The neighbourhood-system
-  content (positivity) and the algebra (semigroup + embedding) are complete.
+## Infinite words (Exercise 7.22l)
 
-* **Infinite words.** Scott's last questions ask about *infinite words* in `S` and whether certain
-  **multiplicative equations** hold in `|S|`. We formalise **`w⃗`** as the filter
-  `Z ↦ InS Z ∧ ∀ n, wⁿ ∈ Z` (`streamElem`), and check Scott's equations as Lean theorems when the
-  witness language `{wⁿ}` lies in `S` (`InS (powerLang w)`): `streamElem_idempotent` gives
-  `w⃗ · w⃗ = w⃗`, and associativity gives the triple-product form; the `σ ++ [true]` case is the
-  same with `w = σ ++ [true]`. Scott's last question (`01⃗⁴ = 01⃗²`?) is conditional on
-  `InS (powerLang [false, true])` — if that language is not in `S`, the power-filter model and Scott's
-  LFP reading may diverge (see **7.22l**).
+Scott's last questions ask about *infinite words* in `S` and whether certain multiplicative
+equations hold in `|S|`. We answer them **the way Scott poses the question**: `σ⃗` is a genuine
+**least fixed point in the domain `|S|`**, `σ⃗ = σ · σ⃗` (`streamArrow`, `streamArrow_eq`), built with
+this project's existing Theorem 4.1 machinery — the same construction as `Example44.lean`'s
+alternating sequence `a = 0(1a)` — rather than a set-theoretic proxy. All four of Scott's equations
+then hold **unconditionally**, with no side-condition and no open question:
+`streamArrow_mul_self` (`σ⃗σ⃗ = σ⃗`), `streamArrow_mul_self_self` (`σ⃗σ⃗σ⃗ = σ⃗`),
+`streamArrow_mul_self_append_true` (`σ1⃗ · σ1⃗ = σ1⃗`), and `streamArrow_containsZero_pow_four`
+(`01⃗01⃗01⃗01⃗ = 01⃗01⃗`).
 
-Everything below depends only on `propext` / `Quot.sound` (no `Classical.choice`).
+(An earlier pass answered the same questions via a *set-theoretic proxy* instead: `streamElem w`,
+the filter `Z ↦ InS Z ∧ ∀n, wⁿ ∈ Z`, conditional on the side-question `InS (powerLang w)` — is the
+language `{wⁿ}` itself a member of `S`? That side-question turned out to be a genuinely open
+combinatorics-on-words question (kept below, `streamElem`/`powerLang`, for reference), but it is
+*not* Scott's question — it was an artefact of choosing that particular proxy, and `streamArrow`
+above answers Scott's actual equations without ever needing it.)
+
+Everything in this file depends only on `propext` / `Quot.sound` (no `Classical.choice`).
 -/
 
 namespace Scott1980.Neighborhood
 
 namespace Exercise722
+
+open NeighborhoodSystem ApproximableMap
 
 /-! ## Concatenation of languages over `Σ = {0,1}*`
 
@@ -252,6 +259,140 @@ theorem emb_injective : Function.Injective emb := by
   intro σ τ h
   have hmem : (emb τ).mem {σ} := h ▸ (⟨InS.singleton σ, rfl⟩ : (emb σ).mem {σ})
   exact (Set.mem_singleton_iff.mp hmem.2).symm
+
+/-! ## Infinite words as genuine least fixed points (Exercise 7.22l)
+
+Scott's actual question defines `σ⃗` **as a least fixed point in the domain `|S|`**: `σ⃗ = σ·σ⃗`
+(Theorem 4.1's construction, already built for exactly this purpose, e.g. `Example44.lean`'s
+alternating sequence `a = 0(1a)`). We realise `x ↦ σ·x` as an approximable self-map on `Ssys`
+(`prependMap`, generalising `Example44.lean`'s `consMap` from a single bit to a whole word), and
+take `σ⃗ := (prependMap σ).fixElement`. This gives Scott's equation *unconditionally* — no side
+condition on `InS (powerLang σ)` is needed, and (Theorem 4.1's construction being choice-free) no
+`Classical.choice` is pulled in either. -/
+
+/-- **`x ↦ σ·x`, realised as an approximable self-map on `|S|`.** Mirrors `Example44.lean`'s
+`consMap`, generalised from a single bit `b` to an arbitrary word `σ`. -/
+def prependMap (σ : List Bool) : ApproximableMap Ssys Ssys where
+  rel Y Z := InS Y ∧ InS Z ∧ concat {σ} Y ⊆ Z
+  rel_dom h := h.1
+  rel_cod h := h.2.1
+  master_rel := ⟨InS.univ, InS.univ, Set.subset_univ _⟩
+  inter_right := by
+    rintro Y Z Z' ⟨hY, hZ, hsub⟩ ⟨_, hZ', hsub'⟩
+    have hcsub : concat {σ} Y ⊆ Z ∩ Z' := Set.subset_inter hsub hsub'
+    have hne : (Z ∩ Z').Nonempty :=
+      (concat_nonempty (Set.singleton_nonempty σ) hY.nonempty).mono hcsub
+    exact ⟨hY, InS.inter hZ hZ' hne, hcsub⟩
+  mono := by
+    rintro Y Y' Z Z' ⟨_, hZ, hsub⟩ hYY' hZZ' hY' hZ'
+    exact ⟨hY', hZ', (concat_mono (Set.Subset.refl _) hYY').trans (hsub.trans hZZ')⟩
+
+/-- `(prependMap σ).toElementMap y = σ · y`: the approximable-map action agrees with Scott's
+multiplication `mulElem`, using `{σ} ⊆ X` (any valid witness `X` for `emb σ` contains `σ`) to
+tighten the witness set to `{σ}` without loss. -/
+theorem prependMap_toElementMap (σ : List Bool) (y : Ssys.Element) :
+    (prependMap σ).toElementMap y = mulElem (emb σ) y := by
+  apply NeighborhoodSystem.Element.ext
+  intro Z
+  constructor
+  · rintro ⟨Y, hY, hInSY, hInSZ, hsub⟩
+    exact ⟨hInSZ, {σ}, ⟨InS.singleton σ, rfl⟩, Y, hY, hsub⟩
+  · rintro ⟨hInSZ, X, ⟨_, hσX⟩, Y, hY, hsub⟩
+    refine ⟨Y, hY, y.sub hY, hInSZ, ?_⟩
+    exact (concat_mono (Set.singleton_subset_iff.mpr hσX) (Set.Subset.refl _)).trans hsub
+
+/-- **Scott's `σ⃗`, as a genuine least fixed point** (Theorem 4.1) of `x ↦ σ·x` in `|S|`. -/
+def streamArrow (σ : List Bool) : Ssys.Element := (prependMap σ).fixElement
+
+/-- **`σ⃗ = σ·σ⃗`** (Scott's defining equation), unconditionally. -/
+theorem streamArrow_eq (σ : List Bool) :
+    mulElem (emb σ) (streamArrow σ) = streamArrow σ := by
+  rw [← prependMap_toElementMap]
+  exact toElementMap_fixElement (prependMap σ)
+
+/-- `mulElem` is monotone in its right argument. -/
+theorem mulElem_mono_right (x : Ssys.Element) : Monotone (mulElem x) := by
+  rintro y y' hyy' Z ⟨hInS, X, hX, Y, hY, hsub⟩
+  exact ⟨hInS, X, hX, Y, hyy' Y hY, hsub⟩
+
+/-- **`⊥` is a left-annihilator up to `≤`**: `⊥·y ≤ y`. (`⊥`'s only neighbourhood is `Δ = Σ`, and
+`Y ⊆ Σ·Y` via the empty-word split, so any witness collapses onto `y` itself.) -/
+theorem mulElem_bot_le (y : Ssys.Element) : mulElem Ssys.bot y ≤ y := by
+  rintro Z ⟨hInS, X, hX, Y, hY, hsub⟩
+  rw [NeighborhoodSystem.mem_bot, Ssys_master] at hX
+  subst hX
+  refine y.up_mem hY hInS fun w hw => hsub ?_
+  simpa using append_mem_concat (Set.mem_univ ([] : List Bool)) hw
+
+/-- **`σ⃗ ≤ σ⃗·σ⃗`**: `σ⃗·σ⃗` is itself a fixed point of `x ↦ σ·x` (by associativity and `σ⃗ = σ·σ⃗`),
+and `σ⃗` is the *least* such fixed point (`fixElement_le_of_toElementMap_le`). -/
+theorem streamArrow_le_mul_self (σ : List Bool) :
+    streamArrow σ ≤ mulElem (streamArrow σ) (streamArrow σ) := by
+  apply fixElement_le_of_toElementMap_le
+  have heq : (prependMap σ).toElementMap (mulElem (streamArrow σ) (streamArrow σ)) =
+      mulElem (streamArrow σ) (streamArrow σ) := by
+    rw [prependMap_toElementMap, ← mulElem_assoc, streamArrow_eq]
+  exact le_of_eq heq
+
+/-- **Per-approximant bound**: `fⁿ(⊥) · σ⃗ ≤ σ⃗`, by induction using `mulElem_bot_le` (base case)
+and associativity + monotonicity + `streamArrow_eq` (step). -/
+theorem prependMap_iterElem_mul_streamArrow_le (σ : List Bool) :
+    ∀ n, mulElem ((prependMap σ).iterElem n) (streamArrow σ) ≤ streamArrow σ
+  | 0 => by
+      have h0 : (prependMap σ).iterElem 0 = Ssys.bot := by
+        show (idMap Ssys).toElementMap Ssys.bot = Ssys.bot
+        exact toElementMap_idMap Ssys.bot
+      rw [h0]
+      exact mulElem_bot_le (streamArrow σ)
+  | n + 1 => by
+      have hsucc : (prependMap σ).iterElem (n + 1) =
+          mulElem (emb σ) ((prependMap σ).iterElem n) := by
+        show ((prependMap σ).comp ((prependMap σ).iterMap n)).toElementMap Ssys.bot = _
+        rw [toElementMap_comp]
+        exact prependMap_toElementMap σ _
+      rw [hsucc, mulElem_assoc]
+      calc mulElem (emb σ) (mulElem ((prependMap σ).iterElem n) (streamArrow σ))
+          ≤ mulElem (emb σ) (streamArrow σ) :=
+            mulElem_mono_right (emb σ) (prependMap_iterElem_mul_streamArrow_le σ n)
+        _ = streamArrow σ := streamArrow_eq σ
+
+/-- **`σ⃗·σ⃗ ≤ σ⃗`**: `σ⃗`'s membership witnesses come from *some* finite approximant `fⁿ(⊥)`
+(`mem_fixElement`/`mem_iterElem`), and every approximant satisfies the per-`n` bound above. -/
+theorem streamArrow_mul_self_le (σ : List Bool) :
+    mulElem (streamArrow σ) (streamArrow σ) ≤ streamArrow σ := by
+  rintro Z ⟨hInSZ, X, hX, Y, hY, hsub⟩
+  obtain ⟨n, hn⟩ := (mem_fixElement (prependMap σ)).mp hX
+  have hXn : ((prependMap σ).iterElem n).mem X := (mem_iterElem (prependMap σ) n).mpr hn
+  exact prependMap_iterElem_mul_streamArrow_le σ n Z ⟨hInSZ, X, hXn, Y, hY, hsub⟩
+
+/-- **Exercise 7.22l (Scott's first equation, unconditional).** `σ⃗·σ⃗ = σ⃗`, for the genuine
+least-fixed-point `σ⃗`, with no side-condition. -/
+theorem streamArrow_mul_self (σ : List Bool) :
+    mulElem (streamArrow σ) (streamArrow σ) = streamArrow σ :=
+  le_antisymm (streamArrow_mul_self_le σ) (streamArrow_le_mul_self σ)
+
+/-- **Scott's second equation.** `σ⃗·σ⃗·σ⃗ = σ⃗`. -/
+theorem streamArrow_mul_self_self (σ : List Bool) :
+    mulElem (mulElem (streamArrow σ) (streamArrow σ)) (streamArrow σ) = streamArrow σ := by
+  rw [streamArrow_mul_self, streamArrow_mul_self]
+
+/-- **Scott's third equation.** `σ1⃗ · σ1⃗ = σ1⃗`, where `σ1⃗ := streamArrow (σ ++ [true])` is the
+arrow of the *combined* token `σ1` (Scott's notation `σ⃗1⃗` names the infinite repetition of the
+word `σ` followed by `1`, not a product of two separate arrows — matching how the file's earlier
+`streamElem`-based examples read the same equation). An instance of `streamArrow_mul_self`. -/
+theorem streamArrow_mul_self_append_true (σ : List Bool) :
+    mulElem (streamArrow (σ ++ [true])) (streamArrow (σ ++ [true])) =
+      streamArrow (σ ++ [true]) :=
+  streamArrow_mul_self (σ ++ [true])
+
+/-- **Scott's fourth equation (the concrete numeric instance).** `01⃗·01⃗·01⃗·01⃗ = 01⃗·01⃗`, for
+`01⃗ := streamArrow [false, true]`. Follows from `streamArrow_mul_self` applied twice. -/
+theorem streamArrow_containsZero_pow_four :
+    mulElem
+        (mulElem (streamArrow [false, true]) (streamArrow [false, true]))
+        (mulElem (streamArrow [false, true]) (streamArrow [false, true]))
+      = mulElem (streamArrow [false, true]) (streamArrow [false, true]) := by
+  rw [streamArrow_mul_self, streamArrow_mul_self]
 
 /-! ## Stream elements (Scott's infinite-word investigations)
 

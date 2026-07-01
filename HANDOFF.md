@@ -17,22 +17,31 @@ A session may begin after a context reset; chat memory is not durable, these fil
 4. Build with `lake build Domain` (filter output: `| grep -vE 'LEAN_PATH|trace:' | tail`).
 5. Follow `.cursor/rules/handoff-discipline.mdc` (choice discipline, axiom audits, and the
    end-of-item checklist that keeps this file + `arxiv.md` current).
-6. **Exercise 7.22 (split inventory):** Scott's construction is **formalized** — grep `Exercise 7.22`
-   in `arxiv.md`: rows **7.22a–h**, **7.22i(a)**, **7.22i(b)1(a–e)**, **7.22i(b)2–8**, the
-   **7.22i(b)** umbrella, **7.22j**, and **7.22k** are **all Pass** (`Ssys_cons_computable`:
-   Definition 7.1 (ii) consistency recursively decidable; `Ssys_interEq_computable`: Definition
-   7.1 (i) language-equivalence recursively decidable; both choice-free save for the inherited
-   list-extensionality `Classical.choice`). **7.22l** is **Not Yet**, **optional** (infinite-word
-   equations; does not block the paper). **`@Exercise722-Composer-Run.md`** only (one @ per
-   session). **Composer tracker:** C1–C8 ☑, C11 ☑, C12 ☑; **C9a** → **7.22i(a)** ☑; **C9b1–C9b8**
-   → **7.22i(b)1–8** ☑ (umbrella **C9b** ☑); **C10** → **7.22j** ☑; **C7b** → **7.22k** ☑
-   (`Exercise722Equiv.lean`: choice-free `Finset`-subset-construction simulation of `toNFA e`
-   proving `interEqB`/`interEqChar`; `Ssys_interEq_computable` in `Exercise722Presentation.lean`).
-   **Remaining optional:** upgrading `Ssys_partially_effectively_given` (`ConsistencyPresentation`)
-   to a full `Ssys_effectively_given` (`ComputablePresentation`) additionally needs `inter`/
-   `inter_primrec`/`inter_spec`/`masterIdx` fields (Definition71.lean) — not yet attempted, now
-   unblocked since `interEq_computable`'s hard math is done. Do **not** duplicate encode/decode in
-   a monolith (`Exercise722Primrec.lean` was abandoned 2026-06-29).
+6. **Exercise 7.22 (split inventory): COMPLETE.** grep `Exercise 7.22` in `arxiv.md`: rows
+   **7.22a–h**, **7.22i(a)**, **7.22i(b)1(a–e)**, **7.22i(b)2–8**, the **7.22i(b)** umbrella,
+   **7.22j**, **7.22k**, and **7.22l** are **all Pass**. `Ssys_cons_computable`/
+   `Ssys_interEq_computable`: Definition 7.1 (i)/(ii) recursively decidable. `streamArrow`/
+   `streamArrow_mul_self` etc. (`Exercise722.lean`): Scott's infinite-word equations, as genuine
+   domain least fixed points, **fully choice-free** (`⊆ {propext, Quot.sound}`, no
+   `Classical.choice`). **`@Exercise722-Composer-Run.md`** only (one @ per session). **Composer
+   tracker:** C1–C8 ☑, C11 ☑, C12 ☑; **C9a** → **7.22i(a)** ☑; **C9b1–C9b8** → **7.22i(b)1–8** ☑
+   (umbrella **C9b** ☑); **C10** → **7.22j** ☑; **C7b** → **7.22k** ☑ (`Exercise722Equiv.lean`:
+   choice-free `Finset`-subset-construction simulation of `toNFA e` proving `interEqB`/
+   `interEqChar`; `Ssys_interEq_computable` in `Exercise722Presentation.lean`); **C13** →
+   **7.22l** ☑ (`streamArrow`, Theorem 4.1's `fixElement` applied to a new approximable self-map
+   `prependMap σ`, mirroring `Example44.lean`'s `a = 0(1a)`).
+   **Remaining optional (does not block the paper):** upgrading `Ssys_partially_effectively_given`
+   (`ConsistencyPresentation`) to a full `Ssys_effectively_given` (`ComputablePresentation`) needs
+   `inter`/`inter_primrec`/`inter_spec`/`masterIdx` fields (Definition71.lean) — not yet attempted,
+   now unblocked since `interEq_computable`'s hard math is done. Do **not** duplicate encode/decode
+   in a monolith (`Exercise722Primrec.lean` was abandoned 2026-06-29).
+   **Lesson (2026-07-01, 7.22l):** if a "Prove or refute X" side-question introduced by *your own*
+   mechanization choice (not the original exercise text) turns out open-ended, don't grind on it —
+   re-read the exercise's literal wording and check whether a *different* mechanization of the same
+   question sidesteps the side-question entirely. Here `InS (powerLang w)` was an artifact of
+   modeling `σ⃗` as a "power-filter" set; modeling it instead as an actual domain-theoretic least
+   fixed point (`Theorem41.fixElement`, already built) answered Scott's real equations
+   unconditionally, with no open question and (bonus) no `Classical.choice`.
    **Perf pitfall (2026-07-01):** large recursive `Nat → Nat` "Char" definitions (`subsetBChar`,
    `interEqChar`) MUST be marked `@[irreducible]` if they're ever composed **more than once** inside
    another `def`'s body (e.g. two calls wrapped in `capCode`/`+`) — without it, the elaborator's
@@ -4453,3 +4462,64 @@ profile as the rest of the C9/C10 arc). New file `Exercise722Equiv.lean` wired i
 **Exercise 7.22k Pass.** **Next:** optional — full `ComputablePresentation Ssys` (add `inter`/
 `inter_primrec`/`inter_spec`/`masterIdx` to upgrade `Ssys_partially_effectively_given` to
 `Ssys_effectively_given`), or **7.22l** (infinite-word equations); neither blocks the paper.
+
+---
+
+**2026-07-01 — C13 / 7.22l Pass, closing the Exercise 7.22 inventory.** Asked to do 7.22l, found
+the existing `streamElem`/`powerLang` mechanization had turned Scott's question into an open
+side-question (`InS (powerLang w)`: is `{wⁿ}` itself in `S`? — genuinely unresolved after real
+attempts at a length-set/pumping invariant; intersection kept breaking every candidate invariant).
+User pushback ("is the question as posed a research topic?") prompted re-reading Scott's literal
+text: `σ⃗` is defined by a **least fixed point** `σ⃗ = σσ⃗` *in the domain* `\|S\|`, not via a
+set-theoretic "power-filter" proxy — that proxy (and its side-question) was this project's own
+earlier modeling choice, not part of the exercise.
+
+**Fix (`Exercise722.lean`):** realise `x ↦ σ·x` as an approximable self-map `prependMap σ :
+ApproximableMap Ssys Ssys` (`rel Y Z := InS Y ∧ InS Z ∧ concat {σ} Y ⊆ Z`; mirrors
+`Example44.lean`'s `consMap`, generalised from a bit to a word), then `streamArrow σ := (prependMap
+σ).fixElement` (Theorem 4.1, already built — no new domain-theory infrastructure needed).
+`prependMap_toElementMap` bridges `(prependMap σ).toElementMap y = mulElem (emb σ) y` (tightening
+the existential witness to `{σ}`, since `{σ} ⊆ X` for any valid `emb σ`-witness `X`). This gives
+`streamArrow_eq : σ·σ⃗ = σ⃗` unconditionally via `toElementMap_fixElement`.
+
+**`σ⃗·σ⃗ = σ⃗`, both directions, no open question:**
+* `≤` (`streamArrow_le_mul_self`): `σ⃗·σ⃗` is itself a fixed point of `x↦σ·x` (by `mulElem_assoc`
+  + `streamArrow_eq`), and `σ⃗` is the *least* pre-fixed point (`fixElement_le_of_toElementMap_le`,
+  already in `Theorem41.lean`) — one line.
+* `≥` (`streamArrow_mul_self_le`): needed real (but standard, not open-ended) work. Per-approximant
+  bound `prependMap_iterElem_mul_streamArrow_le : ∀n, fⁿ(⊥)·σ⃗ ≤ σ⃗` by induction (base case
+  `mulElem_bot_le : ⊥·y ≤ y`, new — `⊥`'s only neighbourhood is `Δ=Σ`, and `Y ⊆ Σ·Y` via the
+  empty-word split; step case via `iterElem`'s recursive unfolding through `toElementMap_comp` +
+  `prependMap_toElementMap` + `mulElem_assoc` + monotonicity + `streamArrow_eq`). Then any
+  membership witness of `σ⃗` comes from *some* finite approximant (`mem_fixElement`/`mem_iterElem`),
+  so the per-`n` bound closes it — no need for the `fixElement_eq_iSupDirected`
+  directed-sup-distributivity route originally planned (the direct witness-extraction argument
+  turned out simpler once written out).
+
+`streamArrow_mul_self_self`/`streamArrow_mul_self_append_true`/
+`streamArrow_containsZero_pow_four` (Scott's other three equations) are then one-line corollaries
+(`σ⃗1⃗` reads as `streamArrow (σ++[true])`, matching how the old `streamElem`-based examples already
+read that notation — not a product of two separate arrows). `mulElem_mono_right` (new,
+straightforward) used throughout.
+
+**Also fixed, unrelated:** a latent `simp`-fragility bug in `Recursive.lean`'s `appendListTabFn_eq`
+(C9b4, untouched since 2026-06-29) that only surfaces on a *fully clean* rebuild — `simp` computes
+`(i+1)-len1` down to the literal `0` before the intended rewrite lemma `isZero_succ_sub_len1` gets
+a chance to fire on the symbolic form, leaving `isZero 0` unresolved. Fix: add `isZero` itself to
+that one `simp` call so the literal case reduces by unfolding+arithmetic instead. (Diagnosed by
+`rm`-ing the `.olean`/`.ilean`/`.c` build artifacts and rebuilding from scratch with `lake env lean`
+directly to see the real leftover goal — routine `lake build` was reusing a stale, already-broken
+cache and reporting false negatives on unrelated files for a while.)
+
+`lake build` (whole workspace, 3120 jobs) green; zero `sorry`. Axiom audit: `streamArrow_eq`/
+`streamArrow_mul_self`/`streamArrow_mul_self_self`/`streamArrow_mul_self_append_true`/
+`streamArrow_containsZero_pow_four` all `⊆ {propext, Quot.sound}` — **no `Classical.choice`**
+(tighter than the Zorn-based `exists_least_fixedPoint` route considered and rejected mid-session).
+`Exercise722.lean`'s docstring rewritten: the "effective givenness left as a gap" paragraph was
+stale (7.22a–k solved it elsewhere) and is now corrected; the infinite-words section now leads with
+`streamArrow` as the primary, unconditional answer, with `streamElem`/`powerLang` demoted to "kept
+for reference, side-question still open, not Scott's actual question."
+
+**Exercise 7.22 inventory is now fully Pass (a–l).** Only optional extension left: full
+`ComputablePresentation Ssys` (`inter`/`inter_primrec`/`inter_spec`/`masterIdx`) to upgrade
+`Ssys_partially_effectively_given` to `Ssys_effectively_given` — does not block the paper.
