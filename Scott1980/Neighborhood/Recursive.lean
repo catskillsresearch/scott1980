@@ -2050,4 +2050,168 @@ theorem primrec_listLenChar : Nat.Primrec listLenChar := by
   exact (primrec_foldCode primrec_listLenStp (Nat.Primrec.const 0) (Nat.Primrec.const 0)
     primrec_id).of_eq fun _ => rfl
 
+/-! ## Exercise 7.22 C9b3 — coded list equality
+
+Synchronized `foldCode` over `c1` threading remainder-code of `c2` (**7.22i(b)3**). No witness
+search — decidable elementwise equality only. -/
+
+/-- `{0,1}` nat-equality char (reused in C9b tag/element comparisons). -/
+def natEqChar (a b : ℕ) : ℕ := 1 - ((a - b) + (b - a))
+
+@[simp] theorem natEqChar_eq_one_iff (a b : ℕ) : natEqChar a b = 1 ↔ a = b := by
+  unfold natEqChar; omega
+
+theorem natEqChar_le_one (a b : ℕ) : natEqChar a b ≤ 1 := by unfold natEqChar; omega
+
+theorem natEqChar_eq_zero_or_one (a b : ℕ) : natEqChar a b = 0 ∨ natEqChar a b = 1 := by
+  unfold natEqChar; omega
+
+theorem primrec_natEqChar : Nat.Primrec (fun t => natEqChar t.unpair.1 t.unpair.2) :=
+  (primrec_sub₂ (Nat.Primrec.const 1)
+    (primrec_add₂ (primrec_sub₂ Nat.Primrec.left Nat.Primrec.right)
+      (primrec_sub₂ Nat.Primrec.right Nat.Primrec.left))).of_eq fun _ => rfl
+
+/-- Non-empty-`remC2` branch of `listEqStp`. -/
+def listEqStpNonzero (w : ℕ) : ℕ :=
+  Nat.pair
+    (selectFn w.unpair.2.unpair.1.unpair.1
+      (natEqChar w.unpair.1 ((w.unpair.2.unpair.1.unpair.2 - 1).unpair.1)) 0)
+    ((w.unpair.2.unpair.1.unpair.2 - 1).unpair.2)
+
+/-- Fold step: state `pair flag remC2`; consume one head of `c1`, peel one cons off `remC2`. -/
+def listEqStp (w : ℕ) : ℕ :=
+  selectFn (isZero w.unpair.2.unpair.1.unpair.2) (Nat.pair 0 0) (listEqStpNonzero w)
+
+private def listEqStep (st x : ℕ) : ℕ := listEqStp (Nat.pair x (Nat.pair st 0))
+
+theorem listEqStp_acc (flag rem x : ℕ) :
+    listEqStp (Nat.pair x (Nat.pair (Nat.pair flag rem) 0)) =
+      selectFn (isZero rem) (Nat.pair 0 0)
+        (Nat.pair (selectFn flag (natEqChar x ((rem - 1).unpair.1)) 0) ((rem - 1).unpair.2)) := by
+  unfold listEqStp listEqStpNonzero
+  simp only [unpair_pair_fst, unpair_pair_snd, Nat.add_sub_cancel]
+
+/-- `listEqChar c1 c2 = 1 ↔ decodeList c1 = decodeList c2`. -/
+def listEqChar (c1 c2 : ℕ) : ℕ :=
+  let r := foldCode listEqStp 0 (Nat.pair 1 c2) c1
+  mulBit r.unpair.1 (isZero r.unpair.2)
+
+theorem decodeList_eq_nil_iff (c : ℕ) : decodeList c = [] ↔ c = 0 := by
+  constructor
+  · intro h
+    have := congrArg encodeList h
+    rwa [encodeList, encodeList_decodeList] at this
+  · intro hc; simp [hc, decodeList_zero]
+
+private theorem selectFn_eq_one_iff_zero {a b : ℕ} (ha : a = 0 ∨ a = 1) :
+    selectFn a b 0 = 1 ↔ a = 1 ∧ b = 1 := by
+  rcases ha with ha | ha <;> simp [selectFn, ha]
+
+private theorem listEqStep_zero (flag x : ℕ) :
+    listEqStep (Nat.pair flag 0) x = Nat.pair 0 0 := by
+  simp [listEqStep, listEqStp_acc, isZero, min]
+
+private theorem listEqStep_succ (flag x m : ℕ) :
+    listEqStep (Nat.pair flag (m + 1)) x =
+      Nat.pair (selectFn flag (natEqChar x m.unpair.1) 0) m.unpair.2 := by
+  unfold listEqStep listEqStp listEqStpNonzero
+  simp only [unpair_pair_fst, unpair_pair_snd]
+  have hzero : isZero (m + 1) = 0 := by
+    unfold isZero; simp [show min (m + 1) 1 = 1 from by omega]
+  rw [hzero, selectFn_zero, Nat.add_sub_cancel]
+
+private theorem listEq_foldl_zero (flag x : ℕ) (xs : List ℕ) :
+    (List.foldl listEqStep (Nat.pair flag 0) (x :: xs)).unpair.1 = 0 := by
+  rw [List.foldl_cons, listEqStep_zero]
+  induction xs with
+  | nil => simp [List.foldl_nil, unpair_pair_fst]
+  | cons y ys ih =>
+    rw [List.foldl_cons, listEqStep_zero, ih]
+
+private theorem listEq_foldl_end_iff (l1 : List ℕ) (flag rem : ℕ) (hflag : flag = 0 ∨ flag = 1) :
+    (let r := List.foldl listEqStep (Nat.pair flag rem) l1
+     r.unpair.1 = 1 ∧ isZero r.unpair.2 = 1) ↔
+      flag = 1 ∧ l1 = decodeList rem := by
+  induction l1 generalizing flag rem with
+  | nil =>
+    simp only [List.foldl_nil, unpair_pair_fst, unpair_pair_snd]
+    constructor
+    · intro ⟨hflag', hrem0⟩
+      have hrem0' : rem = 0 := (isZero_eq_one_iff rem).1 hrem0
+      exact ⟨hflag', ((decodeList_eq_nil_iff rem).2 hrem0').symm⟩
+    · intro ⟨hflag', heq⟩
+      exact ⟨hflag', (isZero_eq_one_iff rem).2 ((decodeList_eq_nil_iff rem).1 heq.symm)⟩
+  | cons x xs ih =>
+    by_cases hrem : rem = 0
+    · subst hrem
+      simp only [decodeList_zero]
+      constructor
+      · intro ⟨h1, _⟩
+        have h0 : (let r := List.foldl listEqStep (Nat.pair flag 0) (x :: xs); r.unpair.1) = 0 := by
+          show (List.foldl listEqStep (Nat.pair flag 0) (x :: xs)).unpair.1 = 0
+          exact listEq_foldl_zero flag x xs
+        rw [h0] at h1
+        exact absurd h1 (by decide)
+      · intro h
+        cases h.2
+    · rcases rem with _ | m
+      · omega
+      · set acc' := selectFn flag (natEqChar x m.unpair.1) 0 with hacc'
+        have hacc01 : acc' = 0 ∨ acc' = 1 := by
+          rcases hflag with h | h
+          · left; rw [hacc', h, selectFn_zero]
+          · have hz := natEqChar_eq_zero_or_one x m.unpair.1
+            rw [hacc', h, selectFn_one]
+            rcases hz with hz0 | hz1
+            · exact Or.inl hz0
+            · exact Or.inr hz1
+        rw [List.foldl_cons, listEqStep_succ, ih acc' m.unpair.2 hacc01, decodeList_succ]
+        constructor
+        · intro ⟨hacc'1, hxs⟩
+          have hsel : selectFn flag (natEqChar x m.unpair.1) 0 = 1 := hacc'.trans hacc'1
+          rcases (selectFn_eq_one_iff_zero hflag).1 hsel with ⟨hflag1, hxeq⟩
+          rw [natEqChar_eq_one_iff] at hxeq
+          exact ⟨hflag1, by rw [hxeq, hxs]⟩
+        · intro ⟨hflag1, heq⟩
+          rcases List.cons.inj heq with ⟨hx, hxs⟩
+          refine ⟨hacc'.trans ((selectFn_eq_one_iff_zero hflag).2 ⟨hflag1, by
+            rw [natEqChar_eq_one_iff, hx]⟩), hxs⟩
+
+theorem listEqChar_eq_one_iff (c1 c2 : ℕ) :
+    listEqChar c1 c2 = 1 ↔ decodeList c1 = decodeList c2 := by
+  unfold listEqChar
+  rw [foldCode_eq', show (fun acc x => listEqStp (Nat.pair x (Nat.pair acc 0))) = listEqStep from rfl,
+    mulBit_eq_one_iff]
+  exact (listEq_foldl_end_iff (decodeList c1) 1 c2 (Or.inr rfl)).trans (by simp)
+
+set_option maxHeartbeats 800000 in
+theorem primrec_listEqStpNonzero : Nat.Primrec listEqStpNonzero := by
+  have hflag := Nat.Primrec.left.comp (Nat.Primrec.left.comp Nat.Primrec.right)
+  have hrem := Nat.Primrec.right.comp (Nat.Primrec.left.comp Nat.Primrec.right)
+  have hhead := Nat.Primrec.left
+  have hrem1 := primrec_sub₂ hrem (Nat.Primrec.const 1)
+  have hcmp := primrec_natEqChar.comp (hhead.pair (Nat.Primrec.left.comp hrem1))
+  have htail := Nat.Primrec.right.comp hrem1
+  exact (Nat.Primrec.pair (primrec_selectFn hflag hcmp (Nat.Primrec.const 0)) htail).of_eq fun w => by
+    simp [listEqStpNonzero, selectFn]
+
+set_option maxHeartbeats 800000 in
+theorem primrec_listEqStp : Nat.Primrec listEqStp := by
+  have hrem := Nat.Primrec.right.comp (Nat.Primrec.left.comp Nat.Primrec.right)
+  have hzero := Nat.Primrec.pair (Nat.Primrec.const 0) (Nat.Primrec.const 0)
+  exact (primrec_selectFn (primrec_isZero.comp hrem) hzero primrec_listEqStpNonzero).of_eq fun w => by
+    simp [listEqStp, selectFn, isZero, min]
+
+theorem primrec_listEqChar : Nat.Primrec (fun t => listEqChar t.unpair.1 t.unpair.2) := by
+  have hfold := primrec_foldCode primrec_listEqStp (Nat.Primrec.const 0)
+    (Nat.Primrec.pair (Nat.Primrec.const 1) Nat.Primrec.right) Nat.Primrec.left
+  have hflag : Nat.Primrec (fun t =>
+      (foldCode listEqStp 0 (Nat.pair 1 t.unpair.2) t.unpair.1).unpair.1) :=
+    Nat.Primrec.left.comp hfold
+  have hrem : Nat.Primrec (fun t =>
+      (foldCode listEqStp 0 (Nat.pair 1 t.unpair.2) t.unpair.1).unpair.2) :=
+    Nat.Primrec.right.comp hfold
+  exact (primrec_mulBit.comp (hflag.pair (primrec_isZero.comp hrem))).of_eq fun t => by
+    simp [listEqChar, unpair_pair_fst, unpair_pair_snd]
+
 end Domain.Recursive

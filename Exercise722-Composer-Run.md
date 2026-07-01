@@ -86,7 +86,7 @@ You are a Lean 4 proof engineer in `/home/catskills/Desktop/scott1980` (mathlib 
 | **C9b1d** | `decodeListBool_isSome_iff` | ☑ | C9b1b | 7.22i(b)1(d) |
 | **C9b1e** | `decodeFuelOkChar_eq_one_iff` | ☑ | C9b1c, C9b1d | 7.22i(b)1(e) |
 | **C9b2** | `listLenChar` + `primrec` | ☑ | C9b1b | 7.22i(b)2 |
-| **C9b3** | `listEqChar` + `primrec` | Need Advice | C9b2 | 7.22i(b)3 |
+| **C9b3** | `listEqChar` + `primrec` | ☑ | C9b2 | 7.22i(b)3 |
 | **C9b4** | `appendListCode`, `takeCode`, `dropCode` + `primrec` | Not Yet | C9b3 | 7.22i(b)4 |
 | **C9b5** | `autStateCardFuelChar`, `matchesBChar` + `primrec` | Not Yet | C9b4 | 7.22i(b)5 |
 | **C9b6** | `decideNonemptyBChar`, `consistentBChar` + `primrec` | Not Yet | C9b5 | 7.22i(b)6 |
@@ -366,7 +366,7 @@ only
 | **C9b1d** | `decodeListBool_isSome_iff` | ☑ | 7.22i(b)1(d) |
 | **C9b1e** | `decodeFuelOkChar_eq_one_iff` | ☑ | 7.22i(b)1(e) |
 | **C9b2** | `listLenChar` + `primrec` | ☑ | 7.22i(b)2 |
-| **C9b3** | `listEqChar` + `primrec` | Need Advice | 7.22i(b)3 |
+| **C9b3** | `listEqChar` + `primrec` | ☑ | 7.22i(b)3 |
 | **C9b4** | `appendListCode`, `takeCode`, `dropCode` + `primrec` | Not Yet | 7.22i(b)4 |
 | **C9b5** | `autStateCardFuelChar`, `matchesBChar` + `primrec` | Not Yet | 7.22i(b)5 |
 | **C9b6** | `decideNonemptyBChar`, `consistentBChar` + `primrec` | Not Yet | 7.22i(b)6 |
@@ -374,9 +374,8 @@ only
 | **C9b8** | `primrec_ssysConsChar` → `Ssys_cons_computable` | Not Yet | 7.22i(b)8 |
 
 **One slice per session.** Use shallow char lemmas for iff links—do not unfold `ssys_cons_char_iff`
-chains at WHNF. **If stuck >30 min:** STOP, HANDOFF "C9bN BLOCKED" (N = slice number). **7.22i(b)3**
-already flagged **Need Advice** after bulk WIP WHNF/tabulation failure—confirm witness design before
-re-implementing `listEqChar`.
+chains at WHNF. **If stuck >30 min:** STOP, HANDOFF "C9bN BLOCKED" (N = slice number). **C9b3**
+resolved: synchronized **`foldCode`** (no **`reForallChar`**/**`tabCode`**). **Next:** **C9b4**.
 
 ### Session C9b1 — `decodeFuelOkChar` (sub-slices **1(a–e)**)
 

@@ -470,7 +470,7 @@ theorem Ssys_cons_computable_of_primrec_ssysConsChar (hf : Nat.Primrec ssysConsC
 --    (c) dispatch lemmas ☑ (d) decodeListBool_isSome_iff ☑ (e) decodeFuelOkChar_eq_one_iff ☑
 --    See `arxiv.md` rows **7.22i(b)1(a–e)**.
 -- 2. `listLenChar` + primrec (C9b2 / 7.22i(b)2) ☑
--- 3. `listEqChar` + primrec (C9b3 / 7.22i(b)3) — Need Advice
+-- 3. `listEqChar` + primrec (C9b3 / 7.22i(b)3) — Pass
 -- 4. `appendListCode`, `takeCode`, `dropCode` + primrec (C9b4 / 7.22i(b)4) — Not Yet
 -- 5. `autStateCardFuelChar`, `matchesBChar` + primrec (C9b5 / 7.22i(b)5) — Not Yet
 -- 6. `decideNonemptyBChar`, `consistentBChar` + primrec (C9b6 / 7.22i(b)6) — Not Yet

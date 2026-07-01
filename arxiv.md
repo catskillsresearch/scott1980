@@ -101,7 +101,7 @@ within `Recursive.lean`—not to further domain theory. See appendices A and B.
 | **C9b1d** | `decodeListBool_isSome_iff` | ☑ | 7.22i(b)1(d) |
 | **C9b1e** | `decodeFuelOkChar_eq_one_iff` | ☑ | 7.22i(b)1(e) |
 | **C9b2** | `listLenChar` + `primrec` | ☑ | 7.22i(b)2 |
-| **C9b3** | `listEqChar` + `primrec` | Need Advice | 7.22i(b)3 |
+| **C9b3** | `listEqChar` + `primrec` | ☑ | 7.22i(b)3 |
 | **C9b4** | `appendListCode`, `takeCode`, `dropCode` + `primrec` | Not Yet | 7.22i(b)4 |
 | **C9b5** | `autStateCardFuelChar`, `matchesBChar` + `primrec` | Not Yet | 7.22i(b)5 |
 | **C9b6** | `decideNonemptyBChar`, `consistentBChar` + `primrec` | Not Yet | 7.22i(b)6 |
@@ -1693,8 +1693,8 @@ delivered **7.22a–h** and **7.22i(a)**; **7.22i(b)1–8** (Composer **C9b1–C
 #### Exercise 7.22i(b)3
 * **Mathematical Target:** coded list equality — **`listEqChar`** + **`primrec_listEqChar`**
 * **Lean File:** `Scott1980/Neighborhood/Recursive.lean`
-* **Proof Notes:** **`reForallChar`** + **`tabCode`** witness table; **`listEqChar_eq_one_iff`**. **Need Advice:** bulk WIP hit WHNF timeout / tabulation linkage here—confirm witness design before re-implementing.
-* **Status:** Need Advice
+* **Proof Notes:** **`natEqChar`** (factored `{0,1}` nat equality); synchronized **`foldCode`** over `c1` threading remainder-code of `c2` via **`listEqStp`**/**`listEqStpNonzero`** (no **`reForallChar`**/**`tabCode`** witness search). **`listEqChar_eq_one_iff`**: **`foldCode_eq'`** + **`listEq_foldl_end_iff`** (structural induction, same idiom as **`allList_foldl_eq_one_iff`**). Length mismatch caught inline (`remC2 = 0` stuck state + final **`isZero rem`**). Green; zero `sorry`; **`primrec_listEqChar` ⊆ {propext, Classical.choice, Quot.sound}** (choice inherited from **`omega`**/**`simp`** pipeline, same as other char-layer links).
+* **Status:** Pass
 
 #### Exercise 7.22i(b)4
 * **Mathematical Target:** list append / take / drop on codes — **`appendListCode`**, **`takeCode`**, **`dropCode`** + `primrec`
