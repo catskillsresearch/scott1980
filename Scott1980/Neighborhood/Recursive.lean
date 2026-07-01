@@ -2214,4 +2214,252 @@ theorem primrec_listEqChar : Nat.Primrec (fun t => listEqChar t.unpair.1 t.unpai
   exact (primrec_mulBit.comp (hflag.pair (primrec_isZero.comp hrem))).of_eq fun t => by
     simp [listEqChar, unpair_pair_fst, unpair_pair_snd]
 
+/-! ## Exercise 7.22 C9b4 — coded list append / take / drop
+
+Built via `tabCode` + `nthCode`/`listLenChar` (no snoc/reverse fold). Correctness goes through
+`tabCode_nth_lt`/`tabCode_nth_ge` + `nthCode_eq` only. -/
+
+/-- Tabulation lookup for `appendListCode`: params `pair c1 (pair c2 len1)`. -/
+def appendListTabFn (w : ℕ) : ℕ :=
+  let i := w.unpair.1
+  let p := w.unpair.2
+  let len1 := p.unpair.2.unpair.2
+  selectFn (isZero ((i + 1) - len1))
+    (nthCode p.unpair.1 i 0)
+    (nthCode p.unpair.2.unpair.1 (i - len1) 0)
+
+/-- Coded list append: `decodeList (appendListCode c1 c2) = decodeList c1 ++ decodeList c2`. -/
+def appendListCode (c1 c2 : ℕ) : ℕ :=
+  let len1 := listLenChar c1
+  let len2 := listLenChar c2
+  tabCode appendListTabFn (Nat.pair (len1 + len2) (Nat.pair c1 (Nat.pair c2 len1))) (len1 + len2)
+
+/-- Tabulation lookup for `takeCode`: params `pair n c`. -/
+def takeListTabFn (w : ℕ) : ℕ := nthCode (w.unpair.2.unpair.2) w.unpair.1 0
+
+/-- Coded list take: `decodeList (takeCode n c) = (decodeList c).take n`. -/
+def takeCode (n c : ℕ) : ℕ :=
+  let len := listLenChar c
+  let B := Nat.min n len
+  tabCode takeListTabFn (Nat.pair B (Nat.pair n c)) B
+
+/-- Tabulation lookup for `dropCode`: params `pair n c`. -/
+def dropListTabFn (w : ℕ) : ℕ :=
+  nthCode (w.unpair.2.unpair.2) (w.unpair.1 + w.unpair.2.unpair.1) 0
+
+/-- Coded list drop: `decodeList (dropCode n c) = (decodeList c).drop n`. -/
+def dropCode (n c : ℕ) : ℕ :=
+  let len := listLenChar c
+  tabCode dropListTabFn (Nat.pair (len - n) (Nat.pair n c)) (len - n)
+
+/-- Two lists agree when every `getD` index does. (`Classical.choice` from `List.ext_getElem`.) -/
+theorem list_eq_of_getD {l1 l2 : List ℕ} (h : ∀ i d, l1.getD i d = l2.getD i d) : l1 = l2 := by
+  have hlen : l1.length = l2.length := by
+    by_contra hne
+    rcases Nat.lt_or_gt_of_ne hne with hlt | hgt
+    · have h1 := h l1.length 1
+      have h2 := h l1.length 2
+      rw [getD_eq_default_cf l1 _ (Nat.le_refl _), getD_eq_getElem_cf l2 _ (by omega)] at h1 h2
+      omega
+    · have h1 := h l2.length 1
+      have h2 := h l2.length 2
+      rw [getD_eq_getElem_cf l1 _ (by omega), getD_eq_default_cf l2 _ (Nat.le_refl _)] at h1 h2
+      omega
+  apply List.ext_getElem hlen
+  intro i hi _
+  have hi' : i < l2.length := by rw [← hlen]; exact hi
+  rw [← getD_eq_getElem_cf l1 0 hi, ← getD_eq_getElem_cf l2 0 hi', h i 0]
+
+theorem getD_take_cf (l : List ℕ) (n i d : ℕ) (hi : i < (l.take n).length) :
+    (l.take n).getD i d = l.getD i d := by
+  have hlen : i < l.length := by
+    rw [List.length_take] at hi
+    exact Nat.lt_of_lt_of_le hi (Nat.min_le_right n l.length)
+  rw [getD_eq_getElem_cf (l.take n) d hi, getD_eq_getElem_cf l d hlen, List.getElem_take]
+
+theorem getD_drop_cf (l : List ℕ) (n i d : ℕ) (hi : i < (l.drop n).length) :
+    (l.drop n).getD i d = l.getD (i + n) d := by
+  induction n generalizing l i d with
+  | zero =>
+    simp [List.drop_zero, Nat.zero_add] at hi ⊢
+  | succ n ih =>
+    cases l with
+    | nil => simp [List.drop, List.length_nil] at hi
+    | cons a tl =>
+      cases i with
+      | zero =>
+        simp [List.drop, List.getD_cons_zero, List.getD_cons_succ, Nat.zero_add]
+      | succ i =>
+        simp only [List.drop, List.getD_cons_succ]
+        exact ih tl (i + 1) d (by simpa [List.length_drop] using hi)
+
+private theorem isZero_succ_sub_len1 (i len1 : ℕ) :
+    isZero ((i + 1) - len1) = 1 ↔ i < len1 := by
+  unfold isZero
+  constructor
+  · intro h
+    by_contra hge
+    have hpos : 0 < (i + 1) - len1 := Nat.sub_pos_of_lt (Nat.lt_succ_of_le (Nat.le_of_not_gt hge))
+    have hmin : min ((i + 1) - len1) 1 = 1 := Nat.min_eq_right (Nat.succ_le_iff.mpr hpos)
+    omega
+  · intro hlt
+    have : (i + 1) - len1 = 0 := Nat.sub_eq_zero_iff_le.mpr (Nat.succ_le_iff.mpr hlt)
+    simp [this, min]
+
+private theorem isZero_succ_sub_len1_zero (i len1 : ℕ) (hge : len1 ≤ i) :
+    isZero ((i + 1) - len1) = 0 := by
+  unfold isZero
+  have hpos : 0 < (i + 1) - len1 := Nat.sub_pos_of_lt (Nat.lt_succ_of_le hge)
+  have hmin : min ((i + 1) - len1) 1 = 1 := Nat.min_eq_right (Nat.succ_le_iff.mpr hpos)
+  simp [hmin]
+
+private theorem appendListTabFn_eq (c1 c2 len1 i : ℕ) :
+    appendListTabFn (Nat.pair i (Nat.pair c1 (Nat.pair c2 len1))) =
+      if i < len1 then
+        (decodeList c1).getD i 0
+      else
+        (decodeList c2).getD (i - len1) 0 := by
+  by_cases hlt : i < len1
+  · simp [appendListTabFn, unpair_pair_fst, unpair_pair_snd, hlt,
+      (isZero_succ_sub_len1 i len1).2 hlt, selectFn_one, nthCode_eq]
+  · simp [appendListTabFn, unpair_pair_fst, unpair_pair_snd, hlt,
+      isZero_succ_sub_len1_zero i len1 (Nat.le_of_not_gt hlt), selectFn_zero, nthCode_eq]
+
+theorem appendListCode_eq (c1 c2 : ℕ) :
+    decodeList (appendListCode c1 c2) = decodeList c1 ++ decodeList c2 := by
+  unfold appendListCode
+  rw [decodeList_tabCode, listLenChar_eq c1, listLenChar_eq c2]
+  apply list_eq_of_getD
+  intro i d
+  by_cases hi : i < (decodeList c1).length + (decodeList c2).length
+  · have hf := appendListTabFn_eq c1 c2 (decodeList c1).length i
+    rw [getD_map_range_cf
+        (fun j => appendListTabFn (Nat.pair j (Nat.pair c1 (Nat.pair c2 (decodeList c1).length)))) d hi,
+      hf]
+    by_cases hlt : i < (decodeList c1).length
+    · rw [if_pos hlt,
+        show (decodeList c1).getD i 0 = (decodeList c1).getD i d from by
+          rw [getD_eq_getElem_cf _ 0 hlt, getD_eq_getElem_cf _ d hlt],
+        (getD_append_cf (decodeList c1) (decodeList c2) d hlt).symm]
+    · rw [if_neg hlt,
+        show (decodeList c2).getD (i - (decodeList c1).length) 0 =
+            (decodeList c2).getD (i - (decodeList c1).length) d from by
+          have hi2 : i - (decodeList c1).length < (decodeList c2).length := by
+            have hle : (decodeList c1).length ≤ i := Nat.le_of_not_gt hlt
+            omega
+          rw [getD_eq_getElem_cf _ 0 hi2, getD_eq_getElem_cf _ d hi2],
+        (getD_append_right_cf (decodeList c1) (decodeList c2) d (Nat.le_of_not_gt hlt)).symm]
+  · have hge : (decodeList c1).length + (decodeList c2).length ≤ i := Nat.le_of_not_gt hi
+    rw [getD_eq_default_cf _ d (by rw [List.length_map, List.length_range]; exact hge),
+      getD_eq_default_cf _ d (by rw [List.length_append]; exact hge)]
+
+theorem takeCode_eq (n c : ℕ) :
+    decodeList (takeCode n c) = (decodeList c).take n := by
+  unfold takeCode
+  rw [decodeList_tabCode, listLenChar_eq c]
+  apply list_eq_of_getD
+  intro i d
+  by_cases hi : i < Nat.min n (decodeList c).length
+  · have hic : i < (decodeList c).length := Nat.lt_of_lt_of_le hi (Nat.min_le_right n _)
+    rw [getD_map_range_cf (fun j => takeListTabFn (Nat.pair j (Nat.pair n c))) d hi,
+      show takeListTabFn (Nat.pair i (Nat.pair n c)) = (decodeList c).getD i d by
+        have hc : (Nat.pair i (Nat.pair n c)).unpair.2.unpair.2 = c := by simp [unpair_pair_snd]
+        have hi' : (Nat.pair i (Nat.pair n c)).unpair.1 = i := by simp [unpair_pair_fst]
+        rw [takeListTabFn, hc, hi', nthCode_eq,
+          show (decodeList c).getD i 0 = (decodeList c).getD i d from by
+            rw [getD_eq_getElem_cf _ 0 hic, getD_eq_getElem_cf _ d hic]],
+      getD_take_cf (decodeList c) n i d (by rwa [List.length_take])]
+  · have hge : Nat.min n (decodeList c).length ≤ i := Nat.le_of_not_gt hi
+    rw [getD_eq_default_cf _ d (by rw [List.length_map, List.length_range]; exact hge),
+      getD_eq_default_cf _ d (by rw [List.length_take]; exact hge)]
+
+theorem dropCode_eq (n c : ℕ) :
+    decodeList (dropCode n c) = (decodeList c).drop n := by
+  unfold dropCode
+  rw [decodeList_tabCode, listLenChar_eq c]
+  apply list_eq_of_getD
+  intro i d
+  by_cases hi : i < (decodeList c).length - n
+  · have hic : i + n < (decodeList c).length := Nat.add_lt_of_lt_sub hi
+    rw [getD_map_range_cf (fun j => dropListTabFn (Nat.pair j (Nat.pair n c))) d hi,
+      show dropListTabFn (Nat.pair i (Nat.pair n c)) = (decodeList c).getD (i + n) d by
+        have hc : (Nat.pair i (Nat.pair n c)).unpair.2.unpair.2 = c := by simp [unpair_pair_snd]
+        have hn : (Nat.pair i (Nat.pair n c)).unpair.2.unpair.1 = n := by simp [unpair_pair_fst]
+        have hi' : (Nat.pair i (Nat.pair n c)).unpair.1 = i := by simp [unpair_pair_fst]
+        rw [dropListTabFn, hi', hn, hc, nthCode_eq,
+          show (decodeList c).getD (i + n) 0 = (decodeList c).getD (i + n) d from by
+            rw [getD_eq_getElem_cf _ 0 hic, getD_eq_getElem_cf _ d hic]],
+      getD_drop_cf (decodeList c) n i d (by rw [List.length_drop]; exact hi)]
+  · have hge : (decodeList c).length - n ≤ i := Nat.le_of_not_gt hi
+    rw [getD_eq_default_cf _ d (by rw [List.length_map, List.length_range]; exact hge),
+      getD_eq_default_cf _ d (by rw [List.length_drop]; exact hge)]
+
+theorem primrec_appendListTabFn : Nat.Primrec appendListTabFn := by
+  have hi := Nat.Primrec.left
+  have hp := Nat.Primrec.right
+  have hlen1 := Nat.Primrec.right.comp (Nat.Primrec.right.comp hp)
+  have hc1 := Nat.Primrec.left.comp hp
+  have hc2 := Nat.Primrec.left.comp (Nat.Primrec.right.comp hp)
+  have hlt := primrec_isZero.comp
+    (primrec_sub₂ (primrec_add₂ hi (Nat.Primrec.const 1)) hlen1)
+  have hleft := primrec_nthCode.comp (hc1.pair (Nat.Primrec.pair hi (Nat.Primrec.const 0)))
+  have hright := primrec_nthCode.comp
+    (hc2.pair (Nat.Primrec.pair (primrec_sub₂ hi hlen1) (Nat.Primrec.const 0)))
+  exact (primrec_selectFn hlt hleft hright).of_eq fun w => by simp [appendListTabFn]
+
+theorem primrec_appendListCode : Nat.Primrec (fun t => appendListCode t.unpair.1 t.unpair.2) := by
+  have hc1 := Nat.Primrec.left
+  have hc2 := Nat.Primrec.right
+  have hlen1 := primrec_listLenChar.comp hc1
+  have hlen2 := primrec_listLenChar.comp hc2
+  have hsum := primrec_add₂ hlen1 hlen2
+  have hp := hc1.pair (hc2.pair hlen1)
+  have hr := (hsum.pair hp).pair hsum
+  refine ((primrec_tabCode primrec_appendListTabFn).comp hr).of_eq fun t => by
+    simp [appendListCode, unpair_pair_fst, unpair_pair_snd]
+
+theorem primrec_takeListTabFn : Nat.Primrec takeListTabFn :=
+  (primrec_nthCode.comp
+    ((Nat.Primrec.right.comp Nat.Primrec.right).pair
+      (Nat.Primrec.left.pair (Nat.Primrec.const 0)))).of_eq fun w => by
+    simp [takeListTabFn, unpair_pair_fst, unpair_pair_snd]
+
+theorem primrec_min {f g : ℕ → ℕ} (hf : Nat.Primrec f) (hg : Nat.Primrec g) :
+    Nat.Primrec (fun n => Nat.min (f n) (g n)) :=
+  (primrec_selectFn (primrec_le hf hg) hf hg).of_eq fun n => by
+    unfold selectFn isZero Nat.min
+    by_cases h : f n ≤ g n
+    · simp [Nat.sub_eq_zero_iff_le.mpr h, Nat.min_eq_left h]
+    · have hlt : g n < f n := Nat.lt_of_not_ge h
+      have hpos : 0 < f n - g n := Nat.sub_pos_of_lt hlt
+      have hmin : min (f n - g n) 1 = 1 := Nat.min_eq_right (Nat.succ_le_iff.mpr hpos)
+      simp [isZero, hmin, Nat.min_eq_right (Nat.le_of_lt hlt)]
+
+theorem primrec_takeCode : Nat.Primrec (fun t => takeCode t.unpair.1 t.unpair.2) := by
+  have hn := Nat.Primrec.left
+  have hc := Nat.Primrec.right
+  have hlen := primrec_listLenChar.comp hc
+  have hB := primrec_min hn hlen
+  have hp := hn.pair hc
+  have hr := (hB.pair hp).pair hB
+  refine ((primrec_tabCode primrec_takeListTabFn).comp hr).of_eq fun t => by
+    simp [takeCode, unpair_pair_fst, unpair_pair_snd]
+
+theorem primrec_dropListTabFn : Nat.Primrec dropListTabFn :=
+  (primrec_nthCode.comp
+    ((Nat.Primrec.right.comp Nat.Primrec.right).pair
+      (Nat.Primrec.pair (primrec_add₂ Nat.Primrec.left (Nat.Primrec.left.comp Nat.Primrec.right))
+        (Nat.Primrec.const 0)))).of_eq fun w => by
+    simp [dropListTabFn, unpair_pair_fst, unpair_pair_snd]
+
+theorem primrec_dropCode : Nat.Primrec (fun t => dropCode t.unpair.1 t.unpair.2) := by
+  have hn := Nat.Primrec.left
+  have hc := Nat.Primrec.right
+  have hlen := primrec_listLenChar.comp hc
+  have hB := primrec_sub₂ hlen hn
+  have hp := hn.pair hc
+  have hr := (hB.pair hp).pair hB
+  refine ((primrec_tabCode primrec_dropListTabFn).comp hr).of_eq fun t => by
+    simp [dropCode, unpair_pair_fst, unpair_pair_snd]
+
 end Domain.Recursive

@@ -20,11 +20,13 @@ A session may begin after a context reset; chat memory is not durable, these fil
 6. **Exercise 7.22 (split inventory):** Scott's construction is **formalized** — grep `Exercise 7.22`
    in `arxiv.md`: rows **7.22a–h**, **7.22i(a)** are **Pass**;    **7.22i(b)1(a–e)**, **7.22i(b)2–3** **Pass**;
    **7.22i(b)4–8** are **Not Yet**;
+   **7.22i(b)4 Pass** (**C9b4** ☑). **7.22i(b)5–8 Not Yet**;
    **7.22i(b)** umbrella and **7.22j–l** are **Not Yet** (PR
    certification + optional extensions). Remaining Composer work is **interface repair** between the
    automata Bool layer and `Recursive.lean`, not unfinished Scott mathematics. **`@Exercise722-Composer-Run.md`**
    only (one @ per session). **Composer tracker:** C1–C8 ☑, C11 ☑, C12 ☑; **C9a** → **7.22i(a)** ☑;
-   **next eligible ☐:** **C9b4** / **7.22i(b)4**; see **`arxiv.md`** rows **7.22i(b)4–8**; **C10** → **7.22j** after **C9b8**; **C7b** → **7.22k**
+   **C9b4** → **7.22i(b)4** ☑;
+   **next eligible ☐:** **C9b5** / **7.22i(b)5**; see **`arxiv.md`** rows **7.22i(b)5–8**; **C10** → **7.22j** after **C9b8**; **C7b** → **7.22k**
    (optional, does not block paper). Do **not** duplicate encode/decode in a monolith
    (`Exercise722Primrec.lean` was abandoned 2026-06-29).
 
@@ -32,7 +34,7 @@ A session may begin after a context reset; chat memory is not durable, these fil
 `arxiv.md`: **7.22a–h Pass** (LFP `InS`, positive `Ssys`, semigroup/embedding, regular events,
 automata, Bool deciders, `SsysX`, infinite-word **`streamElem`** + conditional idempotency).
 **7.22i(a) Pass; i(b)1–8 + j–l Not Yet:** (i)(b) umbrella closes when sub-rows **7.22i(b)1–8** Pass
-(**C9b1–C9b8**); **7.22i(b)4–8 Not Yet.** (j)
+(**C9b1–C9b8**); **7.22i(b)4 Pass; 7.22i(b)5–8 Not Yet.** (j)
 `ComputablePresentation` (**C10**);
 (k) relation (i) `interEq` (**C7b**, optional); (l) formal infinite-word equations (optional).
 See `Exercise722-Composer-Run.md` for next Composer session.
@@ -4288,4 +4290,4 @@ session:** **C9b1** only (`decodeFuelOkChar` in `Recursive.lean`).
 
 ---
 
-**2026-06-30 — C9b3 / 7.22i(b)3 Pass.** **`Recursive.lean`:** **`natEqChar`**, **`listEqStpNonzero`**, **`listEqStp`**, **`listEqChar`**, **`listEqChar_eq_one_iff`**, **`primrec_listEqStp`**, **`primrec_listEqChar`**. Design: synchronized single-pass **`foldCode`** (rejected **`reForallChar`**+**`tabCode`** witness design). **`lake build Scott1980.Neighborhood.Recursive`** green; zero `sorry`; **`primrec_listEqChar` ⊆ {propext, Classical.choice, Quot.sound}**. **Next:** **C9b4** (`appendListCode`/`takeCode`/`dropCode`).
+**2026-07-01 — C9b4 / 7.22i(b)4 Pass.** **`Recursive.lean`:** **`appendListTabFn`**, **`appendListCode`**, **`takeListTabFn`**, **`takeCode`**, **`dropListTabFn`**, **`dropCode`**, **`list_eq_of_getD`**, **`getD_take_cf`**, **`getD_drop_cf`**, **`appendListCode_eq`**, **`takeCode_eq`**, **`dropCode_eq`**, **`primrec_appendListTabFn`**, **`primrec_appendListCode`**, **`primrec_takeListTabFn`**, **`primrec_min`**, **`primrec_takeCode`**, **`primrec_dropListTabFn`**, **`primrec_dropCode`**. Design: **`tabCode`** tabulation (no snoc/reverse fold); append branch via **`isZero ((i+1)-len1)`**; correctness through **`tabCode_nth_lt`**/**`nthCode_eq`** only. **`lake build Scott1980.Neighborhood.Recursive`** green; zero `sorry`; **`appendListCode_eq`/`takeCode_eq`/`dropCode_eq` ⊆ {propext, Classical.choice, Quot.sound}** (`Classical.choice` from **`List.ext_getElem`**). **Next:** **C9b5** (`autStateCardFuelChar`/`matchesBChar`).

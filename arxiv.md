@@ -102,7 +102,7 @@ within `Recursive.lean`—not to further domain theory. See appendices A and B.
 | **C9b1e** | `decodeFuelOkChar_eq_one_iff` | ☑ | 7.22i(b)1(e) |
 | **C9b2** | `listLenChar` + `primrec` | ☑ | 7.22i(b)2 |
 | **C9b3** | `listEqChar` + `primrec` | ☑ | 7.22i(b)3 |
-| **C9b4** | `appendListCode`, `takeCode`, `dropCode` + `primrec` | Not Yet | 7.22i(b)4 |
+| **C9b4** | `appendListCode`, `takeCode`, `dropCode` + `primrec` | Pass | 7.22i(b)4 |
 | **C9b5** | `autStateCardFuelChar`, `matchesBChar` + `primrec` | Not Yet | 7.22i(b)5 |
 | **C9b6** | `decideNonemptyBChar`, `consistentBChar` + `primrec` | Not Yet | 7.22i(b)6 |
 | **C9b7** | `ssysConsistentBChar` + shallow Bool `_eq` lemmas | Not Yet | 7.22i(b)7 |
@@ -1699,8 +1699,8 @@ delivered **7.22a–h** and **7.22i(a)**; **7.22i(b)1–8** (Composer **C9b1–C
 #### Exercise 7.22i(b)4
 * **Mathematical Target:** list append / take / drop on codes — **`appendListCode`**, **`takeCode`**, **`dropCode`** + `primrec`
 * **Lean File:** `Scott1980/Neighborhood/Recursive.lean`
-* **Proof Notes:** **`snocCode`** / **`appendList_foldl_snoc`**; **`tabCode`**/`**nthCode**` for take/drop. Depends on **7.22i(b)2–3**. Bulk WIP: append cons-case proof incomplete.
-* **Status:** Not Yet
+* **Proof Notes:** **`tabCode`**/`**nthCode**`/`**listLenChar**` (no snoc/reverse fold): **`appendListTabFn`** uses **`isZero ((i+1)-len1)`** branch + **`nthCode`**; **`takeCode`**/**`dropCode`** tabulate at **`min n len`**/**`len-n`**. Correctness via **`tabCode_nth_lt`**/**`nthCode_eq`** + choice-free **`getD_take_cf`**/**`getD_drop_cf`** (inductive). **`appendListCode_eq`**, **`takeCode_eq`**, **`dropCode_eq`**, **`primrec_*`**. **`⊆{propext,Classical.choice,Quot.sound}`** (`Classical.choice` from **`List.ext_getElem`** in **`list_eq_of_getD`**).
+* **Status:** Pass
 
 #### Exercise 7.22i(b)5
 * **Mathematical Target:** numeric **`matchesB`** / state-card bound — **`autStateCardFuelChar`**, **`matchesBChar`** + `primrec`

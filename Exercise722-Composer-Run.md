@@ -87,7 +87,7 @@ You are a Lean 4 proof engineer in `/home/catskills/Desktop/scott1980` (mathlib 
 | **C9b1e** | `decodeFuelOkChar_eq_one_iff` | ☑ | C9b1c, C9b1d | 7.22i(b)1(e) |
 | **C9b2** | `listLenChar` + `primrec` | ☑ | C9b1b | 7.22i(b)2 |
 | **C9b3** | `listEqChar` + `primrec` | ☑ | C9b2 | 7.22i(b)3 |
-| **C9b4** | `appendListCode`, `takeCode`, `dropCode` + `primrec` | Not Yet | C9b3 | 7.22i(b)4 |
+| **C9b4** | `appendListCode`, `takeCode`, `dropCode` + `primrec` | ☑ | C9b3 | 7.22i(b)4 |
 | **C9b5** | `autStateCardFuelChar`, `matchesBChar` + `primrec` | Not Yet | C9b4 | 7.22i(b)5 |
 | **C9b6** | `decideNonemptyBChar`, `consistentBChar` + `primrec` | Not Yet | C9b5 | 7.22i(b)6 |
 | **C9b7** | `ssysConsistentBChar` + shallow Bool `_eq` lemmas | Not Yet | C9b6 | 7.22i(b)7 |
@@ -367,7 +367,7 @@ only
 | **C9b1e** | `decodeFuelOkChar_eq_one_iff` | ☑ | 7.22i(b)1(e) |
 | **C9b2** | `listLenChar` + `primrec` | ☑ | 7.22i(b)2 |
 | **C9b3** | `listEqChar` + `primrec` | ☑ | 7.22i(b)3 |
-| **C9b4** | `appendListCode`, `takeCode`, `dropCode` + `primrec` | Not Yet | 7.22i(b)4 |
+| **C9b4** | `appendListCode`, `takeCode`, `dropCode` + `primrec` | ☑ | 7.22i(b)4 |
 | **C9b5** | `autStateCardFuelChar`, `matchesBChar` + `primrec` | Not Yet | 7.22i(b)5 |
 | **C9b6** | `decideNonemptyBChar`, `consistentBChar` + `primrec` | Not Yet | 7.22i(b)6 |
 | **C9b7** | `ssysConsistentBChar` + shallow Bool `_eq` lemmas | Not Yet | 7.22i(b)7 |
