@@ -720,6 +720,77 @@ theorem ssysConsistentBChar_eq_one_iff (n m : ℕ) :
       | true => exact absurd hAn hn
     simp only [hn0, mulBit, zero_mul, selectFn_zero, hnf, Bool.not_false, Bool.true_or, if_true]
 
+/-! ### Session C9b8 — closing the `C9b` umbrella
+
+`decodeFuelOkChar`/`autStateCardFuelChar`/`matchesBChar`/`decideNonemptyBChar`/`consistentBChar`
+are jointly primitive recursive in `(fuel, code)` (see `Recursive.lean`'s course-of-values
+sections), so `ssysActiveChar`/`ssysConsistentBChar` compose directly, with no further new
+infrastructure needed here. -/
+
+theorem primrec_ssysActiveChar : Nat.Primrec ssysActiveChar := by
+  have hpack : Nat.Primrec (fun n : ℕ => Nat.pair (n.unpair.2 + 1) n.unpair.1) :=
+    Nat.Primrec.pair (primrec_add₂ Nat.Primrec.right (Nat.Primrec.const 1)) Nat.Primrec.left
+  have h1 : Nat.Primrec (fun n => decodeFuelOkChar (n.unpair.2 + 1) n.unpair.1) :=
+    (primrec_decodeFuelOkChar2.comp hpack).of_eq fun n => by
+      simp only [unpair_pair_fst, unpair_pair_snd]
+  have h2 : Nat.Primrec (fun n => decideNonemptyBChar (n.unpair.2 + 1) n.unpair.1) :=
+    (primrec_decideNonemptyBChar2.comp hpack).of_eq fun n => by
+      simp only [unpair_pair_fst, unpair_pair_snd]
+  exact (primrec_mulBit.comp (Nat.Primrec.pair h1 h2)).of_eq fun n => by
+    simp only [unpair_pair_fst, unpair_pair_snd, ssysActiveChar]
+
+theorem primrec_ssysConsistentBChar :
+    Nat.Primrec (fun t => ssysConsistentBChar t.unpair.1 t.unpair.2) := by
+  have hcond : Nat.Primrec
+      (fun t => mulBit (ssysActiveChar t.unpair.1) (ssysActiveChar t.unpair.2)) :=
+    (primrec_mulBit.comp (Nat.Primrec.pair (primrec_ssysActiveChar.comp Nat.Primrec.left)
+      (primrec_ssysActiveChar.comp Nat.Primrec.right))).of_eq fun t => by
+      simp only [unpair_pair_fst, unpair_pair_snd]
+  have hfuel : Nat.Primrec (fun t : ℕ => t.unpair.1.unpair.2 + t.unpair.2.unpair.2 + 2) :=
+    primrec_add₂ (primrec_add₂ (Nat.Primrec.right.comp Nat.Primrec.left)
+      (Nat.Primrec.right.comp Nat.Primrec.right)) (Nat.Primrec.const 2)
+  have hpack : Nat.Primrec (fun t : ℕ => Nat.pair (t.unpair.1.unpair.2 + t.unpair.2.unpair.2 + 2)
+      (Nat.pair t.unpair.1.unpair.1 t.unpair.2.unpair.1)) :=
+    Nat.Primrec.pair hfuel (Nat.Primrec.pair (Nat.Primrec.left.comp Nat.Primrec.left)
+      (Nat.Primrec.left.comp Nat.Primrec.right))
+  have hcons : Nat.Primrec (fun t => consistentBChar
+      (t.unpair.1.unpair.2 + t.unpair.2.unpair.2 + 2) t.unpair.1.unpair.1 t.unpair.2.unpair.1) :=
+    (primrec_consistentBChar2.comp hpack).of_eq fun t => by
+      simp only [unpair_pair_fst, unpair_pair_snd]
+  exact (primrec_selectFn hcond hcons (Nat.Primrec.const 1)).of_eq fun t => by
+    simp only [ssysConsistentBChar]
+
+theorem ssysConsistentBChar_le_one (n m : ℕ) : ssysConsistentBChar n m ≤ 1 := by
+  unfold ssysConsistentBChar
+  rcases (show mulBit (ssysActiveChar n) (ssysActiveChar m) = 0 ∨
+      mulBit (ssysActiveChar n) (ssysActiveChar m) = 1 by
+    have h1 := ssysActiveChar_le_one n
+    have h2 := ssysActiveChar_le_one m
+    unfold mulBit
+    rcases (show ssysActiveChar n = 0 ∨ ssysActiveChar n = 1 by omega) with hn | hn <;>
+      rcases (show ssysActiveChar m = 0 ∨ ssysActiveChar m = 1 by omega) with hm | hm <;>
+      simp [hn, hm]) with h0 | h1
+  · rw [h0, selectFn_zero]
+  · rw [h1, selectFn_one]; exact consistentBChar_le_one _ _ _
+
+theorem ssysConsChar_le_one (t : ℕ) : ssysConsChar t ≤ 1 := by
+  have := boolNat_zero_one (ssysConsistentB t.unpair.1 t.unpair.2)
+  unfold ssysConsChar
+  omega
+
+theorem ssysConsChar_eq_ssysConsistentBChar (t : ℕ) :
+    ssysConsChar t = ssysConsistentBChar t.unpair.1 t.unpair.2 := by
+  apply eq_of_le_one_iff_one (ssysConsChar_le_one t) (ssysConsistentBChar_le_one _ _)
+  rw [ssysConsChar_eq_one_iff, ssysConsistentBChar_eq_one_iff]
+
+/-- **7.22i(b)8 / closes the C9b umbrella.** -/
+theorem primrec_ssysConsChar : Nat.Primrec ssysConsChar :=
+  (primrec_ssysConsistentBChar).of_eq fun t => (ssysConsChar_eq_ssysConsistentBChar t).symm
+
+/-- **Definition 7.1 (ii) is recursively decidable** (Exercise 7.22, closing C9). -/
+theorem Ssys_cons_computable : RecDecidable₂ (fun n m => ∃ k, SsysX k ⊆ SsysX n ∩ SsysX m) :=
+  Ssys_cons_computable_of_primrec_ssysConsChar primrec_ssysConsChar
+
 end Exercise722
 
 end Scott1980.Neighborhood

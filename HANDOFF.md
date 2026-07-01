@@ -18,16 +18,13 @@ A session may begin after a context reset; chat memory is not durable, these fil
 5. Follow `.cursor/rules/handoff-discipline.mdc` (choice discipline, axiom audits, and the
    end-of-item checklist that keeps this file + `arxiv.md` current).
 6. **Exercise 7.22 (split inventory):** Scott's construction is **formalized** — grep `Exercise 7.22`
-   in `arxiv.md`: rows **7.22a–h**, **7.22i(a)** are **Pass**;    **7.22i(b)1(a–e)**, **7.22i(b)2–4**, **7.22i(b)5**, **7.22i(b)6**, **7.22i(b)7** **Pass**;
-   **7.22i(b)8** is **Not Yet**;
-   **7.22i(b)4 Pass** (**C9b4** ☑). **7.22i(b)5 Pass** (**C9b5** ☑). **7.22i(b)6 Pass** (**C9b6** ☑). **7.22i(b)7 Pass** (**C9b7** ☑). **7.22i(b)8 Not Yet**;
-   **7.22i(b)** umbrella and **7.22j–l** are **Not Yet** (PR
-   certification + optional extensions). Remaining Composer work is **interface repair** between the
-   automata Bool layer and `Recursive.lean`, not unfinished Scott mathematics. **`@Exercise722-Composer-Run.md`**
-   only (one @ per session). **Composer tracker:** C1–C8 ☑, C11 ☑, C12 ☑; **C9a** → **7.22i(a)** ☑;
-   **C9b4** → **7.22i(b)4** ☑; **C9b5** → **7.22i(b)5** ☑; **C9b6** → **7.22i(b)6** ☑; **C9b7** → **7.22i(b)7** ☑;
-   **next eligible ☐:** **C9b8** / **7.22i(b)8** (closes the **C9b** umbrella: `primrec_ssysConsChar` from `ssysConsistentBChar`'s
-   own compositional `primrec_*` pieces, then `Ssys_cons_computable`); **C10** → **7.22j** after **C9b8**; **C7b** → **7.22k**
+   in `arxiv.md`: rows **7.22a–h**, **7.22i(a)**, **7.22i(b)1(a–e)**, **7.22i(b)2–8**, and the
+   **7.22i(b)** umbrella are **all Pass** (`Ssys_cons_computable` proved — Definition 7.1 (ii)
+   consistency is recursively decidable, choice-free save for the inherited list-extensionality
+   `Classical.choice`). **7.22j–l** are **Not Yet** (PR certification + optional extensions).
+   **`@Exercise722-Composer-Run.md`** only (one @ per session). **Composer tracker:** C1–C8 ☑,
+   C11 ☑, C12 ☑; **C9a** → **7.22i(a)** ☑; **C9b1–C9b8** → **7.22i(b)1–8** ☑ (umbrella **C9b** ☑);
+   **next eligible ☐:** **C10** / **7.22j** (`ComputablePresentation Ssys`); **C7b** → **7.22k**
    (optional, does not block paper). Do **not** duplicate encode/decode in a monolith
    (`Exercise722Primrec.lean` was abandoned 2026-06-29).
 
@@ -4302,3 +4299,55 @@ session:** **C9b1** only (`decodeFuelOkChar` in `Recursive.lean`).
 ---
 
 **2026-07-01 — C9b7 / 7.22i(b)7 Pass.** **`Recursive.lean`:** un-privated **`c9b5_boolNat`**/**`c9b5_encodeListBool`**/**`c9b5_sexprDepth`**/**`c9b5_sexprGodelEncode`** (the C9b5 Gödel mirror) so `Exercise722Presentation.lean` (downstream via `Definition71`) can bridge to them — `Recursive.lean` itself cannot see `SExpr.encode`/`sexprDepth` (would cycle). Added 4 generic choice-free boundedness lemmas: **`mulBit_le_one`**, **`allListChar_le_one`**, **`allBinDigitsChar_le_one`**, **`decodeFuelOkChar_le_one`**. **`Exercise722Presentation.lean`:** bridge equalities **`c9b5_sexprGodelEncode_eq`**/**`c9b5_sexprDepth_eq`** (trivial structural induction — both sides are literally the same recursive equations under different private names); decode-soundness **`decodeFuel_sound`** (`decodeFuel fuel c = some e → c = SExpr.encode e`, via `Nat.pair_unpair` + `decodeList`/`decodeListBool` injectivity) and **`decodeFuel_depth_le`** (`decodeFuel fuel c = some e → sexprDepth e ≤ fuel`), both by induction on `fuel` reusing C9b1's `decodeFuel_succ_*` case lemmas. **`ssysActiveChar`** (`mulBit` of `decodeFuelOkChar` (C9b1) + `decideNonemptyBChar` (C9b6) on the same `(n.unpair.2+1, n.unpair.1)` fuel/code pair `SExpr.decode` uses) + **`ssysActiveChar_eq_one_iff`**; **`ssysConsistentBChar`** (`selectFn` of `mulBit (ssysActiveChar n) (ssysActiveChar m)` gating `consistentBChar` (C9b6) at fuel `n.unpair.2+m.unpair.2+2`, defaulting to `1`) + **`ssysConsistentBChar_eq_one_iff`** — both bridge shallowly to `ssysActive`/`ssysConsistentB` (no WHNF unfold of `ssys_cons_char_iff`), citing C9b1/C9b6's `_eq_one_iff` theorems as black boxes. `lake build` (both files) green; zero `sorry`; **`ssysActiveChar_eq_one_iff`**/**`ssysConsistentBChar_eq_one_iff` ⊆ {propext, Classical.choice, Quot.sound}** (choice inherited from the list-extensionality layer, same pattern as C9b4–C9b6). **Next:** **C9b8** (`primrec_ssysConsChar` from `ssysConsistentBChar`'s own compositional `primrec_*` pieces via `.of_eq` + boundedness, then `Ssys_cons_computable`; closes the C9b umbrella).
+
+---
+
+**2026-07-01 — C9b8 / 7.22i(b)8 Pass — closes the C9b umbrella (7.22i(b)).** This was **not** the
+"short Presentation instantiation" originally planned: attempting the direct composition first
+revealed that `decodeFuelOkChar`/`autStateCardFuelChar`/`matchesBChar`/`decideNonemptyBChar`/
+`consistentBChar` (C9b1, C9b5, C9b6) were each only `Nat.Primrec` **for a fixed external `fuel`**,
+never **jointly** in `(fuel, code)` — but `ssysActiveChar`/`ssysConsistentBChar` (C9b7) need
+`fuel := n.unpair.2 + 1`, which *varies* with the input. Closing C9b8 required building genuine
+**course-of-values recursion** in `Recursive.lean` first (user explicitly approved this scope
+expansion over marking the row "Need Advice"):
+- **`fuelTable`/`fuelTableStep`** (generic): tabulates a fuel-recursive `{0,1}`-family's values on
+  `[0, bound]` as a coded list (`tabCode`/`nthCode`), iterated via `Nat.rec` on `fuel` — mirrors
+  `tabCode`'s own `Nat.Primrec.prec` packaging (C9b4). **`fuelTable_eq_of_recursion`**: correctness
+  given a table-lookup `bodyLookup` + a **locality** hypothesis (the step's recursive calls at code
+  `c` never exceed `c`). **`primrec_fuelTable`**: joint `Nat.Primrec` via `Nat.Primrec.prec`.
+- Instantiated directly for **`decodeFuelOkChar`** and **`autStateCardFuelChar`** (`Nat.unpair`
+  sub-projections only, always `≤ c` — new **`unpair_left_le`**, paired with `unpair_snd_le`).
+- **`matchesBChar`** was harder: cat-branch calls are at `pair a (takeCode i cw)`/
+  `pair b (dropCode i cw)` — the word half is a *derived* code. New **`encodeList_take_le`/
+  `encodeList_drop_le`** (prefix/suffix codes never exceed the full code) give **`takeCode_le`/
+  `dropCode_le`**; combined with new **`pair_le_pair`/`pair_le_pair_left`/`pair_le_pair_right'`**
+  (weak `Nat.pair` monotonicity) for locality, plus **`bExistsFn_congr`** and
+  **`eq_of_le_one_iff_one`** (bridges two differently-packed but pointwise-equal `bExistsFn`
+  calls).
+- **`decideNonemptyBChar`/`consistentBChar`** needed no new course-of-values work — just
+  **`primrec_bExistsFn_param`** (parametrized `bExistsFn`: `g` may depend on an external `fuel`
+  held fixed throughout the search) to thread `fuel` through without changing C9b6's definitions.
+- **`Exercise722Presentation.lean`:** **`primrec_ssysActiveChar`**/**`primrec_ssysConsistentBChar`**
+  now compose directly from the jointly-primrec five; **`ssysConsChar_eq_ssysConsistentBChar`**
+  (via `eq_of_le_one_iff_one` + `_eq_one_iff`/`_le_one` facts) bridges `ssysConsChar` (built from
+  the real `ssysConsistentB`) to `ssysConsistentBChar`, giving **`primrec_ssysConsChar`** via
+  `.of_eq`; **`Ssys_cons_computable := Ssys_cons_computable_of_primrec_ssysConsChar
+  primrec_ssysConsChar`** closes C9.
+- Renamed two new lemmas (**`unpair_fst_le`→`unpair_left_le`**, **`pair_le_pair_right`→
+  `pair_le_pair_right'`**) after full-workspace build caught name collisions with pre-existing
+  independent lemmas of the same name in `Proposition77.lean`/`Exercise717Part2.lean` (both opened
+  together with `Domain.Recursive` elsewhere) — always run **`lake build`** (whole workspace, not
+  just the touched module) after adding new **public** top-level names to `Recursive.lean`.
+- Recurring proof-engineering lesson (hit repeatedly this session): direct term-mode
+  `have h : Nat.Primrec (target) := bigLemma.comp packing` type-ascriptions against a **complex**
+  pre-existing `Nat.Primrec` term (`primrec_tabCode`, `primrec_ssysActiveChar`, etc.) routinely
+  timed out at `whnf`/`isDefEq` even at `maxHeartbeats` in the millions; wrapping in
+  **`.of_eq fun x => by simp [unpair_pair_fst, unpair_pair_snd]`** instead (proving *pointwise
+  equality* rather than asking the elaborator to unify the raw composed term against a manually
+  stated type) fixed every instance.
+`lake build` (whole workspace) green; zero `sorry`; **`primrec_ssysConsChar`**/
+**`Ssys_cons_computable` ⊆ {propext, Classical.choice, Quot.sound}** (choice inherited from the
+list-extensionality layer, same as every other C9b slice). **Exercise 7.22i(b) umbrella now
+Pass** (rows 7.22i(b)1–8 all Pass) — Scott's Definition 7.1 (ii) consistency relation on the
+`SsysX` enumeration is recursively decidable. **Next:** **C10** / **7.22j**
+(`ComputablePresentation Ssys` / `IsEffectivelyGiven`); **C7b** → **7.22k** (optional).

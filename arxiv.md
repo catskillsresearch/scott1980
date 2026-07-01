@@ -93,7 +93,7 @@ within `Recursive.lean`—not to further domain theory. See appendices A and B.
 | C11 | Infinite-word equations | ☑ | 7.22h |
 | C12 | Inventory + axiom audit | ☑ | — |
 | **C9a** | First missing **generic** `Nat.Primrec` lemma in `Recursive.lean` | ☑ | 7.22i(a) |
-| **C9b** | `primrec_ssysConsChar` + `Ssys_cons_computable` (umbrella) | Not Yet | 7.22i(b) |
+| **C9b** | `primrec_ssysConsChar` + `Ssys_cons_computable` (umbrella) | Pass | 7.22i(b) |
 | **C9b1** | `decodeFuelOkChar` umbrella (**7.22i(b)1(a–e)**) | ☑ | 7.22i(b)1 |
 | **C9b1a** | `mulBit` + `primrec` | ☑ | 7.22i(b)1(a) |
 | **C9b1b** | `decodeFuelOkChar` + `primrec` | ☑ | 7.22i(b)1(b) |
@@ -106,7 +106,7 @@ within `Recursive.lean`—not to further domain theory. See appendices A and B.
 | **C9b5** | `autStateCardFuelChar`, `matchesBChar` + `primrec` | Pass | 7.22i(b)5 |
 | **C9b6** | `decideNonemptyBChar`, `consistentBChar` + `primrec` | Pass | 7.22i(b)6 |
 | **C9b7** | `ssysConsistentBChar` + shallow Bool `_eq` lemmas | Pass | 7.22i(b)7 |
-| **C9b8** | `primrec_ssysConsChar` → `Ssys_cons_computable` | Not Yet | 7.22i(b)8 |
+| **C9b8** | `primrec_ssysConsChar` → `Ssys_cons_computable` | Pass | 7.22i(b)8 |
 | **C10** | `ComputablePresentation Ssys` / `IsEffectivelyGiven` | ☐ | 7.22j |
 | C7b | Full relation (i) `interEq` decider | ☐ (optional) | 7.22k |
 
@@ -1716,15 +1716,22 @@ delivered **7.22a–h** and **7.22i(a)**; **7.22i(b)1–8** (Composer **C9b1–C
 
 #### Exercise 7.22i(b)8
 * **Mathematical Target:** close **C9b** — **`primrec_ssysConsChar`**, **`Ssys_cons_computable`**
-* **Lean File:** `Scott1980/Neighborhood/Exercise722Presentation.lean`
-* **Proof Notes:** **`primrec_ssysConsChar : Nat.Primrec ssysConsChar`** (or **`ssysConsistentBChar`** packaged as **`ssysConsChar`**) then **`Ssys_cons_computable := Ssys_cons_computable_of_primrec_ssysConsChar primrec_ssysConsChar`**. Depends on **7.22i(b)7**.
-* **Status:** Not Yet
+* **Lean File:** `Scott1980/Neighborhood/Exercise722Presentation.lean` (instantiation); a major new generic layer in **`Recursive.lean`** (see below)
+* **Proof Notes:** This session was **not** the "short Presentation instantiation" the original plan expected — attempting the direct composition first revealed that `decodeFuelOkChar`/`autStateCardFuelChar`/`matchesBChar`/`decideNonemptyBChar`/`consistentBChar` (C9b1, C9b5, C9b6) were each only proved `Nat.Primrec` **for a fixed external `fuel`** (`∀ fuel, Nat.Primrec (fun c => F fuel c)`), never **jointly** in `(fuel, code)` — but `ssysActiveChar`/`ssysConsistentBChar` (C9b7) need `fuel := n.unpair.2 + 1`, which *varies* with the input. Closing C9b8 therefore required building genuine **course-of-values recursion** in `Recursive.lean` first:
+  - **`fuelTable`/`fuelTableStep`** (generic): tabulates a fuel-recursive `{0,1}`-family's values on `[0, bound]` as a coded list (`tabCode`/`nthCode`), iterated via `Nat.rec` on `fuel` — mirrors `tabCode`'s own `Nat.Primrec.prec` packaging (C9b4). **`fuelTable_eq_of_recursion`**: correctness given (a) a table-lookup-based `bodyLookup` faithfully implementing the recursive step, and (b) a **locality** hypothesis (the step's own recursive calls at code `c` never exceed `c`). **`primrec_fuelTable`**: joint `Nat.Primrec` via `Nat.Primrec.prec`.
+  - Instantiated for **`decodeFuelOkChar`** and **`autStateCardFuelChar`** directly (`decodeFuelOkCharBody`/`autStateCardFuelCharBody`'s only recursive calls are `Nat.unpair` sub-projections, always `≤ c` — new lemma **`unpair_left_le`**, paired with existing `unpair_snd_le`).
+  - **`matchesBChar`** was harder: its cat-branch recursive calls are at `pair a (takeCode i cw)`/`pair b (dropCode i cw)` — the word half is a *derived* code, not a raw `Nat.unpair` projection. New lemmas **`encodeList_take_le`/`encodeList_drop_le`** (prefix/suffix codes never exceed the full code, via `Nat.pair`'s monotonicity in the second argument) give **`takeCode_le`/`dropCode_le`**; combined with new **`pair_le_pair`/`pair_le_pair_left`/`pair_le_pair_right'`** (weak monotonicity, both/either argument) for the locality hypothesis, plus **`bExistsFn_congr`** (bExistsFn depends on `g` only via its values on the search range) and **`eq_of_le_one_iff_one`** (two `{0,1}`-bounded naturals agreeing on `=1` are equal, to bridge two *differently-packed* but pointwise-equal `bExistsFn` calls).
+  - **`decideNonemptyBChar`/`consistentBChar`** needed no new course-of-values work (built from the now-joint `matchesBChar`/`autStateCardFuelChar` via `bExistsFn`/`codeBound`) — just a new **`primrec_bExistsFn_param`** (parametrized `bExistsFn`: `g` may depend on an external `fuel` held fixed throughout the search, packed alongside `bExistsFn`'s own `n`) to thread `fuel` through without needing `decideNonemptyBChar`'s C9b6 definition to change.
+  - With all five jointly primitive recursive, **`primrec_ssysActiveChar`**/**`primrec_ssysConsistentBChar`** compose directly (C9b7's definitions, unchanged); **`ssysConsChar_eq_ssysConsistentBChar`** (via `eq_of_le_one_iff_one` + the C9b7/C9b8 `_eq_one_iff`/`_le_one` facts) bridges `ssysConsChar` (built from the real `ssysConsistentB`) to `ssysConsistentBChar`, giving **`primrec_ssysConsChar`** via `.of_eq`; **`Ssys_cons_computable := Ssys_cons_computable_of_primrec_ssysConsChar primrec_ssysConsChar`** closes C9.
+  - Two pre-existing-name collisions surfaced once the new lemmas were made public and reachable via `open Domain.Recursive` elsewhere (`unpair_fst_le`/`pair_le_pair_right` already existed independently in `Proposition77.lean`/`Exercise717Part2.lean`); renamed to `unpair_left_le`/`pair_le_pair_right'` to disambiguate.
+  - **`⊆ {propext, Classical.choice, Quot.sound}`** (choice inherited from the list-extensionality layer, same as every other C9b slice). Depends on **7.22i(b)7**.
+* **Status:** Pass
 
 #### Exercise 7.22i(b)
 * **Mathematical Target:** primitive-recursive certification of consistency — `RecDecidable₂` for Def 7.1 (ii) (Composer **C9b** umbrella)
 * **Lean File:** `Scott1980/Neighborhood/Exercise722Presentation.lean` (instantiation); generic lemmas in **`Recursive.lean`**
-* **Proof Notes:** Mathematics done (`ssys_cons_char_iff`). Conditional closure (**`Ssys_cons_computable_of_primrec_ssysConsChar`**) in place. **Umbrella closes when sub-rows 7.22i(b)1–8 are all Pass.** One **slice per session**—do **not** rebuild the abandoned `Exercise722Primrec.lean` monolith. Bulk WIP (2026-06-30, not checked in) failed before step 8; retry incrementally.
-* **Status:** Not Yet
+* **Proof Notes:** **Umbrella closes: sub-rows 7.22i(b)1–8 are all Pass.** `Ssys_cons_computable : RecDecidable₂ (fun n m => ∃ k, SsysX k ⊆ SsysX n ∩ SsysX m)` — Scott's Definition 7.1 (ii) consistency relation on the `SsysX` enumeration is recursively decidable, choice-free save for the inherited list-extensionality `Classical.choice`. See **7.22i(b)8**'s proof notes for the closing session's course-of-values joint-primrec architecture.
+* **Status:** Pass
 
 #### Exercise 7.22j
 * **Mathematical Target:** `ComputablePresentation Ssys` / `Ssys.IsEffectivelyGiven` (Def 7.1 packaging)

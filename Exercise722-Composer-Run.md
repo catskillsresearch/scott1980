@@ -78,7 +78,7 @@ You are a Lean 4 proof engineer in `/home/catskills/Desktop/scott1980` (mathlib 
 | C7b | full equivalence | ☐ optional | C5 | 7.22k |
 | C8 | `SsysX` enumeration | ☑ | C5 | 7.22g |
 | **C9a** | first missing **generic** `Nat.Primrec` lemma in `Recursive.lean` | ☑ | C6, C8 | 7.22i(a) |
-| **C9b** | `primrec_ssysConsChar` + `Ssys_cons_computable` (umbrella) | Not Yet | C9a | 7.22i(b) |
+| **C9b** | `primrec_ssysConsChar` + `Ssys_cons_computable` (umbrella) | Pass | C9a | 7.22i(b) |
 | **C9b1** | `decodeFuelOkChar` umbrella (**7.22i(b)1(a–e)**) | ☑ | C9a | 7.22i(b)1 |
 | **C9b1a** | `mulBit` + `primrec` | ☑ | C9a | 7.22i(b)1(a) |
 | **C9b1b** | `decodeFuelOkChar` + `primrec` | ☑ | C9b1a | 7.22i(b)1(b) |
@@ -91,7 +91,7 @@ You are a Lean 4 proof engineer in `/home/catskills/Desktop/scott1980` (mathlib 
 | **C9b5** | `autStateCardFuelChar`, `matchesBChar` + `primrec` | Pass | C9b4 | 7.22i(b)5 |
 | **C9b6** | `decideNonemptyBChar`, `consistentBChar` + `primrec` | Pass | C9b5 | 7.22i(b)6 |
 | **C9b7** | `ssysConsistentBChar` + shallow Bool `_eq` lemmas | Pass | C9b6 | 7.22i(b)7 |
-| **C9b8** | `primrec_ssysConsChar` → `Ssys_cons_computable` | Not Yet | C9b7 | 7.22i(b)8 |
+| **C9b8** | `primrec_ssysConsChar` → `Ssys_cons_computable` | Pass | C9b7 | 7.22i(b)8 |
 | C10 | `ComputablePresentation` | ☐ | C9b8 | 7.22j |
 | C11 | infinite-word prose | ☑ | — | 7.22h |
 | C12 | arxiv + audit | ☑ | C6+ | — |
@@ -371,7 +371,7 @@ only
 | **C9b5** | `autStateCardFuelChar`, `matchesBChar` + `primrec` | Pass | 7.22i(b)5 |
 | **C9b6** | `decideNonemptyBChar`, `consistentBChar` + `primrec` | Pass | 7.22i(b)6 |
 | **C9b7** | `ssysConsistentBChar` + shallow Bool `_eq` lemmas | Pass | 7.22i(b)7 |
-| **C9b8** | `primrec_ssysConsChar` → `Ssys_cons_computable` | Not Yet | 7.22i(b)8 |
+| **C9b8** | `primrec_ssysConsChar` → `Ssys_cons_computable` | Pass | 7.22i(b)8 |
 
 **One slice per session.** Use shallow char lemmas for iff links—do not unfold `ssys_cons_char_iff`
 chains at WHNF. **If stuck >30 min:** STOP, HANDOFF "C9bN BLOCKED" (N = slice number). **C9b3**
