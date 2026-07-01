@@ -1569,6 +1569,24 @@ theorem existsListChar_eq_one_iff (g : ℕ → ℕ) (p c : ℕ) :
   rw [existsListChar_eq, existsList_foldl_eq_one_iff g p (decodeList c) 0 (Nat.zero_le 1)]
   simp only [Nat.zero_ne_one, false_or]
 
+theorem allListChar_le_one (g : ℕ → ℕ) (p c : ℕ) : allListChar g p c ≤ 1 := by
+  have h : ∀ (l : List ℕ) (z : ℕ), z ≤ 1 →
+      List.foldl (fun acc x => allListStp g (Nat.pair x (Nat.pair acc p))) z l ≤ 1 := by
+    intro l
+    induction l with
+    | nil => intro z hz; simpa using hz
+    | cons x xs ih =>
+      intro z hz
+      simp only [List.foldl_cons]
+      apply ih
+      rw [allListStp_eq]
+      rcases (show z = 0 ∨ z = 1 by omega) with h0 | h1
+      · rw [h0, selectFn_zero]; exact Nat.zero_le 1
+      · rw [h1, selectFn_one]; exact isOne_le_one _
+  unfold allListChar
+  rw [foldCode_eq']
+  exact h (decodeList c) 1 (le_refl 1)
+
 theorem primrec_allListStp {g : ℕ → ℕ} (hg : Nat.Primrec g) : Nat.Primrec (allListStp g) := by
   have hacc : Nat.Primrec (fun w : ℕ => w.unpair.2.unpair.1) :=
     Nat.Primrec.left.comp Nat.Primrec.right
@@ -1623,6 +1641,9 @@ theorem allBinDigitsChar_eq_one_iff (c : ℕ) :
   unfold allBinDigitsChar
   rw [allListChar_eq_one_iff]
   simp [unpair_pair_fst, unpair_pair_snd, isBinDigit_eq_one_iff]
+
+theorem allBinDigitsChar_le_one (c : ℕ) : allBinDigitsChar c ≤ 1 := by
+  unfold allBinDigitsChar; exact allListChar_le_one _ _ _
 
 set_option maxHeartbeats 800000 in
 theorem primrec_allBinDigitsChar : Nat.Primrec allBinDigitsChar := by
@@ -1929,6 +1950,11 @@ def mulBit (a b : ℕ) : ℕ := a * b
 theorem mulBit_eq_one_iff (a b : ℕ) : mulBit a b = 1 ↔ a = 1 ∧ b = 1 := by
   simpa [mulBit] using nat_mul_eq_one
 
+theorem mulBit_le_one {a b : ℕ} (ha : a ≤ 1) (hb : b ≤ 1) : mulBit a b ≤ 1 := by
+  unfold mulBit
+  rcases (show a = 0 ∨ a = 1 by omega) with rfl | rfl <;>
+    rcases (show b = 0 ∨ b = 1 by omega) with rfl | rfl <;> simp
+
 theorem primrec_mulBit : Nat.Primrec (fun t => mulBit t.unpair.1 t.unpair.2) :=
   primrec_mul₂ Nat.Primrec.left Nat.Primrec.right
 
@@ -2017,6 +2043,26 @@ theorem primrec_decodeFuelOkChar : ∀ fuel, Nat.Primrec (fun c => decodeFuelOkC
   | fuel + 1 => by
     simpa [decodeFuelOkChar] using
       primrec_decodeFuelOkCharBody (primrec_decodeFuelOkChar fuel)
+
+theorem decodeFuelOkChar_le_one : ∀ fuel c, decodeFuelOkChar fuel c ≤ 1
+  | 0, _ => by simp [decodeFuelOkChar]
+  | fuel + 1, c => by
+    rw [decodeFuelOkChar, decodeFuelOkCharBody_eq]
+    match tag : c.unpair.1 with
+    | 0 =>
+      dsimp only
+      rcases (show isOne (1 - c.unpair.2) = 0 ∨ isOne (1 - c.unpair.2) = 1 by
+        have := isOne_le_one (1 - c.unpair.2); omega) with h0 | h1
+      · rw [h0, selectFn_zero]; exact Nat.zero_le 1
+      · rw [h1, selectFn_one]
+    | 1 =>
+      dsimp only
+      exact allBinDigitsChar_le_one _
+    | 2 | 3 =>
+      dsimp only
+      exact mulBit_le_one (decodeFuelOkChar_le_one fuel c.unpair.2.unpair.1)
+        (decodeFuelOkChar_le_one fuel c.unpair.2.unpair.2)
+    | _ + 4 => exact Nat.zero_le 1
 
 /-! ## Exercise 7.22 C9b2 — coded list length
 
@@ -2473,18 +2519,21 @@ Fuel-bounded numeric mirrors of `autStateCard` / `matchesB` with tag dispatch li
 
 open Scott1980.Neighborhood Exercise722
 
-private def c9b5_boolNat (b : Bool) : ℕ := if b then 1 else 0
+/-- **Not** `private`: `Exercise722Presentation.lean` (downstream of this file via `Definition71`)
+bridges this to its own `boolNat` in Session **C9b7**, since `Recursive.lean` cannot import
+`Exercise722Presentation.lean` (would cycle) and so cannot state that bridge itself. -/
+def c9b5_boolNat (b : Bool) : ℕ := if b then 1 else 0
 
-private def c9b5_encodeListBool (σ : List Bool) : ℕ := encodeList (σ.map c9b5_boolNat)
+def c9b5_encodeListBool (σ : List Bool) : ℕ := encodeList (σ.map c9b5_boolNat)
 
-private def c9b5_sexprDepth : SExpr → ℕ
+def c9b5_sexprDepth : SExpr → ℕ
   | .sigma => 1
   | .single _ => 1
   | .cat a b => 1 + max (c9b5_sexprDepth a) (c9b5_sexprDepth b)
   | .cap a b => 1 + max (c9b5_sexprDepth a) (c9b5_sexprDepth b)
 
 /-- Gödel code mirroring `SExpr.encode` in `Exercise722Presentation.lean`. -/
-private def c9b5_sexprGodelEncode : SExpr → ℕ
+def c9b5_sexprGodelEncode : SExpr → ℕ
   | .sigma => Nat.pair 0 0
   | .single σ => Nat.pair 1 (c9b5_encodeListBool σ)
   | .cat a b => Nat.pair 2 (Nat.pair (c9b5_sexprGodelEncode a) (c9b5_sexprGodelEncode b))

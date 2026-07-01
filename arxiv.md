@@ -105,7 +105,7 @@ within `Recursive.lean`—not to further domain theory. See appendices A and B.
 | **C9b4** | `appendListCode`, `takeCode`, `dropCode` + `primrec` | Pass | 7.22i(b)4 |
 | **C9b5** | `autStateCardFuelChar`, `matchesBChar` + `primrec` | Pass | 7.22i(b)5 |
 | **C9b6** | `decideNonemptyBChar`, `consistentBChar` + `primrec` | Pass | 7.22i(b)6 |
-| **C9b7** | `ssysConsistentBChar` + shallow Bool `_eq` lemmas | Not Yet | 7.22i(b)7 |
+| **C9b7** | `ssysConsistentBChar` + shallow Bool `_eq` lemmas | Pass | 7.22i(b)7 |
 | **C9b8** | `primrec_ssysConsChar` → `Ssys_cons_computable` | Not Yet | 7.22i(b)8 |
 | **C10** | `ComputablePresentation Ssys` / `IsEffectivelyGiven` | ☐ | 7.22j |
 | C7b | Full relation (i) `interEq` decider | ☐ (optional) | 7.22k |
@@ -1642,22 +1642,16 @@ delivered **7.22a–h** and **7.22i(a)**; **7.22i(b)1–8** (Composer **C9b1–C
 * **Proof Notes:** **`isBinDigit`**, **`allBinDigitsChar`**, **`primrec_isBinDigit`**, **`primrec_allBinDigitsChar`** — `{0,1}` validation over **`decodeList`** via existing **`allListChar`**/`**foldCode**`. Reused by **`decodeFuelOkChar`** tag-1 (**7.22i(b)1(b)**). Green, zero `sorry`; primrec theorems `⊆ {propext, Quot.sound}`.
 * **Status:** Pass
 
-#### Exercise 7.22i(b)
-* **Mathematical Target:** primitive-recursive certification of consistency — `RecDecidable₂` for Def 7.1 (ii) (Composer **C9b** umbrella)
-* **Lean File:** `Scott1980/Neighborhood/Exercise722Presentation.lean` (instantiation); generic lemmas in **`Recursive.lean`**
-* **Proof Notes:** Mathematics done (`ssys_cons_char_iff`). Conditional closure (**`Ssys_cons_computable_of_primrec_ssysConsChar`**) in place. **Umbrella closes when sub-rows 7.22i(b)1–8 are all Pass.** One **slice per session**—do **not** rebuild the abandoned `Exercise722Primrec.lean` monolith. Bulk WIP (2026-06-30, not checked in) failed before step 8; retry incrementally.
-* **Status:** Not Yet
-
-#### Exercise 7.22i(b)1
-* **Mathematical Target:** fuel-bounded decode ok flag — **`decodeFuelOkChar`** + **`primrec_decodeFuelOkChar`**, then shallow link ↔ **`decodeFuel`**.**`isSome`**
-* **Lean File:** `Scott1980/Neighborhood/Recursive.lean` (char + primrec); `Exercise722Presentation.lean` (link)
-* **Proof Notes:** **All sub-rows (a–e) Pass.** Char + primrec in **`Recursive.lean`**; shallow link **`decodeFuelOkChar_eq_one_iff`** in **`Exercise722Presentation.lean`** (fuel induction + tag dispatch via **(c)**, tag-1 via **(d)**, tags 2/3 via **`mulBit_eq_one_iff`** + pair-**`isSome`** lemmas).
-* **Status:** Pass
-
 #### Exercise 7.22i(b)1(a)
 * **Mathematical Target:** `{0,1}` AND — **`mulBit`**, **`mulBit_eq_one_iff`**, **`primrec_mulBit`**
 * **Lean File:** `Scott1980/Neighborhood/Recursive.lean`
 * **Proof Notes:** Used by `.cat`/`.cap` branches of **`decodeFuelOkCharBody`**. Green; **`primrec_mulBit` ⊆ {propext, Quot.sound}**.
+* **Status:** Pass
+
+#### Exercise 7.22i(b)1(b)
+* **Mathematical Target:** fuel-bounded decode ok char — **`decodeFuelOkChar`**, **`decodeFuelOkCharBody`**, **`primrec_decodeFuelOkChar`**
+* **Lean File:** `Scott1980/Neighborhood/Recursive.lean`
+* **Proof Notes:** Tag dispatch via **`primrec_tagCase4`**; tag-0 uses **`isOne (1 - u)`** (matches **`decodeFuel`**); tag-1 reuses **7.22i(a)** **`allBinDigitsChar`**; tags 2/3 use **7.22i(b)1(a)** **`mulBit`**. Fuel induction on first argument. Green; zero `sorry`; **`primrec_decodeFuelOkChar` ⊆ {propext, Quot.sound}**.
 * **Status:** Pass
 
 #### Exercise 7.22i(b)1(c)
@@ -1676,6 +1670,12 @@ delivered **7.22a–h** and **7.22i(a)**; **7.22i(b)1–8** (Composer **C9b1–C
 * **Mathematical Target:** shallow decode link — **`decodeFuelOkChar_eq_one_iff`** (`decodeFuelOkChar fuel c = 1 ↔ (decodeFuel fuel c).isSome = true`)
 * **Lean File:** `Scott1980/Neighborhood/Exercise722Presentation.lean`
 * **Proof Notes:** Fuel induction; **`decodeFuelOkCharBody_eq`** + **`match c.unpair.1`**. Tag 0: **`selectFn_isOne_one_sub_sigma`**; tag 1: **(d)** + **`Option.isSome_map`**; tags 2/3: **`mulBit_eq_one_iff`** + **`decodeFuel_pair_*_isSome_iff`**; tag ≥4: both **`false`**. Green; zero `sorry`; **`decodeFuelOkChar_eq_one_iff` ⊆ {propext, Classical.choice, Quot.sound}** (choice inherited).
+* **Status:** Pass
+
+#### Exercise 7.22i(b)1
+* **Mathematical Target:** fuel-bounded decode ok flag — **`decodeFuelOkChar`** + **`primrec_decodeFuelOkChar`**, then shallow link ↔ **`decodeFuel`**.**`isSome`**
+* **Lean File:** `Scott1980/Neighborhood/Recursive.lean` (char + primrec); `Exercise722Presentation.lean` (link)
+* **Proof Notes:** **All sub-rows (a–e) Pass.** Char + primrec in **`Recursive.lean`**; shallow link **`decodeFuelOkChar_eq_one_iff`** in **`Exercise722Presentation.lean`** (fuel induction + tag dispatch via **(c)**, tag-1 via **(d)**, tags 2/3 via **`mulBit_eq_one_iff`** + pair-**`isSome`** lemmas).
 * **Status:** Pass
 
 #### Exercise 7.22i(b)2
@@ -1710,9 +1710,9 @@ delivered **7.22a–h** and **7.22i(a)**; **7.22i(b)1–8** (Composer **C9b1–C
 
 #### Exercise 7.22i(b)7
 * **Mathematical Target:** index-level consistency char — **`ssysActiveChar`**, **`ssysConsistentBChar`** + shallow Bool links
-* **Lean File:** `Scott1980/Neighborhood/Exercise722Presentation.lean`
-* **Proof Notes:** Package **`ssysActive`** / **`ssysConsistentB`** as `{0,1}` functions; prove **`_eq_one_iff`** vs existing Bool defs only—**no** WHNF unfold of **`ssys_cons_char_iff`**. Depends on **7.22i(b)1**, **7.22i(b)6**.
-* **Status:** Not Yet
+* **Lean File:** `Scott1980/Neighborhood/Exercise722Presentation.lean` (+ 4 small generic boundedness lemmas in `Recursive.lean`)
+* **Proof Notes:** `Recursive.lean`'s C9b5/C9b6 correctness theorems are stated against a **private-file-local** Gödel mirror (`c9b5_sexprGodelEncode`/`c9b5_sexprDepth`), not literally `SExpr.encode`/`sexprDepth` (`Recursive.lean` cannot import `Exercise722Presentation.lean` — would cycle via `Presentation → Definition71 → Recursive`). This session (i) **un-privates** the four small mirror defs (`c9b5_boolNat`/`c9b5_encodeListBool`/`c9b5_sexprDepth`/`c9b5_sexprGodelEncode`) in `Recursive.lean` so downstream code can see them, (ii) proves the bridge equalities **`c9b5_sexprGodelEncode_eq`**/**`c9b5_sexprDepth_eq`** (trivial structural induction, both sides literally the same recursive equations) here in `Exercise722Presentation.lean`, (iii) proves **decode soundness** — **`decodeFuel_sound`** (`decodeFuel fuel c = some e → c = SExpr.encode e`, via `Nat.pair_unpair` + injectivity of `decodeList`/`decodeListBool`) and **`decodeFuel_depth_le`** (`decodeFuel fuel c = some e → sexprDepth e ≤ fuel`), both by induction on `fuel` reusing the existing `decodeFuel_succ_*` case lemmas from C9b1. With these, **`ssysActiveChar n := mulBit (decodeFuelOkChar (n.unpair.2+1) n.unpair.1) (decideNonemptyBChar (n.unpair.2+1) n.unpair.1)`** and its **`_eq_one_iff`** bridge to `ssysActive` follow by citing C9b1's `decodeFuelOkChar_eq_one_iff` + C9b6's `decideNonemptyBChar_eq_one_iff` as black boxes (no WHNF unfold of `ssys_cons_char_iff`). **`ssysConsistentBChar n m := selectFn (mulBit (ssysActiveChar n) (ssysActiveChar m)) (consistentBChar (n.unpair.2+m.unpair.2+2) n.unpair.1 m.unpair.1) 1`** (fuel generous enough for either side); its **`_eq_one_iff`** case-splits on `ssysActive n`/`ssysActive m` and cites `consistentBChar_eq_one_iff` (C9b6) + `consistentB_iff` in the active-active case. New generic (choice-free) boundedness lemmas added to `Recursive.lean`: **`mulBit_le_one`**, **`allListChar_le_one`**, **`allBinDigitsChar_le_one`**, **`decodeFuelOkChar_le_one`** (needed to case-split `ssysActiveChar`'s value into exactly `{0,1}`). **`⊆{propext,Classical.choice,Quot.sound}`** (choice inherited from the list-extensionality layer, same as C9b4–C9b6). Depends on **7.22i(b)1**, **7.22i(b)6**.
+* **Status:** Pass
 
 #### Exercise 7.22i(b)8
 * **Mathematical Target:** close **C9b** — **`primrec_ssysConsChar`**, **`Ssys_cons_computable`**
@@ -1720,11 +1720,11 @@ delivered **7.22a–h** and **7.22i(a)**; **7.22i(b)1–8** (Composer **C9b1–C
 * **Proof Notes:** **`primrec_ssysConsChar : Nat.Primrec ssysConsChar`** (or **`ssysConsistentBChar`** packaged as **`ssysConsChar`**) then **`Ssys_cons_computable := Ssys_cons_computable_of_primrec_ssysConsChar primrec_ssysConsChar`**. Depends on **7.22i(b)7**.
 * **Status:** Not Yet
 
-#### Exercise 7.22i(b)1(b)
-* **Mathematical Target:** fuel-bounded decode ok char — **`decodeFuelOkChar`**, **`decodeFuelOkCharBody`**, **`primrec_decodeFuelOkChar`**
-* **Lean File:** `Scott1980/Neighborhood/Recursive.lean`
-* **Proof Notes:** Tag dispatch via **`primrec_tagCase4`**; tag-0 uses **`isOne (1 - u)`** (matches **`decodeFuel`**); tag-1 reuses **7.22i(a)** **`allBinDigitsChar`**; tags 2/3 use **7.22i(b)1(a)** **`mulBit`**. Fuel induction on first argument. Green; zero `sorry`; **`primrec_decodeFuelOkChar` ⊆ {propext, Quot.sound}**.
-* **Status:** Pass
+#### Exercise 7.22i(b)
+* **Mathematical Target:** primitive-recursive certification of consistency — `RecDecidable₂` for Def 7.1 (ii) (Composer **C9b** umbrella)
+* **Lean File:** `Scott1980/Neighborhood/Exercise722Presentation.lean` (instantiation); generic lemmas in **`Recursive.lean`**
+* **Proof Notes:** Mathematics done (`ssys_cons_char_iff`). Conditional closure (**`Ssys_cons_computable_of_primrec_ssysConsChar`**) in place. **Umbrella closes when sub-rows 7.22i(b)1–8 are all Pass.** One **slice per session**—do **not** rebuild the abandoned `Exercise722Primrec.lean` monolith. Bulk WIP (2026-06-30, not checked in) failed before step 8; retry incrementally.
+* **Status:** Not Yet
 
 #### Exercise 7.22j
 * **Mathematical Target:** `ComputablePresentation Ssys` / `Ssys.IsEffectivelyGiven` (Def 7.1 packaging)

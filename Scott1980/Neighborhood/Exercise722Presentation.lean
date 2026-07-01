@@ -459,24 +459,266 @@ theorem Ssys_cons_computable_of_primrec_ssysConsChar (hf : Nat.Primrec ssysConsC
     RecDecidable₂ (fun n m => ∃ k, SsysX k ⊆ SsysX n ∩ SsysX m) :=
   RecDecidable₂.of_paired_zero_one_char hf ssysConsChar_zero_one ssys_cons_char_eq_one_iff
 
--- TODO (Scott Exercise 7.22 C9b8): `primrec_ssysConsChar : Nat.Primrec ssysConsChar`
--- TODO (Scott Exercise 7.22 C9b8): `Ssys_cons_computable` via
---   `Ssys_cons_computable_of_primrec_ssysConsChar primrec_ssysConsChar`
---
--- The mathematics is finished (`ssys_cons_char_iff`). The only missing piece is the
--- primitive-recursive realization of `ssysConsChar` (no new algorithm). Slices (C9b / 7.22i(b)):
--- 0. `isBinDigit` / `allBinDigitsChar` in `Recursive.lean` (C9a / 7.22i(a) ☑)
--- 1. C9b1 / 7.22i(b)1 — (a) mulBit ☑ (b) decodeFuelOkChar+primrec ☑;
---    (c) dispatch lemmas ☑ (d) decodeListBool_isSome_iff ☑ (e) decodeFuelOkChar_eq_one_iff ☑
---    See `arxiv.md` rows **7.22i(b)1(a–e)**.
--- 2. `listLenChar` + primrec (C9b2 / 7.22i(b)2) ☑
--- 3. `listEqChar` + primrec (C9b3 / 7.22i(b)3) — Pass
--- 4. `appendListCode`, `takeCode`, `dropCode` + primrec (C9b4 / 7.22i(b)4) — Not Yet
--- 5. `autStateCardFuelChar`, `matchesBChar` + primrec (C9b5 / 7.22i(b)5) — Not Yet
--- 6. `decideNonemptyBChar`, `consistentBChar` + primrec (C9b6 / 7.22i(b)6) — Not Yet
--- 7. `ssysConsistentBChar` + shallow Bool `_eq` lemmas (C9b7 / 7.22i(b)7) — Not Yet
--- 8. `primrec_ssysConsChar` → `Ssys_cons_computable` (C9b8 / 7.22i(b)8) — Not Yet
--- See `arxiv.md` rows **7.22i(b)1–8** (one slice per session; avoid monolith).
+/-! ### Session C9b7 — `ssysActiveChar`, `ssysConsistentBChar`
+
+`Recursive.lean` cannot import this file (it would cycle: `Presentation → Definition71 →
+Recursive`), so its C9b5/C9b6 Gödel mirror (`c9b5_sexprGodelEncode`/`c9b5_sexprDepth`) is a
+self-contained *structural* copy of `SExpr.encode`/`sexprDepth` above, not literally the same
+function. The bridge equalities below (provable here, downstream, where both sides are visible)
+let every C9b5/C9b6 correctness theorem be re-applied against the *real* `SExpr.encode`/
+`sexprDepth`/`denote`, without re-deriving any of their induction. -/
+
+theorem c9b5_boolNat_eq (b : Bool) : Domain.Recursive.c9b5_boolNat b = boolNat b := by
+  cases b <;> rfl
+
+theorem c9b5_encodeListBool_eq (σ : List Bool) :
+    Domain.Recursive.c9b5_encodeListBool σ = encodeListBool σ := by
+  unfold Domain.Recursive.c9b5_encodeListBool encodeListBool
+  congr 1
+
+theorem c9b5_sexprDepth_eq (e : SExpr) : Domain.Recursive.c9b5_sexprDepth e = sexprDepth e := by
+  induction e with
+  | sigma => rfl
+  | single _ => rfl
+  | cat a b iha ihb => simp [Domain.Recursive.c9b5_sexprDepth, sexprDepth, iha, ihb]
+  | cap a b iha ihb => simp [Domain.Recursive.c9b5_sexprDepth, sexprDepth, iha, ihb]
+
+theorem c9b5_sexprGodelEncode_eq (e : SExpr) :
+    Domain.Recursive.c9b5_sexprGodelEncode e = SExpr.encode e := by
+  induction e with
+  | sigma => rfl
+  | single σ => simp [Domain.Recursive.c9b5_sexprGodelEncode, SExpr.encode, c9b5_encodeListBool_eq]
+  | cat a b iha ihb => simp [Domain.Recursive.c9b5_sexprGodelEncode, SExpr.encode, iha, ihb]
+  | cap a b iha ihb => simp [Domain.Recursive.c9b5_sexprGodelEncode, SExpr.encode, iha, ihb]
+
+/-! #### Decode soundness: `decodeFuel` recovers exactly the canonical encoding, within fuel
+
+Needed to instantiate C9b5/C9b6's `_eq_one_iff` theorems (stated at `c9b5_sexprGodelEncode e` /
+`c9b5_sexprDepth e ≤ fuel`) against a code `n.unpair.1` that merely *decodes* to some `e` under
+`SExpr.decode` — not one already known to equal `SExpr.encode e` syntactically. -/
+
+private theorem natBool_eq_some_iff (n : ℕ) (b : Bool) : natBool n = some b ↔ n = boolNat b := by
+  match n with
+  | 0 => cases b <;> simp [natBool, boolNat]
+  | 1 => cases b <;> simp [natBool, boolNat]
+  | n + 2 => cases b <;> simp [natBool, boolNat]
+
+private theorem mapM_natBool_eq_some (l : List ℕ) (σ : List Bool)
+    (h : l.mapM natBool = some σ) : l = σ.map boolNat := by
+  induction l generalizing σ with
+  | nil => rw [List.mapM_nil] at h; simpa using h.symm
+  | cons x xs ih =>
+    rw [List.mapM_cons] at h
+    cases hnx : natBool x with
+    | none => simp [hnx] at h
+    | some b =>
+      cases htx : xs.mapM natBool with
+      | none => simp [hnx, htx] at h
+      | some ys =>
+        simp only [hnx, htx] at h
+        obtain rfl : σ = b :: ys := by simpa using h.symm
+        simp [ih ys htx, (natBool_eq_some_iff x b).mp hnx]
+
+private theorem decodeListBool_eq_some (n : ℕ) (σ : List Bool) (h : decodeListBool n = some σ) :
+    n = encodeListBool σ := by
+  have hl : decodeList n = σ.map boolNat := mapM_natBool_eq_some (decodeList n) σ h
+  calc n = encodeList (decodeList n) := (encodeList_decodeList n).symm
+    _ = encodeList (σ.map boolNat) := by rw [hl]
+    _ = encodeListBool σ := rfl
+
+/-- **Soundness:** any code `c` that `decodeFuel` accepts is the canonical `SExpr.encode` of the
+recovered expression (`decodeList`/`decodeListBool`/`Nat.pair` are all injective in the relevant
+direction, so nothing "junk" can decode). -/
+theorem decodeFuel_sound {fuel c : ℕ} {e : SExpr} (h : decodeFuel fuel c = some e) :
+    c = SExpr.encode e := by
+  induction fuel generalizing c e with
+  | zero => simp [decodeFuel] at h
+  | succ fuel ih =>
+    match tag : c.unpair.1 with
+    | 0 =>
+      by_cases hσ : c.unpair.2 = 0
+      · have hc : c = Nat.pair 0 0 := by
+          have hpu := Nat.pair_unpair c; rw [tag, hσ] at hpu; exact hpu.symm
+        rw [decodeFuel_succ_sigma fuel c tag hσ] at h
+        simp only [Option.some.injEq] at h
+        simp [SExpr.encode, ← h, hc]
+      · rw [decodeFuel_succ_not_sigma fuel c tag hσ] at h; simp at h
+    | 1 =>
+      have hc1 : c = Nat.pair 1 c.unpair.2 := by
+        have hpu := Nat.pair_unpair c; rw [tag] at hpu; exact hpu.symm
+      rw [decodeFuel_succ_single fuel c tag] at h
+      cases hb : decodeListBool c.unpair.2 with
+      | none => simp [hb] at h
+      | some σ =>
+        rw [hb] at h
+        simp only [Option.map_some, Option.some.injEq] at h
+        have hσc : c.unpair.2 = encodeListBool σ := decodeListBool_eq_some c.unpair.2 σ hb
+        rw [← h, SExpr.encode, hc1, hσc]
+    | 2 =>
+      have hc2 : c = Nat.pair 2 c.unpair.2 := by
+        have hpu := Nat.pair_unpair c; rw [tag] at hpu; exact hpu.symm
+      rw [decodeFuel_succ_cat fuel c tag] at h
+      cases ha : decodeFuel fuel c.unpair.2.unpair.1 with
+      | none => simp [ha] at h
+      | some a =>
+        cases hb : decodeFuel fuel c.unpair.2.unpair.2 with
+        | none => simp [ha, hb] at h
+        | some b =>
+          simp only [ha, hb, Option.some.injEq] at h
+          have hac : c.unpair.2.unpair.1 = SExpr.encode a := ih ha
+          have hbc : c.unpair.2.unpair.2 = SExpr.encode b := ih hb
+          have hpc : c.unpair.2 = Nat.pair (SExpr.encode a) (SExpr.encode b) := by
+            have hpu := Nat.pair_unpair c.unpair.2; rw [hac, hbc] at hpu; exact hpu.symm
+          rw [← h, SExpr.encode, hc2, hpc]
+    | 3 =>
+      have hc3 : c = Nat.pair 3 c.unpair.2 := by
+        have hpu := Nat.pair_unpair c; rw [tag] at hpu; exact hpu.symm
+      rw [decodeFuel_succ_cap fuel c tag] at h
+      cases ha : decodeFuel fuel c.unpair.2.unpair.1 with
+      | none => simp [ha] at h
+      | some a =>
+        cases hb : decodeFuel fuel c.unpair.2.unpair.2 with
+        | none => simp [ha, hb] at h
+        | some b =>
+          simp only [ha, hb, Option.some.injEq] at h
+          have hac : c.unpair.2.unpair.1 = SExpr.encode a := ih ha
+          have hbc : c.unpair.2.unpair.2 = SExpr.encode b := ih hb
+          have hpc : c.unpair.2 = Nat.pair (SExpr.encode a) (SExpr.encode b) := by
+            have hpu := Nat.pair_unpair c.unpair.2; rw [hac, hbc] at hpu; exact hpu.symm
+          rw [← h, SExpr.encode, hc3, hpc]
+    | _ + 4 =>
+      rw [decodeFuel_succ_junk fuel c (by omega)] at h; simp at h
+
+/-- **Fuel sufficiency:** the recovered expression never needs more depth than the fuel it was
+decoded with. -/
+theorem decodeFuel_depth_le {fuel c : ℕ} {e : SExpr} (h : decodeFuel fuel c = some e) :
+    sexprDepth e ≤ fuel := by
+  induction fuel generalizing c e with
+  | zero => simp [decodeFuel] at h
+  | succ fuel ih =>
+    match tag : c.unpair.1 with
+    | 0 =>
+      by_cases hσ : c.unpair.2 = 0
+      · rw [decodeFuel_succ_sigma fuel c tag hσ] at h
+        simp only [Option.some.injEq] at h
+        simp [← h, sexprDepth]
+      · rw [decodeFuel_succ_not_sigma fuel c tag hσ] at h; simp at h
+    | 1 =>
+      rw [decodeFuel_succ_single fuel c tag] at h
+      cases hb : decodeListBool c.unpair.2 with
+      | none => simp [hb] at h
+      | some σ =>
+        rw [hb] at h
+        simp only [Option.map_some, Option.some.injEq] at h
+        simp [← h, sexprDepth]
+    | 2 =>
+      rw [decodeFuel_succ_cat fuel c tag] at h
+      cases ha : decodeFuel fuel c.unpair.2.unpair.1 with
+      | none => simp [ha] at h
+      | some a =>
+        cases hb : decodeFuel fuel c.unpair.2.unpair.2 with
+        | none => simp [ha, hb] at h
+        | some b =>
+          simp only [ha, hb, Option.some.injEq] at h
+          have hda := ih ha
+          have hdb := ih hb
+          simp only [← h, sexprDepth]
+          omega
+    | 3 =>
+      rw [decodeFuel_succ_cap fuel c tag] at h
+      cases ha : decodeFuel fuel c.unpair.2.unpair.1 with
+      | none => simp [ha] at h
+      | some a =>
+        cases hb : decodeFuel fuel c.unpair.2.unpair.2 with
+        | none => simp [ha, hb] at h
+        | some b =>
+          simp only [ha, hb, Option.some.injEq] at h
+          have hda := ih ha
+          have hdb := ih hb
+          simp only [← h, sexprDepth]
+          omega
+    | _ + 4 =>
+      rw [decodeFuel_succ_junk fuel c (by omega)] at h; simp at h
+
+/-- `{0,1}` packaging of `ssysActive` via `decodeFuelOkChar` (C9b1) + `decideNonemptyBChar`
+(C9b6), operating purely on the Gödel code `n.unpair.1` with fuel `n.unpair.2 + 1` (mirroring
+`SExpr.decode`). -/
+def ssysActiveChar (n : ℕ) : ℕ :=
+  mulBit (decodeFuelOkChar (n.unpair.2 + 1) n.unpair.1)
+    (decideNonemptyBChar (n.unpair.2 + 1) n.unpair.1)
+
+theorem ssysActiveChar_le_one (n : ℕ) : ssysActiveChar n ≤ 1 :=
+  mulBit_le_one (decodeFuelOkChar_le_one _ _) (bExistsFn_le_one _ _ _)
+
+theorem ssysActiveChar_eq_one_iff (n : ℕ) : ssysActiveChar n = 1 ↔ ssysActive n = true := by
+  simp only [ssysActiveChar, ssysActive, SExpr.decode, mulBit_eq_one_iff,
+    decodeFuelOkChar_eq_one_iff]
+  cases hdec : decodeFuel (n.unpair.2 + 1) n.unpair.1 with
+  | none => simp [hdec]
+  | some e =>
+    have hc : n.unpair.1 = SExpr.encode e := decodeFuel_sound hdec
+    have hdepth : Domain.Recursive.c9b5_sexprDepth e ≤ n.unpair.2 + 1 := by
+      rw [c9b5_sexprDepth_eq]; exact decodeFuel_depth_le hdec
+    simp only [Option.isSome_some, true_and]
+    rw [hc, ← c9b5_sexprGodelEncode_eq, decideNonemptyBChar_eq_one_iff hdepth, decideNonemptyB_iff]
+
+/-- `{0,1}` packaging of `ssysConsistentB`: inactive-either defaults to `1` (consistent), while
+active-active reduces to `consistentBChar` (C9b6). Fuel `n.unpair.2 + m.unpair.2 + 2` is generous
+enough for the `.cap` of both decoded expressions regardless of which side is deeper. -/
+def ssysConsistentBChar (n m : ℕ) : ℕ :=
+  selectFn (mulBit (ssysActiveChar n) (ssysActiveChar m))
+    (consistentBChar (n.unpair.2 + m.unpair.2 + 2) n.unpair.1 m.unpair.1)
+    1
+
+private theorem ssysActive_exists_decode {n : ℕ} (hn : ssysActive n = true) :
+    ∃ e, SExpr.decode n = some e := by
+  unfold ssysActive at hn
+  cases hdec : SExpr.decode n with
+  | none => simp [hdec] at hn
+  | some e => exact ⟨e, rfl⟩
+
+theorem ssysConsistentBChar_eq_one_iff (n m : ℕ) :
+    ssysConsistentBChar n m = 1 ↔ ssysConsistentB n m = true := by
+  unfold ssysConsistentBChar ssysConsistentB
+  by_cases hn : ssysActive n = true
+  · by_cases hm : ssysActive m = true
+    · have hnc : ssysActiveChar n = 1 := (ssysActiveChar_eq_one_iff n).mpr hn
+      have hmc : ssysActiveChar m = 1 := (ssysActiveChar_eq_one_iff m).mpr hm
+      obtain ⟨a, hdecn⟩ := ssysActive_exists_decode hn
+      obtain ⟨b, hdecm⟩ := ssysActive_exists_decode hm
+      have hac : n.unpair.1 = SExpr.encode a := decodeFuel_sound hdecn
+      have hbc : m.unpair.1 = SExpr.encode b := decodeFuel_sound hdecm
+      have hda : sexprDepth a ≤ n.unpair.2 + 1 := decodeFuel_depth_le hdecn
+      have hdb : sexprDepth b ≤ m.unpair.2 + 1 := decodeFuel_depth_le hdecm
+      have hfuel : Domain.Recursive.c9b5_sexprDepth (.cap a b) ≤ n.unpair.2 + m.unpair.2 + 2 := by
+        rw [c9b5_sexprDepth_eq]
+        simp only [sexprDepth]
+        omega
+      simp only [hnc, hmc, mulBit, mul_one, selectFn_one]
+      rw [hac, hbc, ← c9b5_sexprGodelEncode_eq, ← c9b5_sexprGodelEncode_eq,
+        consistentBChar_eq_one_iff hfuel]
+      have hnotinactive : (!ssysActive n || !ssysActive m) = false := by simp [hn, hm]
+      rw [hnotinactive, if_neg (by decide)]
+      simp only [hdecn, hdecm]
+      exact (consistentB_iff a b).symm
+    · have hm0 : ssysActiveChar m = 0 := by
+        have hle := ssysActiveChar_le_one m
+        have hne : ssysActiveChar m ≠ 1 := fun h => hm ((ssysActiveChar_eq_one_iff m).mp h)
+        omega
+      have hmf : ssysActive m = false := by
+        cases hAm : ssysActive m with
+        | false => rfl
+        | true => exact absurd hAm hm
+      simp only [hm0, mulBit, mul_zero, selectFn_zero, hmf, Bool.not_false, Bool.or_true, if_true]
+  · have hn0 : ssysActiveChar n = 0 := by
+      have hle := ssysActiveChar_le_one n
+      have hne : ssysActiveChar n ≠ 1 := fun h => hn ((ssysActiveChar_eq_one_iff n).mp h)
+      omega
+    have hnf : ssysActive n = false := by
+      cases hAn : ssysActive n with
+      | false => rfl
+      | true => exact absurd hAn hn
+    simp only [hn0, mulBit, zero_mul, selectFn_zero, hnf, Bool.not_false, Bool.true_or, if_true]
 
 end Exercise722
 
