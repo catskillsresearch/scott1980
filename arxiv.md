@@ -6,7 +6,7 @@ In November 1969, Dana Scott formulated a mathematical program to construct the 
 
 When Scott delivered his lectures at Oxford in 1980—subsequently published as *Lectures on a Mathematical Theory of Computation* (Technical Report PRG-19)—he made an intentional, systematic pivot. His 1972 paper was a text on a model of $\lambda$-calculus, readable only by specialists in lattice theory and topology. The 1980 lectures used far less topology, focusing instead on discrete information presented as *domains*. This more discrete presentation was intended to be more accessible to computer scientists without training in topology.
 
-This Lean 4 formalization checks this constructive mathematical machinery: neighborhood systems (filters on a master set $\Delta$; domain elements as filters), approximable maps, and the full PRG-19 exercise set.
+This Lean 4 formalization covers every element of PRG-19, including all exercises.  We strive to avoid law of the excluded middle.  We check axioms throughout, so if a proof seems to unavoidably require law of the excluded middle, that will be shown in the axiom check.
 
 ---
 
