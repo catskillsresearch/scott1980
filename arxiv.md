@@ -1774,7 +1774,7 @@ also now **Pass**, closing the inventory.
 ### Lecture VIII: Retracts of the Universal Domain
 
 
-Lecture VIII covers retractions, projections, and the construction of the universal domain $U$. The retraction/projection spine (Definitions 8.1/8.3, Proposition 8.2, Example 8.4(a)/(b), Theorem 8.5 in full, **Theorem 8.6 in full — (a)/(b)(i)/(b)(ii)/(c) all Pass**) is formalized below; the universal domain `U` (Def 8.7 onward) and a few other hard/large items remain deferred.
+Lecture VIII covers retractions, projections, and the construction of the universal domain $U$. The retraction/projection spine (Definitions 8.1/8.3, Proposition 8.2, Example 8.4(a)/(b), Theorem 8.5 in full, **Theorem 8.6 in full — (a)/(b)(i)/(b)(ii)/(c) all Pass**) is formalized below, and **Definition 8.7's `U` itself is now built and verified as a genuine `NeighborhoodSystem ℚ`, Pass**; Theorem 8.8 onward (universality of `U`) and a few other hard/large items remain deferred.
 
 #### Definition 8.1
 * **Mathematical Target:** a *retraction* `a:E→E` with `a∘a=a`
@@ -1837,10 +1837,10 @@ Lecture VIII covers retractions, projections, and the construction of the univer
 * **Status:** Pass
 
 #### Definition 8.7
-* **Mathematical Target:** the universal domain `U` over the rationals `Q`
-* **Lean File:** — (Formalization deferred)
-* **Proof Notes:** the universal domain `U` over the rationals `Q`
-* **Status:** Deferred
+* **Mathematical Target:** the neighbourhood system `U` over `[0,1)⊆ℚ`: non-empty finite unions of rational intervals `[r,s)` with `0≤r<s≤1`
+* **Lean File:** `Scott1980/Neighborhood/Definition87.lean`
+* **Proof Notes:** **Encoding.** A finite union of intervals is coded by `L:List(ℚ×ℚ)` (`presentedIntervals L:=⋃p∈L,Ico p.1 p.2`); rather than force the per-pair bounds `0≤r<s≤1` into every list operation, `U.mem X:=(∃L,X=presentedIntervals L)∧X.Nonempty∧X⊆Ico 0 1` — presentability plus the two set-level facts Scott's family actually needs. **Closure under `∩` is bookkeeping-free**: pairwise-combining two lists' endpoints via `p.1⊔q.1,p.2⊓q.2` (`combineIntervals`) always presents the intersection (`presentedIntervals_inter`, proved directly from `sup_le`/`lt_inf_iff`/`le_sup_left`/`inf_le_left`-style order facts — no case split on validity, since a crossed bound `⊔≥⊓` just makes `Ico` empty on its own). `master_mem`/`sub_master`/`inter_mem` (`Z.Nonempty.mono hZsub`, `Set.inter_subset_left.trans hXsub`) are then immediate. **Faithfulness** (`U_mem_iff_scott`): the encoding is *not* a relaxation — it is proved equivalent to Scott's literal per-pair-bounded family, by clipping any presenting list to `[0,1)` (`clip p:=(p.1⊔0,p.2⊓1)`, `presentedIntervals_map_clip : presentedIntervals(L.map clip)=presentedIntervals L∩Ico 0 1`) and discarding now-degenerate pairs (`presentedIntervals_filter_lt`, filtering on `decide(p.1<p.2)` doesn't change the union since dropped pairs contributed `∅` already). **Bonus — Scott's remark "`U` has no minimal neighbourhoods"** (`U_no_minimal`): any `U`-neighbourhood `X` splits into two disjoint proper `U`-neighbourhoods by cutting at the rational midpoint `m:=(p.1+p.2)/2` of any witnessing interval `[p.1,p.2)⊆X` (`left_lt_add_div_two`/`add_div_two_lt_right`) — `Y:=X∩Iio m`, `Z:=X∩Ici m` are both presentable (`clipLt`/`clipGe` variants of the same clipping trick), non-empty (`p.1∈Y`, `m∈Z`), disjoint, union to `X`, and each properly smaller than `X` (else the other would collapse into the empty intersection). **Axiom footprint.** Every proof is elementary list recursion plus `ℚ`'s linear order — no `Classical.choice`/`Classical.dec` is used directly — but `#print axioms` reports `[propext,Classical.choice,Quot.sound]` throughout, because the *pinned Mathlib's* bundled `LinearOrder ℚ` (`Rat.instLinearOrder`) is itself `Classical.choice`-tainted at the axiom level in this snapshot: even bare `Rat.le_refl` reports this footprint (confirmed directly), as does the pre-existing `Exercise117.lean`'s `ratIntervalMem_nonempty` despite that file's now-stale "choice-free" docstring claim. This is an upstream `ℚ`-order-hierarchy artifact, not a choice made here.
+* **Status:** Pass
 
 #### Theorem 8.8
 * **Mathematical Target:** `U` is universal: every countable system `D ◁ U`

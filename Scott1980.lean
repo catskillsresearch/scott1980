@@ -168,3 +168,4 @@ import Scott1980.Neighborhood.Theorem86
 import Scott1980.Neighborhood.Theorem86c
 import Scott1980.Neighborhood.Example84
 import Scott1980.Neighborhood.Example84b
+import Scott1980.Neighborhood.Definition87
