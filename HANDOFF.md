@@ -1,4 +1,4 @@
-# Handoff — Scott 1981 (PRG-19): Lectures I–IV COMPLETE (IV spine Thm 4.1/4.2, Ex 4.3/4.4, Def 4.5 + Thm 4.6, **all Exercises 4.7–4.25**); **Lecture V COMPLETE** (Table 5.5, Thm 5.1/5.2/5.6, Prop 5.3/5.4, **Exercises 5.7–5.16 — including 5.16's full Thue–Morse `t`: unfolding, digit-sum-mod-2 (Lambek), and overlap-freeness**); **Lecture VI: Example 6.1 (D<sup>§</sup> ≅ D + (D<sup>§</sup>×D<sup>§</sup>)), Example 6.2 (`B ≅ B+B`, `C ≅ {{Λ}}+C+C`, the generalization `A ≅ Aⁿ + Aⁿ`, and eventually-periodic trees ↔ regular events via Myhill–Nerode) + categorical spine (Defs 6.3–6.5, Props 6.6–6.7) Definition 6.8 (functors *continuous on maps*, over the strict function space), and **Theorem 6.9 (homomorphisms out of a fixed point `D ≅ T(D)`)**, and **Theorem 6.14 (initial `T`-algebra: existence + uniqueness/initiality among strict algebras)**, **Lemma 6.15 (projection pair ⟹ `D ⊴ E`)** and **Theorem 6.16 (an initial `T`-algebra embeds in every solution: `D ⊴ E` for all `E ≅ T(E)`)** COMPLETE**; **Lecture VII: Definition 7.1 (computable presentation), Definition 7.2 (computable map / computable element), and Proposition 7.3 (identity + composition computable; computable map ∘ computable element), and **Theorem 7.4 — BOTH halves** (`D₀×D₁` *and* `D₀+D₁` effectively given; `projᵢ`/`inᵢ`/`outᵢ`, `⟨f,g⟩`, `f×g`/`f+g` computable) COMPLETE & CHOICE-FREE** over a bespoke choice-free recursion theory + r.e. closure layer (`Recursive.lean`, incl. truncated subtraction, `RecDecidable.natEq`/`.not`/`.em`/`.or`, `REPred.or`, **and now a choice-free primitive-recursive bitwise OR `myLor`**); **Example 7.8 (the powerset `PN` is effectively given) COMPLETE & fully choice-free (`Example78.lean`)**; **Definition 7.9 (the Smyth power domain `ℙ𝒟` family: down-set `↓X`=Ex 1.20 `upSet`, preparation `𝒟†`=`powerSystem`, finite-union family `PDmem`, the two intersection remarks) COMPLETE & fully choice-free (`Definition79.lean`)**; **Exercise 7.23 COMPLETE (`∩`/`∪`/`+`/`fun`/`graph` on `PN` all computable + full computable-elements-of-`PN` characterization, all choice-free, `Exercise723.lean`)**; **Exercise 7.24 COMPLETE (`Γ`/`L`, `L` effectively given, `\|L\|≃Γ`, `B⊴L`, LUCID combinators `notT`/`andT` + generic `postcompose`/`pointwiseBin` lifting to `(L→T)` computable maps, `Exercise724.lean`)**; **Lecture VIII retraction/projection spine: Definition 8.1 (`IsRetraction`), Proposition 8.2 (`D◁E` induces retraction `a=i∘j`, `\|D\|≅Fix(a)`), Definition 8.3 (`IsProjection`/`IsFinitary`), Example 8.4(a) (`check`/`fade` combinators, `a(x)=fade(check(x),u)` a retraction with range `≅O`, fully choice-free data) and **Example 8.4(b)** (`smash`/`strict`: `smash` identified with Prop 8.2's canonical retraction on `Exercise510.smash D E ◁ prod D E`; `strict` built via the pre-existing `curry`/`evalMap`, range `≅Exercise510.strictFun D E`; both choice-free data) **COMPLETE**; Theorem 8.5 and Theorem 8.6 PARTIAL (documented, choice-free `(ii)⟹(i)` direction and `sub` combinator core; hard direction + `funSpace`-level `sub` packaging deferred)**; rest of VI + VII–VIII transcribed & inventoried
+# Handoff — Scott 1981 (PRG-19): Lectures I–IV COMPLETE (IV spine Thm 4.1/4.2, Ex 4.3/4.4, Def 4.5 + Thm 4.6, **all Exercises 4.7–4.25**); **Lecture V COMPLETE** (Table 5.5, Thm 5.1/5.2/5.6, Prop 5.3/5.4, **Exercises 5.7–5.16 — including 5.16's full Thue–Morse `t`: unfolding, digit-sum-mod-2 (Lambek), and overlap-freeness**); **Lecture VI: Example 6.1 (D<sup>§</sup> ≅ D + (D<sup>§</sup>×D<sup>§</sup>)), Example 6.2 (`B ≅ B+B`, `C ≅ {{Λ}}+C+C`, the generalization `A ≅ Aⁿ + Aⁿ`, and eventually-periodic trees ↔ regular events via Myhill–Nerode) + categorical spine (Defs 6.3–6.5, Props 6.6–6.7) Definition 6.8 (functors *continuous on maps*, over the strict function space), and **Theorem 6.9 (homomorphisms out of a fixed point `D ≅ T(D)`)**, and **Theorem 6.14 (initial `T`-algebra: existence + uniqueness/initiality among strict algebras)**, **Lemma 6.15 (projection pair ⟹ `D ⊴ E`)** and **Theorem 6.16 (an initial `T`-algebra embeds in every solution: `D ⊴ E` for all `E ≅ T(E)`)** COMPLETE**; **Lecture VII: Definition 7.1 (computable presentation), Definition 7.2 (computable map / computable element), and Proposition 7.3 (identity + composition computable; computable map ∘ computable element), and **Theorem 7.4 — BOTH halves** (`D₀×D₁` *and* `D₀+D₁` effectively given; `projᵢ`/`inᵢ`/`outᵢ`, `⟨f,g⟩`, `f×g`/`f+g` computable) COMPLETE & CHOICE-FREE** over a bespoke choice-free recursion theory + r.e. closure layer (`Recursive.lean`, incl. truncated subtraction, `RecDecidable.natEq`/`.not`/`.em`/`.or`, `REPred.or`, **and now a choice-free primitive-recursive bitwise OR `myLor`**); **Example 7.8 (the powerset `PN` is effectively given) COMPLETE & fully choice-free (`Example78.lean`)**; **Definition 7.9 (the Smyth power domain `ℙ𝒟` family: down-set `↓X`=Ex 1.20 `upSet`, preparation `𝒟†`=`powerSystem`, finite-union family `PDmem`, the two intersection remarks) COMPLETE & fully choice-free (`Definition79.lean`)**; **Exercise 7.23 COMPLETE (`∩`/`∪`/`+`/`fun`/`graph` on `PN` all computable + full computable-elements-of-`PN` characterization, all choice-free, `Exercise723.lean`)**; **Exercise 7.24 COMPLETE (`Γ`/`L`, `L` effectively given, `\|L\|≃Γ`, `B⊴L`, LUCID combinators `notT`/`andT` + generic `postcompose`/`pointwiseBin` lifting to `(L→T)` computable maps, `Exercise724.lean`)**; **Lecture VIII retraction/projection spine: Definition 8.1 (`IsRetraction`), Proposition 8.2 (`D◁E` induces retraction `a=i∘j`, `\|D\|≅Fix(a)`), Definition 8.3 (`IsProjection`/`IsFinitary`), Example 8.4(a) (`check`/`fade` combinators, `a(x)=fade(check(x),u)` a retraction with range `≅O`, fully choice-free data) and **Example 8.4(b)** (`smash`/`strict`: `smash` identified with Prop 8.2's canonical retraction on `Exercise510.smash D E ◁ prod D E`; `strict` built via the pre-existing `curry`/`evalMap`, range `≅Exercise510.strictFun D E`; both choice-free data), and **Theorem 8.5 (both directions, `finitaryProjection_iff_formula`, fully choice-free)** **COMPLETE**; Theorem 8.6 PARTIAL (documented, choice-free `sub` combinator core; converse containment + `funSpace`-level `sub` packaging deferred)**; rest of VI + VII–VIII transcribed & inventoried
 
 You are a Lean 4 proof engineer formalizing Dana Scott's 1981 *Lectures on a Mathematical Theory of
 Computation* (PRG-19) in:
@@ -4912,9 +4912,69 @@ transfer).
   expected type at the call site, so get the expected type right (e.g. via an explicit `have :
   T := ...`) before invoking it, rather than trying to supply `X'` positionally.
 
-**Status:** Lecture VIII's retraction/projection spine (Def 8.1/8.3, Prop 8.2, Example 8.4(a) **and
-(b)**, Thm 8.5's easy direction, Thm 8.6's `sub` combinator) is now fully `Pass`. Remaining Lecture
-VIII work: (a) Theorem 8.5's hard direction (`(i)⟹(ii)`, needs a
-"compactness-through-embedding-projection" lemma); (b) Theorem 8.6's converse containment (needs
-(a)) and packaging `sub` as a genuine `funSpace`-level `ApproximableMap`; (c) Def 8.7 onward (the
-universal domain `𝒰` over `ℚ`, all Deferred, likely the largest remaining chunk of the monograph).
+**Status (superseded by 2026-07-02 below):** Lecture VIII's retraction/projection spine (Def
+8.1/8.3, Prop 8.2, Example 8.4(a) **and (b)**, Thm 8.5's easy direction, Thm 8.6's `sub`
+combinator) is now fully `Pass`. Remaining Lecture VIII work: (a) Theorem 8.5's hard direction
+(`(i)⟹(ii)`, needs a "compactness-through-embedding-projection" lemma); (b) Theorem 8.6's converse
+containment (needs (a)) and packaging `sub` as a genuine `funSpace`-level `ApproximableMap`; (c)
+Def 8.7 onward (the universal domain `𝒰` over `ℚ`, all Deferred, likely the largest remaining chunk
+of the monograph).
+
+---
+
+**2026-07-02 — Theorem 8.5 COMPLETE (both directions), choice-free.** `Theorem85.lean` now proves
+`finitaryProjection_iff_formula : IsFinitaryProjection a ↔ (∀ x Y, a(x)∋Y ↔ E.mem Y ∧ ∃X∈x,
+X⊆Y∧XaX)` in full. `(i)⟹(ii)` (the previously-deferred hard direction, `formula_of_isFinitaryProjection`)
+is now proved:
+
+* **`section Algebraic`** (general, any `NeighborhoodSystem`): `eq_iSupDirected_principal` —
+  every element is the directed sup of its own principal approximants (algebraicity), literally
+  as an `iSupDirected` (not just the pre-existing membership-only `eq_iUnion_principal`).
+  `IsCompactElt`/`principal_isCompactElt`/`eq_principal_of_isCompactElt` — the standard
+  directed-sup compactness predicate coincides exactly with being principal.
+* **`section HardDirection`**: given the `IsFinitary` witness `e : Fix(a) ≃o F.Element`, build the
+  "section" `i := sectionMap e : F → E` via `ofMono` (Ex 2.8) sending `↑X ↦ (e.symm ↑X).1`, then
+  prove **Claim′** (`toElementMap_sectionMap`) that `i` realizes `e.symm` at *every* `F`-element,
+  not just principals — `≤` from monotonicity, `≥` from `F`'s algebraicity plus a helper
+  (`e_apply_iSupDirected_fixed`) showing `e` distributes over directed sups of `a`-fixed families.
+  This gives **Scott's compactness-reflection fact**
+  (`exists_principal_eq_of_isRetraction_le_idMap`): pulling an `F`-principal back through `e.symm`
+  always lands on an `E`-principal — the key step lifts any `E`-directed bound via idempotency
+  (`toElementMap_idem`: `a` applied to *any* element is automatically `a`-fixed) into an `a`-fixed
+  directed family, then transfers the bound back down using `a ≤ idMap E` (deflationary). Formula
+  (ii) then drops out directly: `w := a(x)` is `a`-fixed (no principality of `x` needed);
+  Exercise 2.9's union formula applied to `sectionMap e` at `e⟨w,_⟩` locates the witnessing `F`-side
+  neighbourhood `W`; compactness reflection turns `(e.symm ↑W).1` into a genuine `E.principal hX`;
+  `X⊆Y`, `XaX`, and `x.mem X` all drop out of `X`'s defining `a`-fixed equation plus `↑X ≤ w ≤ x`.
+
+**Universe wrangling was most of the friction.** The `Algebraic` section's generic lemmas (`γ`,
+`I` both universe-polymorphic) need to be *instantiated* at both `E`'s level (`α`) and `F`'s level
+(`β`) inside `HardDirection`, and `IsFinitary`'s existential in `Definition83.lean` ties `β` to the
+*same* universe `u` as `α` via an explicit `universe u` there. Reusing the bare name `u` for a
+*second*, unrelated `universe u` inside `Theorem85.lean`'s own `Algebraic` section (closed at
+`end Algebraic`) silently produces a *fresh*, differently-scoped universe metavariable for later
+reuses of `{I : Type u}` in `HardDirection` (Lean's `autoBound` mechanism happily manufactures a
+new one with the same display name), causing spurious "type mismatch"/"expected `Type u` got
+`Type u_1`" errors deep inside tactic blocks that otherwise looked correct. **Fix:** declare
+`universe u` exactly *once*, at the top of the file (before `variable {α : Type u} ...}`), and
+never re-declare it in any nested `section` — let every later `Type u` (in `Algebraic`'s `γ`, and
+`HardDirection`'s `β`/`I`) resolve to that single file-level binder. A second recurring gotcha:
+inside a `section` with an explicit `variable (e : X ≃o Y)`, theorems that *use* `e` get it
+inserted as an actual (first) explicit parameter of the compiled declaration — call sites *inside
+the same section* still must pass `e` positionally (it is not auto-supplied just because it's in
+scope as a local variable); forgetting this produces a confusing "expected `X ≃o Y`, got `ℕ → ...`"
+unification failure blaming the *next* argument instead.
+
+**Choice discipline, confirmed.** `#print axioms finitaryProjection_iff_formula` /
+`formula_of_isFinitaryProjection` / `isFinitaryProjection_of_formula` all report
+`⊆ {propext, Quot.sound}` — fully choice-free, matching the rest of the retraction/projection
+spine.
+
+**Status:** Theorem 8.5 is now fully `Pass`. Lecture VIII's retraction/projection spine (Def
+8.1/8.3, Prop 8.2, Example 8.4(a)/(b), **Theorem 8.5 in full**, Thm 8.6's `sub` combinator core) is
+`Pass`. Remaining Lecture VIII work: (a) Theorem 8.6's converse containment (`f = sub f` from
+`IsFinitaryProjection f`, now unblocked since Theorem 8.5's hard direction exists — should be a
+short follow-up: `formula_of_isFinitaryProjection` gives exactly the formula `fixedNbhd_sub`/
+`sub`'s closed form needs) and packaging `sub` as a genuine `funSpace`-level `ApproximableMap`;
+(b) Def 8.7 onward (the universal domain `𝒰` over `ℚ`, all Deferred, likely the largest remaining
+chunk of the monograph).
