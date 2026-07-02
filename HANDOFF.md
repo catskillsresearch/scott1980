@@ -1,4 +1,4 @@
-# Handoff — Scott 1981 (PRG-19): Lectures I–IV COMPLETE (IV spine Thm 4.1/4.2, Ex 4.3/4.4, Def 4.5 + Thm 4.6, **all Exercises 4.7–4.25**); **Lecture V COMPLETE** (Table 5.5, Thm 5.1/5.2/5.6, Prop 5.3/5.4, **Exercises 5.7–5.16 — including 5.16's full Thue–Morse `t`: unfolding, digit-sum-mod-2 (Lambek), and overlap-freeness**); **Lecture VI: Example 6.1 (D<sup>§</sup> ≅ D + (D<sup>§</sup>×D<sup>§</sup>)), Example 6.2 (`B ≅ B+B`, `C ≅ {{Λ}}+C+C`, the generalization `A ≅ Aⁿ + Aⁿ`, and eventually-periodic trees ↔ regular events via Myhill–Nerode) + categorical spine (Defs 6.3–6.5, Props 6.6–6.7) Definition 6.8 (functors *continuous on maps*, over the strict function space), and **Theorem 6.9 (homomorphisms out of a fixed point `D ≅ T(D)`)**, and **Theorem 6.14 (initial `T`-algebra: existence + uniqueness/initiality among strict algebras)**, **Lemma 6.15 (projection pair ⟹ `D ⊴ E`)** and **Theorem 6.16 (an initial `T`-algebra embeds in every solution: `D ⊴ E` for all `E ≅ T(E)`)** COMPLETE**; **Lecture VII: Definition 7.1 (computable presentation), Definition 7.2 (computable map / computable element), and Proposition 7.3 (identity + composition computable; computable map ∘ computable element), and **Theorem 7.4 — BOTH halves** (`D₀×D₁` *and* `D₀+D₁` effectively given; `projᵢ`/`inᵢ`/`outᵢ`, `⟨f,g⟩`, `f×g`/`f+g` computable) COMPLETE & CHOICE-FREE** over a bespoke choice-free recursion theory + r.e. closure layer (`Recursive.lean`, incl. truncated subtraction, `RecDecidable.natEq`/`.not`/`.em`/`.or`, `REPred.or`, **and now a choice-free primitive-recursive bitwise OR `myLor`**); **Example 7.8 (the powerset `PN` is effectively given) COMPLETE & fully choice-free (`Example78.lean`)**; **Definition 7.9 (the Smyth power domain `ℙ𝒟` family: down-set `↓X`=Ex 1.20 `upSet`, preparation `𝒟†`=`powerSystem`, finite-union family `PDmem`, the two intersection remarks) COMPLETE & fully choice-free (`Definition79.lean`)**; **Exercise 7.23 PARTIAL (`∩`/`∪`/`+` on `PN` computable + full computable-elements-of-`PN` characterization done & choice-free; `fun`/`graph` not yet mechanised, `Exercise723.lean`)**; rest of VI + VII–VIII transcribed & inventoried
+# Handoff — Scott 1981 (PRG-19): Lectures I–IV COMPLETE (IV spine Thm 4.1/4.2, Ex 4.3/4.4, Def 4.5 + Thm 4.6, **all Exercises 4.7–4.25**); **Lecture V COMPLETE** (Table 5.5, Thm 5.1/5.2/5.6, Prop 5.3/5.4, **Exercises 5.7–5.16 — including 5.16's full Thue–Morse `t`: unfolding, digit-sum-mod-2 (Lambek), and overlap-freeness**); **Lecture VI: Example 6.1 (D<sup>§</sup> ≅ D + (D<sup>§</sup>×D<sup>§</sup>)), Example 6.2 (`B ≅ B+B`, `C ≅ {{Λ}}+C+C`, the generalization `A ≅ Aⁿ + Aⁿ`, and eventually-periodic trees ↔ regular events via Myhill–Nerode) + categorical spine (Defs 6.3–6.5, Props 6.6–6.7) Definition 6.8 (functors *continuous on maps*, over the strict function space), and **Theorem 6.9 (homomorphisms out of a fixed point `D ≅ T(D)`)**, and **Theorem 6.14 (initial `T`-algebra: existence + uniqueness/initiality among strict algebras)**, **Lemma 6.15 (projection pair ⟹ `D ⊴ E`)** and **Theorem 6.16 (an initial `T`-algebra embeds in every solution: `D ⊴ E` for all `E ≅ T(E)`)** COMPLETE**; **Lecture VII: Definition 7.1 (computable presentation), Definition 7.2 (computable map / computable element), and Proposition 7.3 (identity + composition computable; computable map ∘ computable element), and **Theorem 7.4 — BOTH halves** (`D₀×D₁` *and* `D₀+D₁` effectively given; `projᵢ`/`inᵢ`/`outᵢ`, `⟨f,g⟩`, `f×g`/`f+g` computable) COMPLETE & CHOICE-FREE** over a bespoke choice-free recursion theory + r.e. closure layer (`Recursive.lean`, incl. truncated subtraction, `RecDecidable.natEq`/`.not`/`.em`/`.or`, `REPred.or`, **and now a choice-free primitive-recursive bitwise OR `myLor`**); **Example 7.8 (the powerset `PN` is effectively given) COMPLETE & fully choice-free (`Example78.lean`)**; **Definition 7.9 (the Smyth power domain `ℙ𝒟` family: down-set `↓X`=Ex 1.20 `upSet`, preparation `𝒟†`=`powerSystem`, finite-union family `PDmem`, the two intersection remarks) COMPLETE & fully choice-free (`Definition79.lean`)**; **Exercise 7.23 COMPLETE (`∩`/`∪`/`+`/`fun`/`graph` on `PN` all computable + full computable-elements-of-`PN` characterization, all choice-free, `Exercise723.lean`)**; rest of VI + VII–VIII transcribed & inventoried
 
 You are a Lean 4 proof engineer formalizing Dana Scott's 1981 *Lectures on a Mathematical Theory of
 Computation* (PRG-19) in:
@@ -4590,3 +4590,63 @@ standalone effort comparable in size to `Theorem75.lean`'s `eval`/`curry` machin
 `arxiv.md` Exercise 7.23 row for the full sketch; **not started** beyond this plan.
 
 **Next concrete target:** finish Exercise 7.23 (`fun`/`graph`), per the plan above.
+
+---
+
+## Checkpoint 2026-07-01 (cont'd) — Exercise 7.23 COMPLETE: `fun`/`graph` mechanised
+
+`Exercise723.lean` now 1476 lines (was 654), zero `sorry`. **All four parts of Exercise 7.23 done
+and `#print axioms`-audited `⊆ {propext, Quot.sound}`** — `∩`/`∪`/`+`/computable-elements (previous
+checkpoint) plus `fun`/`graph` (this one). `arxiv.md`'s Exercise 7.23 row updated to **Pass**.
+
+**`gMap`/`funMap` (Exercise 5.14's `Fun`, adapted to `PN`).** `gMap : ApproximableMap (prod PN PN)
+PN` implements `Fun` via the reversal idiom on `nbhd n ×ˢ nbhd n₁`; the hard part was making the
+*decode* direction primitive-recursive: `tag`'s existing decoder is only well-founded-recursive, so
+a fresh `untagRef`/`untagList`/`untagVal` trio was built as a **bounded-iteration** `untagState :=
+untagStep^[c+1] …` via `Nat.Primrec.prec`, giving `mem_Fun_compl_nbhd_iff'` — `j ∈ Fun(nbhd n)ᶜ
+(nbhd n₁)ᶜ` rewritten as a bounded `∃c<n` (ranging over the set bits of `n`, i.e.
+`decodeList(bitsCode n n)`) with a decode-and-check body — which closes `gMap_isComputable` via
+`RecDecidable.bExists`/`.bForall`. `funMap := curry gMap` is then computable for free via Theorem
+7.5's generic `curry_isComputable` — no new work needed for the `fun` combinator itself once `gMap`
+was done.
+
+**`graphMap` (Exercise 5.14's `Graph`, the harder half).** Dualizes via `Zᶜ ⊆ GraphIdx W` where
+`GraphIdx W := {c | ∃ n m₀ m, c = tagOfBits n m ∧ (∀f∈W, f.rel(nbhd n)(nbhd m₀)) ∧ m₀.testBit m}`.
+Key design choice: `tagOfBits n m := tagCode (bitsCode n n) m`, a **primitive-recursive** re-encoding
+of `tag(decodeList(bitsCode n n)) m` (not the merely-well-founded `tag(bitsList n) m`), so
+`GraphIdx`-membership decodes computably (`mem_GraphIdx_iff`, via `tag`'s injectivity + a one-line
+`decodeList_injective`). The `∀f∈W,f.rel X Y` clause becomes the decidable function-space-inclusion
+test `Xenum…c ⊆ Xenum…(pair(pair n m₀)0+1)` via `mem_step`+`Xenum_singleton`+
+`funPresentation.incl_computable` (mirrors `Theorem75.lean`'s `evalMap_isComputable`); since (unlike
+`gMap`'s `Fun`) `GraphIdx`'s two existentials `n,m₀` aren't boundable by the queried index alone,
+they're closed via `REPred.proj` applied twice (`graphIdx_isComputable : REPred₂ …`), and
+`graphMap_isComputable` finishes with `REPred.forall_mem_decodeList₂` over `bitsCode m m` (bounding
+the outer `∀j<m` via `compl_nbhd_subset_iff`, the `S`-generic form of `gMap`'s own bound lemma).
+Both `graphMap_isComputable`/`funMap_isComputable` are stated generically over any valid
+`funPresentation PNpres PNpres gN incl0 incl1 eq1 …` witness data, matching how
+`Theorem75.lean`'s own `curry_isComputable`/`evalMap_isComputable` are stated.
+
+**New axiom-leak sources hunted this round (add to the running list):**
+- `Nat.Primrec.id` (Mathlib's convenience lemma) is itself classical — always use this project's
+  local choice-free `primrec_id` instead. Caught via the usual `AxCheck*Temp.lean` bisection.
+- `Nat.pair`/`Nat.unpair` do **not** cancel definitionally — `unpair_pair_fst`/`unpair_pair_snd` are
+  genuine theorems, not `rfl`. A term-mode `have h : ⟨explicit-unpaired-type⟩ := ⟨.pair/.comp
+  chain⟩` ascription silently relies on that non-existent defeq wherever a `.pair` combinator's
+  output is immediately `.unpair`'d downstream (e.g. inside `RecDecidable.natEq`/`RecDecidable₂`'s
+  own unfolding), causing either a `whnf` heartbeat timeout or an outright type mismatch. Fix used
+  throughout: never rely on the defeq, always close with `.of_eq (fun w => by simp only
+  [unpair_pair_fst, unpair_pair_snd])`.
+- Dot notation (`hp.re`, `hp.forall_mem_decodeList₂`) only resolves when the hypothesis's *stated*
+  type head literally matches the namespace (`REPred.re`, not the reducible alias `REPred₂.re`) —
+  use prefix application (`REPred.forall_mem_decodeList₂ hp`) when the stated type is a `₂`-suffixed
+  alias that might unfold under elaboration.
+
+Full-workspace `lake build` (3121 jobs) green. `Exercise723` wired into `Scott1980.lean` (already
+was, from the previous checkpoint).
+
+**Exercise 7.23 is now fully Pass — no remaining parts.** Next open item per `arxiv.md`: Exercise
+7.24 (LUCID/Ashcroft–Wadge stream operators, "Not Yet") is the next unclaimed exercise in Lecture
+VII's sequence; alternatively the optional `Ssys_effectively_given` upgrade noted in the 7.22k
+checkpoint, or starting Lecture VIII (retracts of the universal domain, all Deferred).
+
+**Next concrete target:** Exercise 7.24, or user's choice of the two optional items above.

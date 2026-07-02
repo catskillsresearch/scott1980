@@ -927,7 +927,11 @@ theorem isZero_le_one (n : ℕ) : isZero n ≤ 1 := by unfold isZero; omega
 theorem primrec_isZero : Nat.Primrec isZero := by
   have hmin : Nat.Primrec (fun n => min n 1) :=
     (primrec_sub₂ primrec_id (primrec_sub₂ primrec_id (Nat.Primrec.const 1))).of_eq fun n => by
-      rcases n with _ | n <;> simp [min]
+      rcases n with _ | n
+      · rfl
+      · show n + 1 - (n + 1 - 1) = min (n + 1) 1
+        rw [Nat.min_eq_right (Nat.le_add_left 1 n)]
+        omega
   exact primrec_sub₂ (Nat.Primrec.const 1) hmin
 
 /-- `{0,1}` test for `f n ≤ g n` (truncated subtraction). -/

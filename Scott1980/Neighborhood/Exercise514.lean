@@ -167,6 +167,12 @@ theorem id_le_Graph_Fun (u : Set ℕ) : u ⊆ Graph (Fun u) := by
   refine ⟨ns, m, hceq.symm, ?_⟩
   exact ⟨ns, fun n hn => hn, by rw [hceq]; exact hc⟩
 
+/-- **`Fun` is monotone in both arguments jointly.** Needed to check the `mono` axiom of the
+neighbourhood-level approximable map built from `Fun` (Exercise 7.23). -/
+theorem Fun_mono {u u' x x' : Set ℕ} (hu : u ⊆ u') (hx : x ⊆ x') : Fun u x ⊆ Fun u' x' := by
+  rintro m ⟨ns, hns, htag⟩
+  exact ⟨ns, fun n hn => hx (hns n hn), hu htag⟩
+
 /-- Every `Fun u` is itself approximable, so `fun` really lands in the continuous maps. -/
 theorem Fun_isApprox (u : Set ℕ) : IsApprox (Fun u) := by
   refine ⟨?_, ?_⟩
