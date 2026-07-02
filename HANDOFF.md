@@ -1,4 +1,4 @@
-# Handoff — Scott 1981 (PRG-19): Lectures I–IV COMPLETE (IV spine Thm 4.1/4.2, Ex 4.3/4.4, Def 4.5 + Thm 4.6, **all Exercises 4.7–4.25**); **Lecture V COMPLETE** (Table 5.5, Thm 5.1/5.2/5.6, Prop 5.3/5.4, **Exercises 5.7–5.16 — including 5.16's full Thue–Morse `t`: unfolding, digit-sum-mod-2 (Lambek), and overlap-freeness**); **Lecture VI: Example 6.1 (D<sup>§</sup> ≅ D + (D<sup>§</sup>×D<sup>§</sup>)), Example 6.2 (`B ≅ B+B`, `C ≅ {{Λ}}+C+C`, the generalization `A ≅ Aⁿ + Aⁿ`, and eventually-periodic trees ↔ regular events via Myhill–Nerode) + categorical spine (Defs 6.3–6.5, Props 6.6–6.7) Definition 6.8 (functors *continuous on maps*, over the strict function space), and **Theorem 6.9 (homomorphisms out of a fixed point `D ≅ T(D)`)**, and **Theorem 6.14 (initial `T`-algebra: existence + uniqueness/initiality among strict algebras)**, **Lemma 6.15 (projection pair ⟹ `D ⊴ E`)** and **Theorem 6.16 (an initial `T`-algebra embeds in every solution: `D ⊴ E` for all `E ≅ T(E)`)** COMPLETE**; **Lecture VII: Definition 7.1 (computable presentation), Definition 7.2 (computable map / computable element), and Proposition 7.3 (identity + composition computable; computable map ∘ computable element), and **Theorem 7.4 — BOTH halves** (`D₀×D₁` *and* `D₀+D₁` effectively given; `projᵢ`/`inᵢ`/`outᵢ`, `⟨f,g⟩`, `f×g`/`f+g` computable) COMPLETE & CHOICE-FREE** over a bespoke choice-free recursion theory + r.e. closure layer (`Recursive.lean`, incl. truncated subtraction, `RecDecidable.natEq`/`.not`/`.em`/`.or`, `REPred.or`, **and now a choice-free primitive-recursive bitwise OR `myLor`**); **Example 7.8 (the powerset `PN` is effectively given) COMPLETE & fully choice-free (`Example78.lean`)**; **Definition 7.9 (the Smyth power domain `ℙ𝒟` family: down-set `↓X`=Ex 1.20 `upSet`, preparation `𝒟†`=`powerSystem`, finite-union family `PDmem`, the two intersection remarks) COMPLETE & fully choice-free (`Definition79.lean`)**; **Exercise 7.23 COMPLETE (`∩`/`∪`/`+`/`fun`/`graph` on `PN` all computable + full computable-elements-of-`PN` characterization, all choice-free, `Exercise723.lean`)**; **Exercise 7.24 COMPLETE (`Γ`/`L`, `L` effectively given, `\|L\|≃Γ`, `B⊴L`, LUCID combinators `notT`/`andT` + generic `postcompose`/`pointwiseBin` lifting to `(L→T)` computable maps, `Exercise724.lean`)**; **Lecture VIII retraction/projection spine started: Definition 8.1 (`IsRetraction`), Proposition 8.2 (`D◁E` induces retraction `a=i∘j`, `\|D\|≅Fix(a)`), Definition 8.3 (`IsProjection`/`IsFinitary`) COMPLETE; Theorem 8.5 and Theorem 8.6 PARTIAL (documented, choice-free `(ii)⟹(i)` direction and `sub` combinator core; hard direction + `funSpace`-level `sub` packaging deferred)**; rest of VI + VII–VIII transcribed & inventoried
+# Handoff — Scott 1981 (PRG-19): Lectures I–IV COMPLETE (IV spine Thm 4.1/4.2, Ex 4.3/4.4, Def 4.5 + Thm 4.6, **all Exercises 4.7–4.25**); **Lecture V COMPLETE** (Table 5.5, Thm 5.1/5.2/5.6, Prop 5.3/5.4, **Exercises 5.7–5.16 — including 5.16's full Thue–Morse `t`: unfolding, digit-sum-mod-2 (Lambek), and overlap-freeness**); **Lecture VI: Example 6.1 (D<sup>§</sup> ≅ D + (D<sup>§</sup>×D<sup>§</sup>)), Example 6.2 (`B ≅ B+B`, `C ≅ {{Λ}}+C+C`, the generalization `A ≅ Aⁿ + Aⁿ`, and eventually-periodic trees ↔ regular events via Myhill–Nerode) + categorical spine (Defs 6.3–6.5, Props 6.6–6.7) Definition 6.8 (functors *continuous on maps*, over the strict function space), and **Theorem 6.9 (homomorphisms out of a fixed point `D ≅ T(D)`)**, and **Theorem 6.14 (initial `T`-algebra: existence + uniqueness/initiality among strict algebras)**, **Lemma 6.15 (projection pair ⟹ `D ⊴ E`)** and **Theorem 6.16 (an initial `T`-algebra embeds in every solution: `D ⊴ E` for all `E ≅ T(E)`)** COMPLETE**; **Lecture VII: Definition 7.1 (computable presentation), Definition 7.2 (computable map / computable element), and Proposition 7.3 (identity + composition computable; computable map ∘ computable element), and **Theorem 7.4 — BOTH halves** (`D₀×D₁` *and* `D₀+D₁` effectively given; `projᵢ`/`inᵢ`/`outᵢ`, `⟨f,g⟩`, `f×g`/`f+g` computable) COMPLETE & CHOICE-FREE** over a bespoke choice-free recursion theory + r.e. closure layer (`Recursive.lean`, incl. truncated subtraction, `RecDecidable.natEq`/`.not`/`.em`/`.or`, `REPred.or`, **and now a choice-free primitive-recursive bitwise OR `myLor`**); **Example 7.8 (the powerset `PN` is effectively given) COMPLETE & fully choice-free (`Example78.lean`)**; **Definition 7.9 (the Smyth power domain `ℙ𝒟` family: down-set `↓X`=Ex 1.20 `upSet`, preparation `𝒟†`=`powerSystem`, finite-union family `PDmem`, the two intersection remarks) COMPLETE & fully choice-free (`Definition79.lean`)**; **Exercise 7.23 COMPLETE (`∩`/`∪`/`+`/`fun`/`graph` on `PN` all computable + full computable-elements-of-`PN` characterization, all choice-free, `Exercise723.lean`)**; **Exercise 7.24 COMPLETE (`Γ`/`L`, `L` effectively given, `\|L\|≃Γ`, `B⊴L`, LUCID combinators `notT`/`andT` + generic `postcompose`/`pointwiseBin` lifting to `(L→T)` computable maps, `Exercise724.lean`)**; **Lecture VIII retraction/projection spine started: Definition 8.1 (`IsRetraction`), Proposition 8.2 (`D◁E` induces retraction `a=i∘j`, `\|D\|≅Fix(a)`), Definition 8.3 (`IsProjection`/`IsFinitary`), Example 8.4(a) (`check`/`fade` combinators, `a(x)=fade(check(x),u)` a retraction with range `≅O`, fully choice-free data) COMPLETE; Theorem 8.5 and Theorem 8.6 PARTIAL (documented, choice-free `(ii)⟹(i)` direction and `sub` combinator core; hard direction + `funSpace`-level `sub` packaging deferred); Example 8.4(b) (`strict`/`smash`) split out and documented as Deferred**; rest of VI + VII–VIII transcribed & inventoried
 
 You are a Lean 4 proof engineer formalizing Dana Scott's 1981 *Lectures on a Mathematical Theory of
 Computation* (PRG-19) in:
@@ -4781,3 +4781,57 @@ two-element system `O` from a retraction on non-trivial `D` — small, self-cont
 the full theorem statement, but the packaging/continuity argument itself doesn't); (d) start Def 8.7
 onward (the universal domain `𝒰` over `ℚ`, all Deferred, likely the largest remaining chunk of the
 monograph).
+
+## Checkpoint 2026-07-02 (cont'd) — Example 8.4(a) PASS (`check`/`fade`, choice-free data); 8.4(b) split out & documented
+
+User's directive: split Scott's "EXAMPLES 8.4" (plural — Scott gives *three* worked examples off
+the same `check`/`fade` combinators: the headline `O`-retraction, then `strict`/`smash` as two more
+projections built the same way) into **8.4(a)** (the `O`-retraction, formalized this session) and
+**8.4(b)** (`strict`/`smash`, deferred but *documented with real strategy*, not dropped as a mere
+"interesting follow-up" — user's standing policy: formalize *all* of Scott's explicit asks, prose
+remarks included, and nothing beyond). New file `Scott1980/Neighborhood/Example84.lean`, wired into
+`Scott1980.lean`, full project `lake build` (3128 jobs) green.
+
+**Construction (`Example84.lean`).** `O : NeighborhoodSystem (Fin 2)` literal (`mem = {{0},{0,1}}`).
+`check : ApproximableMap D O` literal from Scott's formula `X check Y ↔ Y={0,1}∨X≠Δ_D`. `fade` built
+via the `ApproximableMap₂`/`ofMap₂` bridge (Theorem 3.5, `Product.lean`): `fade₂.rel X Y Z := Z=Δ_D
+∨ (X={0}∧Y⊆Z)`. `a := fade.comp (paired check (constMap D u))` for a fixed `u≠⊥_D` — Scott's literal
+composite. Unfolding via `toElementMap_comp`/`toElementMap_paired`/`toElementMap_constMap` plus a new
+general bridge lemma `toElementMap_ofMap₂_pair : (ofMap₂ f₂).toElementMap (pair p q) = f₂.toElementMap₂
+p q` gives the closed form `mem_toElementMap_a : a(x)∋Z ↔ Z=Δ_D∨(x≠⊥_D∧u∋Z)` (i.e. `a(x)=⊥_D` if
+`x=⊥_D` else `u`) — `IsRetraction a` is then one `by_cases`. The fixed-point set `{⊥_D,u}` is shown
+`≅O` by building the two directions *directly* off the closed form rather than characterizing `Fix(a)`
+abstractly: `fixOfO t := {Z ∣ Z=Δ_D∨(t∋{0}∧u∋Z)}` (a genuine `Element`, no `ite`) and
+`invFun y := check.toElementMap y`; round-trip/monotonicity lemmas (`fixOfO_ne_bot_iff`,
+`check_toElementMap_fixOfO`, `fixOfO_check_toElementMap`, `O_le_iff`) close the `OrderIso` (`fixIso`).
+
+**Choice discipline, confirmed by axiom audit.** `check`'s first draft used `by_cases` inside
+`inter_right`, which leaked `Classical.choice` into the **data** (`#print axioms check` included it)
+— rewritten to a direct `rcases` on the defining disjunction (`Y={0,1}∨X≠Δ`) instead, restoring
+choice-freedom. Final audit: `O`, `check`, `fade₂`, `fade`, `a`, `fixOfO` are **all**
+`⊆ {propext, Quot.sound}` (genuine data, zero `Classical.choice`); only the packaged `OrderIso`
+(`fixIso`) and the pure theorems (`isRetraction_a`, `example84a`) pick up `Classical.choice` through
+`Prop`-valued proof fields (`left_inv`/`right_inv`/`map_rel_iff'`, and `exists_mem_ne_master_of_ne_bot`'s
+`by_contra`) — exactly the same pattern as the pre-existing `ext_of_toElementMap`. `push_neg` is
+deprecated in this mathlib; use `push Not` instead.
+
+**Lean gotchas hit this session:**
+* `variable (u)(hu)` **auto-includes into a theorem's signature only if referenced in the stated
+  type**, not just the tactic proof body. Using `include hu` once makes it *permanently* spliced
+  into every subsequent declaration's signature (even unrelated ones — triggers "unused variable"
+  linter warnings and cascades into broken call-sites through the file). Prefer adding
+  `(hu : u ≠ D.bot)` as an **explicit** parameter directly on each theorem that needs it, and thread
+  it explicitly through call sites — more boilerplate but scoped correctly.
+* A relation defined as `Z = master ∨ (X = {0} ∧ Y ⊆ Z)` needs the **inner disjunction case-split
+  nested inside the outer one** (both hypotheses, both branches) when proving `inter_right`/`mono`/
+  `Element.inter_mem` for an intersected output `Z∩Z'` — collapsing to a flat 2-way split and always
+  taking `left`/`right` based on only one side's case is a classic bug: e.g. `Z=master, Z'≠master`
+  needs `Z∩Z'=Z'≠master`, so the *right* disjunct fires even though the first hypothesis looked like
+  the "master" case. Four sub-cases, not two.
+* Named-argument disambiguation on a dot-projection (`check.rel (D := D) X Y`) fails because the
+  field accessor's parameter name is the *structure's* implicit (`V₀`), not the ambient ambient
+  ident; instead type-ascribe the *receiver*: `(check : ApproximableMap D O).rel X Y`.
+
+**Next concrete target (user's choice):** Example 8.4(b) (`strict`/`smash`, needs `funSpace`
+curry-lifting for `strict`, likely more tractable to attempt `smash` first); or resume Theorem
+8.5's hard direction / Def 8.7 onward as before.
