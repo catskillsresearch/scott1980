@@ -1960,7 +1960,7 @@ lake build Scott1980
 
 ## Lean Code
 
-All **160** Lean 4 modules in the [scott1980](https://github.com/catskillsresearch/scott1980)
+All **163** Lean 4 modules in the [scott1980](https://github.com/catskillsresearch/scott1980)
 repository, grouped by role. Links point to the current `main` branch on GitHub. The import order
 matches [`Scott1980.lean`](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980.lean).
 
@@ -2142,8 +2142,11 @@ matches [`Scott1980.lean`](https://github.com/catskillsresearch/scott1980/blob/m
 * [Exercise722Cat.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/Exercise722Cat.lean) — concatenation εNFA (`catEps`)
 * [Exercise722Decide.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/Exercise722Decide.lean) — uniform `toNFA`, emptiness/consistency Bool deciders
 * [Exercise722Words.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/Exercise722Words.lean) — bounded word enumeration for search
+* [Exercise722Equiv.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/Exercise722Equiv.lean) — choice-free `Finset`-subset-construction simulation of `toNFA e`; `subsetB`/`interEqB` language-equivalence deciders (**7.22k**)
 * [Recursive.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/Recursive.lean) — **`isBinDigit`** / **`allBinDigitsChar`** (Composer **C9a** / **7.22i(a)**); future C9b generic primrec lemmas
 * [Exercise722Presentation.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/Exercise722Presentation.lean) — `SsysX` enumeration, `ssysConsChar`, C9 `RecDecidable₂` bridge (partial; **`Ssys_cons_computable`** open — **7.22i(b)1–8**)
+* [Exercise723.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/Exercise723.lean) — `PN`'s `∩`/`∪`/`+`/`fun`/`graph` computable, computable elements = r.e. sets
+* [Exercise724.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/Exercise724.lean) — `Γ`/`L` effectively given, `\|L\|≃Γ`, `B⊴L`, LUCID combinators computable
 
 ### Lecture V (misc)
 
