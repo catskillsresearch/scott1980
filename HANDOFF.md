@@ -1,4 +1,4 @@
-# Handoff — Scott 1981 (PRG-19): Lectures I–IV COMPLETE (IV spine Thm 4.1/4.2, Ex 4.3/4.4, Def 4.5 + Thm 4.6, **all Exercises 4.7–4.25**); **Lecture V COMPLETE** (Table 5.5, Thm 5.1/5.2/5.6, Prop 5.3/5.4, **Exercises 5.7–5.16 — including 5.16's full Thue–Morse `t`: unfolding, digit-sum-mod-2 (Lambek), and overlap-freeness**); **Lecture VI: Example 6.1 (D<sup>§</sup> ≅ D + (D<sup>§</sup>×D<sup>§</sup>)), Example 6.2 (`B ≅ B+B`, `C ≅ {{Λ}}+C+C`, the generalization `A ≅ Aⁿ + Aⁿ`, and eventually-periodic trees ↔ regular events via Myhill–Nerode) + categorical spine (Defs 6.3–6.5, Props 6.6–6.7) Definition 6.8 (functors *continuous on maps*, over the strict function space), and **Theorem 6.9 (homomorphisms out of a fixed point `D ≅ T(D)`)**, and **Theorem 6.14 (initial `T`-algebra: existence + uniqueness/initiality among strict algebras)**, **Lemma 6.15 (projection pair ⟹ `D ⊴ E`)** and **Theorem 6.16 (an initial `T`-algebra embeds in every solution: `D ⊴ E` for all `E ≅ T(E)`)** COMPLETE**; **Lecture VII: Definition 7.1 (computable presentation), Definition 7.2 (computable map / computable element), and Proposition 7.3 (identity + composition computable; computable map ∘ computable element), and **Theorem 7.4 — BOTH halves** (`D₀×D₁` *and* `D₀+D₁` effectively given; `projᵢ`/`inᵢ`/`outᵢ`, `⟨f,g⟩`, `f×g`/`f+g` computable) COMPLETE & CHOICE-FREE** over a bespoke choice-free recursion theory + r.e. closure layer (`Recursive.lean`, incl. truncated subtraction, `RecDecidable.natEq`/`.not`/`.em`/`.or`, `REPred.or`, **and now a choice-free primitive-recursive bitwise OR `myLor`**); **Example 7.8 (the powerset `PN` is effectively given) COMPLETE & fully choice-free (`Example78.lean`)**; **Definition 7.9 (the Smyth power domain `ℙ𝒟` family: down-set `↓X`=Ex 1.20 `upSet`, preparation `𝒟†`=`powerSystem`, finite-union family `PDmem`, the two intersection remarks) COMPLETE & fully choice-free (`Definition79.lean`)**; **Exercise 7.23 COMPLETE (`∩`/`∪`/`+`/`fun`/`graph` on `PN` all computable + full computable-elements-of-`PN` characterization, all choice-free, `Exercise723.lean`)**; **Exercise 7.24 COMPLETE (`Γ`/`L`, `L` effectively given, `\|L\|≃Γ`, `B⊴L`, LUCID combinators `notT`/`andT` + generic `postcompose`/`pointwiseBin` lifting to `(L→T)` computable maps, `Exercise724.lean`)**; rest of VI + VII–VIII transcribed & inventoried
+# Handoff — Scott 1981 (PRG-19): Lectures I–IV COMPLETE (IV spine Thm 4.1/4.2, Ex 4.3/4.4, Def 4.5 + Thm 4.6, **all Exercises 4.7–4.25**); **Lecture V COMPLETE** (Table 5.5, Thm 5.1/5.2/5.6, Prop 5.3/5.4, **Exercises 5.7–5.16 — including 5.16's full Thue–Morse `t`: unfolding, digit-sum-mod-2 (Lambek), and overlap-freeness**); **Lecture VI: Example 6.1 (D<sup>§</sup> ≅ D + (D<sup>§</sup>×D<sup>§</sup>)), Example 6.2 (`B ≅ B+B`, `C ≅ {{Λ}}+C+C`, the generalization `A ≅ Aⁿ + Aⁿ`, and eventually-periodic trees ↔ regular events via Myhill–Nerode) + categorical spine (Defs 6.3–6.5, Props 6.6–6.7) Definition 6.8 (functors *continuous on maps*, over the strict function space), and **Theorem 6.9 (homomorphisms out of a fixed point `D ≅ T(D)`)**, and **Theorem 6.14 (initial `T`-algebra: existence + uniqueness/initiality among strict algebras)**, **Lemma 6.15 (projection pair ⟹ `D ⊴ E`)** and **Theorem 6.16 (an initial `T`-algebra embeds in every solution: `D ⊴ E` for all `E ≅ T(E)`)** COMPLETE**; **Lecture VII: Definition 7.1 (computable presentation), Definition 7.2 (computable map / computable element), and Proposition 7.3 (identity + composition computable; computable map ∘ computable element), and **Theorem 7.4 — BOTH halves** (`D₀×D₁` *and* `D₀+D₁` effectively given; `projᵢ`/`inᵢ`/`outᵢ`, `⟨f,g⟩`, `f×g`/`f+g` computable) COMPLETE & CHOICE-FREE** over a bespoke choice-free recursion theory + r.e. closure layer (`Recursive.lean`, incl. truncated subtraction, `RecDecidable.natEq`/`.not`/`.em`/`.or`, `REPred.or`, **and now a choice-free primitive-recursive bitwise OR `myLor`**); **Example 7.8 (the powerset `PN` is effectively given) COMPLETE & fully choice-free (`Example78.lean`)**; **Definition 7.9 (the Smyth power domain `ℙ𝒟` family: down-set `↓X`=Ex 1.20 `upSet`, preparation `𝒟†`=`powerSystem`, finite-union family `PDmem`, the two intersection remarks) COMPLETE & fully choice-free (`Definition79.lean`)**; **Exercise 7.23 COMPLETE (`∩`/`∪`/`+`/`fun`/`graph` on `PN` all computable + full computable-elements-of-`PN` characterization, all choice-free, `Exercise723.lean`)**; **Exercise 7.24 COMPLETE (`Γ`/`L`, `L` effectively given, `\|L\|≃Γ`, `B⊴L`, LUCID combinators `notT`/`andT` + generic `postcompose`/`pointwiseBin` lifting to `(L→T)` computable maps, `Exercise724.lean`)**; **Lecture VIII retraction/projection spine started: Definition 8.1 (`IsRetraction`), Proposition 8.2 (`D◁E` induces retraction `a=i∘j`, `\|D\|≅Fix(a)`), Definition 8.3 (`IsProjection`/`IsFinitary`) COMPLETE; Theorem 8.5 and Theorem 8.6 PARTIAL (documented, choice-free `(ii)⟹(i)` direction and `sub` combinator core; hard direction + `funSpace`-level `sub` packaging deferred)**; rest of VI + VII–VIII transcribed & inventoried
 
 You are a Lean 4 proof engineer formalizing Dana Scott's 1981 *Lectures on a Mathematical Theory of
 Computation* (PRG-19) in:
@@ -4711,3 +4711,73 @@ Full project `lake build` (3122 jobs) green (only pre-existing unrelated lint wa
 **Next concrete target:** the `primrec_listEqStpNonzero` choice-leak (optional cleanup, see above),
 the optional `Ssys_effectively_given` upgrade (7.22k checkpoint), or starting Lecture VIII (retracts
 of the universal domain, all Deferred) — user's choice.
+
+---
+
+## Checkpoint 2026-07-02 — Lecture VIII retraction/projection spine: Def 8.1/8.3, Prop 8.2 PASS; Thm 8.5/8.6 PARTIAL
+
+Scope (per prior planning transcript): split Lecture VIII into (a) retraction/projection spine —
+this session's target — (b) the universal domain `𝒰` (Def 8.7 onward), deferred. Four new files,
+all wired into `Scott1980.lean`, full project `lake build` (3127 jobs) green, every new theorem
+axiom-audited **choice-free** (`⊆ {propext, Quot.sound}`).
+
+**`Definition81.lean` — `IsRetraction a := a.comp a = a`.** Trivial; `idMap E` is a retraction.
+
+**`Proposition82.lean` — `D◁E ⟹` a retraction `a=i∘j` with `\|D\|≅Fix(a)`.** `retractionOfSubsystem
+h := (Subsystem.inj h).comp (Subsystem.proj h)` for `h:D◁E` (reusing Prop 6.12's canonical
+injection/projection pair). `retractionOfSubsystem_rel : a.rel X Z ↔ E.mem X∧E.mem Z∧∃Y,D.mem
+Y∧X⊆Y⊆Z` by unfolding `comp_rel/inj_rel/proj_rel`. Idempotency from `j∘i=I_D` (Prop 6.12) rewritten
+inside the double composite (needed explicit `show (h.inj.comp h.proj)…` + `toElementMap_comp`
+unfolds — `retractionOfSubsystem` is a `def`, not `abbrev`, so it doesn't auto-unfold under `show`).
+`elementIso h : D.Element ≃o {y:E.Element ∣ a.toElementMap y=y}` via `i`'s `toElementMap`-injectivity.
+
+**`Definition83.lean` — `IsProjection`/`IsFinitary`/`IsFinitaryProjection`.** `IsProjection a :=
+IsRetraction a ∧ a≤idMap E`. `IsFinitary a := ∃(β:Type u)(F:NeighborhoodSystem β),
+Nonempty(Fix(a)≃o F.Element)` — needed an explicit `universe u` binding both the ambient `α` and the
+existential `β` to the same universe, else a metavariable leaks. Corollaries package Prop 8.2's
+output as a finitary projection for free.
+
+**`Theorem85.lean` — step-closure formula ⟺ finitary projection, `(ii)⟹(i)` direction only.**
+`fixedNbhd a := {X∈E∣XaX}` is a genuine `NeighborhoodSystem` **for any approximable `a`** (needs only
+`mono`/`inter_right`, no projection/finitary hypothesis) and `fixedNbhd_subsystem a : fixedNbhd a◁E`
+holds unconditionally. Formula (ii) (`a(x)={Y∈E∣∃X∈x,X⊆Y∧XaX}`), unwound at a principal `x=↑X` via
+`rel_iff_mem_principal`, reproduces `retractionOfSubsystem_rel`'s formula for `D=fixedNbhd a`
+*exactly* — so `a = retractionOfSubsystem (fixedNbhd_subsystem a)` (`ApproximableMap.ext`), and Def
+8.3's corollary finishes in one line. **`(i)⟹(ii)` deliberately not attempted**: Scott's proof needs
+"an embedding-projection pair reflects compactness" (`i(j(↑X))=↑X ⟹ j(↑X)` finite in `D`) — provable
+in principle from `iSupDirected`/`toElementMap_iSupDirected` (continuity) plus a general fact
+`D`-algebraicity (every element is a directed union of its principal approximants, not yet a lemma
+in the codebase) but assembling the embedding pair `i,j` from the abstract `IsFinitary` witness
+*and* this compactness-reflection lemma is a standalone effort on the order of a new file. Documented
+in the module docstring rather than left as a `sorry`.
+
+**`Theorem86.lean` — the `sub` combinator, core only.** `sub f := retractionOfSubsystem
+(fixedNbhd_subsystem f)` (Scott's formula for `sub(f)` *is* Prop 8.2 applied to `fixedNbhd f`).
+Proved: `sub_le : sub f≤f`; `fixedNbhd_sub : fixedNbhd(sub f)=fixedNbhd f` (witness `Y⊆Y'⊆Y⟹Y=Y'`
+by `Set.Subset.antisymm`) giving the sharper `sub_sub : sub(sub f)=sub f` (an *equality*, stronger
+than Scott's stated `sub(f)⊑sub(sub(f))`); `sub_mono`; the easy containment
+`isFinitaryProjection_of_sub_eq_self : sub f=f → IsFinitaryProjection f`. **Deferred**: the converse
+containment (needs Thm 8.5's hard direction) and packaging `sub` itself as a genuine
+`ApproximableMap (funSpace E E)(funSpace E E)` (Scott: "`f↦sub(f)` preserves directed unions of
+`f`'s, thus `sub` is approximable") plus its finitary-projection/computability clauses — this needs
+`ofMono`/`curry`-style machinery extended to `funSpace`'s step-neighbourhoods, comparable in size to
+`Theorem75.lean`, and was out of scope for this session.
+
+**Lean gotcha hit twice while writing `Theorem86.lean`:** `rintro`/anonymous-constructor patterns
+for a hypothesis of shape `A∧(B∧(∃Y,(C∧D)∧(E∧F)))` need **exactly** the flat count `⟨a,b,Y,⟨c,d⟩,e,f⟩`
+(6 pieces, with the *left* conjunct of the innermost pair bracketed since anonymous-constructor
+auto-flattening only works rightward) — miscounting by one silently misassigns a `Set α` witness to
+a wildcard meant for a `Prop`, producing a confusing `rcases: ‹var› is not an inductive datatype`
+error at the *following* pattern piece, not the one actually short. When in doubt, `obtain` in
+separate explicit steps instead of guessing a long flat `rintro` pattern.
+
+`arxiv.md` rows updated: 8.1/8.2/8.3 → **Pass**; 8.5/8.6 → **Partial** (both with dense proof notes
+matching the above); 8.4/8.7–8.11 remain **Deferred**.
+
+**Next concrete target (user's choice):** (a) the compactness-reflection lemma to close Theorem
+8.5's hard direction (also unlocks Theorem 8.6's converse containment); (b) `Example84.lean` (the
+two-element system `O` from a retraction on non-trivial `D` — small, self-contained, doesn't need
+(a)); (c) packaging `sub` as a genuine `funSpace`-level `ApproximableMap` (needs (a) eventually for
+the full theorem statement, but the packaging/continuity argument itself doesn't); (d) start Def 8.7
+onward (the universal domain `𝒰` over `ℚ`, all Deferred, likely the largest remaining chunk of the
+monograph).

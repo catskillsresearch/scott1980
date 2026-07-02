@@ -1774,25 +1774,25 @@ also now **Pass**, closing the inventory.
 ### Lecture VIII: Retracts of the Universal Domain
 
 
-Lecture VIII covers retractions, projections, and the construction of the universal domain $U$. Formalization for these items is deferred; they are cataloged below in the same structured format as the rest of the monograph.
+Lecture VIII covers retractions, projections, and the construction of the universal domain $U$. The retraction/projection spine (Definitions 8.1/8.3, Proposition 8.2, Theorem 8.5's easy direction, Theorem 8.6's `sub` combinator) is formalized below; the universal domain `U` (Def 8.7 onward) and a few hard/large items remain deferred.
 
 #### Definition 8.1
 * **Mathematical Target:** a *retraction* `a:E→E` with `a∘a=a`
-* **Lean File:** — (Formalization deferred)
-* **Proof Notes:** a *retraction* `a:E→E` with `a∘a=a`
-* **Status:** Deferred
+* **Lean File:** `Scott1980/Neighborhood/Definition81.lean`
+* **Proof Notes:** `IsRetraction a := a.comp a = a`, verbatim. `idMap E` is trivially a retraction (`isRetraction_idMap`, one line from `idMap_comp`).
+* **Status:** Pass
 
 #### Proposition 8.2
 * **Mathematical Target:** `D◁E` induces a retraction `a:E→E`
-* **Lean File:** — (Formalization deferred)
-* **Proof Notes:** `D◁E` induces a retraction `a:E→E`
-* **Status:** Deferred
+* **Lean File:** `Scott1980/Neighborhood/Proposition82.lean`
+* **Proof Notes:** `retractionOfSubsystem h := i∘j` for the `Subsystem.inj`/`Subsystem.proj` pair of Prop 6.12 (`h : D◁E`); `retractionOfSubsystem_rel : (i∘j).rel X Z ↔ E.mem X∧E.mem Z∧∃Y,D.mem Y∧X⊆Y⊆Z` unfolds `comp_rel/inj_rel/proj_rel`. `isRetraction_retractionOfSubsystem` from `j∘i=I_D` (Prop 6.12) rewritten inside the double composite. `elementIso h : D.Element ≃o Fix(a)` built via `toElementMap`-injectivity of `i` (`retractionOfSubsystem_toElementMap_inj`) plus a direct fixed-point characterization.
+* **Status:** Pass
 
 #### Definition 8.3
-* **Mathematical Target:** a *projection* (retraction with `a⊑I`)
-* **Lean File:** — (Formalization deferred)
-* **Proof Notes:** a *projection* (retraction with `a⊑I`)
-* **Status:** Deferred
+* **Mathematical Target:** a *projection* (retraction with `a⊑I`); a *finitary* retraction (fixed-point set isomorphic to a domain)
+* **Lean File:** `Scott1980/Neighborhood/Definition83.lean`
+* **Proof Notes:** `IsProjection a := IsRetraction a ∧ a ≤ idMap E`; `IsFinitary a := ∃ β F, Nonempty (Fix(a) ≃o F.Element)` (explicit `universe u` to keep `β` and the ambient `α` in the same universe, avoiding a metavariable). Corollaries `isProjection_retractionOfSubsystem`/`isFinitary_retractionOfSubsystem`/`isFinitaryProjection_retractionOfSubsystem` package Prop 8.2's output (`a ≤ idMap E` from `inj_comp_proj_le`; finitary witness `elementIso h`).
+* **Status:** Pass
 
 #### Example 8.4
 * **Mathematical Target:** the two-element system `O={{0},{0,1}}` arises from a retraction on any non-trivial `D`
@@ -1801,16 +1801,16 @@ Lecture VIII covers retractions, projections, and the construction of the univer
 * **Status:** Deferred
 
 #### Theorem 8.5
-* **Mathematical Target:** equivalent characterizations of an approximable retraction `a:E→E`
-* **Lean File:** — (Formalization deferred)
-* **Proof Notes:** equivalent characterizations of an approximable retraction `a:E→E`
-* **Status:** Deferred
+* **Mathematical Target:** for `a:E→E`, TFAE: (i) `a` is a finitary projection; (ii) `a(x)={Y∈E∣∃X∈x,X⊆Y∧XaX}` for all `x∈|E|`
+* **Lean File:** `Scott1980/Neighborhood/Theorem85.lean`
+* **Proof Notes:** `(ii)⟹(i)` (`isFinitaryProjection_of_formula`) proved in full: `fixedNbhd a := {X∈E∣XaX}` is a genuine subsystem `◁E` for *any* `a` (`fixedNbhd_subsystem`, needs only `mono`/`inter_right`); formula (ii) unwound at principal elements via `rel_iff_mem_principal` reproduces `retractionOfSubsystem_rel`'s formula exactly, giving `a = retractionOfSubsystem (fixedNbhd_subsystem a)`, so Def 8.3's corollaries finish it. `(i)⟹(ii)` is **not formalized**: it needs a "compactness reflected through an embedding-projection pair" lemma (Scott: `i(j(↑X))=↑X` means `j(↑X)` finite in `D`) not yet in the codebase — buildable from `iSupDirected`/`toElementMap_iSupDirected` plus `D`'s algebraicity, but a standalone effort; see module docstring and `HANDOFF.md`.
+* **Status:** Partial
 
 #### Theorem 8.6
-* **Mathematical Target:** the domain of retracts of `E`
-* **Lean File:** — (Formalization deferred)
-* **Proof Notes:** the domain of retracts of `E`
-* **Status:** Deferred
+* **Mathematical Target:** `sub:(E→E)→(E→E)` by `X sub(f) Z ↔ ∃Y∈E,X⊆Y∧fYY∧Y⊆Z`; range(sub) = finitary projections on `E`; `sub` itself is a finitary projection on `(E→E)`; computable if `E` effective
+* **Lean File:** `Scott1980/Neighborhood/Theorem86.lean`
+* **Proof Notes:** `sub f := retractionOfSubsystem (fixedNbhd_subsystem f)` — Scott's formula *is* Prop 8.2 applied to Thm 8.5's `fixedNbhd f`. Proved: `sub_le : sub f ≤ f`; `fixedNbhd_sub : fixedNbhd (sub f) = fixedNbhd f` (witness `Y⊆Y'⊆Y⟹Y=Y'`) giving the sharper `sub_sub : sub(sub f)=sub f` (equality, not just Scott's stated `⊑`); `sub_mono`; easy containment `isFinitaryProjection_of_sub_eq_self : sub f=f → IsFinitaryProjection f` (direct substitution into Def 8.3's corollary). **Deferred**: converse containment (needs Thm 8.5's hard direction); packaging `sub` itself as an `ApproximableMap (funSpace E E)(funSpace E E)` (needs `ofMono`/`curry`-style machinery extended to `funSpace`'s step-neighbourhoods, comparable in size to `Theorem75.lean`) and its finitary-projection/computability clauses.
+* **Status:** Partial
 
 #### Definition 8.7
 * **Mathematical Target:** the universal domain `U` over the rationals `Q`
