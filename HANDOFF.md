@@ -5204,3 +5204,53 @@ unions of rational intervals `[r,s)` with `0≤r<s≤1`.
 
 **Status: Definition 8.7 is `Pass`.** Theorem 8.8 (universality of `U`) is the natural next item,
 building the recursive back-and-forth embedding of any countable `V` into `U`.
+
+---
+
+**2026-07-02 (later same day) — Theorem 8.8(a) STARTED: the key local splitting lemma.** New file
+`Theorem88.lean`. Split Theorem 8.8 into three arxiv.md rows: **(a)** general (non-effective)
+embeddability `D ⊴ U` for countable `D`; **(b)** the effective refinement (computable projection
+pair when `D` is effectively given); **(c)** the converse correspondence (computable finitary
+projections of `U` give effectively-given domains). Verified page images (`pdftoppm` renders of
+`sources/PRG19.pdf` pp. 138–141) against `sources/PRG19.md`'s existing clean transcription — the
+latter is accurate and needs no correction; `pdftotext`'s raw OCR (used earlier, ad hoc) is what was
+garbled, not the maintained transcript.
+
+* **Scott's construction, reverse-engineered onto this codebase's idiom.** Scott tracks, for each
+  `n`, the `2ⁿ` "atoms" `⋂_{i<n} δᵢXᵢ` (`δ ∈ {+,-}ⁿ`, `δX := X` if `+`, `Δ\X` if `-`) and their
+  paired images `⋂_{i<n} δᵢYᵢ`, requiring matching emptiness (`(■)`) at every stage. Rather than
+  carry dependent `Fin n → Bool` tuples, this file (and its planned continuation) tracks atoms as a
+  **doubling `List (Set α × Set ℚ)`** of matching pairs `(A, B)` — exactly `(■)` unpacked as
+  ordinary list recursion, avoiding `Fin`-indexed bookkeeping entirely (matching this codebase's
+  usual `List`-based idiom, e.g. `presentedIntervals`).
+* **`exists_split` (done, verified): the one-atom refinement step.** Given a matching pair `(A, B)`
+  and a new target `Xₙ`, produces refinements `I` (for `A ∩ Xₙ`) and `J` (for `A \ Xₙ`), with
+  `I ∪ J = B`, `I ∩ J = ∅`. The pleasant surprise: **none of the three cases need a "`U` closed
+  under set difference" lemma** — `A ∩ Xₙ = ∅` gives `(I,J) := (∅, B)`; `A ⊆ Xₙ` gives `(B, ∅)`;
+  otherwise (the only interesting case) `B` is forced non-empty by the matching invariant, and
+  **Definition 8.7's `U_no_minimal`** directly hands back a disjoint proper splitting `B = Y ⊔ Z`
+  to use as `(I, J) := (Y, Z)` — confirming `U_no_minimal` (built as a "bonus" alongside Definition
+  8.7) is not decorative but the load-bearing lemma for Theorem 8.8's induction.
+* **Why the `𝒟 ≅ 𝒟†`/`(♦)` preparation is skipped here.** Scott's text is explicit that `(♦)`
+  (`Xₘ ⊆ ⋃_{i<k} Xₙᵢ ↔ ∃i<k. Xₘ ⊆ Xₙᵢ`, needing the positivity-preparation `𝒟 ≅ 𝒟†`) exists *solely*
+  to make atom-emptiness **effectively decidable** — it plays no role in the abstract correctness
+  argument, which case-splits on emptiness classically (`by_cases`, fine for this `Prop`-level
+  existence theorem). So Theorem 8.8(a) needs no dagger/positivity machinery at all; it is reserved
+  for Theorem 8.8(b)'s effective refinement.
+* **Axioms:** `exists_split` is `⊆ {propext, Classical.choice, Quot.sound}` — `Classical.choice`
+  here is *expected and legitimate* (case-splitting an arbitrary `Prop` via `by_cases`, for a
+  genuinely non-constructive existence statement about an arbitrary countable `D`), on top of the
+  same upstream `ℚ`-order taint documented for `Definition87.lean`.
+* **Remaining for Theorem 8.8(a)** (not yet started): (1) lift `exists_split` to a `List`-of-pairs
+  recursive step (`exists_splitCells`, doubling the list each step, by straightforward list
+  induction — the natural next increment); (2) bundle into a sequence `Y : ℕ → Set ℚ` via strong
+  recursion carrying the growing cell list as accumulator (needs `Classical.choice`/`Exists.choose`
+  at each step, fine); (3) derive `Xᵢ ⊆ Xⱼ ↔ Yᵢ ⊆ Yⱼ` from the atom-emptiness invariant (the
+  "any Boolean combination is a union of atoms" argument) — the piece needed to actually build the
+  order-isomorphism, likely the largest remaining chunk; (4) assemble `∃ D' : NeighborhoodSystem ℚ,
+  D ≅ᴰ D' ∧ D' ◁ U`. **8.8(b)** (effective refinement) and **8.8(c)** (converse correspondence,
+  short — reuses Theorem 8.5's fixed-point-set-is-a-subsystem identification plus r.e.-ness of
+  equality on `U`-neighbourhoods) remain fully deferred.
+
+**Status: Theorem 8.8(a) is in progress — `exists_split` (the mathematical core of the induction)
+is done and verified; the surrounding recursive-sequence/isomorphism packaging remains.**
