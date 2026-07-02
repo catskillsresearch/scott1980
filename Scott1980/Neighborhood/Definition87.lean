@@ -5,6 +5,8 @@ import Mathlib.Data.Set.Lattice
 import Mathlib.Algebra.Order.Field.Rat
 import Mathlib.Tactic.NormNum
 import Mathlib.Algebra.Order.Field.Basic
+import Mathlib.Data.Fintype.Card
+import Mathlib.Order.CompleteLattice.Finset
 
 /-!
 # Definition 8.7 (Scott 1981, PRG-19, Lecture VIII) — the universal domain `𝒰` over `ℚ`
@@ -221,5 +223,47 @@ theorem U_no_minimal {X : Set ℚ} (hX : U.mem X) :
     have hYsub : presentedIntervals L ∩ Set.Iio m ⊆ presentedIntervals L ∩ Set.Ici m := by
       rw [hEq]; exact Set.inter_subset_left
     exact hYne.ne_empty ((Set.inter_eq_left.mpr hYsub).symm.trans hYZinter)
+
+/-! ### `𝒰` is closed under finite unions (needed for Theorem 8.8) -/
+
+theorem presentedIntervals_append (L1 L2 : List (ℚ × ℚ)) :
+    presentedIntervals (L1 ++ L2) = presentedIntervals L1 ∪ presentedIntervals L2 := by
+  induction L1 with
+  | nil => simp
+  | cons p L1 ih => simp [List.cons_append, presentedIntervals_cons, ih, Set.union_assoc]
+
+/-- **`U` is closed under binary union**, as long as the result is non-empty: if `X` and `Y` are
+each either empty or `U`-neighbourhoods, so is `X ∪ Y`. Unlike intersection (Definition 8.7's
+`inter_mem`), this needs no consistency witness — `U`'s neighbourhoods are *by definition* finite
+unions of intervals, so unioning two presenting lists (`++`) always presents the union. -/
+theorem U_union_mem {X Y : Set ℚ} (hX : X = ∅ ∨ U.mem X) (hY : Y = ∅ ∨ U.mem Y) :
+    X ∪ Y = ∅ ∨ U.mem (X ∪ Y) := by
+  rcases hX with rfl | hX
+  · rcases hY with rfl | hY
+    · exact Or.inl (by simp)
+    · exact Or.inr (by simpa using hY)
+  · rcases hY with rfl | hY
+    · exact Or.inr (by simpa using hX)
+    · obtain ⟨⟨L1, rfl⟩, hXne, hXsub⟩ := hX
+      obtain ⟨⟨L2, rfl⟩, hYne, hYsub⟩ := hY
+      refine Or.inr ⟨⟨L1 ++ L2, (presentedIntervals_append L1 L2).symm⟩,
+        hXne.mono Set.subset_union_left, Set.union_subset hXsub hYsub⟩
+
+/-- **`U` is closed under finite (`Fintype`-indexed) unions**, as long as the result is
+non-empty: if every `f i` is either empty or a `U`-neighbourhood, so is `⋃ i, f i` (given it is
+non-empty). Proved by folding `U_union_mem` over `Finset.univ` (`Finset.induction_on`). -/
+theorem U_iUnion_mem {ι : Type*} [Fintype ι] {f : ι → Set ℚ} (hf : ∀ i, f i = ∅ ∨ U.mem (f i))
+    (hne : (⋃ i, f i).Nonempty) : U.mem (⋃ i, f i) := by
+  classical
+  have hstep : ∀ s : Finset ι, (⋃ i ∈ s, f i) = ∅ ∨ U.mem (⋃ i ∈ s, f i) := by
+    intro s
+    induction s using Finset.induction_on with
+    | empty => exact Or.inl (by simp)
+    | insert i s hi ih =>
+      rw [Finset.set_biUnion_insert]
+      exact U_union_mem (hf i) ih
+  have hall : (⋃ i, f i) = ⋃ i ∈ (Finset.univ : Finset ι), f i := by simp
+  rw [hall] at hne ⊢
+  exact (hstep Finset.univ).resolve_left hne.ne_empty
 
 end Scott1980.Neighborhood
