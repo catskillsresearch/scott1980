@@ -1774,7 +1774,7 @@ also now **Pass**, closing the inventory.
 ### Lecture VIII: Retracts of the Universal Domain
 
 
-Lecture VIII covers retractions, projections, and the construction of the universal domain $U$. The retraction/projection spine (Definitions 8.1/8.3, Proposition 8.2, Example 8.4(a)/(b), Theorem 8.5 in full, Theorem 8.6(a)/(b)(i)/(b)(ii) all Pass, 8.6(c) deferred) is formalized below; the universal domain `U` (Def 8.7 onward) and a few other hard/large items remain deferred.
+Lecture VIII covers retractions, projections, and the construction of the universal domain $U$. The retraction/projection spine (Definitions 8.1/8.3, Proposition 8.2, Example 8.4(a)/(b), Theorem 8.5 in full, **Theorem 8.6 in full — (a)/(b)(i)/(b)(ii)/(c) all Pass**) is formalized below; the universal domain `U` (Def 8.7 onward) and a few other hard/large items remain deferred.
 
 #### Definition 8.1
 * **Mathematical Target:** a *retraction* `a:E→E` with `a∘a=a`
@@ -1832,9 +1832,9 @@ Lecture VIII covers retractions, projections, and the construction of the univer
 
 #### Theorem 8.6(c)
 * **Mathematical Target:** if `E` is effectively given, then **`sub` is computable**
-* **Lean File:** — (not attempted)
-* **Proof Notes:** Now unblocked on the domain-theory side (8.6(a)/(b) complete). Needs Def 7.1's `ComputablePresentation` / Def 7.2 computable-map machinery layered on top of the `funSpace`-level packaging in `Sub8_6`. Not attempted.
-* **Status:** Deferred
+* **Lean File:** `Scott1980/Neighborhood/Theorem86c.lean`
+* **Proof Notes:** Mirrors Theorem 7.6's `fixMap_isComputable` template, but is shorter since `sub`'s formula has a single existential (no iteration/chain). `subApprox := ofContinuous subFilter …` unfolds via `ofMono`/`toFilter` to `subApprox.rel F G ↔ (funSpace E E).mem G ∧ sub(toApproxMap↑F) ∈ G` (`subApprox_rel_iff`, using proof irrelevance to drop the membership-witness existential). Specializing `F=Xenum n`, `G=Xenum m` and unfolding via `mem_Xenum_iff_map` (Thm 7.5) gives `subApprox_rel_Xenum_iff`: `(Xenum n)subApprox(Xenum m) ↔ gN m=1 → ∀e∈decodeList m, (sub ĝₙ).rel(X_{e.1})(X_{e.2})` with `ĝₙ:=toApproxMap↑(Xenum n)` the least map. `sub_rel`'s existential witness `Y` is reindexed to a presentation index `y` via `P.surj` (`sub_rel_iff_exists_index`), and the key decidability step reuses **Theorem 7.6's own** `leastMap_Xenum_rel`/`Xenum_codePair` unchanged: `ĝₙ.rel(X_y)(X_y) ↔ Xenum n⊆Xenum(codePair y y)` (`sub_leastMap_rel_iff`), exactly the function-space presentation's own decidable `incl_computable`. `subStep_recDecidable` packages the per-witness triple (`Xenum n⊆Xenum(codePair y y) ∧ X_{e.1}⊆X_y ∧ X_y⊆X_{e.2}`) as one `RecDecidable` (coded `w=⟨y,⟨n,e⟩⟩`, `RecDecidable.and` of three reindexed presentation chars); `.re.proj` (unbounded `∃y` of decidable ⟹ r.e.) + `REPred.forall_mem_decodeList₂` (bounded `∀e∈decodeList m`, parameterised in `n`) + `.or`/`Decidable.imp_iff_not_or` (guard by `¬(gN m=1)`) assembles `subApprox_isComputable : IsComputableMap(funPresentation P P…)(funPresentation P P…) subApprox`. `sub_isComputable_of_isEffectivelyGiven` packages Scott's literal statement, extracting `P`'s own chars via `funConsChar`/`funPresentation` (Thm 7.5's own construction, reused verbatim) exactly as `funSpace_isEffectivelyGiven` does. **Choice-free in full:** `#print axioms` on `subApprox_isComputable`/`sub_isComputable_of_isEffectivelyGiven` and all supporting lemmas is `⊆{propext,Quot.sound}` — no `Classical.choice` anywhere (unlike 8.6(b)(ii), whose choice provenance is untouched here).
+* **Status:** Pass
 
 #### Definition 8.7
 * **Mathematical Target:** the universal domain `U` over the rationals `Q`
