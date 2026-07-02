@@ -159,3 +159,4 @@ import Scott1980.Neighborhood.Exercise722Words
 import Scott1980.Neighborhood.Exercise722Equiv
 import Scott1980.Neighborhood.Exercise722Presentation
 import Scott1980.Neighborhood.Exercise723
+import Scott1980.Neighborhood.Exercise724
