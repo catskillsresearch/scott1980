@@ -1,6 +1,7 @@
 import Scott1980.Neighborhood.Theorem85
 import Scott1980.Neighborhood.FunctionSpace
 import Scott1980.Neighborhood.Exercise213
+import Scott1980.Neighborhood.Proposition611
 
 /-!
 # Lecture VIII — Theorem 8.6 (Scott 1981, PRG-19): the `sub` combinator
@@ -38,10 +39,11 @@ Theorem 8.5's subdomain `D = fixedNbhd f = {Y ∈ E ∣ Y f Y}` (which, recall, 
 * **`sub f` is *always* a finitary projection**, for any `f` (`isFinitaryProjection_sub`) —
   `sub (sub f) = sub f` plus the above.
 
-**Theorem 8.6's clause 2, half done (in `namespace Sub8_6`):** `sub` packaged as a genuine
+**Theorem 8.6's clause 2, in full (in `namespace Sub8_6`):** `sub` packaged as a genuine
 `ApproximableMap (funSpace E E) (funSpace E E)` (`subApprox`), realizing Scott's remark that
 "the correspondence `f ↦ sub(f)` preserves directed unions of `f`'s, thus `sub` is itself
-approximable", and shown to be a **projection** on `(E → E)` (`isProjection_subApprox`):
+approximable", and shown to be a **finitary projection** on `(E → E)`
+(`isFinitaryProjection_subApprox`):
 `subApprox` is built via Exercise 2.13's `ofContinuous`, using a new general domain-theory bridge
 `continuous_of_monotone_iSupDirected` (`Exercise213.lean`: monotone + directed-sup-preserving ⟹
 topologically continuous, proved directly from algebraicity) applied to `subFilter`, `sub`
@@ -51,21 +53,28 @@ correspond, under `toApproxMap`, to the raw union of the underlying maps' *relat
 (`toApproxMap_rel_iSupDirected`, immediate from `mem_iSupDirected`), and `sub`'s formula is a
 *positive* existential in `f`'s relation, hence commutes with such unions by pure logic
 (`sub_toApproxMap_iSupDirected`). `IsRetraction subApprox`/`subApprox ≤ idMap` then drop out of
-`sub_sub`/`sub_le` respectively.
+`sub_sub`/`sub_le` respectively (`isProjection_subApprox`).
+
+**`IsFinitary subApprox`** (`isFinitary_subApprox`) turned out *not* to need the universal-domain
+machinery after all: `finitaryProjectionSubsystemEquiv` upgrades Theorem 8.6(a)'s bijection
+`f ↦ fixedNbhd f` / `D ↦ retractionOfSubsystem D` between `{f ∣ sub f = f}` and the subsystems
+`{D ∣ D ◁ E}` into a genuine **order-isomorphism** (round trips `fixedNbhd_retractionOfSubsystem`
+and `sub`'s own defining equation; order via `retractionOfSubsystem_rel`'s witness clause plus
+`Subsystem.subsystem_iff_subset_of_common`). Composed with `Fix(subApprox) ≃o {f ∣ sub f = f}`
+(`subApproxFixIso`, via `toApproxMap`/`toFilter`) and **Lecture VI's Proposition 6.11**
+(`subsystemReprIso`: the subsystems of `E` already form a genuine domain), this gives the witness
+for `IsFinitary subApprox` directly, with no new "domain of subsystems" construction needed.
 
 **Not formalized (deferred):**
 
-* **`IsFinitary subApprox`** — the remaining half of clause 2 (that `Fix(subApprox)`, the finitary
-  projections on `E`, is itself isomorphic to a domain). Every other `IsFinitary` witness in this
-  file was built by exhibiting the retraction as `retractionOfSubsystem` of an *explicit* subsystem,
-  but that route is circular here (it would need Theorem 8.5's hard direction applied to
-  `subApprox` itself). The natural honest witness needs a fresh domain of "subsystems of `E`",
-  which looks to require the not-yet-formalized universal-domain machinery (Def 8.7 onward); see
-  `HANDOFF.md`.
-* **Clause 3 (computability)** — needs clause 2 complete plus `E` effectively given (Def 7.1
-  machinery); out of reach until the above lands.
+* **Clause 3 (computability)** — needs `E` effectively given (Def 7.1 machinery); a separate,
+  not-yet-formalized prerequisite.
 
-Everything proved here is **choice-free** (`#print axioms ⊆ {propext, Quot.sound}`).
+Everything proved here is **choice-free** (`#print axioms ⊆ {propext, Quot.sound}`), *except*
+`isFinitary_subApprox`/`isFinitaryProjection_subApprox`, which pick up `Classical.choice` solely
+through Proposition 6.11's `subsystemReprIso` (itself inheriting it from Exercise 2.22's `reprIso`,
+the documented "for set theorists" exercise) — the same, already-accepted, provenance as every
+other domain-representation result in this project (Ex 3.25/3.27, Prop 6.11 itself).
 -/
 
 namespace Scott1980.Neighborhood
@@ -169,6 +178,70 @@ fixed point of `sub` (feed `isFinitaryProjection_of_sub_eq_self (sub_sub f)` bac
 theorem isFinitaryProjection_sub (f : ApproximableMap E E) : IsFinitaryProjection (sub f) :=
   isFinitaryProjection_of_sub_eq_self (sub_sub f)
 
+/-! ## The finitary-projections-on-`E` ↔ subsystems-of-`E` order-isomorphism
+
+Needed below for `Sub8_6.isFinitary_subApprox` (Theorem 8.6(b)(ii)): the bijection `f ↦ fixedNbhd f`
+/ `D ↦ retractionOfSubsystem D` between `{f ∣ sub f = f}` (the finitary projections) and
+`{D ∣ D ◁ E}` (the subsystems) that already underlies `sub`'s definition is in fact an
+order-isomorphism. Composed with Proposition 6.11's `subsystemReprIso` (the subsystems of `E`
+already form a genuine domain, from Lecture VI), this gives Theorem 8.6(b)(ii)'s witness directly —
+no new "domain of subsystems" construction is needed here. -/
+
+/-- `fixedNbhd (retractionOfSubsystem h) = D`: the round trip recovering a subsystem `D` from the
+retraction it induces. `Y (retractionOfSubsystem h) Y ↔ ∃W∈D, Y⊆W⊆Y`, and `Y⊆W⊆Y` forces `W=Y`, so
+this says exactly `D.mem Y` (using `E.mem Y` for free from `D ⊆ E`). -/
+theorem fixedNbhd_retractionOfSubsystem {D : NeighborhoodSystem α} (h : D ◁ E) :
+    fixedNbhd (Subsystem.retractionOfSubsystem h) = D := by
+  apply NeighborhoodSystem.ext
+  · intro X
+    rw [fixedNbhd_mem, Subsystem.retractionOfSubsystem_rel]
+    constructor
+    · rintro ⟨hXE, -, -, Y, hY, hXY, hYX⟩
+      rw [Set.Subset.antisymm hXY hYX]
+      exact hY
+    · intro hX
+      exact ⟨h.sub hX, h.sub hX, h.sub hX, X, hX, subset_rfl, subset_rfl⟩
+  · exact h.master_eq.symm
+
+/-- Every `retractionOfSubsystem h` is already a fixed point of `sub` — immediate from the round
+trip `fixedNbhd_retractionOfSubsystem`, since `sub` is *defined* as `retractionOfSubsystem` applied
+to `fixedNbhd`. -/
+theorem sub_retractionOfSubsystem {D : NeighborhoodSystem α} (h : D ◁ E) :
+    sub (Subsystem.retractionOfSubsystem h) = Subsystem.retractionOfSubsystem h := by
+  unfold sub
+  congr 1
+  exact fixedNbhd_retractionOfSubsystem h
+
+/-- **The finitary projections on `E` are order-isomorphic to the subsystems of `E`.** Forward:
+`f ↦ ⟨fixedNbhd f, fixedNbhd_subsystem f⟩`; backward: `D ↦ retractionOfSubsystem D` (a fixed point
+of `sub`, by `sub_retractionOfSubsystem`). Round trips are `fixedNbhd_retractionOfSubsystem` and
+(definitionally) `sub`'s own defining equation; order is preserved/reflected via `sub`'s formula
+being monotone in the underlying subsystem (`retractionOfSubsystem_rel`'s witness clause) together
+with `Subsystem.subsystem_iff_subset_of_common`. -/
+def finitaryProjectionSubsystemEquiv (E : NeighborhoodSystem α) :
+    {f : ApproximableMap E E // sub f = f} ≃o {D : NeighborhoodSystem α // D ◁ E} where
+  toFun f := ⟨fixedNbhd f.1, fixedNbhd_subsystem f.1⟩
+  invFun D := ⟨Subsystem.retractionOfSubsystem D.2, sub_retractionOfSubsystem D.2⟩
+  left_inv f := Subtype.ext f.2
+  right_inv D := Subtype.ext (fixedNbhd_retractionOfSubsystem D.2)
+  map_rel_iff' := by
+    intro f g
+    constructor
+    · intro hle
+      have hleD : fixedNbhd f.1 ◁ fixedNbhd g.1 := hle
+      have hsub : sub f.1 ≤ sub g.1 := by
+        rintro X Z hXZ
+        rw [sub_rel] at hXZ ⊢
+        obtain ⟨hX, hZ, Y, hY, hXY, hYZ⟩ := hXZ
+        exact ⟨hX, hZ, Y, hleD.sub hY, hXY, hYZ⟩
+      rwa [f.2, g.2] at hsub
+    · intro hfg
+      show fixedNbhd f.1 ◁ fixedNbhd g.1
+      refine (Subsystem.subsystem_iff_subset_of_common
+        (fixedNbhd_subsystem f.1) (fixedNbhd_subsystem g.1)).mpr ?_
+      intro X hX
+      exact ⟨hX.1, hfg X X hX.2⟩
+
 /-! ## Theorem 8.6, clause 2 (partial): `sub` is itself approximable, and a projection, on
 `(E → E)`
 
@@ -182,13 +255,13 @@ filters (`toApproxMap_rel_iSupDirected`, immediate from `mem_iSupDirected`), wit
 consistency argument needed. `continuous_of_monotone_iSupDirected` then upgrades this to genuine
 topological continuity, giving `subApprox := ofContinuous subFilter hc`.
 
-**Not yet formalized:** `IsFinitary subApprox` (that `Fix(subApprox)` — the finitary projections on
-`E` — is itself isomorphic to a domain) and the computability clause. Every other `IsFinitary`
-witness in this file was built by exhibiting the retraction as `retractionOfSubsystem` of an
-*explicit* subsystem, but that route is circular here (it would need Theorem 8.5's hard direction
-applied to `subApprox` itself). The natural honest witness needs a fresh domain of "subsystems of
-`E`", which looks to require the not-yet-formalized universal-domain machinery (Def 8.7 onward);
-see `HANDOFF.md`. -/
+`IsFinitary subApprox` (further below) needs no new "domain of subsystems" construction: it
+composes `Fix(subApprox) ≃o {f ∣ sub f = f}` (`subApproxFixIso`) with the
+`finitaryProjectionSubsystemEquiv`/`subsystemReprIso` route already available from Theorem 8.6(a)
+and Lecture VI's Proposition 6.11.
+
+**Not yet formalized:** the computability clause (Theorem 8.6's clause 3), which needs `E`
+effectively given (Def 7.1 machinery), a separate prerequisite. -/
 
 namespace Sub8_6
 
@@ -299,10 +372,51 @@ theorem subApprox_le_idMap : subApprox ≤ idMap (funSpace E E) := by
     _ = φ := toFilter_toApproxMap φ
 
 /-- **`sub` is itself a *projection* on the function space `(E → E)`** (half of Theorem 8.6's
-second clause — the remaining `IsFinitary` half needs the not-yet-formalized universal-domain
-machinery, see the section docstring above). -/
+second clause; the other half, `IsFinitary subApprox`, is below). -/
 theorem isProjection_subApprox : IsProjection (subApprox (E := E)) :=
   ⟨isRetraction_subApprox, subApprox_le_idMap⟩
+
+/-! ### Theorem 8.6(b)(ii): `subApprox` is finitary
+
+`Fix(subApprox)` is order-isomorphic to `{f ∣ sub f = f}` (the finitary projections on `E`, via
+`toApproxMap`/`toFilter`), which in turn is order-isomorphic to the subsystems of `E`
+(`finitaryProjectionSubsystemEquiv`, just above) — and Proposition 6.11 already exhibits the
+subsystems of `E` as a genuine domain (`subsystemReprIso`). No new "domain of subsystems"
+construction is needed: it was already built in Lecture VI. -/
+
+/-- **`Fix(subApprox) ≃o {f ∣ sub f = f}`.** `subApprox.toElementMap φ = φ` unfolds (via
+`toElementMap_subApprox`/`subFilter`) to `toFilter (sub (toApproxMap φ)) = φ`, i.e. exactly
+`sub (toApproxMap φ) = toApproxMap φ` after transporting through `toApproxMap`/`toFilter`'s round
+trips. -/
+def subApproxFixIso :
+    {φ : (funSpace E E).Element // subApprox.toElementMap φ = φ} ≃o
+      {f : ApproximableMap E E // sub f = f} where
+  toFun φ := ⟨toApproxMap φ.1, by
+    have h1 : subFilter φ.1 = φ.1 := (toElementMap_subApprox φ.1).symm.trans φ.2
+    have h2 : toApproxMap (subFilter φ.1) = toApproxMap φ.1 := congrArg toApproxMap h1
+    rwa [toApproxMap_subFilter] at h2⟩
+  invFun f := ⟨toFilter f.1, by
+    rw [toElementMap_subApprox]
+    show subFilter (toFilter f.1) = toFilter f.1
+    unfold subFilter
+    rw [toApproxMap_toFilter, f.2]⟩
+  left_inv φ := Subtype.ext (toFilter_toApproxMap φ.1)
+  right_inv f := Subtype.ext (toApproxMap_toFilter f.1)
+  map_rel_iff' := by
+    intro φ ψ
+    show toApproxMap φ.1 ≤ toApproxMap ψ.1 ↔ φ.1 ≤ ψ.1
+    exact (funSpaceEquiv E E).map_rel_iff
+
+/-- **Theorem 8.6(b)(ii) (Scott 1981, PRG-19).** `subApprox` is finitary: composing
+`subApproxFixIso` with `finitaryProjectionSubsystemEquiv` and Proposition 6.11's
+`subsystemReprIso` witnesses `Fix(subApprox)` as (order-isomorphic to) a genuine domain. -/
+theorem isFinitary_subApprox : IsFinitary (subApprox (E := E)) :=
+  ⟨_, _, ⟨subApproxFixIso.trans
+    ((finitaryProjectionSubsystemEquiv E).trans (Proposition611.subsystemReprIso E))⟩⟩
+
+/-- **Theorem 8.6(b), in full.** `subApprox` is a finitary projection on `(E → E)`. -/
+theorem isFinitaryProjection_subApprox : IsFinitaryProjection (subApprox (E := E)) :=
+  ⟨isProjection_subApprox, isFinitary_subApprox⟩
 
 end Sub8_6
 

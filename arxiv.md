@@ -1774,7 +1774,7 @@ also now **Pass**, closing the inventory.
 ### Lecture VIII: Retracts of the Universal Domain
 
 
-Lecture VIII covers retractions, projections, and the construction of the universal domain $U$. The retraction/projection spine (Definitions 8.1/8.3, Proposition 8.2, Example 8.4(a)/(b), Theorem 8.5 in full, Theorem 8.6(a) Pass / 8.6(b)(i) Pass / 8.6(b)(ii) deferred / 8.6(c) deferred) is formalized below; the universal domain `U` (Def 8.7 onward) and a few other hard/large items remain deferred.
+Lecture VIII covers retractions, projections, and the construction of the universal domain $U$. The retraction/projection spine (Definitions 8.1/8.3, Proposition 8.2, Example 8.4(a)/(b), Theorem 8.5 in full, Theorem 8.6(a)/(b)(i)/(b)(ii) all Pass, 8.6(c) deferred) is formalized below; the universal domain `U` (Def 8.7 onward) and a few other hard/large items remain deferred.
 
 #### Definition 8.1
 * **Mathematical Target:** a *retraction* `a:E→E` with `a∘a=a`
@@ -1826,14 +1826,14 @@ Lecture VIII covers retractions, projections, and the construction of the univer
 
 #### Theorem 8.6(b)(ii)
 * **Mathematical Target:** `sub` is **finitary** on `(E→E)` — `Fix(subApprox)` (the finitary projections on `E`) is itself isomorphic to a domain
-* **Lean File:** — (not attempted)
-* **Proof Notes:** `IsFinitary subApprox` needs a witness `Fix(subApprox) ≃o F.Element` for some fresh `NeighborhoodSystem F`. Every other `IsFinitary` witness in Lecture VIII (Def 8.3's corollaries, Example 8.4(a)/(b), Thm 8.6(a)) is built by exhibiting the retraction as `retractionOfSubsystem` of an *explicit* subsystem `D◁E`, for which the witness is free (`elementIso`). That route is circular here: writing `subApprox = retractionOfSubsystem h` for some `h : D ◁ funSpace E E` is exactly the finitary-projection formula of Thm 8.5's hard direction applied to `subApprox` itself, which in turn needs `IsFinitary subApprox` as a hypothesis. The natural honest witness is a fresh domain `D` whose elements are (isomorphic to) *subsystems of `E`* — this looks to require the not-yet-formalized universal-domain machinery (Def 8.7 onward: the "domain of domains" construction), rather than being reachable as a standalone lemma. Not attempted; flagged in `HANDOFF.md` as blocking on that prerequisite.
-* **Status:** Deferred
+* **Lean File:** `Scott1980/Neighborhood/Theorem86.lean` (top level: `finitaryProjectionSubsystemEquiv`; `namespace Sub8_6`: `subApproxFixIso`, `isFinitary_subApprox`); domain witness reused from `Scott1980/Neighborhood/Proposition611.lean`
+* **Proof Notes:** The originally-flagged "circularity" (writing `subApprox = retractionOfSubsystem h` needs Thm 8.5 applied to `subApprox` itself) turned out to be avoidable: no witness of *that* shape is needed. Instead, Thm 8.6(a)'s existing bijection `f↦fixedNbhd f`/`D↦retractionOfSubsystem D` between `{f∣sub f=f}` and `{D∣D◁E}` is upgraded from a bijection to a genuine **order-isomorphism** `finitaryProjectionSubsystemEquiv : {f∣sub f=f} ≃o {D∣D◁E}`: round trips are `fixedNbhd_retractionOfSubsystem` (`Y(retractionOfSubsystem h)Y ↔ ∃W∈D,Y⊆W⊆Y`, and `Y⊆W⊆Y⟹W=Y`, so this is exactly `D.mem Y`) and `sub`'s own defining equation (`sub_retractionOfSubsystem`); order is preserved/reflected via `retractionOfSubsystem_rel`'s witness clause being monotone in the subsystem argument, packaged through `Subsystem.subsystem_iff_subset_of_common`. Separately, `Fix(subApprox) ≃o {f∣sub f=f}` (`subApproxFixIso`) unfolds `subApprox.toElementMap φ=φ` via `toElementMap_subApprox`/`subFilter` into `sub(toApproxMap φ)=toApproxMap φ`, transported by `toApproxMap`/`toFilter`'s round trips (`toApproxMap_subFilter`, `toFilter_toApproxMap`), with order transported via `funSpaceEquiv.map_rel_iff`. Composing both with **Lecture VI's Proposition 6.11** (`subsystemReprIso : {D∣D◁E} ≃o (reprSystem(subFam E)…).Element` — the subsystems of `E` already form a domain, proved independently via Exercise 2.22's abstract representation theorem) gives `isFinitary_subApprox` directly: **no new "domain of subsystems" (universal-domain) construction was needed**, since Prop 6.11 had already built exactly that domain in Lecture VI. `isFinitaryProjection_subApprox` packages this with 8.6(b)(i)'s `isProjection_subApprox`. **Axioms:** `finitaryProjectionSubsystemEquiv`/`subApproxFixIso` and their supporting lemmas (`fixedNbhd_retractionOfSubsystem`, `sub_retractionOfSubsystem`) are `⊆{propext,Quot.sound}`; `isFinitary_subApprox`/`isFinitaryProjection_subApprox` pick up `Classical.choice` *solely* through Prop 6.11's `subsystemReprIso` (itself inheriting it from Exercise 2.22's `reprIso`, the documented "for set theorists" exercise) — the same provenance as every other domain-representation result in this project (Ex 3.25/3.27, Prop 6.11 itself).
+* **Status:** Pass
 
 #### Theorem 8.6(c)
 * **Mathematical Target:** if `E` is effectively given, then **`sub` is computable**
 * **Lean File:** — (not attempted)
-* **Proof Notes:** Depends on Thm 8.6(b)(ii) (`IsFinitary subApprox`) plus Def 7.1's `ComputablePresentation` / Def 7.2 computable-map machinery layered on top of the `funSpace`-level packaging in `Sub8_6`. Not attempted.
+* **Proof Notes:** Now unblocked on the domain-theory side (8.6(a)/(b) complete). Needs Def 7.1's `ComputablePresentation` / Def 7.2 computable-map machinery layered on top of the `funSpace`-level packaging in `Sub8_6`. Not attempted.
 * **Status:** Deferred
 
 #### Definition 8.7

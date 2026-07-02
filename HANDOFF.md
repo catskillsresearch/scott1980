@@ -1,4 +1,4 @@
-# Handoff — Scott 1981 (PRG-19): Lectures I–IV COMPLETE (IV spine Thm 4.1/4.2, Ex 4.3/4.4, Def 4.5 + Thm 4.6, **all Exercises 4.7–4.25**); **Lecture V COMPLETE** (Table 5.5, Thm 5.1/5.2/5.6, Prop 5.3/5.4, **Exercises 5.7–5.16 — including 5.16's full Thue–Morse `t`: unfolding, digit-sum-mod-2 (Lambek), and overlap-freeness**); **Lecture VI: Example 6.1 (D<sup>§</sup> ≅ D + (D<sup>§</sup>×D<sup>§</sup>)), Example 6.2 (`B ≅ B+B`, `C ≅ {{Λ}}+C+C`, the generalization `A ≅ Aⁿ + Aⁿ`, and eventually-periodic trees ↔ regular events via Myhill–Nerode) + categorical spine (Defs 6.3–6.5, Props 6.6–6.7) Definition 6.8 (functors *continuous on maps*, over the strict function space), and **Theorem 6.9 (homomorphisms out of a fixed point `D ≅ T(D)`)**, and **Theorem 6.14 (initial `T`-algebra: existence + uniqueness/initiality among strict algebras)**, **Lemma 6.15 (projection pair ⟹ `D ⊴ E`)** and **Theorem 6.16 (an initial `T`-algebra embeds in every solution: `D ⊴ E` for all `E ≅ T(E)`)** COMPLETE**; **Lecture VII: Definition 7.1 (computable presentation), Definition 7.2 (computable map / computable element), and Proposition 7.3 (identity + composition computable; computable map ∘ computable element), and **Theorem 7.4 — BOTH halves** (`D₀×D₁` *and* `D₀+D₁` effectively given; `projᵢ`/`inᵢ`/`outᵢ`, `⟨f,g⟩`, `f×g`/`f+g` computable) COMPLETE & CHOICE-FREE** over a bespoke choice-free recursion theory + r.e. closure layer (`Recursive.lean`, incl. truncated subtraction, `RecDecidable.natEq`/`.not`/`.em`/`.or`, `REPred.or`, **and now a choice-free primitive-recursive bitwise OR `myLor`**); **Example 7.8 (the powerset `PN` is effectively given) COMPLETE & fully choice-free (`Example78.lean`)**; **Definition 7.9 (the Smyth power domain `ℙ𝒟` family: down-set `↓X`=Ex 1.20 `upSet`, preparation `𝒟†`=`powerSystem`, finite-union family `PDmem`, the two intersection remarks) COMPLETE & fully choice-free (`Definition79.lean`)**; **Exercise 7.23 COMPLETE (`∩`/`∪`/`+`/`fun`/`graph` on `PN` all computable + full computable-elements-of-`PN` characterization, all choice-free, `Exercise723.lean`)**; **Exercise 7.24 COMPLETE (`Γ`/`L`, `L` effectively given, `\|L\|≃Γ`, `B⊴L`, LUCID combinators `notT`/`andT` + generic `postcompose`/`pointwiseBin` lifting to `(L→T)` computable maps, `Exercise724.lean`)**; **Lecture VIII retraction/projection spine: Definition 8.1 (`IsRetraction`), Proposition 8.2 (`D◁E` induces retraction `a=i∘j`, `\|D\|≅Fix(a)`), Definition 8.3 (`IsProjection`/`IsFinitary`), Example 8.4(a) (`check`/`fade` combinators, `a(x)=fade(check(x),u)` a retraction with range `≅O`, fully choice-free data) and **Example 8.4(b)** (`smash`/`strict`: `smash` identified with Prop 8.2's canonical retraction on `Exercise510.smash D E ◁ prod D E`; `strict` built via the pre-existing `curry`/`evalMap`, range `≅Exercise510.strictFun D E`; both choice-free data), and **Theorem 8.5 (both directions, `finitaryProjection_iff_formula`, fully choice-free)** **COMPLETE**; Theorem 8.6 PARTIAL (8.6(a) — range(sub) = finitary projections, both directions — **COMPLETE & choice-free**; 8.6(b)(i) done: `subApprox : ApproximableMap(funSpace E E)(funSpace E E)` built via a new `continuous_of_monotone_iSupDirected` bridge in `Exercise213.lean`, shown to be a projection, choice-free; 8.6(b)(ii) (`IsFinitary subApprox`) + 8.6(c) (computability) deferred, likely needs the universal-domain machinery)**; rest of VI + VII–VIII transcribed & inventoried
+# Handoff — Scott 1981 (PRG-19): Lectures I–IV COMPLETE (IV spine Thm 4.1/4.2, Ex 4.3/4.4, Def 4.5 + Thm 4.6, **all Exercises 4.7–4.25**); **Lecture V COMPLETE** (Table 5.5, Thm 5.1/5.2/5.6, Prop 5.3/5.4, **Exercises 5.7–5.16 — including 5.16's full Thue–Morse `t`: unfolding, digit-sum-mod-2 (Lambek), and overlap-freeness**); **Lecture VI: Example 6.1 (D<sup>§</sup> ≅ D + (D<sup>§</sup>×D<sup>§</sup>)), Example 6.2 (`B ≅ B+B`, `C ≅ {{Λ}}+C+C`, the generalization `A ≅ Aⁿ + Aⁿ`, and eventually-periodic trees ↔ regular events via Myhill–Nerode) + categorical spine (Defs 6.3–6.5, Props 6.6–6.7) Definition 6.8 (functors *continuous on maps*, over the strict function space), and **Theorem 6.9 (homomorphisms out of a fixed point `D ≅ T(D)`)**, and **Theorem 6.14 (initial `T`-algebra: existence + uniqueness/initiality among strict algebras)**, **Lemma 6.15 (projection pair ⟹ `D ⊴ E`)** and **Theorem 6.16 (an initial `T`-algebra embeds in every solution: `D ⊴ E` for all `E ≅ T(E)`)** COMPLETE**; **Lecture VII: Definition 7.1 (computable presentation), Definition 7.2 (computable map / computable element), and Proposition 7.3 (identity + composition computable; computable map ∘ computable element), and **Theorem 7.4 — BOTH halves** (`D₀×D₁` *and* `D₀+D₁` effectively given; `projᵢ`/`inᵢ`/`outᵢ`, `⟨f,g⟩`, `f×g`/`f+g` computable) COMPLETE & CHOICE-FREE** over a bespoke choice-free recursion theory + r.e. closure layer (`Recursive.lean`, incl. truncated subtraction, `RecDecidable.natEq`/`.not`/`.em`/`.or`, `REPred.or`, **and now a choice-free primitive-recursive bitwise OR `myLor`**); **Example 7.8 (the powerset `PN` is effectively given) COMPLETE & fully choice-free (`Example78.lean`)**; **Definition 7.9 (the Smyth power domain `ℙ𝒟` family: down-set `↓X`=Ex 1.20 `upSet`, preparation `𝒟†`=`powerSystem`, finite-union family `PDmem`, the two intersection remarks) COMPLETE & fully choice-free (`Definition79.lean`)**; **Exercise 7.23 COMPLETE (`∩`/`∪`/`+`/`fun`/`graph` on `PN` all computable + full computable-elements-of-`PN` characterization, all choice-free, `Exercise723.lean`)**; **Exercise 7.24 COMPLETE (`Γ`/`L`, `L` effectively given, `\|L\|≃Γ`, `B⊴L`, LUCID combinators `notT`/`andT` + generic `postcompose`/`pointwiseBin` lifting to `(L→T)` computable maps, `Exercise724.lean`)**; **Lecture VIII retraction/projection spine: Definition 8.1 (`IsRetraction`), Proposition 8.2 (`D◁E` induces retraction `a=i∘j`, `\|D\|≅Fix(a)`), Definition 8.3 (`IsProjection`/`IsFinitary`), Example 8.4(a) (`check`/`fade` combinators, `a(x)=fade(check(x),u)` a retraction with range `≅O`, fully choice-free data) and **Example 8.4(b)** (`smash`/`strict`: `smash` identified with Prop 8.2's canonical retraction on `Exercise510.smash D E ◁ prod D E`; `strict` built via the pre-existing `curry`/`evalMap`, range `≅Exercise510.strictFun D E`; both choice-free data), and **Theorem 8.5 (both directions, `finitaryProjection_iff_formula`, fully choice-free)** **COMPLETE**; **Theorem 8.6(a)/(b)(i)/(b)(ii) COMPLETE**: 8.6(a) — range(sub) = finitary projections, both directions, choice-free; 8.6(b)(i) — `subApprox : ApproximableMap(funSpace E E)(funSpace E E)` built via a new `continuous_of_monotone_iSupDirected` bridge in `Exercise213.lean`, shown to be a projection, choice-free; 8.6(b)(ii) — `IsFinitary subApprox`, via `finitaryProjectionSubsystemEquiv : {f∣sub f=f}≃o{D∣D◁E}` (Thm 8.6(a)'s bijection upgraded to an order-iso) composed with **Lecture VI's Proposition 6.11** (subsystems of `E` already form a domain) — *no* universal-domain machinery needed after all, `Classical.choice` only via Prop 6.11's own Exercise-2.22 provenance; only **8.6(c) (computability) remains deferred**, needing Def 7.1/7.2 machinery**; rest of VI + VII–VIII transcribed & inventoried
 
 You are a Lean 4 proof engineer formalizing Dana Scott's 1981 *Lectures on a Mathematical Theory of
 Computation* (PRG-19) in:
@@ -5046,3 +5046,61 @@ chunk of the monograph).
 **Status:** Theorem 8.6 clause 1 is now fully `Pass` (both directions). Clause 2 is half `Pass`
 (`subApprox` exists, is approximable and a projection); `IsFinitary subApprox` and clause 3
 (computability) remain deferred, blocking on the universal-domain machinery (Def 8.7 onward).
+
+---
+
+**2026-07-02 (later same day) — Theorem 8.6(b)(ii) (`IsFinitary subApprox`) COMPLETE: the
+"universal-domain machinery" blocker above was a false alarm.** `Theorem86.lean`:
+
+* **The key realization:** the previous checkpoint's stated blocker — that the honest `IsFinitary
+  subApprox` witness needs "a fresh domain whose elements are subsystems of `E`", requiring the
+  not-yet-formalized universal-domain construction (Def 8.7 onward) — was wrong. **That domain
+  already exists**: `Scott1980/Neighborhood/Proposition611.lean` (Lecture VI, already `Pass`)
+  proves exactly "the subsystems of `E` form a domain" (`subsystemReprIso : {D ∣ D ◁ E} ≃o
+  (reprSystem (subFam E) …).Element`), via the *abstract* representation theorem (Exercise 2.22),
+  with no dependence on the universal domain `U`. The only missing piece was upgrading Theorem
+  8.6(a)'s existing *bijection* between `{f ∣ sub f = f}` and `{D ∣ D ◁ E}` into a genuine
+  *order-isomorphism*, which turned out to be a short, direct calculation.
+* **`finitaryProjectionSubsystemEquiv : {f ∣ sub f = f} ≃o {D ∣ D ◁ E}`** (top level, right after
+  `isFinitaryProjection_sub`): `toFun f := ⟨fixedNbhd f, fixedNbhd_subsystem f⟩`,
+  `invFun D := ⟨retractionOfSubsystem D.2, sub_retractionOfSubsystem D.2⟩`. Round trips:
+  `fixedNbhd_retractionOfSubsystem h : fixedNbhd (retractionOfSubsystem h) = D` (`Y
+  (retractionOfSubsystem h) Y ↔ ∃W ∈ D, Y⊆W⊆Y`, and `Y⊆W⊆Y` forces `W=Y`, so this is exactly
+  `D.mem Y`, using `Set.Subset.antisymm`); the other round trip is *definitional* (`sub f` literally
+  unfolds to `retractionOfSubsystem (fixedNbhd_subsystem f)`, so `Subtype.ext f.2` closes it).
+  `sub_retractionOfSubsystem h : sub (retractionOfSubsystem h) = retractionOfSubsystem h` is the
+  same one-line `unfold sub; congr 1; exact fixedNbhd_retractionOfSubsystem h` pattern as
+  `sub_sub`. Order preserved/reflected via `map_rel_iff'`: forward direction coerces the subsystem
+  hypothesis `hle : fixedNbhd f.1 ◁ fixedNbhd g.1` (needs an explicit `have hleD : ... := hle` cast
+  through the `Proposition611.subPartialOrder` instance before dot-notation `hleD.sub` resolves)
+  and threads it through `retractionOfSubsystem_rel`'s witness clause to get `sub f.1 ≤ sub g.1`,
+  then `rw [f.2, g.2]`; backward direction is `Subsystem.subsystem_iff_subset_of_common` applied to
+  the two `fixedNbhd_subsystem` proofs, reducing to `(fixedNbhd f.1).mem X → (fixedNbhd g.1).mem X`.
+* **`Sub8_6.subApproxFixIso : Fix(subApprox) ≃o {f ∣ sub f = f}`**: unfolds
+  `subApprox.toElementMap φ = φ` via `toElementMap_subApprox`/`subFilter` into `sub (toApproxMap φ)
+  = toApproxMap φ`, using `toApproxMap_subFilter` to push `toApproxMap` through `subFilter`; order
+  transported via `(funSpaceEquiv E E).map_rel_iff` (`toApproxMap` is literally `funSpaceEquiv`'s
+  `toFun`, `funSpaceEquiv_apply` being `rfl`).
+* **`Sub8_6.isFinitary_subApprox`** := `subApproxFixIso.trans (finitaryProjectionSubsystemEquiv
+  E |>.trans (Proposition611.subsystemReprIso E))`, wrapped in the `IsFinitary` existential (`⟨_,
+  _, ⟨…⟩⟩`, letting Lean infer `β`/`F` from the composed `OrderIso`'s codomain — no universe
+  friction, since `Definition83.IsFinitary`'s bound `β : Type u` unifies with `ApproximableMap E
+  E`'s own universe, which matches `Tok (subFam E)`'s). Packaged with 8.6(b)(i)'s
+  `isProjection_subApprox` as `Sub8_6.isFinitaryProjection_subApprox`.
+* **Axioms:** `finitaryProjectionSubsystemEquiv`, `fixedNbhd_retractionOfSubsystem`,
+  `sub_retractionOfSubsystem`, `Sub8_6.subApproxFixIso` are all `⊆ {propext, Quot.sound}`.
+  `Sub8_6.isFinitary_subApprox`/`isFinitaryProjection_subApprox` report `[propext,
+  Classical.choice, Quot.sound]` — the `Classical.choice` comes *solely* from
+  `Proposition611.subsystemReprIso`, which itself inherits it from Exercise 2.22's `reprIso` (the
+  documented "for set theorists" exercise); this is the same, already-accepted provenance as every
+  other domain-representation result in the project (Ex 3.25/3.27, Prop 6.11 itself), not a new
+  choice-discipline regression.
+* **Lesson:** when a proof looks blocked on "the next big deferred chunk of the monograph", check
+  whether an *equivalent* witness is already available from an earlier, differently-motivated
+  lecture (here: Lecture VI's abstract "subsystems form a domain" fact, proved for entirely
+  different reasons, turned out to be exactly Theorem 8.6(b)(ii)'s missing witness) before treating
+  the large prerequisite as necessary.
+
+**Status:** Theorem 8.6(a)/(b)(i)/(b)(ii) are all `Pass`. Only Theorem 8.6(c) (computability, if `E`
+is effectively given) remains deferred, needing Def 7.1/7.2's computable-presentation machinery
+layered on top of `Sub8_6`'s `funSpace`-level packaging — now otherwise unblocked.
