@@ -1128,6 +1128,27 @@ theorem RecDecidable.bForall {p : ℕ → Prop} (hp : RecDecidable p) {bound : �
     rw [bForallFn_eq_one_iff]
     exact ⟨fun h i hi => (hfspec _).mp (h i hi), fun h i hi => (hfspec _).mpr (h i hi)⟩
 
+/-- **Bounded existential quantifier preserves recursive decidability.** Mirrors
+`RecDecidable.bForall`, swapping `bForallFn` for `bExistsFn`. -/
+theorem RecDecidable.bExists {p : ℕ → Prop} (hp : RecDecidable p) {bound : ℕ → ℕ}
+    (hb : Nat.Primrec bound) :
+    RecDecidable (fun n => ∃ i, i < bound n ∧ p (Nat.pair i n)) := by
+  obtain ⟨f, hf, hfspec⟩ := hp
+  refine ⟨fun n => bExistsFn f n (bound n), ?_, ?_⟩
+  · have hGfn : Nat.Primrec (fun w => selectFn w.unpair.2.unpair.2 1
+        (isOne (f (Nat.pair w.unpair.2.unpair.1 w.unpair.1)))) :=
+      primrec_selectFn (Nat.Primrec.right.comp Nat.Primrec.right) (Nat.Primrec.const 1)
+        (primrec_isOne.comp (hf.comp
+          ((Nat.Primrec.left.comp Nat.Primrec.right).pair Nat.Primrec.left)))
+    have hprec := Nat.Primrec.prec (Nat.Primrec.const 0) hGfn
+    refine (hprec.comp (primrec_id.pair hb)).of_eq (fun n => ?_)
+    simp only [Nat.unpaired, unpair_pair_fst, unpair_pair_snd, id_eq]
+    rfl
+  · intro n
+    show (∃ i, i < bound n ∧ p (Nat.pair i n)) ↔ bExistsFn f n (bound n) = 1
+    rw [bExistsFn_eq_one_iff]
+    exact ⟨fun ⟨i, hi, h⟩ => ⟨i, hi, (hfspec _).mp h⟩, fun ⟨i, hi, h⟩ => ⟨i, hi, (hfspec _).mpr h⟩⟩
+
 /-- `decodeList ∘ encodeList = id` (the round-trip the other way from `encodeList_decodeList`). -/
 theorem decodeList_encodeList : ∀ l : List ℕ, decodeList (encodeList l) = l
   | [] => by rw [encodeList, decodeList_zero]

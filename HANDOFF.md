@@ -1,4 +1,4 @@
-# Handoff — Scott 1981 (PRG-19): Lectures I–IV COMPLETE (IV spine Thm 4.1/4.2, Ex 4.3/4.4, Def 4.5 + Thm 4.6, **all Exercises 4.7–4.25**); **Lecture V COMPLETE** (Table 5.5, Thm 5.1/5.2/5.6, Prop 5.3/5.4, **Exercises 5.7–5.16 — including 5.16's full Thue–Morse `t`: unfolding, digit-sum-mod-2 (Lambek), and overlap-freeness**); **Lecture VI: Example 6.1 (D<sup>§</sup> ≅ D + (D<sup>§</sup>×D<sup>§</sup>)), Example 6.2 (`B ≅ B+B`, `C ≅ {{Λ}}+C+C`, the generalization `A ≅ Aⁿ + Aⁿ`, and eventually-periodic trees ↔ regular events via Myhill–Nerode) + categorical spine (Defs 6.3–6.5, Props 6.6–6.7) Definition 6.8 (functors *continuous on maps*, over the strict function space), and **Theorem 6.9 (homomorphisms out of a fixed point `D ≅ T(D)`)**, and **Theorem 6.14 (initial `T`-algebra: existence + uniqueness/initiality among strict algebras)**, **Lemma 6.15 (projection pair ⟹ `D ⊴ E`)** and **Theorem 6.16 (an initial `T`-algebra embeds in every solution: `D ⊴ E` for all `E ≅ T(E)`)** COMPLETE**; **Lecture VII: Definition 7.1 (computable presentation), Definition 7.2 (computable map / computable element), and Proposition 7.3 (identity + composition computable; computable map ∘ computable element), and **Theorem 7.4 — BOTH halves** (`D₀×D₁` *and* `D₀+D₁` effectively given; `projᵢ`/`inᵢ`/`outᵢ`, `⟨f,g⟩`, `f×g`/`f+g` computable) COMPLETE & CHOICE-FREE** over a bespoke choice-free recursion theory + r.e. closure layer (`Recursive.lean`, incl. truncated subtraction, `RecDecidable.natEq`/`.not`/`.em`/`.or`, `REPred.or`, **and now a choice-free primitive-recursive bitwise OR `myLor`**); **Example 7.8 (the powerset `PN` is effectively given) COMPLETE & fully choice-free (`Example78.lean`)**; **Definition 7.9 (the Smyth power domain `ℙ𝒟` family: down-set `↓X`=Ex 1.20 `upSet`, preparation `𝒟†`=`powerSystem`, finite-union family `PDmem`, the two intersection remarks) COMPLETE & fully choice-free (`Definition79.lean`)**; rest of VI + VII–VIII transcribed & inventoried
+# Handoff — Scott 1981 (PRG-19): Lectures I–IV COMPLETE (IV spine Thm 4.1/4.2, Ex 4.3/4.4, Def 4.5 + Thm 4.6, **all Exercises 4.7–4.25**); **Lecture V COMPLETE** (Table 5.5, Thm 5.1/5.2/5.6, Prop 5.3/5.4, **Exercises 5.7–5.16 — including 5.16's full Thue–Morse `t`: unfolding, digit-sum-mod-2 (Lambek), and overlap-freeness**); **Lecture VI: Example 6.1 (D<sup>§</sup> ≅ D + (D<sup>§</sup>×D<sup>§</sup>)), Example 6.2 (`B ≅ B+B`, `C ≅ {{Λ}}+C+C`, the generalization `A ≅ Aⁿ + Aⁿ`, and eventually-periodic trees ↔ regular events via Myhill–Nerode) + categorical spine (Defs 6.3–6.5, Props 6.6–6.7) Definition 6.8 (functors *continuous on maps*, over the strict function space), and **Theorem 6.9 (homomorphisms out of a fixed point `D ≅ T(D)`)**, and **Theorem 6.14 (initial `T`-algebra: existence + uniqueness/initiality among strict algebras)**, **Lemma 6.15 (projection pair ⟹ `D ⊴ E`)** and **Theorem 6.16 (an initial `T`-algebra embeds in every solution: `D ⊴ E` for all `E ≅ T(E)`)** COMPLETE**; **Lecture VII: Definition 7.1 (computable presentation), Definition 7.2 (computable map / computable element), and Proposition 7.3 (identity + composition computable; computable map ∘ computable element), and **Theorem 7.4 — BOTH halves** (`D₀×D₁` *and* `D₀+D₁` effectively given; `projᵢ`/`inᵢ`/`outᵢ`, `⟨f,g⟩`, `f×g`/`f+g` computable) COMPLETE & CHOICE-FREE** over a bespoke choice-free recursion theory + r.e. closure layer (`Recursive.lean`, incl. truncated subtraction, `RecDecidable.natEq`/`.not`/`.em`/`.or`, `REPred.or`, **and now a choice-free primitive-recursive bitwise OR `myLor`**); **Example 7.8 (the powerset `PN` is effectively given) COMPLETE & fully choice-free (`Example78.lean`)**; **Definition 7.9 (the Smyth power domain `ℙ𝒟` family: down-set `↓X`=Ex 1.20 `upSet`, preparation `𝒟†`=`powerSystem`, finite-union family `PDmem`, the two intersection remarks) COMPLETE & fully choice-free (`Definition79.lean`)**; **Exercise 7.23 PARTIAL (`∩`/`∪`/`+` on `PN` computable + full computable-elements-of-`PN` characterization done & choice-free; `fun`/`graph` not yet mechanised, `Exercise723.lean`)**; rest of VI + VII–VIII transcribed & inventoried
 
 You are a Lean 4 proof engineer formalizing Dana Scott's 1981 *Lectures on a Mathematical Theory of
 Computation* (PRG-19) in:
@@ -4523,3 +4523,70 @@ for reference, side-question still open, not Scott's actual question."
 **Exercise 7.22 inventory is now fully Pass (a–l).** Only optional extension left: full
 `ComputablePresentation Ssys` (`inter`/`inter_primrec`/`inter_spec`/`masterIdx`) to upgrade
 `Ssys_partially_effectively_given` to `Ssys_effectively_given` — does not block the paper.
+
+---
+
+## Checkpoint 2026-07-01 — Exercise 7.23, three of four parts (`∩`/`∪`/`+`, computable elements)
+
+`Exercise723.lean` (ns `Scott1980.Neighborhood.Exercise723`, imports `Example78`+`Theorem74`) new,
+wired into `Scott1980.lean`, 654 lines, zero `sorry`. **`fun`/`graph` not yet mechanised — see
+"remaining" below and the `arxiv.md` Exercise 7.23 row for the full technical plan.**
+
+**Master reduction (`nbhd_subset_iff_myLor_eq`):** every combinator this exercise asks about tests
+`Eₖ ⊆ h(Eₙ,Eₘ)` (excluded-set containment), which is `nbhd n ⊆ nbhd k` reindexed — i.e.
+`PNpres.incl_computable` directly gives **`∩`/`∪`** (`capMap`/`cupMap`) with zero new machinery.
+
+**`λx,y.x+y` (Minkowski sum, `plusMap`):** needed real bit-level primitive recursion — `bitAt`
+(`Nat.testBit` made `Nat.Primrec` via `halfIter`), `orUpTo`/`plusIdx` (iterative bitwise-OR of
+`m<<<a` over set bits of `n`, mirroring `myLor`'s own fold), `compl_nbhd_plusIdx`, and a
+`plusStep`/`Nat.Primrec.prec` presentation (`primrec_plusIdx`).
+
+**Computable elements of `PN` (`isComputableElement_iff_elemSet_re`) — the headline result.**
+`elemSet x := ⋃{Eₙ∣x.mem(nbhd n)}` identifies `PN.Element ≃o (Set ℕ,⊆)`; the crux lemma
+`nbhd_mem_iff_subset_elemSet : x.mem(nbhd n) ↔ Eₙ⊆elemSet x` needed a choice-free *finite covering*
+argument (`exists_combined_witness`: any finite list of per-bit witness-neighbourhoods of `x`
+combine into one, via `myLor`+`x.inter_mem`, structural induction on the list — this is the one
+place genuine new mathematical content was needed, since `PN` is a *negative-information* system and
+turning "positive info at each of finitely many points" into "one neighbourhood" isn't definitional).
+The r.e.-characterization then packages `Eₙ⊆elemSet x` as a bounded conjunction over a
+primitive-recursive coded list (`bitsCode`, mirroring `plusIdx`'s iteration exactly) via
+`REPred.forall_mem_decodeList`. **Result: `PN`'s computable elements are exactly the r.e. subsets of
+ℕ** — Scott's classical fact about the powerset domain, now mechanised.
+
+**Axiom-audit lesson (spent real time on this — write it down so it isn't re-learned).** Every
+top-level theorem here is `#print axioms`-verified `⊆ {propext, Quot.sound}`, but getting there took
+several rounds of hunting down *silent* `Classical.choice` leaks, because generic Mathlib lemmas
+about `Set`/`Nat.unpair` are classical even when the *specific* instance in play is constructive:
+- `simp [foo]` (plain, not `simp only`) in a goal containing `Nat.pair`/`Nat.unpair` can silently
+  discharge via Mathlib's `Nat.unpair_pair` (classical) instead of this project's own choice-free
+  `unpair_pair_fst`/`unpair_pair_snd` (`@[simp]`, but not always picked by the simp set) — **always
+  `simp only` with the explicit local lemma names in choice-sensitive files.**
+- `Set.compl_subset_compl` (`Xᶜ⊆Yᶜ ↔ Y⊆X`) and `Set.compl_inter` (`(X∩Y)ᶜ=Xᶜ∪Yᶜ`) are classical in
+  general (their forward/`mp` reading is a De Morgan step needing excluded middle), **even when only
+  the constructive `.mpr` direction is used** — the whole `Iff`/`Eq` term (and hence its axiom
+  footprint) is pulled in by `rw`/`.mpr` alike. Fixed with hand-rolled specializations exploiting
+  `Nat.testBit`'s decidability: `compl_subset_compl_of_subset` (pure contraposition, no case split
+  needed — this direction alone is constructive for *any* sets), `nbhd_subset_iff_compl_subset_compl`
+  (needs the classical-looking converse too, but `nbhd`'s membership is a `Bool`, so `cases
+  hbit : b.testBit x` replaces the excluded-middle step), `compl_inter_nbhd` (`cases
+  a.testBit x <;> cases b.testBit x <;> decide` — four concrete-`Bool` goals, no generic algebra).
+- A `theorem foo (n m : ℕ) : ∀ k, P k \| 0 => … \| k+1 => …` equation-compiler recursion with a
+  `simp [bar]` base case can *also* leak `Nat.unpair_pair` this way even though the exact same
+  pattern (`testBit_orUpTo`) was fine elsewhere — the difference was simply whether that particular
+  base case's goal happened to contain a `Nat.pair`/`unpair` redex for `simp` to close via the
+  classical lemma. Diagnosed by bisecting with a scratch file (`AxCheck*Temp.lean`, `import
+  Exercise723` + `#print axioms <name>` on every intermediate lemma, then `#print <name>` to read the
+  proof term and `#print axioms` on the individual constants it mentions) rather than guessing.
+
+**Remaining: `fun`/`graph` (Exercise 5.14's reflexive-domain combinators, adapted to `PN`).** Since
+`PN.Element ≃o Set ℕ` (same as `Pω`), the plan is to reuse Exercise 5.14's `tag`/`entries`/`bitsList`
+(already here) but build genuine `ApproximableMap`s using `Theorem75.lean`'s `funPresentation` coded
+entry-lists (`funListOf`/`funPair`): `graph : ApproximableMap (funSpace PN PN) PN` with
+`graph.rel (stepFun (funListOf PNpres PNpres el)) (nbhd k)` iff `Eₖ ⊆ ⋃{tag (bitsList e.unpair.1) m
+∣ e∈el, m∈E_{e.unpair.2}}`; `fun : ApproximableMap PN (funSpace PN PN)` dually. The hard remaining
+work is proving the five `ApproximableMap` axioms (`rel_dom`/`rel_cod`/`master_rel`/`inter_right`/
+`mono`, against `funSpace`'s own nontrivial `mono`/`inter_right`) and then `IsComputableMap` — a
+standalone effort comparable in size to `Theorem75.lean`'s `eval`/`curry` machinery. See the
+`arxiv.md` Exercise 7.23 row for the full sketch; **not started** beyond this plan.
+
+**Next concrete target:** finish Exercise 7.23 (`fun`/`graph`), per the plan above.
