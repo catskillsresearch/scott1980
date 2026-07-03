@@ -5747,3 +5747,107 @@ underlying issue since `splitULeft ∘ Nat.find` still isn't provably equal to `
 value without an *additional, currently-unproved* fact that `canonCode` is unique-per-set (checked:
 it is **not**, e.g. `[(0,0.5),(0.5,1)]` vs `[(0,1)]` both canonicalize to themselves but represent the
 same set with different "first pairs"). **Parts 7–8 remain untouched.**
+
+---
+
+## 2026-07-02 (later still) — Theorem 8.8(b) split into arxiv.md sub-items (i)–(viii)
+
+Per user request, `arxiv.md`'s single `Theorem 8.8(b)` row is now an **umbrella** (short summary,
+`Status: Partial`, no Lean File of its own) pointing at eight new sub-rows **Theorem 8.8(b)(i)**
+through **Theorem 8.8(b)(viii)**, one per part of the 8-part plan above (mirroring the
+`Exercise 7.22a–l`/`7.22i(b)1–8` split-inventory pattern already used elsewhere in this file):
+
+* **(i)** Part 1 (`RationalPrimrec.lean`) — **Pass**.
+* **(ii)** Part 2 (`RecursiveCross.lean` + `IntervalPrimrec.lean`) — **Pass**.
+* **(iii)** Part 3 (`UComputablePresentation.lean`) — **Pass**.
+* **(iv)** Part 4 (`SplitU.lean`) — **Pass**.
+* **(v)** Part 5 (`DAtomDecidable.lean`) — **Pass**.
+* **(vi)** Part 6 (`Theorem88.lean` generalization + `Theorem88b.lean`) — **Partial**: sub-steps
+  6a–6c done, 6d/6e blocked on the design obstruction documented in the "⚠️ Design pitfall" entry
+  just above this one. This row carries the full obstruction writeup (condensed) plus both
+  documented ways forward, so a future session can read *this one row* instead of needing the
+  full HANDOFF history.
+* **(vii)** Part 7 (projection pair `IsComputableMap`) — **Not Yet**, not started, blocked on (vi).
+* **(viii)** Part 8 (final assembly `theorem_8_8_b`) — **Not Yet**, not started, blocked on (vi)/(vii).
+
+Also updated the Lecture VIII summary line (top of the Lecture VIII section in `arxiv.md`) to
+mention the (i)–(viii) split and its current Pass/Partial/Not-Yet breakdown. **No Lean code was
+touched in this step** — this was purely an inventory/bookkeeping reorganization, done deliberately
+*before* resuming work on the 6d/6e obstruction, per explicit user instruction to stop after the
+split. `lake build` was not re-run (no `.lean` files changed).
+
+**Status: Theorem 8.8(b) inventory is now split into (i)–(viii) in `arxiv.md`, matching the 8-part
+plan exactly. Next: resume Part 6 (sub-row (vi)) by deciding between the two documented ways
+forward (self-contained code-only `atomUCode`, or a direct `DomainIso`→`ApproximableMap`
+r.e.-characterization bridge) — see (vi)'s row or the "⚠️ Design pitfall" entry above for the
+full detail — then continue to Parts 7–8.**
+
+---
+
+## 2026-07-02 (even later) — Theorem 8.8(b)(vi) — Part 6 RESOLVED, sidestepping the `atomUCode` obstruction entirely
+
+**The design obstruction above is dissolved, not overcome.** Neither of the two documented ways
+forward was needed. The key realization: `ComputablePresentation.X : ℕ → Set α` is *data*, not
+itself required to be "computable" as a code-producing function (`unitPresentation`'s constant
+`X _ := Set.univ` is the existing precedent for this). All a `ComputablePresentation` actually
+needs *decidable* are the two **index relations** `interEq_computable`/`cons_computable` plus a
+primitive-recursive `inter` index function — never an explicit code for `X n` itself. So instead
+of building `splitEff`/`atomUCode` to make `Yidx e n` *computable as a value*, new file
+`Theorem88c.lean` shows Theorem 8.8(a)'s **own already-built classical `D'`** (`DprimeU D (e P)
+…`, built via `splitChoice`, unchanged) has decidable index relations, i.e. **`D'` is effectively
+given whenever `D` is** — no new splitting operation, no canonical-form normalization, no
+`atomUCode` construction, matching option (2)'s spirit but via an even more direct route (no
+`DomainIso`→`ApproximableMap` bridge needed either, since Part 7 can now just build a
+`ComputablePresentation` for `D'` directly and reuse `Definition72.lean`'s existing machinery).
+
+**The three facts needed, each already available from Parts 5–6c with zero new decidability
+machinery:**
+* `Yidx e i ∩ Yidx e j = Yidx e k` transfers (`transfer_inter_eq_iff`, Part 6a) to the `idxSet`
+  equation, which a new lemma `idxSet_inter_eq_iff_DAtom` unfolds to `(e k ⊆ e i) ∧ (e k ⊆ e j) ∧
+  (DAtom (P0 P) [i,j] [k] = ∅)` — two `incl_computable` queries plus one fixed-shape
+  `DAtom_recDecidable` query (Part 5), packaged as `RecDecidable₃` via `DAtom_pair_recDecidable`
+  (reindexing `DAtom_recDecidable (P0 P)` along `Nat.Primrec` codes `capPosCode`/`capNegCode` for
+  the constant-shape lists `[i,j]`/`[k]`).
+* `∃k, Yidx e k ⊆ Yidx e i ∩ Yidx e j` transfers (`embed_subset_iff`, twice) to `∃k, e k ⊆ e i ∧
+  e k ⊆ e j` — *literally* `(P0 P).cons_computable`'s own predicate, reused verbatim, no new proof.
+* The intersection index is *literally* `(P0 P).inter n m` (Scott's own index for `D`, reused
+  as-is); correctness transfers via `idxSet_inter_of_inter_eq` + `transfer_inter_eq_iff`.
+* Master index is `0` (`Yidx_zero`, already in `Theorem88a.lean`).
+
+These four assemble directly into `DprimeUPresentation : ComputablePresentation (DprimeU D (e P)
+(hcover P) (he0 P))` and the headline theorem `DprimeU_isEffectivelyGiven`. **Part 6 (all of
+6a–6e) is now fully Pass** — `Theorem88c.lean` is a clean ~220-line file, `lake build
+Scott1980.Neighborhood.Theorem88c` green (2985/2985 jobs), no `sorry`.
+
+**Pitfall hit and fixed:** `rw [transfer_inter_eq_iff …, idxSet_inter_eq_iff_DAtom …]` failed with
+"did not find pattern" inside `RecDecidable.of_iff (fun t => ?_) hcomb`'s goal — the goal is a
+lambda-application `(fun i j k => …) t.unpair.1 t.unpair.2.unpair.1 t.unpair.2.unpair.2` that
+hasn't beta-reduced yet, so `rw`'s syntactic pattern match fails before it can see the intended
+subterm. Fix: `dsimp only` immediately before the `rw` chain (forces beta-reduction with no other
+simp lemmas), then the `rw` chain matches as expected. General lesson for this codebase: any time
+a goal comes from `RecDecidable.of_iff (fun t => ?_) …`, expect a lambda-application shape and put
+a bare `dsimp only` before the first `rw`/`simp only` that needs to see through it, rather than
+debugging "pattern not found" as if the lemma statement were wrong.
+
+**Axiom audit.** `idxSet_inter_eq_iff_DAtom`, `DAtom_pair_recDecidable`,
+`DprimeU_interEq_computable`, `DprimeU_cons_computable`, `DprimeU_inter_spec`,
+`DprimeUPresentation`, `DprimeU_isEffectivelyGiven` — all `⊆ {propext, Classical.choice,
+Quot.sound}`. This is **not a new taint**: `DAtom_recDecidable` (Part 5) and `DprimeU`/
+`theorem_8_8_a` (Theorem 8.8(a) itself) already carry `Classical.choice` at exactly this level
+(confirmed by direct `#print axioms` comparison) — inherited from `splitChoice`'s classical
+witness extraction and from `DAtom_eq_empty_iff`'s excluded-middle step, both pre-existing and
+already documented as unavoidable at the `Prop` level. The `Nat.Primrec` deciders themselves
+remain choice-free plain functions; only the outer `Prop`-level existential-witness extraction
+(already present upstream) shows up in the audit. No new choice-discipline exception needed.
+
+**Files:** new `Scott1980/Neighborhood/Theorem88c.lean`; `Scott1980.lean` gained the import.
+`arxiv.md`'s (vi) row updated to **Pass**; (vii)'s row updated to note it should now build
+`IsComputableMap` directly from `DprimeUPresentation` (no `atomUCode`/`DomainIso` bridge needed).
+Overall Theorem 8.8(b) status is now **6/8 parts Pass** ((i)–(vi)), 2 Not Yet ((vii)–(viii)).
+
+**Status: Theorem 8.8(b)(vi) is Pass. Next: Part 7 — show the projection pair `Subsystem.inj`/
+`Subsystem.proj` for `D' ◁ U` (`DprimeU_subsystem`) is `IsComputableMap`, now relative to
+`DprimeUPresentation` (this session's new presentation of `D'`) and `U`'s own
+`ComputablePresentation` (Part 3, `UComputablePresentation.lean`) — likely via the
+`fixMap_isComputable`/Theorem 8.6(c) r.e.-predicate idiom, bounded search over `U`'s presented
+intervals. Then Part 8: final assembly `theorem_8_8_b`.**
