@@ -169,5 +169,12 @@ import Scott1980.Neighborhood.Theorem86c
 import Scott1980.Neighborhood.Example84
 import Scott1980.Neighborhood.Example84b
 import Scott1980.Neighborhood.Definition87
+import Scott1980.Neighborhood.RationalPrimrec
+import Scott1980.Neighborhood.RecursiveCross
+import Scott1980.Neighborhood.IntervalPrimrec
+import Scott1980.Neighborhood.UComputablePresentation
+import Scott1980.Neighborhood.SplitU
+import Scott1980.Neighborhood.DAtomDecidable
 import Scott1980.Neighborhood.Theorem88
 import Scott1980.Neighborhood.Theorem88a
+import Scott1980.Neighborhood.Theorem88b

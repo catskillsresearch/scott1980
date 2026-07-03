@@ -1710,6 +1710,24 @@ theorem allListChar_le_one (g : ℕ → ℕ) (p c : ℕ) : allListChar g p c ≤
   rw [foldCode_eq']
   exact h (decodeList c) 1 (le_refl 1)
 
+theorem existsListChar_le_one (g : ℕ → ℕ) (p c : ℕ) : existsListChar g p c ≤ 1 := by
+  have h : ∀ (l : List ℕ) (z : ℕ), z ≤ 1 →
+      List.foldl (fun acc x => existsListStp g (Nat.pair x (Nat.pair acc p))) z l ≤ 1 := by
+    intro l
+    induction l with
+    | nil => intro z hz; simpa using hz
+    | cons x xs ih =>
+      intro z hz
+      simp only [List.foldl_cons]
+      apply ih
+      rw [existsListStp_eq]
+      rcases (show z = 0 ∨ z = 1 by omega) with h0 | h1
+      · rw [h0, selectFn_zero]; exact isOne_le_one _
+      · rw [h1, selectFn_one]
+  unfold existsListChar
+  rw [foldCode_eq']
+  exact h (decodeList c) 0 (Nat.zero_le 1)
+
 theorem primrec_allListStp {g : ℕ → ℕ} (hg : Nat.Primrec g) : Nat.Primrec (allListStp g) := by
   have hacc : Nat.Primrec (fun w : ℕ => w.unpair.2.unpair.1) :=
     Nat.Primrec.left.comp Nat.Primrec.right

@@ -110,26 +110,29 @@ theorem idxSet_zero : idxSet e 0 = Set.univ :=
 `D` is ever needed, since we reindexed onto `ℕ` before invoking it (`idxSet_nonempty`). -/
 theorem univ_nonempty_nat : (Set.univ : Set ℕ).Nonempty := ⟨0, trivial⟩
 
-/-- **Scott's `Yₙ`, built from the separated reindexing.** -/
-noncomputable abbrev Yidx (n : ℕ) : Set ℚ := Yseq (idxSet e) Set.univ n
+/-- **Scott's `Yₙ`, built from the separated reindexing.** Instantiated with the classical
+`splitChoice` (this is `Theorem88.lean`'s general, non-effective apparatus). -/
+noncomputable abbrev Yidx (n : ℕ) : Set ℚ := Yseq splitChoice (idxSet e) Set.univ n
 
 include hcover he0 in
 /-- `Yidx e 0 = U.master`, since `idxSet e 0 = Set.univ` (Scott's `X₀ = Δ`). -/
 theorem Yidx_zero : Yidx e 0 = U.master :=
-  Yseq_zero_eq_master (idxSet e) Set.univ univ_nonempty_nat (idxSet_zero D e hcover he0)
+  Yseq_zero_eq_master splitChoice (idxSet e) Set.univ univ_nonempty_nat splitChoice_isSplitSpec
+    (idxSet_zero D e hcover he0)
 
 /-- `Yidx e n` is always `⊆ U.master`. -/
 theorem Yidx_subset_master (n : ℕ) : Yidx e n ⊆ U.master :=
-  Yseq_subset_master (idxSet e) Set.univ univ_nonempty_nat n
+  Yseq_subset_master splitChoice (idxSet e) Set.univ univ_nonempty_nat splitChoice_isSplitSpec n
 
 /-- `Yidx e n` is always `∅` or a genuine `U`-neighbourhood. -/
 theorem Yidx_empty_or_mem (n : ℕ) : Yidx e n = ∅ ∨ U.mem (Yidx e n) :=
-  Yseq_empty_or_mem (idxSet e) Set.univ univ_nonempty_nat n
+  Yseq_empty_or_mem splitChoice (idxSet e) Set.univ univ_nonempty_nat splitChoice_isSplitSpec n
 
 /-- **`Yidx e n` is always non-empty** (hence, by `Yidx_empty_or_mem`, always a genuine
 `U`-neighbourhood): `n` itself witnesses `n ∈ idxSet e n`. -/
 theorem Yidx_nonempty (n : ℕ) : (Yidx e n).Nonempty :=
-  Yseq_nonempty_of_mem (idxSet e) Set.univ univ_nonempty_nat (Set.mem_univ n) (self_mem_idxSet e n)
+  Yseq_nonempty_of_mem splitChoice (idxSet e) Set.univ univ_nonempty_nat splitChoice_isSplitSpec
+    (Set.mem_univ n) (self_mem_idxSet e n)
 
 theorem Yidx_mem (n : ℕ) : U.mem (Yidx e n) :=
   (Yidx_empty_or_mem e n).resolve_left (Yidx_nonempty e n).ne_empty
@@ -141,7 +144,8 @@ trivial since `Yidx e i ⊆ U.master` always) yields exactly Scott's matching in
 plain inclusion. -/
 theorem embed_subset_iff (i j : ℕ) : e i ⊆ e j ↔ Yidx e i ⊆ Yidx e j := by
   rw [← idxSet_subset_iff e i j]
-  have := transfer_subset_iff (idxSet e) Set.univ univ_nonempty_nat i j
+  have := transfer_subset_iff splitChoice (idxSet e) Set.univ univ_nonempty_nat
+    splitChoice_isSplitSpec i j
   rwa [Set.univ_inter, Set.inter_eq_self_of_subset_right (Yidx_subset_master e i)] at this
 
 theorem embed_eq_iff (i j : ℕ) : e i = e j ↔ Yidx e i = Yidx e j :=
@@ -169,7 +173,8 @@ isomorphism below. -/
 theorem exists_inter_index_of_dmem {i j : ℕ} (hDij : D.mem (e i ∩ e j)) :
     ∃ m, e i ∩ e j = e m ∧ Yidx e i ∩ Yidx e j = Yidx e m := by
   obtain ⟨m, hm⟩ := (hcover (e i ∩ e j)).mp hDij
-  exact ⟨m, hm, (transfer_inter_eq_iff (idxSet e) Set.univ univ_nonempty_nat i j m
+  exact ⟨m, hm, (transfer_inter_eq_iff splitChoice (idxSet e) Set.univ univ_nonempty_nat
+    splitChoice_isSplitSpec i j m
     (Set.subset_univ _) (Set.subset_univ _) (Set.subset_univ _)).mp (idxSet_inter_of_inter_eq e hm)⟩
 
 include hcover in
@@ -183,7 +188,8 @@ theorem exists_inter_index_of_nonempty {i j : ℕ} (hne : (Yidx e i ∩ Yidx e j
   have hne' : (idxSet e i ∩ idxSet e j).Nonempty := by
     by_contra hcon
     rw [Set.not_nonempty_iff_eq_empty] at hcon
-    have hkey := transfer_inter_empty_iff (idxSet e) Set.univ univ_nonempty_nat i j
+    have hkey := transfer_inter_empty_iff splitChoice (idxSet e) Set.univ univ_nonempty_nat
+      splitChoice_isSplitSpec i j
     rw [Set.univ_inter, Set.inter_eq_self_of_subset_right (Yidx_subset_master e i)] at hkey
     exact hne.ne_empty (hkey.mp hcon)
   obtain ⟨k, hki, hkj⟩ := hne'

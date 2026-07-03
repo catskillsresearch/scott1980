@@ -5329,3 +5329,421 @@ replace classical case-splits with `D`'s own decidable presentation via a genuin
 witness with an explicit computable interval-splitting formula), or **Theorem 8.8(c)** (converse
 correspondence, expected short — reuses Theorem 8.5's fixed-point-set-is-a-subsystem identification
 plus r.e.-ness of equality on `U`-neighbourhoods).
+
+---
+
+**2026-07-02 — Theorem 8.8(b) started, broken into an 8-part plan (full rigor, choice-free
+discipline maintained); Parts 1–2 of 8 done.** Full statement: if `D` is effectively given, the
+projection pair witnessing `D ⊴ U` (Theorem 8.8(a)) can be taken computable. The 8-part plan (ids
+for future reference): **(1)** rational Gödel encoding + comparison arithmetic; **(2)** `List(ℚ×ℚ)`
+encoding + `combineIntervals`/difference/subset/eq decidability at the code level; **(3)** assemble
+`U.ComputablePresentation` (proves `U.IsEffectivelyGiven`); **(4)** explicit deterministic
+`splitU` replacing `U_no_minimal`'s existential; **(5)** `D`-side effective atom-emptiness
+apparatus (the `(♦)` trick made decidable); **(6)** the recursive `Y_n` construction as an
+r.e.-verifiable witness/verifier chain (mirroring `fixMap_isComputable`'s idiom); **(7)** the
+projection pair `i,j : ApproximableMap D U` satisfy `IsComputableMap`; **(8)** final assembly
+`theorem_8_8_b` + arxiv/HANDOFF update.
+
+* **Part 1 (`RationalPrimrec.lean`, new file) — done.** Choice-free Gödel numbering: `ℤ` as
+  difference-pairs (`encodeInt z := pair z.toNat (-z).toNat`, `decodeInt`; exact round trip for
+  *every* `z`, deliberately not a canonical zig-zag, so downstream code never tracks a
+  canonicality invariant — mirrors `Recursive.lean`'s `encodeList`/`decodeList` discipline); `ℚ`
+  as `encodeRat q := pair (encodeInt q.num) (q.den - 1)` (exact round trip via `Rat.mkRat_self`).
+  Comparison: `ratLeCode`/`ratLtCode` cross-clear denominators via **addition only** (`a₁d₂+b₂d₁ ≤
+  a₂d₁+b₁d₂`, difference-pair numerators avoid truncated subtraction entirely), full
+  `Nat.Primrec` + `_eq_one_iff` correctness; `ratMaxCode`/`ratMinCode` via `selectFn`. Packaged
+  `ratLtCode_recDecidable₂ : RecDecidable₂ (fun c1 c2 => decodeRat c1 < decodeRat c2)` for reuse
+  with `Recursive.lean`'s closure combinators (`.not`/`.and`/`.swap`/`.bExistsList`).
+* **Part 2 (`RecursiveCross.lean` additions + `IntervalPrimrec.lean`, new file) — done.** Added
+  generic `Nat.Primrec` list-code combinators to `RecursiveCross.lean`: `flatMapStep`/`flatMapCode`
+  (`mem_decodeList_flatMapCode` correctness), alongside the pre-existing `crossCombine`.
+  `IntervalPrimrec.lean` then builds, layer by layer: `List(ℚ×ℚ)` encoding
+  (`encodeQPairList`/`decodeQPairList`, exact round trip, reusing `Recursive.lean`'s `encodeList`
+  rather than a bespoke encoding); **`combineCode`** realizing `combineIntervals` at the code level
+  (`qpCombineBop` + `crossCombine`, correctness `presentedIntervals_decodeQPairList_combineCode`);
+  **interval difference** `diffCode`, built from the *unconditional* identity `Ico_diff_Ico : Ico a
+  b \ Ico c d = Ico a (b⊓c) ∪ Ico (a⊔d) b` (no ordering hypotheses, mirroring `Definition87.lean`'s
+  `Set.Ico_inter_Ico` unconditional-intersection trick) — lifted through
+  `diffOneList→diffSingleList→diffAllList→diffLists` at the pure-list level, then mirrored
+  `Nat.Primrec`-side via `flatMapCode`/`foldCode` (`diffOneCode`/`diffSingleCode`/`diffAllCode`/
+  `diffCode`), correctness `presentedIntervals_decodeQPairList_diffCode`; and the **decidability
+  layer**: non-emptiness of a presented union reduces to a bounded-`∃` over the list
+  (`presentedIntervals_nonempty_iff : (presentedIntervals L).Nonempty ↔ ∃ p ∈ L, p.1 < p.2`), coded
+  as `qpNonemptyChar` via `Recursive.lean`'s `existsListChar` — this needed one new generic lemma in
+  `Recursive.lean`, `existsListChar_le_one` (mirroring the pre-existing `allListChar_le_one`, not
+  previously needed) — giving `recDecidable_presentedIntervals_nonempty`. **Subset and equality
+  then come for free** from `diffCode`, no new arithmetic: `presentedIntervals L1 ⊆ L2 ↔ ¬
+  (diffCode L1 L2).Nonempty` (`Set.diff_eq_empty`) gives `recDecidable₂_presentedIntervals_subset`,
+  and equality is `Set.Subset.antisymm_iff` applied to that predicate `.and`ed with its own
+  `.swap` (`Recursive.lean`'s generic swap combinator) — `recDecidable₂_presentedIntervals_eq`.
+* **Two recurring pitfalls hit again (both previously documented, both recurred):** (1) a doc
+  comment (`/-- ... -/`) placed *before* `set_option maxHeartbeats N in` fails to parse
+  (`unexpected token 'set_option'; expected 'lemma'`) — the `set_option ... in` modifier must come
+  **first**, with the docstring directly attached to the `theorem` line after it (confirmed against
+  existing precedent elsewhere in `Recursive.lean`/`Exercise717Part2.lean`). (2) a term-mode
+  application of a `_zero_one_char`-style bridge lemma (`RecDecidable₂.of_paired_zero_one_char`)
+  timed out at `whnf` — root cause was **not** heartbeats but a genuinely swapped `Iff` direction
+  in the supplied `hfe` argument (`ratLtCode_eq_one_iff`'s `f(...)=1 ↔ r` vs. the lemma's expected
+  `r ↔ f(...)=1`); switching to tactic mode (`refine ... (fun n m => ?_); exact
+  (ratLtCode_eq_one_iff n m).symm`) fixed it instantly with no heartbeat bump needed — a reminder
+  that "timeout at whnf" from a lemma-application mismatch can *look* identical to the genuine
+  `Nat.pair`/`Nat.unpair` unification blowups this project has hit before, but has a completely
+  different (and much cheaper) fix.
+* **Build/lint status.** `lake build` (all 3136 jobs) green; `ReadLints` clean on all three edited
+  files (only pre-existing unrelated warnings elsewhere in `Recursive.lean`). Axiom audit:
+  `recDecidable_presentedIntervals_nonempty`/`recDecidable₂_presentedIntervals_subset`/
+  `recDecidable₂_presentedIntervals_eq`/`ratLtCode_recDecidable₂` all report `[propext,
+  Classical.choice, Quot.sound]` — expected, inherited from `ℚ`'s order instance exactly as
+  documented in `Definition87.lean`/`IntervalPrimrec.lean`'s own docstrings, not a choice made in
+  these proofs. `arxiv.md`'s Theorem 8.8(b) row updated to **Partial** with a proof-note summary of
+  Parts 1–2; `Scott1980.lean` already imported `RationalPrimrec`/`RecursiveCross`/`IntervalPrimrec`.
+
+**Status: Theorem 8.8(b) Part 2 of 8 is done. Next: Part 3 — assemble `U.ComputablePresentation`**
+(canonicalize an arbitrary code to a genuine `U`-neighbourhood — needed so the enumeration `X : ℕ →
+Set ℚ` is *total* — then wire `interEq_computable`/`cons_computable`/`inter`/`inter_primrec`/
+`inter_spec`/`masterIdx` from Part 2's `combineCode`/decidability apparatus).
+
+## 2026-07-02 — Theorem 8.8(b) Part 3 done: `U.ComputablePresentation` assembled
+
+`UComputablePresentation.lean` (new file) completes **Part 3** of the 8-part plan (see the
+2026-07-02 checkpoint above): `U` genuinely `IsEffectivelyGiven`.
+
+* **List-level canonicalization (`canonList`).** An arbitrary `List (ℚ×ℚ)` is forced into a valid
+  `U`-presenting list by clipping every pair into `[0,1)` (`qpClip p := (p.1⊔0, p.2⊓1)`), filtering
+  out degenerate (`¬ p.1<p.2`) pairs, and falling back to `U.master`'s canonical presentation
+  `[(0,1)]` if that leaves nothing (`canonList`). `presentedIntervals_map_qpClip`/
+  `_filter_qpPos` show clip/filter are individually `presentedIntervals`-transparent (intersect
+  with `Ico 0 1` / no-op respectively), giving **`U_mem_presentedIntervals_canonList`** (canonList's
+  output is *always* a genuine `U`-neighbourhood, unconditionally) and **`canonList_fixed`**
+  (canonList is the *identity* on `presentedIntervals` whenever the input already presents a
+  `U`-neighbourhood — the crucial "no information lost on already-good input" fact).
+* **Code-level canonicalization (`canonCode`).** Mirrors `canonList` step-by-step as `Nat.Primrec`
+  functions on `List(ℚ×ℚ)`-codes: `qpClipCode` (via `ratMaxCode`/`ratMinCode` from Part 1),
+  `canonFilterStep` (single-pair clip-then-keep-or-drop, via `qpNonemptyBop`/`selectFn`),
+  `canonListCode := flatMapCode canonFilterStep 0` (maps `canonFilterStep` over the whole list),
+  and `canonCode` (fall back to `masterPairCode := pair zeroCode oneCode` when `canonListCode`
+  decodes to `[]`, via `isZero`/`selectFn`). Bridged to the list level by
+  **`presentedIntervals_decodeQPairList_canonCode`**: `presentedIntervals(decodeQPairList(canonCode
+  c)) = presentedIntervals(canonList(decodeQPairList c))` — the single lemma that lets every
+  code-level construction below borrow its correctness from the list-level lemmas above.
+* **The presentation itself.** `UX n := presentedIntervals(decodeQPairList(canonCode n))` is total
+  and *always* a `U`-neighbourhood (`U_mem_UX`, from `U_mem_presentedIntervals_canonList`).
+  Surjectivity (`U_surj_UX`) uses `U_mem_iff_scott` to get a Scott-literal presenting list `L` for
+  any `U`-neighbourhood `Y`, then `canonList_fixed` shows `canonList` doesn't disturb it, so
+  `encodeQPairList L` is a preimage. **The key simplifying observation**: Scott's consistency side
+  condition `∃k. X_k ⊆ Xₙ∩Xₘ` is *equivalent* to plain non-emptiness of `Xₙ∩Xₘ`
+  (`U_cons_iff_nonempty_inter`) — forward direction because every `X_k` is itself non-empty
+  (`U_mem_UX`), backward direction because a non-empty `Xₙ∩Xₘ` is *automatically* `U.mem` (it's
+  `presentedIntervals` of `combineCode`'s output, always `⊆[0,1)`, non-empty by hypothesis), hence
+  by surjectivity has *some* index `k` with `X_k = Xₙ∩Xₘ` outright (not just `⊆`). This collapses
+  `cons_computable` to `recDecidable_presentedIntervals_nonempty` (Part 2) composed with
+  `combineCode∘canonCode` reindexing, and `interEq_computable` to
+  `recDecidable₂_presentedIntervals_eq` (Part 2) similarly reindexed. `inter n m :=
+  combineCode(canonCode n)(canonCode m)` (**no outer `canonCode`** — `UX` already re-canonicalizes
+  on lookup, so wrapping `Uinter` in `canonCode` too would just double up pointlessly and, worse,
+  breaks the `rw` chain in `Uinter_spec` since the leftover single `canonCode` inside
+  `decodeQPairList` no longer syntactically matches `combineCode`'s bare output — hit and fixed
+  this exact mismatch during development). `masterIdx := encodeQPairList [(0,1)]`.
+* **Pitfall recurring a third time, now templated.** Every `Nat.Primrec` composition lemma here
+  that composes `canonCode`/`combineCode` with an `unpair`-based reindexing (e.g.
+  `combineCode(canonCode t.unpair.1)(canonCode t.unpair.2)`) hit the by-now-familiar `whnf` timeout
+  when written as a bare `.comp` term (Lean tries defeq-unification through `Nat.pair`/`unpair`'s
+  well-founded recursion). Fix is now a fixed idiom applied uniformly:
+  `(f.comp g).of_eq (fun t => by simp only [unpair_pair_fst, unpair_pair_snd])` — never rely on the
+  `.comp` term's *defeq* type matching the target, always re-derive it propositionally.
+* **Build/lint status.** `lake build` (all 3137 jobs) green; only pre-existing/benign warnings (one
+  `unusedSimpArgs` on `eq_comm` in a `by_cases` split, harmless — removing it broke the proof, so
+  left in place per the discipline "correctness over lint-cleanliness"). Axiom audit:
+  `U_isEffectivelyGiven`/`UComputablePresentation` both report `[propext, Classical.choice,
+  Quot.sound]` — the usual `ℚ`-order-instance inheritance, not a genuine choice in this file.
+  `Scott1980.lean` updated with the new `UComputablePresentation` import.
+
+**Status: Theorem 8.8(b) Part 3 of 8 is done — `U.IsEffectivelyGiven` is a genuine theorem.**
+**Next: Part 4** — explicit deterministic `splitU` replacing `U_no_minimal`'s existential (Scott's
+"no minimal neighbourhoods" remark, made *computable*: given a `U`-neighbourhood's index `n`,
+canonically split `X_n` at the midpoint of the first pair in `canonList(decodeQPairList n)` into two
+proper, disjoint sub-neighbourhood indices whose union is `X_n`) — needed for Part 6's recursive
+`Y_n` chain construction, which must *compute* a strictly-decreasing-and-covering sequence of
+`U`-neighbourhoods rather than merely know one exists.
+
+## 2026-07-02 — Theorem 8.8(b) Part 4 done: deterministic `splitU`
+
+`SplitU.lean` (new file) completes **Part 4**: `splitULeft`/`splitURight : ℕ → ℕ` are genuine
+`Nat.Primrec` functions (`primrec_splitULeft`/`primrec_splitURight`, `⊆ {propext, Quot.sound}`)
+replacing `U_no_minimal`'s bare existential, with the same four correctness properties
+(`splitU_disjoint`/`splitU_union`/`splitU_left_ne`/`splitU_right_ne`) reproven for this canonical
+choice.
+
+* **No search needed for the split point.** Part 3 already established
+  (`forall_lt_decodeQPairList_canonCode`, added to `UComputablePresentation.lean`) that *every*
+  pair in `canonCode n`'s decoded list is non-degenerate (`p.1 < p.2`) — both branches of `canonCode`
+  (the filtered list, or the `[masterPairCode]` fallback) only ever produce such pairs. So unlike
+  `U_no_minimal`'s arbitrary witness of non-emptiness, `splitU` can deterministically take the
+  **first** pair (`firstElemCode c := (c-1).unpair.1`, reading off `decodeList`'s cons-structure
+  directly) with no existential search — `canonCode_ne_zero`/`decodeQPairList_canonCode_ne_nil`
+  (also added to `UComputablePresentation.lean`) guarantee it's always defined.
+* **The midpoint, without division.** `RationalPrimrec.lean` gained **`ratMidCode`**: the midpoint
+  of two rational codes computed with *no actual division* — cross-clearing denominators (as
+  `ratLeCode` does for comparison) turns the sum into a single fraction over `d₁·d₂`, and "divide by
+  2" is simply *doubling the denominator* (`n/d / 2 = n/(2d)`), so no `gcd`/reduction step is ever
+  needed (`decodeRat`'s own `mkRat` call normalizes on decode). Proved via `qDen_ratMidCode` +
+  `decodeRat_ratMidCode`, both by careful `simp only [ratMidCode, unpair_pair_fst, unpair_pair_snd]`
+  (see pitfall below) then `field_simp; ring`.
+  companion `decodeRat_ratMidCode'` (un-paired, `decodeRat (ratMidCode e) = (decodeRat e.unpair.1 +
+  decodeRat e.unpair.2)/2` for arbitrary `e`, not just `e = Nat.pair c1 c2` literally) exists
+  *specifically* to dodge a pitfall (next bullet).
+* **`splitULeft`/`splitURight` construction.** Mirrors `U_no_minimal`'s `Y := X∩Iio m`/`Z := X∩Ici m`
+  exactly, but at the code level: public `qpClipLt`/`qpClipGe : ℚ→ℚ×ℚ→ℚ×ℚ` (`Definition87.lean`'s
+  `clipLt`/`clipGe` are `private`, so re-declared here — `private` is file-scoped in Lean 4, not
+  namespace-scoped), lifted to per-pair-codes (`clipLtCode`/`clipGeCode`, binary via `Nat.pair m e`)
+  then across a whole list-code via `RecursiveCross.lean`'s `flatMapCode` **with the midpoint `m`
+  threaded through as `flatMapCode`'s own fixed parameter** (`clipLtListCode m c := flatMapCode
+  (fun t => [clipLtCode t]) m c` — no bespoke "mapCode" combinator needed, `flatMapCode`'s existing
+  `x`-parameter *is* a generic map-with-fixed-parameter primitive). `splitULeft n :=
+  clipLtListCode (splitMidCode n) (canonCode n)` (similarly `splitURight`); `UX` re-canonicalizes
+  on lookup, so **no extra `canonCode` wrapping needed** here either (same lesson as Part 3's
+  `Uinter`). Correctness (`UX_splitULeft`/`UX_splitURight`) shows `UX(splitULeft n) = Xₙ∩Iio m`
+  outright: the raw clipped-list output is *already* a genuine `U`-neighbourhood (nonempty via the
+  first-pair/midpoint argument transplanted almost verbatim from `U_no_minimal`), so
+  `canonList_fixed` makes the re-canonicalization a no-op. The four Scott properties then follow
+  from `Xₙ∩Iio m`/`Xₙ∩Ici m` algebra exactly as in `U_no_minimal`, plus — for properness — the
+  one-line observation that `UX k` is *always* non-empty (`U_mem_UX`), so `Y=X ⟹ Z⊆Y ⟹ Z⊆Y∩Z=∅`
+  contradicts `Z`'s own non-emptiness (cleaner than reconstructing witnesses by hand).
+* **Two pitfalls hit (one new, one a fourth recurrence).** (1) **New**: `rw [show e = Nat.pair
+  e.unpair.1 e.unpair.2 from (Nat.pair_unpair e).symm]` inside a goal where `e := firstElemCode
+  (canonCode n)` (a `set`-bound local) timed out at `whnf` — `set`'s local is definitionally
+  transparent, and the rewrite's elaboration apparently tries to unfold `e` back through the entire
+  `canonCode`/`canonListCode`/`flatMapCode`/`foldCode` definition chain. Fixed by proving a
+  standalone un-paired corollary (`decodeRat_ratMidCode'`, stated for a *fresh* bound variable `e`
+  in its own lemma, no `set`, no large ambient definition to unfold) and applying that directly, with
+  `show decodeRat (firstElemCode (canonCode n)).unpair.1 < ...` to align the goal shape instead of
+  rewriting `e` at all. (2) **Recurrence** of the `unpair_pair_fst`/`_snd` `whnf`-timeout-vs-`.of_eq`
+  pattern (now hit 4 times across Parts 1–4) — every `Nat.Primrec` composition through
+  `Nat.pair`/`unpair` reindexing must use `(f.comp g).of_eq (fun t => by simp only
+  [unpair_pair_fst, unpair_pair_snd])`, never a bare `.comp` relying on defeq.
+* **Build/lint status.** `lake build` (all 3138 jobs) green; one pre-existing benign
+  `unusedSimpArgs` warning (same `eq_comm` one from Part 3, left in place — removing it breaks the
+  proof) plus a `Set.left_mem_Ici`→`Set.self_mem_Ici` deprecation (fixed). Axiom audit:
+  `primrec_splitULeft`/`primrec_splitURight` report `[propext, Quot.sound]` (genuinely choice-free);
+  `splitU_disjoint`/`splitU_union`/`splitU_left_ne`/`splitU_right_ne` report the usual
+  `[propext, Classical.choice, Quot.sound]` inherited from `ℚ`'s order instance.
+  `Scott1980.lean` updated with the new `SplitU` import; `arxiv.md`'s Theorem 8.8(b) row updated to
+  reflect Parts 1–4 done.
+
+**Status: Theorem 8.8(b) Part 4 of 8 is done.**
+**Next: Part 5** — `D`-side effective atom-emptiness apparatus for an arbitrary `ComputablePresentation
+P` of `D` (the `(♦)` trick from `Theorem88.lean`'s `genAtom`/`atomD`, made *decidable* rather than
+merely classically well-defined — reusing `Definition71.lean`'s `ComputablePresentation.incl_computable`/
+`eq_computable` plus `Recursive.lean`'s closure combinators to show membership-in-an-atom is
+`RecDecidable`, since Part 6's `Y_n` chain construction needs to *decide*, not just classically
+case-split on, whether a given finite Boolean constraint on `D`'s neighbourhoods is satisfiable).
+
+---
+
+## 2026-07-02: Theorem 8.8(b) Part 5 — D-atom emptiness is `RecDecidable` (choice-free) ✅
+
+New file **`Scott1980/Neighborhood/DAtomDecidable.lean`** (imported into `Scott1980.lean`).
+Given an arbitrary `ComputablePresentation P` of a `NeighborhoodSystem D`, decides whether the
+D-atom cut out by a finite positive/negative index-list pair is empty, using only `P`'s two
+supplied deciders (`cons_computable`, `incl_computable`) — no assumption that `D`'s carrier `α`
+itself is effective in any other way.
+
+* **Reindexing over `idxSet` (Theorem 8.8(a)'s trick, reused).** A D-atom is classically a subset of
+  `α` (elements below every positive neighbourhood, below no negative one), which is not something
+  you can "search". Following `Theorem88a.lean`, everything is reindexed to `ℕ`: `IPos P pos := {m
+  | ∀ i ∈ pos, P.X m ⊆ P.X i}` (`= idxSet P.X i₁ ∩ ⋯` via `IPos_cons`), and `DAtom P pos neg := IPos
+  P pos ∩ {m | ∀ j ∈ neg, P.X m ⊄ P.X j}`. Emptiness of a *set of indices* is now the thing to decide.
+* **The positive meet, as a fold with a Boolean "still consistent" flag.** Rather than testing
+  emptiness of `IPos P pos` directly, `meetStep`/`meetFold` compute — one positive constraint `i` at
+  a time, via `P.inter`/`P.cons_computable` — either a single index `idx` with `idxSet P.X idx =
+  IPos P pos` (the meet exists in `D`), or discover along the way that two of the constraints are
+  `P`-inconsistent (`cons`-check fails), in which case `IPos P pos = ∅` outright and the fold
+  short-circuits (frozen "not ok" flag, per `meetStep_spec`'s invariant transfer lemma). The
+  accumulator is coded as a single `ℕ` via `Nat.pair (ok : ℕ) (idx : ℕ)` — no `Option`/`Sum` needed,
+  keeping everything inside `Nat.Primrec`'s native vocabulary. `meetFold_spec` proves the fold's
+  final state faithfully represents `IPos P pos` (either as `idxSet P.X idx` or, on `ok=0`, as `∅`).
+* **Emptiness test = the meet, then a negative-list existence check.** `DAtom_eq_empty_iff`: `DAtom P
+  pos neg = ∅ ↔ (meet is inconsistent) ∨ (∃ j ∈ neg, the meet's idx ⊆ P.X j)` — i.e. once you have
+  the *single* index `idx` representing all of `IPos`, checking the atom against the negative list
+  is just `existsListChar` over `neg` testing `P`'s `incl_computable` decider at `(idx, j)`.
+  `DAtomEmptyChar` packages exactly this: `meetFoldCode` (the `foldCode`-shaped code-level mirror of
+  `meetFold`, via `meetStepCode`) composed with `existsListChar` guarded by `selectFn` on the
+  meet's `ok` flag. `DAtom_recDecidable` is the final packaged `RecDecidable₂` statement, extracting
+  `P.cons_computable`/`P.incl_computable`'s witnessing functions inside the `Prop`-valued goal
+  (`Proposition710.lean`'s pattern) so the *statement* stays fully polymorphic over `P`.
+* **Axiom hygiene: the `Nat.Primrec` core is now provably choice-free**, not merely "the usual
+  `ℚ`-order taint we always see". Three real bugs were found and fixed by direct `#print axioms`
+  bisection (worth recording since they're generic pitfalls, not `D`-atom-specific):
+  1. **Mathlib's `Nat.Primrec.id` vs. the project's own `primrec_id`.** `primrec_meetFoldCode` used
+     `Nat.Primrec.id` (the ambient Mathlib lemma, itself built via `Nat.Primrec.rec`+`Classical`-tainted
+     library glue) instead of `Recursive.lean`'s own `primrec_id : Nat.Primrec id` (proved directly by
+     `Nat.Primrec.prec`). Same *statement*, different *proof term* — swapping the reference alone
+     took `primrec_meetFoldCode`/`primrec_DAtomEmptyChar` from `[…, Classical.choice, …]` down to
+     `[propext, Quot.sound]`. **Lesson: never reach for `Nat.Primrec.foo` from Mathlib when this
+     project has already proved its own `primrec_foo`; the two are defeq but not axiom-eq.**
+  2. **`simp`/`norm_num` closing a goal makes it needlessly hard to audit.** `meetStep_ok_le_one`
+     originally closed all four `(0∨1)×(0∨1)` case splits with a single `simp [h, h']`; converting to
+     explicit `rw [...]` chains (relying on `rw`'s built-in `rfl`-closing for the two branches that
+     reduce to `1 ≤ 1`, and an explicit `exact Nat.zero_le 1` for the two `0 ≤ 1` branches) removed
+     the taint. (Generic risk: default `simp`/`norm_num` simp-sets can silently pull in
+     classically-proved lemmas even for goals that have a choice-free proof.)
+  3. **The real culprit, found by bisection down to a 3-line repro: `omega` closing a *vacuous
+     implication whose conclusion is a non-arithmetic (`Set`) equality*.** E.g. `(0:ℕ) = 1 → (S : Set
+     ℕ) = ∅ := by omega` reports `Classical.choice` even though `(0:ℕ) = 1 → True := by omega` does
+     not — `omega`'s generic "the hypotheses are contradictory, close any goal" fallback path
+     apparently routes through `Classical.propDecidable`/`byContradiction`-flavoured machinery when
+     the goal isn't itself arithmetic. **Fix: never call `omega` directly on a goal whose conclusion
+     isn't a `Nat`/`Int` (in)equality; instead `intro h; exact absurd h (by decide)`** (or derive the
+     contradiction as a separate `have : False := by omega` and `exact absurd h (by decide)` /
+     `exact h.elim`). This pattern recurred 3× in `meetStep_spec` and was fixed at all three sites.
+  After all three fixes: `meetStep_spec`, `meetFold_foldl_spec`, `meetFold_spec`,
+  `primrec_meetStepCode`, `primrec_meetFoldCode`, `primrec_DAtomEmptyChar` **all report
+  `[propext, Quot.sound]`** — genuinely choice-free, matching `Proposition710.lean`'s precedent
+  (`primrec_interCode`). The *outer* `DAtom_eq_empty_iff`/`DAtomEmptyChar_eq_one_iff`/
+  `DAtom_recDecidable` still report `[propext, Classical.choice, Quot.sound]`, but this remaining
+  instance is a **documented, unavoidable** use: `DAtom_eq_empty_iff`'s forward direction does
+  `by_contra` on `¬∃ j ∈ neg, P.X idx ⊆ P.X j` where `⊆` is a `Prop` about an arbitrary carrier `α`
+  with no assumed decidability — excluded middle on this existential is genuinely required to go
+  from "not empty" to "produces a witness index", and is *only* used at the `Prop`-level
+  characterization lemma, never inside anything computability-relevant (`DAtomEmptyChar` itself, and
+  its two `primrec_*` lemmas, remain clean). This matches the project's choice-discipline exception
+  for "`Prop`-level results where classical is genuinely unavoidable, called out in notes."
+* **Build/lint status.** `lake build` (all 3139 jobs) green, no new warnings beyond pre-existing ones
+  in `Recursive.lean`. `Scott1980.lean` updated with the new `DAtomDecidable` import.
+
+**Status: Theorem 8.8(b) Part 5 of 8 is done.**
+**Next: Part 6** — the recursive `Y_n` chain construction as an r.e.-verifiable witness/verifier
+pair, combining Part 4's `splitU` (deterministic splitting on the `U` side) with Part 5's
+`DAtom_recDecidable` (deciding, at each stage, whether continuing down a given branch of the atom
+tree keeps the D-side constraint satisfiable) to build the effective enumeration `e ↦ Y_n(e)`
+required for `IsComputableMap`.
+
+---
+
+## 2026-07-02: Theorem 8.8(b) Part 6a–6c — effective enumeration + `genAtom`↔`DAtom` bridge ✅
+
+**6a — generalized `Theorem88.lean` over an abstract `split`.** Added `SplitSpec split : Prop`
+(exactly `exists_split`'s conclusion, as a `Prop` about a *total* `split : Set α → Set ℚ → Set α →
+Set ℚ×Set ℚ`); `splitChoice_isSplitSpec : SplitSpec splitChoice` recovers the classical case.
+Reparametrized `atomU`/`Yseq`/`atomU_invariant`/every `transfer_*`/`Yseq_*` lemma over `(split,
+hsplit)` instead of the hardcoded `splitChoice`. **Pitfall (costly to debug): `atomU`'s recursive
+definition silently dropped `split` from its own recursive self-reference.** `variable (split :
+…)` followed by `noncomputable def atomU (X …) (Δ …) (δ …) : ℕ → Set ℚ | 0 => … | n+1 => … split
+…` — `split` appears *only in the equations*, not the header line before `:=`/`|`. Lean's
+`variable`-auto-inclusion for equation-compiled recursive defs apparently only scans the header,
+so `split` was silently **not** added as a parameter, and the recursive call `atomU split X Δ δ n`
+inside the body then mis-parsed `split` into `atomU`'s *first real parameter slot* (`X`'s slot),
+producing a wrong-shaped self-application that only surfaced as a confusing type mismatch at
+*downstream* call sites (`atomU_zero` etc.), not at the definition itself. **Fix: make `split` an
+explicit header parameter of `atomU`** (`noncomputable def atomU (split : …) (X : …) …`), not a
+bare `variable`. **Lesson: for any equation-compiled recursive `def` that uses a `variable` only in
+its equations, write that variable explicitly in the header — never rely on auto-inclusion.**
+Updated `Theorem88a.lean` to pass `splitChoice`/`splitChoice_isSplitSpec` explicitly at every
+`Yseq`/`transfer_*`/`Yseq_zero_eq_master` call site; confirmed the whole project (`lake build`,
+3139/3139 jobs) still builds green, i.e. Theorem 8.8(a) is unaffected by the refactor.
+
+**6b (new file `Theorem88b.lean`) — re-pointing an effective presentation's `0`-th index at its
+master.** `Theorem88a.lean`'s `Yidx`/`DprimeU`/`domainIso` apparatus needs `e 0 = D.master`
+(Scott's `X₀=Δ` convention, hard-coded into `Yseq_zero_eq_master`'s recursion-depth-0 case); an
+arbitrary `ComputablePresentation P` need not have `P.masterIdx = 0`. Rather than re-deriving
+Part 5's whole `DAtom` apparatus for a shifted enumeration, added a **fully general, reusable**
+utility to `Definition71.lean`: `ComputablePresentation.reindexInvolutive P φ hφinv hφp`, which
+transports *every* structural field of `P` along any `Nat.Primrec` involution `φ`
+(`X' n := P.X (φ n)`), by composing each of `P`'s two `RecDecidable` deciders with the
+pairwise-`φ`-reindexing code (`RecDecidable.comp`, mirroring `incl_computable`'s own
+`inclShuffle`-composition pattern) — entirely choice-free, `⊆ {propext, Quot.sound}`. `eIdx` (in
+`Theorem88b.lean`) is the concrete involution used: swap `0 ↔ P.masterIdx`, everything else fixed
+(`if n = 0 then P.masterIdx else if n = P.masterIdx then 0 else n`); `Nat.Primrec eIdx` built from
+`primrec_ite`/`primrec_isZero`/`primrec_sub₂`/`primrec_add₂` (an equality-test `n = c` against a
+*fixed* constant `c`, realized as `isZero ((n-c)+(c-n))`, is the one new reusable trick — no direct
+"primrec equality test" combinator existed in `Recursive.lean` before this). `P0 := P.reindexInvolutive
+eIdx …` then gives `e := P0.X` with `he0 : e 0 = D.master` and `hcover : ∀ S, D.mem S ↔ ∃ n, S = e n`
+essentially for free (`hcover`'s only real content is `eIdx`'s involutive round-trip). **Pitfall:**
+several `Nat.Primrec.pair`-composition attempts initially applied `hφp` directly to the *whole*
+pair-code `t` instead of `t.unpair.1`/`t.unpair.2` first (i.e. wrote `hφp.pair (...)` instead of
+`(hφp.comp Nat.Primrec.left).pair (...)`) — always compose the projection *first*, then the
+reindexing function, never the reverse order.
+
+**6c — `genAtom (idxSet e)`-emptiness reduces to `DAtom`-emptiness, with *zero* new decidability
+machinery.** Made `Theorem88.lean`'s `genAtom` (and its four helper lemmas) non-`private` so Part 6
+can state the bridge (previously file-scoped; genuinely needed across files here, unlike most of
+this project's `private` internals). `posnegList δ n : List ℕ × List ℕ` mirrors `genAtom`'s own
+recursion **step-for-step** (`posnegList δ (n+1) = if δ n then (pos++[n], neg) else (pos,
+neg++[n])`, matching `genAtom`'s own `if δ n then Z n else M\Z n` at every step) rather than being
+reconstructed after the fact via `List.range`/`filter` — this is what makes `genAtom_eq_DAtom`'s
+induction a one-`rw`-chain-per-case argument instead of a reindexing exercise. Two small general
+lemmas were needed and added (`IPos_append`, `negPart_append`): `IPos`/`DAtom`'s negative part both
+split cleanly across `List.append`, because membership-in-an-`idxSet`-atom only depends on the
+*set* of list elements, never on order or multiplicity — `IPos_append` by induction via the
+existing `IPos_cons`, `negPart_append` directly via `List.forall_mem_append`. The final theorem,
+`genAtom_eq_DAtom : genAtom (idxSet e) Set.univ δ n = DAtom P0 (posnegList δ n).1 (posnegList δ
+n).2`, composes with Part 5's `DAtom_recDecidable P0` **unchanged** — `P0`'s `interEq_computable`/
+`cons_computable` (inherited automatically from 6b's `reindexInvolutive`) are exactly the two
+deciders `DAtom_recDecidable` needs, so Part 5's ~300 lines of meet-fold machinery did not need to
+be touched or re-proved for the shifted enumeration. `genAtom_empty_iff` packages the corollary
+(`genAtom (idxSet e) Set.univ δ n = ∅ ↔ DAtom P0 (posnegList δ n).1 (posnegList δ n).2 = ∅`) as the
+handoff point for Part 6e. **Pitfall (Bool `if`-rewriting):** `if δ n then A else B` for `δ n :
+Bool` elaborates as `ite (δ n = true) A B`, so a hypothesis `h : δ n = true` needs a *full* `simp
+[h]` to close (default simp lemmas normalize `true = true`/`false = true` to `True`/`False` and
+then fire `if_pos`/`if_neg`) — `simp only [h, if_true]` / `simp only [h, if_false]` do **not** fire
+(`if_true`/`if_false` are stated for the *coerced-`Prop`* `ite`, not for a literal un-normalized
+`δ n = true`/`δ n = false` condition), matching the `simp only [hδ, if_true]` idiom already used
+elsewhere in `Theorem88.lean` only because those call sites already had `Bool.not_eq_true`-normalized
+hypotheses in scope.
+
+**Axiom audit.** `eIdx_involutive` : `[propext]`; `eIdx_primrec`, `he0`, `hcover`, `P0`,
+`genAtom_eq_DAtom`, `genAtom_empty_iff`, `IPos_append`, `negPart_append`, `reindexInvolutive` (all
+fields) : `[propext, Quot.sound]` — **fully choice-free**, no new `Classical.choice` introduced by
+any of Part 6a–6c despite the substantial refactor and new reindexing machinery.
+
+**Build/lint status.** `lake build` (all 3140 jobs) green; only pre-existing warnings
+(`Recursive.lean`/`UComputablePresentation.lean` `unusedSimpArgs`, already documented). New files:
+`Theorem88b.lean` (imported into `Scott1980.lean`); `Definition71.lean` gained
+`ComputablePresentation.reindexInvolutive`.
+
+**Status: Theorem 8.8(b) Part 6 is ~40% done (6a/6b/6c ✅, 6d/6e pending).**
+
+**⚠️ Design pitfall found while starting 6d — read before attempting `splitEff`/`atomUCode` as
+originally planned.** The natural-looking plan ("build `splitEff` via `DAtom_recDecidable`/
+`splitULeft`/`splitURight`, then build `atomUCode : ℕ → ℕ` tracking `(pos, neg, ok, uCode)` state,
+prove `atomU splitEff (idxSet e) Set.univ δ n = UX (atomUCode …)`") **hits a real obstruction**:
+`splitULeft`/`splitURight`'s *value* depends on the specific `U`-code fed in, not just on the *set*
+it represents (`canonCode` clips-and-filters a list into `[0,1)` but never sorts/merges intervals,
+so two different codes for the same set can have different "first pairs", hence different midpoint
+splits). This means a `splitEff : Set ℕ → Set ℚ → Set ℕ → Set ℚ×Set ℚ` that recovers a `U`-code from
+its `B : Set ℚ` argument via `Classical.choice`/`Nat.find` (any way of "picking a representative
+code from the set") is **not guaranteed to pick the same code `atomUCode`'s own recursion tracks**,
+even though both are validly `SplitSpec`-satisfying — because `SplitSpec`'s conditions do **not**
+uniquely determine the split `(I, J)` as *sets* (many different valid splits of the same `B` satisfy
+disjoint-cover + emptiness-matching), so there is no way to characterize "the split
+`atomUCode` computes" purely propositionally without referring to the code itself. Two ways forward,
+neither attempted yet:
+1. **Avoid `Theorem88.lean`'s `Set`-level abstraction for the effective case entirely.** Build a
+   *self-contained*, code-only recursive construction (never touching `Set ℚ`/`Set ℕ` as
+   intermediate values) that computes `(posC, negC, ok, uCode)` state directly via `Nat.Primrec`
+   (exactly mirroring `DAtomDecidable.lean`'s `meetStep`/`meetFold` `Nat.pair`-accumulator idiom),
+   and prove its correctness (decoded state matches the intended `Set`-level meaning) by a
+   *from-scratch* induction, without needing a generic abstract `split`/`SplitSpec` detour. This
+   sidesteps the canonicity issue because the induction only ever talks about *the one sequence of
+   codes actually produced*, never about "some choice-extracted representative".
+2. **Check whether `IsComputableMap` can be established *without* `atomUCode` at all**, reusing
+   Theorem 8.8(a)'s *already-built* classical `Yidx`/`domainIso` (with `splitChoice`, not a new
+   effective splitter) — since `Yidx`'s *set-theoretic content* is fully characterized by
+   `genAtom (idxSet e)`-emptiness (Part 6c, now decidable) via `atomU_eq_genAtom`/`transfer_*`,
+   independently of which valid `split` built it. If the relation `IsComputableMap` needs to show
+   r.e. (`f.rel (e n) (UX m)`) reduces — via a *finite* bounded search over `Fin k → Bool` sign
+   sequences at each depth `k`, using genAtom-emptiness-decidability — to a decidable/r.e. condition
+   stated *only* in terms of `n, m` and Part 5/6c's deciders, then none of `splitEff`/`atomUCode` are
+   needed, and Part 6 is *already done* as of 6c. **This path was not fully checked** — it hinges on
+   pinning down `f`'s exact neighbourhood relation (`domainIso` is an order-iso of *filters*
+   (`D.Element ≃o D'.Element`), and this codebase does not yet have a general "`DomainIso` induces an
+   `ApproximableMap`" lemma (checked: absent from `Basic.lean`/`Definition610.lean`) — building that
+   bridge, and finding the right r.e. characterization of its neighbourhood relation, is the actual
+   next research question, not a mechanical next step.
+
+**Next session should decide between (1) and (2) above before writing more code** — resist the
+temptation to "just try `Nat.find`-based canonicalization" for `splitEff`; it doesn't fix the
+underlying issue since `splitULeft ∘ Nat.find` still isn't provably equal to `atomUCode`'s tracked
+value without an *additional, currently-unproved* fact that `canonCode` is unique-per-set (checked:
+it is **not**, e.g. `[(0,0.5),(0.5,1)]` vs `[(0,1)]` both canonicalize to themselves but represent the
+same set with different "first pairs"). **Parts 7–8 remain untouched.**
