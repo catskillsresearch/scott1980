@@ -2665,15 +2665,16 @@ def dropCode (n c : ℕ) : ℕ :=
   let len := listLenChar c
   tabCode dropListTabFn (Nat.pair (len - n) (Nat.pair n c)) (len - n)
 
-/-- Two lists agree when every `getD` index does. (`Classical.choice` from `List.ext_getElem`.) -/
+/-- Two lists agree when every `getD` index does. (Choice-free: `by_contra`/`Classical.choice` is
+avoided by case-splitting on `Nat.lt_trichotomy` — a decidable fact — instead.) -/
 theorem list_eq_of_getD {l1 l2 : List ℕ} (h : ∀ i d, l1.getD i d = l2.getD i d) : l1 = l2 := by
   have hlen : l1.length = l2.length := by
-    by_contra hne
-    rcases Nat.lt_or_gt_of_ne hne with hlt | hgt
+    rcases Nat.lt_trichotomy l1.length l2.length with hlt | heq | hgt
     · have h1 := h l1.length 1
       have h2 := h l1.length 2
       rw [getD_eq_default_cf l1 _ (Nat.le_refl _), getD_eq_getElem_cf l2 _ (by omega)] at h1 h2
       omega
+    · exact heq
     · have h1 := h l2.length 1
       have h2 := h l2.length 2
       rw [getD_eq_getElem_cf l1 _ (by omega), getD_eq_default_cf l2 _ (Nat.le_refl _)] at h1 h2
@@ -2732,11 +2733,12 @@ private theorem appendListTabFn_eq (c1 c2 len1 i : ℕ) :
         (decodeList c1).getD i 0
       else
         (decodeList c2).getD (i - len1) 0 := by
+  unfold appendListTabFn
+  simp only [unpair_pair_fst, unpair_pair_snd]
   by_cases hlt : i < len1
-  · simp [appendListTabFn, unpair_pair_fst, unpair_pair_snd, hlt, isZero,
-      (isZero_succ_sub_len1 i len1).2 hlt, selectFn_one, nthCode_eq]
-  · simp [appendListTabFn, unpair_pair_fst, unpair_pair_snd, hlt,
-      isZero_succ_sub_len1_zero i len1 (Nat.le_of_not_gt hlt), selectFn_zero, nthCode_eq]
+  · rw [if_pos hlt, (isZero_succ_sub_len1 i len1).2 hlt, selectFn_one, nthCode_eq]
+  · rw [if_neg hlt, isZero_succ_sub_len1_zero i len1 (Nat.le_of_not_gt hlt), selectFn_zero,
+      nthCode_eq]
 
 theorem appendListCode_eq (c1 c2 : ℕ) :
     decodeList (appendListCode c1 c2) = decodeList c1 ++ decodeList c2 := by
@@ -2858,7 +2860,9 @@ theorem primrec_appendListTabFn : Nat.Primrec appendListTabFn := by
   have hleft := primrec_nthCode.comp (hc1.pair (Nat.Primrec.pair hi (Nat.Primrec.const 0)))
   have hright := primrec_nthCode.comp
     (hc2.pair (Nat.Primrec.pair (primrec_sub₂ hi hlen1) (Nat.Primrec.const 0)))
-  exact (primrec_selectFn hlt hleft hright).of_eq fun w => by simp [appendListTabFn]
+  exact (primrec_selectFn hlt hleft hright).of_eq fun w => by
+    unfold appendListTabFn
+    simp only [unpair_pair_fst, unpair_pair_snd]
 
 theorem primrec_appendListCode : Nat.Primrec (fun t => appendListCode t.unpair.1 t.unpair.2) := by
   have hc1 := Nat.Primrec.left
@@ -2869,7 +2873,8 @@ theorem primrec_appendListCode : Nat.Primrec (fun t => appendListCode t.unpair.1
   have hp := hc1.pair (hc2.pair hlen1)
   have hr := (hsum.pair hp).pair hsum
   refine ((primrec_tabCode primrec_appendListTabFn).comp hr).of_eq fun t => by
-    simp [appendListCode, unpair_pair_fst, unpair_pair_snd]
+    unfold appendListCode
+    simp only [unpair_pair_fst, unpair_pair_snd]
 
 theorem primrec_takeListTabFn : Nat.Primrec takeListTabFn :=
   (primrec_nthCode.comp

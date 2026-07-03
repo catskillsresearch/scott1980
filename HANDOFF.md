@@ -6507,3 +6507,86 @@ a witness `i₀` with `qChar(i₀,n₀) = 1`, the singleton list-code `[Nat.pair
 from `P.masterIdx`, `V`-consistent with everything since `P.masterIdx` indexes `V`'s master) to a raw
 index `n` with `Xₙ = X n₀ ∩ V.master = X n₀ = Y`. See `arxiv.md`'s Theorem 8.8(c) umbrella row's Proof
 Notes for the full 6-part plan.
+
+## 2026-07-03 checkpoint: Theorem 8.8(c)(v) — a primitive-recursive `.inter` for `D_X`, Pass
+
+**What was built, new file `Theorem88l.lean` (imports `Theorem88k.lean`), `lake build` green, zero
+`sorry`:**
+
+- **`D_inter c₁ c₂ := appendListCode c₁ c₂`** (`Recursive.lean`'s Exercise 7.22 combinator, reused
+  outright). This is exactly right because `myFoldCode` is a *left* fold from `P.masterIdx`, so by
+  `List.foldl_append`, folding the concatenated list decomposes as folding `c₂`'s list *starting
+  from* `myFoldCode c₁` instead of from `P.masterIdx` (`D_X_inter_eq`).
+- **The one genuine lemma, `myFoldl_inter_of_le`**: refolding a list `l` from a start `n` that is
+  `⊆` (in `P.X`) another start `r` reproduces `P.X n ∩ P.X (fold of l from r)`, *provided* this is
+  already known `V`-consistent at the *end* of the fold (`∃k, P.X k ⊆ P.X n ∩ P.X (l.foldl … r)`).
+  No `a`/`DiagFixed` apparatus needed — purely structural about `myStep`'s gate. The subtlety:
+  `myStep`'s consistency gate is *accumulator-dependent*, so refolding from a smaller start could in
+  principle skip steps the original fold took. The induction (generalizing over both `n`/`r`
+  advancing together) shows this never happens: a step failing from `r` also fails from `n` (else
+  success from the ⊆-smaller `n` would witness success from `r` too — no extra hypothesis needed);
+  a step succeeding from `r` also succeeds from `n`, because the *global* end-of-fold witness is
+  inherited by *every* intermediate accumulator via the fold's monotone-shrinking property
+  (`myStep_subset`/`myFoldl_subset`: folding only ever shrinks `P.X`).
+- **`D_X_inter_spec`**: applies `myFoldl_inter_of_le` with `n := myFoldCode c₁`, `r :=
+  P.masterIdx` (`n ⊆ r` via `V.sub_master`); the hypothesis is already `V`-side since `D_X`'s
+  codomain literally *is* `P.X` of a raw index (no reindexing needed, unlike Part 4's `cons_iff`).
+
+**Pitfall hit and fixed (upstream, in `Recursive.lean`): `appendListCode_eq`/
+`primrec_appendListCode` were `Classical.choice`-tainted before this session**, even though nothing
+in Theorem 8.8(c) had used them yet. Traced to three independent spots, all in code that predates
+this session:
+1. `list_eq_of_getD`'s length-comparison used `by_contra hne; rcases Nat.lt_or_gt_of_ne hne` —
+   `by_contra` invokes `Classical.byContradiction`. Fixed by case-splitting on the *decidable*
+   `Nat.lt_trichotomy` directly (three-way `rcases`, no `by_contra`).
+2. `appendListTabFn_eq`'s proof used a bare `simp [appendListTabFn, …, hlt, …]` (full default simp
+   set) rather than `simp only`; the default set apparently routed through a classically-proved
+   lemma even though the true content is decidable/computational. Fixed by `unfold` + `simp only
+   [unpair_pair_fst, unpair_pair_snd]` + explicit `by_cases`/`rw [if_pos/if_neg, …]`.
+3. `primrec_appendListTabFn`/`primrec_appendListCode`'s closing `.of_eq fun w => by simp [...]`
+   (again a bare `simp`, not `simp only`) had the same issue. Fixed by `unfold` + `simp only
+   [unpair_pair_fst, unpair_pair_snd]` (no `rfl`/`simp` needed beyond that — bare `rfl` alone hit a
+   `whnf` timeout on the large composed term, so the explicit `simp only` normalization is load-
+   bearing, not just style).
+
+**Lesson: a bare `simp [...]` (vs `simp only [...]`) can silently pull in a `Classical.choice`-
+tainted lemma from the default simp set even when the goal itself is fully decidable/computational
+— always audit axioms after using bare `simp` in choice-free files, and prefer `simp only` with an
+explicit lemma list when in doubt.** All three fixes are pure proof-script changes (no statement or
+`def` changed), so nothing downstream needed touching.
+
+**Second pitfall (this file): `rw [h] at *`/`rw [h1, h2] at hyp ⊢` can silently no-op or error on a
+hypothesis that doesn't contain one of the rewrite patterns**, aborting the whole tactic before
+reaching the goal (e.g. rewriting `myStep n e = n` "at hk" when `hk` never mentions `myStep n e` at
+all, only `myStep r e`). Fixed by rewriting each hypothesis/goal with exactly the lemmas that apply
+to it, never blanket `at *` or a shared lemma list across mismatched locations.
+
+**Third pitfall: `rw`'s trailing auto-`rfl` only fires on syntactic (not full-`whnf`) equality**, so
+goals like `P.X (myFold P qChar cons l) = P.X (l.foldl (myStep P qChar cons) P.masterIdx)` (equal by
+unfolding the plain `def myFold`, not by any rewrite) needed an explicit trailing `rfl` after the
+`rw` chain — several `have`s in this file (`D_X_inter_eq`'s `h1`, `D_X_inter_spec`'s `heq2`) needed
+this. Relatedly, `myFoldCode_eq`/`P`/`qChar`/`cons` are *explicit* arguments (per `Theorem88i.lean`'s
+`variable (P qChar cons)` scoping before its statement) — `(myFoldCode_eq c₁).symm` fails
+elaboration (`c₁ : ℕ` isn't a `ComputablePresentation`); must write `(myFoldCode_eq P qChar cons c₁)
+.symm` (this is the same pitfall flagged in the (iii) checkpoint, re-encountered here — worth
+double-checking explicit/implicit `variable` scoping *every* time a lemma from a different file is
+applied positionally rather than via `rw`, which unifies regardless).
+
+**Axiom audit:** `#print axioms` on every declaration in the file (`myStep_subset`,
+`myFoldl_subset`, `myFoldl_inter_of_le`, `D_inter`, `D_inter_primrec`, `D_X_inter_eq`,
+`D_X_inter_spec`) gives `⊆ {propext, Quot.sound}` — **fully choice-free**, and (per the
+`Recursive.lean` fixes above) so now are `appendListCode_eq`/`primrec_appendListCode`/
+`primrec_appendListTabFn`/`list_eq_of_getD` themselves. `lake build` (whole project) confirmed
+green.
+
+**`arxiv.md` updated**: Theorem 8.8(c)(v) row rewritten with the proof note above, marked **Pass**;
+the Theorem 8.8(c) umbrella row's status → "Partial (5 of 6 parts Pass — see sub-rows; (vi)
+Deferred)". **`Scott1980.lean` updated** to import `Theorem88l`.
+
+**Status: Theorem 8.8(c)(v) is `Pass`. Next: Theorem 8.8(c)(vi)** — final assembly. Package
+`D_X`/`D_inter`/`D_X_mem`/`D_X_surj`/`D_X_interEq_computable`/`D_X_cons_computable`/`D_inter_primrec`/
+`D_X_inter_spec` (plus `masterIdx := 0`, since `D_X 0 = P.X (myFoldCode … 0) = P.X (myFold … [])
+= P.X P.masterIdx = V.master`, using `decodeList_zero`/`myFold_nil`) into a
+`ComputablePresentation (fixedNbhd a)`, then state and prove the headline `theorem_8_8_c`: a
+computable, finitary projection of `U` yields an effectively given domain. See `arxiv.md`'s Theorem
+8.8(c) umbrella row's Proof Notes for the full 6-part plan.
