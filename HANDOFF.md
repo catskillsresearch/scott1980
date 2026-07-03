@@ -5851,3 +5851,104 @@ Overall Theorem 8.8(b) status is now **6/8 parts Pass** ((i)–(vi)), 2 Not Yet 
 `ComputablePresentation` (Part 3, `UComputablePresentation.lean`) — likely via the
 `fixMap_isComputable`/Theorem 8.6(c) r.e.-predicate idiom, bounded search over `U`'s presented
 intervals. Then Part 8: final assembly `theorem_8_8_b`.**
+
+---
+
+## 2026-07-02 (later still) — Theorem 8.8(b)(vii) — correction of the above plan, plus real progress: `Theorem88d.lean`'s `atomUCode`
+
+**The plan sketched immediately above turned out to be a dead end.** `IsComputableMap` for
+`Subsystem.inj`/`Subsystem.proj` against `DprimeUPresentation` needs the *cross*-relation
+`Yidx e n ⊆ UX m` to be r.e. — but `Yidx e n` (Theorem 8.8(a)'s `Yseq`, threaded through
+`splitChoice`) is a `Classical.choice`-picked *value*; `DprimeUPresentation` (Part 6) only ever
+proves `D'`'s own *index relations* (`interEq`/`cons`) decidable, never anything about *which*
+`U`-code `Yidx e n` happens to sit at. There is no way to extract an effective `U`-code for
+`Yidx e n` from `DprimeUPresentation` alone, so no bounded-search/r.e. argument over "`U`'s
+presented intervals" can get off the ground this way. This is a genuine correction, not a
+refinement, of the previous checkpoint's stated plan — recorded here so no future session re-tries
+the same dead end.
+
+**The real fix, now underway in new file `Scott1980/Neighborhood/Theorem88d.lean`:** abandon
+reusing `Theorem88.lean`'s generic, `Set`-valued `atomU`/`split : Set α→Set ℚ→Set α→Set ℚ×Set ℚ`
+machinery entirely (a `Set`-valued `split` can never be proved to agree with an independently-built
+`ℕ`-code tracker, since a set has many codes and `splitULeft`/`splitURight` key off *the specific
+code fed in* — this is the "design pitfall" from the 2026-07-02 (earlier) entry above, and it is
+fundamental to the `Set`-valued approach, not a `Yidx`-specific accident). Instead, build the
+**entire back-and-forth recursion natively as a `Nat.Primrec` function of `(depth, bit-source)`**,
+carrying an explicit `U`-code in its state from step zero, so "which code represents this atom" is
+never a question requiring choice — only ever "the code my own recursion already computed".
+
+**What `Theorem88d.lean` now has, fully proved, `lake build` green, zero `sorry`:**
+* **State encoding** `(remK, posC, negC, uCode)` packed via `packState`/`stateRem`/`statePos`/
+  `stateNeg`/`stateCode`, all `Nat.Primrec` (mirrors this codebase's usual 4-tuple-via-`Nat.pair`
+  idiom).
+* **`atomBase k`** (depth-0 state: `remK=k`, `posC=negC=0`, `uCode=UmasterIdx`) and **`atomStep
+  datomDec w`** (one recursion step: peel `bit := remK%2` off `remK`; extend `posC`/`negC` by
+  prepending the current depth `y` on whichever side `bit` selects; call `datomDec` (abstracted —
+  instantiated below) twice to test emptiness of the two candidate refinements; the new `uCode` is
+  `0` (junk) if the *selected* branch is `D`-side empty, carried over unchanged if the *other*
+  branch is empty (no genuine split needed), else `splitULeft`/`splitURight` of the old `uCode` —
+  exactly `Theorem88.lean`'s three-case `exists_split`, but entirely at the code level, with no
+  `Set`-valued intermediate ever appearing), both **`Nat.Primrec`** (`primrec_atomBase`/
+  `primrec_atomStep`).
+* **`atomUCodeState P t := t.unpair.2.rec (atomBase t.unpair.1) (atomStep (datomDec P) ∘ …)`**
+  (the full recursion, via `Nat.Primrec.prec`), and its three projections `atomUPos`/`atomUNeg`/
+  `atomUCode : (n k : ℕ) → ℕ` (depth `n`, bit-source `k`) — all `Nat.Primrec`
+  (`primrec_atomUCodeState`/`primrec_atomUPos`/`primrec_atomUNeg`/`primrec_atomUCode`). Here
+  `datomDec P := (DAtom_recDecidable (P0 P)).choose`, the `Nat.Primrec` decider Part 5 already
+  extracts (`primrec_datomDec`, `datomDec_spec`).
+* **The headline per-step-correctness theorem, `genAtom_atomUCode`**: for every bit-source `k` and
+  depth `n`, `genAtom (idxSet (e P)) Set.univ (deltaOf k) n = DAtom (P0 P) (decodeList (atomUPos P
+  n k)) (decodeList (atomUNeg P n k))`, where `deltaOf k i := decide ((k / 2^i) % 2 = 1)` reads
+  `k`'s bits low-to-high (matching `atomStep`'s `remK % 2`/`remK / 2` peeling order). Proved by a
+  clean induction mirroring `Theorem88b.lean`'s own `genAtom_eq_DAtom` (same shape, `∩`-comm at the
+  end) but using two new helper lemmas `DAtom_cons_pos`/`DAtom_cons_neg` (prepend instead of
+  `Theorem88b.lean`'s `posnegList`'s append — the natural direction for this recursion) plus
+  `atomUPos_succ`/`atomUNeg_succ` (closed forms for one recursion step) and
+  `stateRem_atomUCodeState` (`stateRem (atomUCodeState P (pair k n)) = k / 2^n`, i.e. the
+  unconsumed bit-source at depth `n` is exactly `k`'s upper bits).
+* Also present (`unionUX`/`UX_unionUX`/`U_mem_union_UX`, via `appendCode`): a `Nat.Primrec` union
+  of two `U`-codes, needed for the next step (`YseqCode`, below) but not yet used.
+
+**Axiom footprint:** `primrec_atomStep`/`primrec_atomBase` (the raw `Nat.Primrec` combinators) are
+`⊆ {propext, Quot.sound}` — genuinely choice-free. `datomDec`/`atomUCodeState`/`primrec_atomUCodeState`/
+`genAtom_atomUCode` carry `Classical.choice`, inherited *only* from naming `datomDec := (DAtom_recDecidable
+…).choose` (the same "the function itself is choice-free, only its bare-existential name needs
+`.choose`" situation as `DprimeUPresentation`, Part 6) — not a new exception.
+
+**What's still missing before Part 7 (`IsComputableMap`) itself, in order:**
+1. **The `atomUCode` invariant**, mirroring `Theorem88.lean`'s `atomU_invariant` but proved fresh
+   at the code level (do **not** try to reuse `atomU_invariant` itself — see above, a `Set`-valued
+   `split` cannot be built from this construction without choice creeping back in): for every `n`,
+   (a) *match*: `DAtom (P0 P) (decodeList (atomUPos P n k)) (decodeList (atomUNeg P n k)) = ∅ ↔ UX
+   (atomUCode P n k) = ∅` (immediate from `genAtom_atomUCode` once the `U`-side half is in hand);
+   (b) *validity*: `UX (atomUCode P n k) = ∅ ∨ U.mem (UX (atomUCode P n k))`; (c) *pairwise
+   disjointness*: if `deltaOf k` and `deltaOf k'` disagree at some `j < n`, then `UX (atomUCode P n
+   k) ∩ UX (atomUCode P n k') = ∅`. Prove by induction on `n`, case-splitting on the same three
+   `atomStep` branches (`emptyI`/`emptyJ`/genuine-split-via-`splitULeft`/`splitURight`) — the proof
+   shape should closely track `atomU_invariant`'s (Theorem88.lean lines ~220–341), substituting
+   `UX_splitULeft`/`UX_splitURight` (Part 4, unconditional) for `U_no_minimal`'s classical split.
+2. **`YseqCode`** (Scott's `Yₙ`, coded): a `Nat.Primrec` union, over the `2ⁿ` bit-sources `k < 2^n`
+   with bit `n` forced to `1` (i.e. `k + 2^n` for `k < 2^n`), of `atomUCode P (n+1) (k+2^n)` — via a
+   bounded fold with `unionUX` (already built), in the style of `Recursive.lean`'s existing
+   `bExistsFn`/`bForallFn` bounded folds. Then prove `UX (YseqCode P n) = Yseq (idxSet (e P))
+   Set.univ (deltaOf ·) n`-analogue (the `Set`-level closed form Scott needs), using invariant (c)
+   above for the "no other atom leaks a point in" half, mirroring `split_fst_eq_inter_Yseq`/
+   `atomU_succ_eq` (Theorem88.lean lines ~384–450).
+3. **Assemble `D''`**: a fresh `NeighborhoodSystem ℚ` subsystem via `n ↦ UX (YseqCode P n)`
+   (or reuse `Theorem88a.lean`'s `DprimeU`/`domainIso` shape with `Yseq` replaced by this `YseqCode`
+   closed form), prove `D ≅ᴰ D''` and `D'' ◁ U`, then a `ComputablePresentation D''` with master
+   index `0` and `X n := UX (YseqCode P n)` (this time genuinely code-driven, unlike `Yidx`).
+4. **`IsComputableMap`** for `D''`'s `Subsystem.inj`/`Subsystem.proj` against `U`'s presentation:
+   now `rel (X n) (UX m) ↔ UX (YseqCode P n) ⊆ UX m`, a *decidable* (not just r.e.) predicate in
+   `(n, m)` once `YseqCode` is in hand (`U`-code inclusion should already be decidable via existing
+   `DAtomDecidable.lean`/`Recursive.lean` interval machinery — check for a `subsetUChar`-style
+   decider before building a new one) — decidability trivially implies `REPred₂`, satisfying
+   `Definition72.lean`'s `IsComputableMap`.
+5. Part 8: final assembly `theorem_8_8_b`, updating `arxiv.md`'s (vii)/(viii) rows to Pass.
+
+**Correction to `arxiv.md`'s (vii) row and this file's own previous checkpoint**: both, as of this
+entry, are updated to describe the actual (`atomUCode`-based) plan above, replacing the retracted
+`DprimeUPresentation`-only plan. **Status: Theorem 8.8(b)(vii) is IN PROGRESS (not Pass) — `Theorem88d.lean`
+Part 7a (the recursion + its per-step correctness, `genAtom_atomUCode`) is done and `lake build`
+green; Parts 7b (invariant + `YseqCode` + `D''` assembly) and 7c (`IsComputableMap` itself) remain,
+per the numbered plan above.**
