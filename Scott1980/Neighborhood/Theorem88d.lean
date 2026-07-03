@@ -46,10 +46,18 @@ recursion already computed". The three ingredients, all already built:
 
 ## Status
 
-This file lays the **foundational recursion** (`atomUCode`, `Nat.Primrec`) and its **per-step
-correctness** (Part 7a): decoding `atomUCode`'s state reproduces exactly Scott's atom-emptiness
-invariant, with the `U`-side code meaningful exactly when the `D`-side atom is non-empty. The
-remaining assembly (Part 7b: a `Yseq`-analogue as a *union* over `2ⁿ` such atoms, disjointness,
+This file lays the **foundational recursion** (`atomUCode`, `Nat.Primrec`), its **per-step `D`-side
+correctness** (`genAtom_atomUCode`), and now **Theorem 8.8(b)(vii)(1), the full `atomUCode`
+invariant**: `atomUCode_mem` (validity, unconditional — `UX` is a total surjection onto `U`'s
+neighbourhoods, so this needs no emptiness hypothesis at all, unlike `Theorem88.lean`'s `atomU`) and
+`atomUCode_disjoint` (atoms for bit-sources disagreeing below depth `n`, and *both* still `D`-side
+non-empty, are `U`-side disjoint). The restriction to non-empty atoms is unavoidable and harmless:
+`atomUCode_eq_zero_of_empty` shows a once-empty atom's code freezes at the junk value `0` forever, so
+every junk atom aliases to the same `UX 0` — disjointness genuinely fails there, but `(vii)(2)`'s
+`YseqCode` filters junk `k`'s out of its union, so this restricted invariant is exactly what is
+needed downstream.
+
+The remaining assembly (Part 7b: a `Yseq`-analogue as a *union* over `2ⁿ` such atoms, disjointness,
 subset/intersection transfer, `D''`'s `NeighborhoodSystem`/`ComputablePresentation`,
 `D ≅ᴰ D''`/`D'' ◁ U`; Part 7c: `IsComputableMap` itself) is **not yet done** — see `HANDOFF.md` for
 the detailed continuation plan. Nothing in this file is a placeholder or `sorry`; everything proved
@@ -251,17 +259,34 @@ variable {D : NeighborhoodSystem α} (P : ComputablePresentation D)
 /-- **The extracted `D`-atom-emptiness decider for `P0 P`.** Obtained non-constructively
 (`Classical.choice`, via `RecDecidable`'s bare existential) from `DAtom_recDecidable (P0 P)`; the
 resulting *function* is exactly as computable as any other `Nat.Primrec` function in this
-codebase — only *naming* it needs choice, mirroring `DprimeUPresentation`'s own `noncomputable`. -/
-noncomputable def datomDec : ℕ → ℕ := (DAtom_recDecidable (P0 P)).choose
+codebase — only *naming* it needs choice, mirroring `DprimeUPresentation`'s own `noncomputable`.
+Wrapped in `isOne` so the result is *literally* `{0,1}`-valued (not just "`= 1` iff ..."): `(vii)(1)`'s
+`selectFn`-based case analysis on `emptyI`/`emptyJ` needs the *exact* value `0` on the false side, not
+merely `≠ 1` (`selectFn`, unlike a genuine `if`, is only well-behaved on a literal `0`/`1` condition). -/
+noncomputable def datomDec : ℕ → ℕ := fun n => isOne ((DAtom_recDecidable (P0 P)).choose n)
 
-theorem primrec_datomDec : Nat.Primrec (datomDec P) := (DAtom_recDecidable (P0 P)).choose_spec.1
+theorem primrec_datomDec : Nat.Primrec (datomDec P) :=
+  (primrec_isOne.comp (DAtom_recDecidable (P0 P)).choose_spec.1).of_eq fun _ => rfl
 
 theorem datomDec_spec (posC negC : ℕ) :
     datomDec P (Nat.pair posC negC) = 1 ↔ DAtom (P0 P) (decodeList posC) (decodeList negC) = ∅ := by
+  unfold datomDec
+  rw [isOne_eq_one_iff]
   have h := (DAtom_recDecidable (P0 P)).choose_spec.2 (Nat.pair posC negC)
   dsimp only at h
   rw [unpair_pair_fst, unpair_pair_snd] at h
   exact h.symm
+
+theorem datomDec_le_one (n : ℕ) : datomDec P n ≤ 1 := by unfold datomDec; exact isOne_le_one _
+
+/-- The complementary fact to `datomDec_spec`: whenever the `D`-side atom is *non*-empty,
+`datomDec` reads out exactly `0` (not just "`≠ 1`") — needed so `selectFn`'s zero-branch actually
+fires in the per-step unfoldings below. -/
+theorem datomDec_eq_zero (posC negC : ℕ) (h : DAtom (P0 P) (decodeList posC) (decodeList negC) ≠ ∅) :
+    datomDec P (Nat.pair posC negC) = 0 := by
+  have hle := datomDec_le_one P (Nat.pair posC negC)
+  have hne : datomDec P (Nat.pair posC negC) ≠ 1 := fun he => h ((datomDec_spec P posC negC).mp he)
+  omega
 
 /-- **The full state recursion**, packing `atomBase`/`atomStep (datomDec P)` via `Nat.Primrec.prec`:
 `atomUCodeState P (pair k n)` is the depth-`n` state for bit-source `k`. -/
@@ -385,5 +410,261 @@ theorem genAtom_atomUCode (k : ℕ) :
         simp [hδ]
       rw [hstep, ih, atomUPos_succ, atomUNeg_succ, hbit0, selectFn_zero, selectFn_zero,
         decodeList_succ, unpair_pair_fst, unpair_pair_snd, DAtom_cons_neg, Set.inter_comm]
+
+/-! ## Theorem 8.8(b)(vii)(1) — the `atomUCode` invariant
+
+Unlike `Theorem88.lean`'s `atomU` (valued in genuine `Set ℚ`, where `∅` is an honest value),
+`UX : ℕ → Set ℚ` is a **total surjection onto `U`'s neighbourhoods** (`U_mem_UX`, unconditional:
+`canonCode`'s degenerate-input fallback is `U.master`, never `∅`) — no code represents the empty
+set. So the right invariant here is *not* `atomU_invariant`'s emptiness-matching clause "(■)"
+verbatim; instead:
+
+* **validity** holds completely for free, for *every* code (`U_mem_UX`), empty match or not;
+* **disjointness** only holds, and only needs to hold, between two atoms that are *both* still
+  `D`-side non-empty (`atomUEmpty = 0`) — once a bit-source's atom goes empty its code is frozen at
+  the junk value `0` forever (`atomUCode_eq_zero_of_empty` below), and *all* junk atoms alias to the
+  same `UX 0`, so disjointness genuinely fails between two junk atoms (or junk vs. non-junk) and must
+  be excluded; `(vii)(2)`'s `YseqCode` filters junk `k`'s out of its union, so this restricted
+  disjointness is exactly what is needed downstream. -/
+
+/-- **`D`-side atom emptiness at depth `n`, for bit-source `k`** — `1` iff the accumulated
+`(pos, neg)` constraint pair already denotes the empty `D`-index atom. -/
+noncomputable def atomUEmpty (n k : ℕ) : ℕ := datomDec P (Nat.pair (atomUPos P n k) (atomUNeg P n k))
+
+theorem atomUEmpty_eq_one_iff (n k : ℕ) :
+    atomUEmpty P n k = 1 ↔ DAtom (P0 P) (decodeList (atomUPos P n k)) (decodeList (atomUNeg P n k)) = ∅ :=
+  datomDec_spec P _ _
+
+/-- **`atomUEmpty` reads off `genAtom`'s own emptiness**, via `genAtom_atomUCode`. -/
+theorem atomUEmpty_eq_one_iff_genAtom (n k : ℕ) :
+    atomUEmpty P n k = 1 ↔ genAtom (idxSet (e P)) Set.univ (deltaOf k) n = ∅ := by
+  rw [atomUEmpty_eq_one_iff, ← genAtom_atomUCode]
+
+theorem atomUEmpty_eq_zero_iff_genAtom (n k : ℕ) :
+    atomUEmpty P n k = 0 ↔ genAtom (idxSet (e P)) Set.univ (deltaOf k) n ≠ ∅ := by
+  have hle : atomUEmpty P n k ≤ 1 := datomDec_le_one P _
+  have h1 := atomUEmpty_eq_one_iff_genAtom P n k
+  constructor
+  · intro h0 hempty; exact absurd (h1.mpr hempty) (by omega)
+  · intro hne; by_contra h0; exact hne (h1.mp (by omega))
+
+/-! ### The zero-depth base case, unconditionally (no dependence on `k`) -/
+
+theorem atomUPos_zero (k : ℕ) : atomUPos P 0 k = 0 := by
+  simp [atomUPos, atomUCodeState, atomBase]
+
+theorem atomUNeg_zero (k : ℕ) : atomUNeg P 0 k = 0 := by
+  simp [atomUNeg, atomUCodeState, atomBase]
+
+theorem atomUCode_zero (k : ℕ) : atomUCode P 0 k = UmasterIdx := by
+  simp [atomUCode, atomUCodeState, atomBase]
+
+/-! ### Unfolding the `U`-side code one step
+
+Mirrors `atomUPos_succ`/`atomUNeg_succ`: `atomUCode P (n+1) k` is a nested `selectFn` on the actual
+bit `(k / 2^n) % 2` and the *two* hypothetical extension-emptiness checks (whichever the actual bit
+picks decides `0`-vs-carry-vs-split; the *other* is exactly the sibling's own `atomUEmpty` at depth
+`n+1`, which is what powers the disjointness argument below). -/
+theorem atomUCode_succ (k n : ℕ) :
+    atomUCode P (n + 1) k =
+      selectFn ((k / 2 ^ n) % 2)
+        (selectFn (datomDec P (Nat.pair (Nat.pair n (atomUPos P n k) + 1) (atomUNeg P n k))) 0
+          (selectFn (datomDec P (Nat.pair (atomUPos P n k) (Nat.pair n (atomUNeg P n k) + 1)))
+            (atomUCode P n k) (splitULeft (atomUCode P n k))))
+        (selectFn (datomDec P (Nat.pair (atomUPos P n k) (Nat.pair n (atomUNeg P n k) + 1))) 0
+          (selectFn (datomDec P (Nat.pair (Nat.pair n (atomUPos P n k) + 1) (atomUNeg P n k)))
+            (atomUCode P n k) (splitURight (atomUCode P n k)))) := by
+  unfold atomUCode atomUPos atomUNeg
+  rw [atomUCodeState_succ]
+  unfold atomStep
+  simp only [wY, wState, unpair_pair_fst, unpair_pair_snd, stateCode_packState,
+    stateRem_atomUCodeState]
+
+/-- The two hypothetical checks appearing in `atomUCode_succ` are exactly `atomUEmpty` at depth
+`n + 1`, evaluated at whichever of the two bit-sources through `n` realizes each hypothesis. In
+particular, for the *actual* bit-source `k` itself: whichever branch `(k/2^n)%2` selects reproduces
+`atomUEmpty P (n+1) k` verbatim. -/
+theorem atomUEmpty_succ (k n : ℕ) :
+    atomUEmpty P (n + 1) k =
+      selectFn ((k / 2 ^ n) % 2)
+        (datomDec P (Nat.pair (Nat.pair n (atomUPos P n k) + 1) (atomUNeg P n k)))
+        (datomDec P (Nat.pair (atomUPos P n k) (Nat.pair n (atomUNeg P n k) + 1))) := by
+  unfold atomUEmpty
+  rw [atomUPos_succ, atomUNeg_succ]
+  rcases Nat.mod_two_eq_zero_or_one (k / 2 ^ n) with hbit | hbit <;>
+    simp only [hbit, selectFn_zero, selectFn_one]
+
+/-! ### Congruence: the recursion depends only on `deltaOf k`'s first `n` bits -/
+
+/-- **Congruence for the whole packed triple**: bit-sources agreeing on `deltaOf` below `n` produce
+identical `(pos, neg, code)` triples at depth `n` — the code-level analogue of `genAtom_congr`/
+`atomU_congr`, proved jointly (the three components interact through `atomUCode_succ`'s two
+`datomDec` checks, which read `atomUPos`/`atomUNeg` at depth `n`). -/
+theorem atomUCodeState_congr {n : ℕ} :
+    ∀ {k k' : ℕ}, (∀ i < n, deltaOf k i = deltaOf k' i) →
+      atomUPos P n k = atomUPos P n k' ∧ atomUNeg P n k = atomUNeg P n k' ∧
+        atomUCode P n k = atomUCode P n k' := by
+  induction n with
+  | zero =>
+    intro k k' _
+    exact ⟨(atomUPos_zero P k).trans (atomUPos_zero P k').symm,
+      (atomUNeg_zero P k).trans (atomUNeg_zero P k').symm,
+      (atomUCode_zero P k).trans (atomUCode_zero P k').symm⟩
+  | succ n ih =>
+    intro k k' h
+    obtain ⟨ihpos, ihneg, ihcode⟩ := ih (fun i hi => h i (Nat.lt_succ_of_lt hi))
+    have hbit : (k / 2 ^ n) % 2 = (k' / 2 ^ n) % 2 := by
+      have hh := h n (Nat.lt_succ_self n)
+      rcases Nat.mod_two_eq_zero_or_one (k / 2 ^ n) with h1 | h1 <;>
+        rcases Nat.mod_two_eq_zero_or_one (k' / 2 ^ n) with h2 | h2 <;>
+          simp_all [deltaOf]
+    refine ⟨?_, ?_, ?_⟩
+    · rw [atomUPos_succ, atomUPos_succ, ihpos, hbit]
+    · rw [atomUNeg_succ, atomUNeg_succ, ihneg, hbit]
+    · rw [atomUCode_succ, atomUCode_succ, ihpos, ihneg, ihcode, hbit]
+
+theorem atomUEmpty_congr {n k k' : ℕ} (h : ∀ i < n, deltaOf k i = deltaOf k' i) :
+    atomUEmpty P n k = atomUEmpty P n k' := by
+  obtain ⟨hpos, hneg, -⟩ := atomUCodeState_congr P h
+  unfold atomUEmpty
+  rw [hpos, hneg]
+
+/-! ### Validity: every code is a genuine `U`-neighbourhood, unconditionally -/
+
+/-- **Validity**, the free half of the invariant: `UX` never needs an emptiness hypothesis at all. -/
+theorem atomUCode_mem (n k : ℕ) : U.mem (UX (atomUCode P n k)) := U_mem_UX _
+
+/-! ### Junk propagates: once empty, `atomUCode` is frozen at `0` forever -/
+
+theorem genAtom_succ_subset (k n : ℕ) :
+    genAtom (idxSet (e P)) Set.univ (deltaOf k) (n + 1) ⊆
+      genAtom (idxSet (e P)) Set.univ (deltaOf k) n :=
+  Set.inter_subset_left
+
+theorem atomUEmpty_mono {n k : ℕ} (h : atomUEmpty P n k = 1) : atomUEmpty P (n + 1) k = 1 := by
+  rw [atomUEmpty_eq_one_iff_genAtom] at h ⊢
+  exact Set.subset_eq_empty (genAtom_succ_subset P k n) h
+
+theorem atomUEmpty_zero_of_succ {n k : ℕ} (h : atomUEmpty P (n + 1) k = 0) : atomUEmpty P n k = 0 := by
+  by_contra hne
+  have hle := datomDec_le_one P (Nat.pair (atomUPos P n k) (atomUNeg P n k))
+  have h1 : atomUEmpty P n k = 1 := by unfold atomUEmpty at hne hle ⊢; omega
+  exact absurd (atomUEmpty_mono P h1) (by omega)
+
+/-- **Junk is frozen at `0`.** Once a bit-source's `D`-side atom is empty, its `U`-code stays `0`
+forever after (both hypothetical continuations of an already-empty atom are themselves empty, so
+`atomUCode_succ`'s outer `selectFn` always lands on its `0` branch). -/
+theorem atomUCode_eq_zero_of_empty {n k : ℕ} (h : atomUEmpty P n k = 1) :
+    atomUCode P (n + 1) k = 0 := by
+  have hemp : DAtom (P0 P) (decodeList (atomUPos P n k)) (decodeList (atomUNeg P n k)) = ∅ :=
+    (atomUEmpty_eq_one_iff P n k).mp h
+  have hI : datomDec P (Nat.pair (Nat.pair n (atomUPos P n k) + 1) (atomUNeg P n k)) = 1 := by
+    refine (datomDec_spec P _ _).mpr ?_
+    rw [decodeList_succ, unpair_pair_fst, unpair_pair_snd, DAtom_cons_pos]
+    exact Set.subset_empty_iff.mp (hemp ▸ Set.inter_subset_right)
+  have hJ : datomDec P (Nat.pair (atomUPos P n k) (Nat.pair n (atomUNeg P n k) + 1)) = 1 := by
+    refine (datomDec_spec P _ _).mpr ?_
+    rw [decodeList_succ, unpair_pair_fst, unpair_pair_snd, DAtom_cons_neg]
+    exact Set.subset_empty_iff.mp (hemp ▸ Set.inter_subset_right)
+  rw [atomUCode_succ, hI, hJ]
+  rcases Nat.mod_two_eq_zero_or_one (k / 2 ^ n) with hbit | hbit <;>
+    simp [hbit, selectFn_zero, selectFn_one]
+
+/-- **Monotonicity**: as long as the depth-`(n+1)` atom is still non-empty, its `U`-code's
+neighbourhood shrinks from (or coincides with) the depth-`n` one — either the "carry unchanged"
+branch fires (equality) or a genuine `splitULeft`/`splitURight` fires (strict `⊆`, `UX_splitULeft`/
+`UX_splitURight`). Mirrors `split_fst_subset`/`split_snd_subset` from the abstract `Theorem88.lean`
+account, but unconditionally true here since `splitULeft`/`splitURight` need no side hypotheses. -/
+theorem atomUCode_subset {n k : ℕ} (h : atomUEmpty P (n + 1) k = 0) :
+    UX (atomUCode P (n + 1) k) ⊆ UX (atomUCode P n k) := by
+  have hemp := h
+  rw [atomUEmpty_succ] at hemp
+  rw [atomUCode_succ]
+  set posC := atomUPos P n k
+  set negC := atomUNeg P n k
+  set c := atomUCode P n k
+  rcases Nat.mod_two_eq_zero_or_one (k / 2 ^ n) with hbit | hbit
+  · simp only [hbit, selectFn_zero] at hemp ⊢
+    rw [hemp, selectFn_zero]
+    have hle := datomDec_le_one P (Nat.pair (Nat.pair n posC + 1) negC)
+    rcases (by omega : datomDec P (Nat.pair (Nat.pair n posC + 1) negC) = 0 ∨
+        datomDec P (Nat.pair (Nat.pair n posC + 1) negC) = 1) with h2 | h2
+    · rw [h2, selectFn_zero, UX_splitURight]; exact Set.inter_subset_left
+    · rw [h2, selectFn_one]
+  · simp only [hbit, selectFn_one] at hemp ⊢
+    rw [hemp, selectFn_zero]
+    have hle := datomDec_le_one P (Nat.pair posC (Nat.pair n negC + 1))
+    rcases (by omega : datomDec P (Nat.pair posC (Nat.pair n negC + 1)) = 0 ∨
+        datomDec P (Nat.pair posC (Nat.pair n negC + 1)) = 1) with h2 | h2
+    · rw [h2, selectFn_zero, UX_splitULeft]; exact Set.inter_subset_left
+    · rw [h2, selectFn_one]
+
+/-! ### Disjointness -/
+
+/-- **The core `(vii)(1)` result**: at every depth `n`, atoms for bit-sources disagreeing somewhere
+below `n` are disjoint on the `U`-side, *provided both are still `D`-side non-empty*. Proved by
+induction on `n`, mirroring `atomU_invariant`'s disjointness clause: either the disagreement is
+already below `n - 1` (recurse, then shrink both sides via `atomUCode_subset`), or it is exactly at
+the last bit (use `atomUCodeState_congr` to identify the shared depth-`(n-1)` ancestor, then
+`splitU_disjoint`, since both survive to depth `n` iff that step was a genuine split). -/
+theorem atomUCode_disjoint :
+    ∀ n k k', atomUEmpty P n k = 0 → atomUEmpty P n k' = 0 → (∃ i < n, deltaOf k i ≠ deltaOf k' i) →
+      UX (atomUCode P n k) ∩ UX (atomUCode P n k') = ∅ := by
+  intro n
+  induction n with
+  | zero => intro k k' _ _ ⟨i, hi, _⟩; exact absurd hi (Nat.not_lt_zero i)
+  | succ n ih =>
+    intro k k' hk hk' ⟨i, hi, hne⟩
+    by_cases hagree : ∀ j < n, deltaOf k j = deltaOf k' j
+    · have hδn : deltaOf k n ≠ deltaOf k' n := by
+        intro heq
+        apply hne
+        rcases Nat.lt_succ_iff_lt_or_eq.mp hi with hi' | rfl
+        · exact hagree i hi'
+        · exact heq
+      obtain ⟨hpos, hneg, hcode⟩ := atomUCodeState_congr P hagree
+      rw [atomUCode_succ, atomUCode_succ, hpos, hneg, hcode]
+      -- `Bool.eq_false_or_eq_true` enumerates `true` before `false`.
+      rcases Bool.eq_false_or_eq_true (deltaOf k n) with h1 | h1
+      · -- `deltaOf k n = true`: `k` takes bit `1`, so `deltaOf k' n` must be `false`.
+        have hbitk : (k / 2 ^ n) % 2 = 1 := (deltaOf_eq_true_iff k n).mp h1
+        have h2 : deltaOf k' n = false := by
+          rcases Bool.eq_false_or_eq_true (deltaOf k' n) with h2 | h2
+          · exact absurd (h1.trans h2.symm) hδn
+          · exact h2
+        have hbitk' : (k' / 2 ^ n) % 2 = 0 := by
+          rcases Nat.mod_two_eq_zero_or_one (k' / 2 ^ n) with hh | hh
+          · exact hh
+          · exact absurd ((deltaOf_eq_true_iff k' n).mpr hh) (by simp [h2])
+        have hkI : datomDec P (Nat.pair (Nat.pair n (atomUPos P n k) + 1) (atomUNeg P n k)) = 0 := by
+          have h := hk; rw [atomUEmpty_succ, hbitk, selectFn_one] at h; exact h
+        have hk'J : datomDec P (Nat.pair (atomUPos P n k') (Nat.pair n (atomUNeg P n k') + 1)) = 0 := by
+          have h := hk'; rw [atomUEmpty_succ, hbitk', selectFn_zero] at h; exact h
+        rw [hpos, hneg] at hkI
+        simp only [hbitk, hbitk', selectFn_zero, selectFn_one, hkI, hk'J]
+        exact splitU_disjoint (atomUCode P n k')
+      · -- `deltaOf k n = false`: `k` takes bit `0`, so `deltaOf k' n` must be `true`.
+        have hbitk : (k / 2 ^ n) % 2 = 0 := by
+          rcases Nat.mod_two_eq_zero_or_one (k / 2 ^ n) with hh | hh
+          · exact hh
+          · exact absurd ((deltaOf_eq_true_iff k n).mpr hh) (by simp [h1])
+        have h2 : deltaOf k' n = true := by
+          rcases Bool.eq_false_or_eq_true (deltaOf k' n) with h2 | h2
+          · exact h2
+          · exact absurd (h1.trans h2.symm) hδn
+        have hbitk' : (k' / 2 ^ n) % 2 = 1 := (deltaOf_eq_true_iff k' n).mp h2
+        have hkJ : datomDec P (Nat.pair (atomUPos P n k) (Nat.pair n (atomUNeg P n k) + 1)) = 0 := by
+          have h := hk; rw [atomUEmpty_succ, hbitk, selectFn_zero] at h; exact h
+        have hk'I : datomDec P (Nat.pair (Nat.pair n (atomUPos P n k') + 1) (atomUNeg P n k')) = 0 := by
+          have h := hk'; rw [atomUEmpty_succ, hbitk', selectFn_one] at h; exact h
+        rw [hpos, hneg] at hkJ
+        simp only [hbitk, hbitk', selectFn_zero, selectFn_one, hkJ, hk'I]
+        exact (Set.inter_comm _ _).trans (splitU_disjoint (atomUCode P n k'))
+    · push Not at hagree
+      obtain ⟨j, hj, hjne⟩ := hagree
+      have hd : UX (atomUCode P n k) ∩ UX (atomUCode P n k') = ∅ :=
+        ih k k' (atomUEmpty_zero_of_succ P hk) (atomUEmpty_zero_of_succ P hk') ⟨j, hj, hjne⟩
+      exact Set.subset_eq_empty
+        (Set.inter_subset_inter (atomUCode_subset P hk) (atomUCode_subset P hk')) hd
 
 end Scott1980.Neighborhood

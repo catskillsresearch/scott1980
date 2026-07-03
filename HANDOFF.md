@@ -5952,3 +5952,89 @@ entry, are updated to describe the actual (`atomUCode`-based) plan above, replac
 Part 7a (the recursion + its per-step correctness, `genAtom_atomUCode`) is done and `lake build`
 green; Parts 7b (invariant + `YseqCode` + `D''` assembly) and 7c (`IsComputableMap` itself) remain,
 per the numbered plan above.**
+## 2026-07-02 (yet later) — Theorem 8.8(b)(vii)(1) PASS: the `atomUCode` invariant, restated correctly
+
+**Started from the "what's still missing" plan above, item 1.** Discovered mid-proof that item 1's
+literal statement (in the plan above, and in `arxiv.md`'s pre-this-entry (vii)(1) row) is
+**impossible**: `UX : ℕ → Set ℚ` is a **total surjection onto `U`'s neighbourhoods**, unconditionally
+(`U_mem_UX`, already existing in `UComputablePresentation.lean`) — `canonCode`'s fallback on a
+degenerate/empty input list is `[(0,1)] = U.master`, never `∅`. So *no* code `c` has `UX c = ∅`, and
+the planned clause "(a) match: `DAtom(...) = ∅ ↔ UX (atomUCode P n k) = ∅`" has an RHS that is always
+false — unlike `Theorem88.lean`'s `atomU` (genuine `Set ℚ`-valued, where `∅` is an honest value).
+
+**Corrected invariant** (now `arxiv.md`'s (vii)(1) row, `Theorem88d.lean`):
+* **Validity is free**: `atomUCode_mem (n k) : U.mem (UX (atomUCode P n k)) := U_mem_UX _` — no
+  induction, no emptiness hypothesis, ever.
+* **Disjointness must be restricted** to bit-sources whose `D`-side atom is still non-empty at depth
+  `n` (`atomUEmpty P n k = 0`, new def): `atomUCode_disjoint : atomUEmpty P n k = 0 → atomUEmpty P n
+  k' = 0 → (∃ i < n, deltaOf k i ≠ deltaOf k' i) → UX (atomUCode P n k) ∩ UX (atomUCode P n k') = ∅`.
+  This restriction is unavoidable, not a weakening for convenience: `atomUCode_eq_zero_of_empty`
+  shows a once-`D`-side-empty atom's code freezes at the junk value `0` **forever** (both
+  hypothetical continuations of an already-empty atom are themselves empty, so `atomStep`'s outer
+  `selectFn` always lands on `0`), so *every* junk atom aliases to literally the same `UX 0` — real
+  disjointness between two junk atoms (or junk-vs-real) is simply false. `(vii)(2)`'s `YseqCode`
+  union will filter junk `k`'s out, so this restricted form is exactly what's needed downstream —
+  confirmed by re-deriving `atomU_invariant`'s succ-case proof shape (`Theorem88.lean` ~291–341) and
+  checking every step through with "both sides junk-filtered" substituted for "both sides `= ∅`".
+
+**Prerequisite fix, `datomDec` must be literally `{0,1}`-valued.** The pre-existing `datomDec P :=
+(DAtom_recDecidable (P0 P)).choose` only satisfies `datomDec (pair pos neg) = 1 ↔ DAtom(...) = ∅`
+(an `Exists.choose` witness for a bare `RecDecidable` existential) — it is **not** guaranteed `≤ 1`
+as a bare consequence of that spec, even though the underlying `DAtomEmptyChar` construction
+(`DAtomDecidable.lean`) *is* `≤ 1` by inspection. This matters here (didn't matter for
+`genAtom_atomUCode`, which never inspected `emptyI`/`emptyJ`'s values) because `atomUCode_succ`'s
+case analysis needs `selectFn`'s zero-branch to *actually* fire, and `selectFn c a b` (`c*a+(1-c)*b`
+in truncated `ℕ` subtraction) is only well-behaved as an if-then-else when `c` is a literal `0`/`1`,
+not merely `≠ 1`. **Fix:** redefined `datomDec P := fun n => isOne ((DAtom_recDecidable (P0
+P)).choose n)` (wrapping in the existing `isOne : ℕ → ℕ` primitive), giving `datomDec_le_one`
+(`isOne_le_one`) and `datomDec_eq_zero` (complement of `datomDec_spec`) for free, with
+`primrec_datomDec`/`datomDec_spec` updated to match — a **local, backward-compatible** change (only
+`primrec_datomDec`/`datomDec_spec` are used elsewhere in the file, both re-proved).
+
+**New lemmas added, `Theorem88d.lean`** (all `lake build` green, zero `sorry`): `atomUEmpty`
+(def) + `atomUEmpty_eq_one_iff`/`_eq_zero_iff_genAtom` (bridges to `DAtom`/`genAtom` via
+`genAtom_atomUCode`); `atomUPos_zero`/`atomUNeg_zero`/`atomUCode_zero` (depth-`0` base values,
+independent of `k`); `atomUCode_succ`/`atomUEmpty_succ` (per-step unfoldings of the `U`-code and
+emptiness-flag, mirroring `atomUPos_succ`/`atomUNeg_succ`'s existing style — extracted via `unfold
+atomUCode atomUPos atomUNeg; rw [atomUCodeState_succ]; unfold atomStep; simp [...]`, same recipe as
+before); `atomUCodeState_congr` (the code-level analogue of `genAtom_congr`/`atomU_congr` — bit
+sources agreeing on `deltaOf` below `n` give *identical* `(pos, neg, code)` triples at depth `n`,
+proved by a **joint** induction on all three components at once, since `atomUCode_succ`'s two
+`datomDec` checks read `atomUPos`/`atomUNeg` at depth `n`) + `atomUEmpty_congr` corollary;
+`genAtom_succ_subset`/`atomUEmpty_mono`/`atomUEmpty_zero_of_succ` (emptiness only ever propagates
+*forward* with `n`, never backward — needed to invoke the induction hypothesis at depth `n` from a
+depth-`(n+1)` non-emptiness hypothesis); `atomUCode_eq_zero_of_empty` (junk freezes at `0`);
+`atomUCode_subset` (once-non-empty atoms shrink-or-stay-equal depth-to-depth — the unconditional
+analogue of `split_fst_subset`/`split_snd_subset`, using `UX_splitULeft`/`UX_splitURight` directly
+since they need no side hypotheses here); and the headline `atomUCode_disjoint`, by induction on `n`:
+the succ case's `hagree`/`¬hagree` split is a direct code-level transcription of `atomU_invariant`'s
+own succ case (`Theorem88.lean` ~313–341) — `hagree` (agree below `n`, so must disagree exactly at
+`n`) uses `atomUCodeState_congr` to identify the shared ancestor `(posC, negC, c)`, then a **direct**
+`splitU_disjoint c` call (no abstract `SplitSpec` packaging needed, since Part 4's split is concretely
+unconditional); `¬hagree` (disagreement already below `n`) recurses via `ih` and shrinks both sides
+with `atomUCode_subset`, exactly `Set.subset_eq_empty (Set.inter_subset_inter h1 h2) hd`.
+
+**Pitfalls hit and fixed this session:** (i) a term-mode `by rcases ... with h|rfl \n · ... \n · ...`
+nested inside `fun heq => hne (by ...)` doesn't parse (bullet `·` needs a tactic block, not a bare
+term-mode `by` argument) — rewritten as a top-level `have hδn : ... := by intro heq; apply hne; ...`
+tactic block instead, matching `Theorem88.lean`'s own style. (ii) got `Bool.eq_false_or_eq_true`'s
+disjunct order backwards *again* in one of the two `rcases` branches inside the disjointness proof
+(same lesson as `genAtom_atomUCode`'s earlier session: the lemma is `b = true ∨ b = false`, **true
+first**) — caused two branches' conclusions to be swapped; fixed by re-deriving each branch's target
+value directly rather than guessing the order.
+
+**Axiom audit:** `#print axioms atomUCode_disjoint`/`atomUCode_mem`/`atomUCode_eq_zero_of_empty` all
+give `[propext, Classical.choice, Quot.sound]` — the `Classical.choice` is **pre-existing**, from
+`datomDec`'s `RecDecidable` extraction (documented since Part 5/`DAtomDecidable.lean`), not new
+taint introduced by this theorem.
+
+**`arxiv.md` updated**: (vii)(1) row rewritten to state the corrected invariant and marked **Pass**
+with a dense proof note; (vii) umbrella row's "0 of 4 sub-parts Pass" → "1 of 4 sub-parts Pass"; the
+top-level 8.8(b) umbrella row's (vii) summary sentence updated to mention (vii)(1) is now Pass.
+
+**Next:** 8.8(b)(vii)(2) — `YseqCode`, the `Nat.Primrec` union over `atomUCode P (n+1) (k+2^n)` for
+`k < 2^n` (filtering junk `k`'s via `atomUEmpty`, per the discussion above), proving it realizes
+Scott's `Yₙ` closed form using this entry's `atomUCode_disjoint` for the "no other atom leaks a
+point in" half (mirroring `split_fst_eq_inter_Yseq`/`atomU_succ_eq`, `Theorem88.lean` ~384–450). See
+the "what's still missing" numbered plan (items 2–5) two sections above — unchanged except item 1 is
+now done.
