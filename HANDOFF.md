@@ -16,7 +16,12 @@ choice-free `⊆{propext,Quot.sound}` since both `Exists`-eliminations land in t
 `Nonempty (ComputablePresentation _)`) and the headline `theorem_8_8_c : (fixedNbhd a).IsEffectivelyGiven
 ∧ fixedNbhd a ◁ U` (audits `⊆{propext,Classical.choice,Quot.sound}`, matching `theorem_8_8_a`/
 `theorem_8_8_b`'s identical footprint — inherited from `U`'s own upstream `Rat`-order taint, not new
-here). All choice-free apart from that one documented upstream exception
+here). All choice-free apart from that one documented upstream exception; **and Definition 8.9 is
+now COMPLETE**: a new general lemma `theorem_8_8_b_strong` (`Theorem88n.lean`) upgrades Theorem
+8.8(b) to a *direct* computable projection pair `D ⇄ U` (no intermediate isomorphic copy), applied
+to `𝒰+𝒰`/`𝒰×𝒰`/`𝒰→𝒰` to fix the six maps `i_+,j_+,i_×,j_×,i_→,j_→`, with the three combinators
+`a+b`/`a×b`/`a→b` (`Definition89.lean`) a direct transcription of Scott's formulas from pre-existing
+combinators (`cond`/`whichMap`/`paired`/`proj₀,₁`/`inMap₀,₁`/`outMap₀,₁`/`curry`/`evalMap`)
 
 You are a Lean 4 proof engineer formalizing Dana Scott's 1981 *Lectures on a Mathematical Theory of
 Computation* (PRG-19) in:
@@ -6682,3 +6687,80 @@ projection of `U` yields an effectively given domain). **Next up:** per `arxiv.m
 (fixed computable projection pairs for `U`'s `+`/`×`/`→`) and other Lecture VIII items remain
 "Formalization deferred" — grep `arxiv.md` for the next `Deferred`/`Not Yet` row when resuming, or
 consult the top of this file's Resume Protocol.
+
+## 2026-07-03 checkpoint: Definition 8.9 — Pass (new general lemma `theorem_8_8_b_strong`, plus the six fixed maps and three combinators)
+
+**The gap that had to be closed first.** `theorem_8_8_b` (`Theorem88g.lean`) only gives, for an
+effectively given `D`, an isomorphic *copy* `D' : NeighborhoodSystem ℚ` with a computable projection
+pair `D' ⇄ U` — it leaves `D ≅ᴰ D'` a bare `Nonempty (OrderIso …)`, with **no** computable pair
+`D ⇄ U` for `D` itself. Definition 8.9 needs exactly that, directly, for `D := 𝒰+𝒰/𝒰×𝒰/𝒰→𝒰`
+(none of which have carrier `ℚ`). Closing this gap turned out to be the bulk of the session's work.
+
+**New file `Theorem88n.lean` — `theorem_8_8_b_strong`, a *direct* computable projection pair `D ⇄ U`:**
+- **Key realization:** `domainIsoCode P`'s iso `D ≅ᴰ DprimeUCode P` (`Theorem88e.lean`) matches raw
+  indices *literally*: `D`'s index `n` (i.e. `e P n = P.X (eIdx P n)`, `eIdx` a **primitive-recursive
+  involution**, `Theorem88b.lean`) corresponds to `D''`'s *same* index `n` (`Yc P n`), via the
+  already-existing unconditional fact `embed_subset_iff_raw_code`/`embed_eq_iff_raw_code`
+  (`Theorem88e.lean`): `e P i ⊆/= e P j ↔ Yc P i ⊆/= Yc P j`, **for all `i j`**, no side condition.
+- **`isoInj P : D → DprimeUCode P` / `isoProj P : DprimeUCode P → D`** := `ofIso (domainIsoCode P)`
+  / `ofIso (domainIsoCode P).symm` (Theorem 2.7, `Approximable.lean` — *any* order-iso comes from an
+  approximable map, choice-free at the relational level). Projection-pair laws
+  (`isoProj_comp_isoInj`/`isoInj_comp_isoProj`, both **equalities** since it's a genuine iso) via the
+  standard `ext_of_toElementMap` + `toElementMap_ofIso` (×2) + `OrderIso.symm_apply_apply`/
+  `apply_symm_apply` recipe (mirrors `Exercise618.lean`'s `jmap_comp_imap`).
+- **Computability — the payoff of the "same index" realization:** unfolding `ofIso`/`toDprimeUCode`/
+  `toDCode`/`principal` and using `embed_eq_iff_raw_code` collapses *both* relations to a single
+  reindexed `incl_computable` query, with **no leftover existential**: `n := b` (resp. `m := eIdx P
+  a`) is always a valid witness, and any *other* witness gives the *same* answer by
+  `embed_eq_iff_raw_code` — so the general `∃n, …`/`∃m, …` shape is provably equivalent to a single
+  inclusion test:
+  - `isoInj_rel_iff_incl : (isoInj P).rel (P.X a) (Yc P b) ↔ P.X a ⊆ P.X (eIdx P b)`
+  - `isoProj_rel_iff_incl : (isoProj P).rel (Yc P b) (P.X a) ↔ Yc P b ⊆ Yc P (eIdx P a)`
+  Each is `incl_computable` reindexed by the primitive-recursive `eIdx P` (`eIdx_primrec`) in one
+  argument — `isoInj_isComputableMap`/`isoProj_isComputableMap`.
+- **`theorem_8_8_b_strong {D} (P) : ∃ i j, j.comp i = idMap D ∧ i.comp j ≤ idMap U ∧ IsComputableMap
+  P UComputablePresentation i ∧ IsComputableMap UComputablePresentation P j`**: compose
+  `(DprimeUCode_subsystem P).inj/.proj` (computable, `Theorem88f.lean`) with `isoInj`/`isoProj` via
+  `comp_assoc`/`comp_mono_gen`/`comp_isComputable`. The reasoning is choice-free, but the statement
+  audits `⊆{propext,Classical.choice,Quot.sound}` — **confirmed inherited, not new**: `U`
+  (`Definition87.lean`) already carries `Classical.choice`, and everything mentioning
+  `U`/`UComputablePresentation` (checked directly: `U_isEffectivelyGiven`, `DprimeUCode_subsystem`,
+  `YseqCode`) shows the identical footprint.
+
+**New file `Definition89.lean` — Definition 8.9 itself, built on `theorem_8_8_b_strong`:**
+- `U_mem_nonempty` (free from `U.mem`'s own definition); `sumUU_isEffectivelyGiven`/
+  `prodUU_isEffectivelyGiven`/`funSpaceUU_isEffectivelyGiven` (`𝒰+𝒰`/`𝒰×𝒰`/`𝒰→𝒰`, one-line
+  corollaries of Theorem 7.4/7.5 applied twice to `U`'s own presentation).
+- **The six fixed maps** `iPlus/jPlus`, `iTimes/jTimes`, `iArrow/jArrow` (+ their four laws each):
+  `theorem_8_8_b_strong` applied to `sumUUPresentation`/`prodUUPresentation`/`funSpaceUUPresentation`
+  (each itself an arbitrary fixed choice, `.some`, out of the corresponding `IsEffectivelyGiven`),
+  extracted via `.choose`/`.choose_spec` — genuinely Scott's "let … be fixed", i.e. an arbitrary
+  choice out of a non-unique existential, exactly as `U` itself already is. Adds no *marginal*
+  `Classical.choice` beyond what `theorem_8_8_b_strong`/`U` already carry (confirmed: same
+  footprint).
+- **The three combinators**, direct transcription of Scott's formulas from pre-existing combinators
+  (no new math): `sumComb a b := cond ∘ ⟨which, i₊∘in₀∘a∘out₀, i₊∘in₁∘b∘out₁⟩ ∘ j₊` (`cond`/
+  `whichMap`, Exercise 3.26; `inMap₀/₁`/`outMap₀/₁`, Exercise 3.18/3.19; `paired`, `Product.lean`);
+  `prodComb a b := i_× ∘ ⟨a∘proj₀, b∘proj₁⟩ ∘ j_×` (`proj₀/₁`/`paired`); `arrowComb a b := i_→ ∘
+  (λf.b∘f∘a) ∘ j_→`, where `λf.b∘f∘a` is built uncurried as `curry (b ∘ eval ∘ (id ×ₘ a))`
+  (`curry`/`evalMap`/`prodMap`, `FunctionSpace.lean`/Exercise 3.19) — `(f,x) ↦ b(f(a(x)))` checks out
+  by direct unfolding of `∘`/`prodMap`.
+- Both files compile with **zero `sorry`**; `lake build` (whole project, 3153 jobs) green.
+  `#print axioms` on `sumComb`/`prodComb`/`arrowComb`/`iPlus`/`jPlus`/`iTimes`/`iArrow` all give
+  `⊆{propext,Classical.choice,Quot.sound}` — the same inherited `U`-footprint, nothing new.
+
+**Not done (left for the exercises/Proposition 8.10, as Scott's text itself does — genuinely
+separate items, not part of Definition 8.9):** Proposition 8.10 (`a+b`/`a×b`/`a→b` are (finitary)
+projections if `a,b` are) is a *separate* numbered item and was **not** attempted this session — only
+Definition 8.9's *data* (the six maps) and *combinator definitions* were in scope. Exercise 8.17
+("find explicitly the projection pairs … are any of these domains isomorphic with `U`?") is also
+untouched; the six maps here are abstract witnesses, not explicit formulas (matching Scott's own
+remark that he doesn't know a good explicit construction for `𝒰→𝒰`).
+
+**`arxiv.md` updated**: Definition 8.9 row rewritten with the proof note above, marked **Pass**.
+`Scott1980.lean` updated to import `Theorem88n` and `Definition89`.
+
+**Status: Definition 8.9 is `Pass`.** `theorem_8_8_b_strong` is genuinely reusable general
+infrastructure (a direct computable `D ⇄ U` pair, not routed through an intermediate copy) — likely
+useful again for Exercise 8.15/8.16/8.17. **Next up:** Proposition 8.10, or continue down `arxiv.md`'s
+Lecture VIII "Deferred" rows (Exercises 8.11–8.26).
