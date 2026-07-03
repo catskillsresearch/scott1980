@@ -6103,3 +6103,94 @@ a `ComputablePresentation D''` with master index `0`. `mem_UX_YseqCode_iff` and 
 are the two facts this depends on. Likely mirrors `Theorem88a.lean`'s `DprimeU`/`theorem_8_8_a`
 assembly shape and `Theorem88c.lean`'s `DprimeUPresentation` shape for the `ComputablePresentation`
 half.
+
+## 2026-07-03 checkpoint: Theorem 8.8(b)(vii)(3) — the `D''` assembly, `D ≅ᴰ D''`, `D'' ◁ U`, and `ComputablePresentation D''`, Pass
+
+**What was built, new file `Theorem88e.lean` (imports `Theorem88d.lean` + `Theorem88c.lean`), `lake
+build` green, zero `sorry`, zero warnings:**
+
+- **`Yc P n := UX (YseqCode P n)`**, plus `Yc_subset_master` (free, `U_mem_UX`) and
+  `Yc_zero_eq_master : Yc P 0 = U.master` (the depth-`0` genuine atom is `UmasterIdx` itself, since
+  `idxSet (e P) 0 = Set.univ` makes the positive constraint at index `0` vacuous and the negative
+  sibling constraint's `DAtom` is already empty, so `atomUCode` freezes unchanged through the step).
+- **The bridging step, `hcoreIdxYc`:** `Theorem88.lean`'s abstract `transfer_dir`/`transfer_empty_iff`
+  are stated generically for *any* `(Z, M)` pair satisfying a `genAtom`-emptiness-match hypothesis
+  `hcore : ∀ δ n, genAtom Z₁ M₁ δ n = ∅ ↔ genAtom Z₂ M₂ δ n = ∅` for *all* `δ : ℕ → Bool` — but
+  (vii)(2)'s `mem_UX_YseqCode_iff`/`atomUCode_succ_true` only pin down `Yc`'s behavior at the
+  *specific* bit-sources `deltaOf k`. A new `encodeBits : (ℕ→Bool)→ℕ→ℕ` (realizing any finite
+  `δ`-prefix as some concrete `k` with `deltaOf k i = δ i` for `i<n`, via `encodeBits_lt`/
+  `deltaOf_encodeBits`) closes this gap: `hcoreIdxYc δ n : genAtom (idxSet (e P)) Set.univ δ n = ∅ ↔
+  genAtom (Yc P) U.master δ n = ∅` holds for arbitrary `δ`, by instantiating both sides at
+  `k := encodeBits δ n` and invoking `genAtom_Yc_empty_iff` ((vii)(1)/(vii)(2)'s combined
+  correctness result) plus `genAtom_congr` (bit-agreement below `n` transports `genAtom`-emptiness
+  along `deltaOf k`).
+- **Since the generic `transfer_dir`/etc. are `private` to `Theorem88.lean`,** local `Yc`-flavoured
+  re-instantiations were built by copying their statements verbatim with `hcore := hcoreIdxYc`:
+  `transfer_dir_idxYc`/`transfer_empty_iff_idxYc`/`transfer_subset_iff_idxYc`/
+  `transfer_inter_empty_iff_idxYc`/`transfer_double_subset_iff_idxYc`/`transfer_inter_eq_iff_idxYc`.
+  **Perf lesson:** `tauto`/`▸` on goals mentioning opaque `Yc P i`-shaped terms triggered `whnf`
+  timeouts (Lean aggressively unfolds `Nat.Primrec`-defined `YseqCode`/`atomUCode` inside `UX`); fixed
+  by replacing every `tauto` in these lemmas' `hRHS`/final-`Set.Subset.antisymm` blocks with explicit
+  `constructor`/`rintro`/`exact` proofs, and every `heq ▸ foo` with `by rw [← heq]; exact foo`, both
+  of which keep `Yc`-terms fully opaque (no unfolding attempted).
+- **`embed_subset_iff_code`/`embed_eq_iff_code`** (idxSet-level: `idxSet (e P) i ⊆ idxSet (e P) j ↔
+  Yc P i ⊆ Yc P j`, resp. `=`), the `Δ=Set.univ`/`Yc P i ⊆ U.master` simplification of
+  `transfer_subset_iff_idxYc`, **plus raw-level wrappers `embed_subset_iff_raw_code`/
+  `embed_eq_iff_raw_code`** (`e P i ⊆ e P j ↔ Yc P i ⊆ Yc P j`, via `idxSet_subset_iff`/
+  `idxSet_eq_iff`) — mirroring `Theorem88a.lean`'s single-level `embed_subset_iff`/`embed_eq_iff`,
+  split into two levels here since both are needed downstream (idxSet-level for
+  `transfer_inter_eq_iff_idxYc`'s internal algebra; raw-level for the `D''`/isomorphism assembly,
+  matching exactly where `Theorem88a.lean` uses its own `embed_subset_iff`).
+- **The assembly, mirroring `Theorem88a.lean`'s `DprimeU`/`domainIso`/`DprimeU_subsystem` verbatim**
+  with `Yidx (e P) ↦ Yc P` and the generic transfer lemmas replaced by the `_idxYc` versions above:
+  `exists_inter_index_of_dmem_code`/`exists_inter_index_of_nonempty_code` (the shared
+  "find a matching index" step), **`DprimeUCode`** (`D''`, `mem Y := ∃n, Y=Yc P n`, master `U.master`),
+  **`DprimeUCode_subsystem`** (`D'' ◁ U`), **`toDprimeUCode`/`toDCode`/`domainIsoCode`/
+  `isomorphic_DprimeUCode`** (`D ≅ᴰ D''`).
+- **`ComputablePresentation D''`, mirroring `Theorem88c.lean`'s `DprimeUPresentation` verbatim:**
+  `inclK_i_recDecidable_code`/`inclK_j_recDecidable_code` (local re-copies of `Theorem88c.lean`'s
+  `private` helpers, since `private` doesn't cross files), `DprimeUCode_interEq_computable` (via
+  `transfer_inter_eq_iff_idxYc` + the **generic** `idxSet_inter_eq_iff_DAtom`/`DAtom_pair_recDecidable`
+  from `Theorem88c.lean`, which are stated for *any* `ComputablePresentation Q` and so apply verbatim
+  to `Q := P0 P` with zero new `Nat.Primrec` work), `DprimeUCode_cons_computable` (via
+  `embed_subset_iff_raw_code`, reusing `(P0 P).cons_computable` itself), `DprimeUCode_inter_spec`
+  (via `embed_subset_iff_raw_code`/`idxSet_inter_of_inter_eq`/`transfer_inter_eq_iff_idxYc`, reusing
+  `(P0 P).inter`/`.inter_spec`/`.inter_primrec` itself) — assembled into
+  **`DprimeUCodePresentation : ComputablePresentation (DprimeUCode P)`** with `masterIdx := 0`, and
+  **`DprimeUCode_isEffectivelyGiven : (DprimeUCode P).IsEffectivelyGiven`**.
+
+**Pitfalls hit and fixed this session:**
+1. `include hcover he0 in` doesn't work here — unlike `Theorem88a.lean`, where `hcover`/`he0` are
+   *section variables* (`variable (hcover : ...) (he0 : ...)`), in `Theorem88b.lean`/this file they
+   are already-proved *theorems* taking `P` as an argument (`hcover P : ∀ S, ...`). `include` only
+   applies to local section variables; all three `include hcover he0 in` lines had to be deleted.
+2. First draft conflated the idxSet-level `embed_subset_iff_code`/`embed_eq_iff_code` with the
+   raw-level statement actually needed at every call site in the `D''`/isomorphism assembly (e.g.
+   `DprimeUCode.inter_mem` needs `e P k ⊆ e P i ↔ Yc P k ⊆ Yc P i`, not `idxSet (e P) k ⊆ idxSet
+   (e P) i ↔ ...`) — `Theorem88a.lean`'s single `embed_subset_iff` folds both steps together via an
+   internal `rw [← idxSet_subset_iff ...]`; here the two roles were split into named lemmas
+   (`embed_subset_iff_code` vs. `_raw_code`) to keep both available, and every mis-wired call site
+   (`DprimeUCode.inter_mem`, `toDprimeUCode.up_mem`, `toDCode.up_mem`, all four sites in
+   `domainIsoCode`) was corrected to use the raw-level wrapper.
+3. Several `def`/`theorem`s in the `D''` assembly redundantly re-bound `{D : NeighborhoodSystem α}
+   (P : ComputablePresentation D)`, shadowing the file's own top-level `variable {α} {D} (P)` — this
+   compiles but is dead weight; removed.
+
+**Axiom audit:** `#print axioms` on `isomorphic_DprimeUCode`/`DprimeUCode_subsystem`/
+`DprimeUCode_isEffectivelyGiven` all give `[propext, Classical.choice, Quot.sound]` — **byte-for-byte
+identical** to a direct comparison against the classical Theorem 8.8(a)/(c) analogues
+(`isomorphic_DprimeU`/`DprimeU_subsystem`/`DprimeU_isEffectivelyGiven`), confirmed by running both
+audits side by side. No new taint; the `Nat.Primrec` core (`YseqCode`/`atomUCode`) underlying `Yc P`
+itself remains choice-free per (vii)(1)/(vii)(2)'s own audits.
+
+**`arxiv.md` updated**: (vii)(3) row rewritten with the proof note above, marked **Pass**; (vii)
+umbrella row's "2 of 4 sub-parts Pass" → "3 of 4 sub-parts Pass"; the top-level 8.8(b) umbrella row's
+(vii) summary sentence updated. **`Scott1980.lean` updated** to import `Theorem88e`.
+
+**Next:** 8.8(b)(vii)(4), the final sub-part — `IsComputableMap` for `D''`'s `Subsystem.inj`/
+`Subsystem.proj` against `U`'s presentation (the actual headline claim of Theorem 8.8(b)(vii)). Once
+this is done, 8.8(b)(viii)'s final assembly `theorem_8_8_b` is unblocked. Per the existing plan: `rel
+(X n) (UX m) ↔ UX (YseqCode P n) ⊆ UX m` should be *decidable* (not just r.e.) in `(n,m)` — check for
+an existing `subsetUChar`-style decider in `DAtomDecidable.lean`/`Recursive.lean`'s interval
+machinery before building a new one; decidability trivially implies `REPred₂`, satisfying
+`Definition72.lean`'s `IsComputableMap`.

@@ -1027,4 +1027,322 @@ theorem atomUCode_succ_true {k n : ℕ} (hne : atomUEmpty P (n + 1) k = 0)
       rw [hd] at hzmem
       exact absurd hzmem (Set.mem_empty_iff_false z).mp
 
+/-- **Uniqueness of a bit-source below `2ⁿ`**: two bit-sources agreeing on every bit below `n` and
+both `< 2ⁿ` are equal (every bit at or above `n` is forced `false` by the bound, so agreement below
+`n` becomes agreement everywhere, and `Nat.eq_of_testBit_eq` finishes). -/
+theorem eq_of_deltaOf_agree_of_lt_two_pow {n i j : ℕ} (hi : i < 2 ^ n) (hj : j < 2 ^ n)
+    (hagree : ∀ l < n, deltaOf i l = deltaOf j l) : i = j := by
+  apply Nat.eq_of_testBit_eq
+  intro l
+  rw [← deltaOf_eq_testBit, ← deltaOf_eq_testBit]
+  rcases Nat.lt_or_ge l n with hl | hl
+  · exact hagree l hl
+  · have hile : 2 ^ n ≤ 2 ^ l := Nat.pow_le_pow_right (by norm_num) hl
+    rw [deltaOf_eq_testBit, deltaOf_eq_testBit, Nat.testBit_lt_two_pow (hi.trans_le hile),
+      Nat.testBit_lt_two_pow (hj.trans_le hile)]
+
+/-- **General exclusion lemma**: if a bit-source `k'` is non-junk at depth `n`, and its own
+canonical "positive twin" at depth `n + 1` (same bits below `n`, forcing bit `n` to `true`) is
+junk, then `k'`'s own depth-`n` atom is disjoint from `YseqCode`'s entire union — no genuine
+(non-junk) depth-`(n+1)` atom in the union can leak a point into it, whether that atom *is* `k'`'s
+own excluded twin (immediate contradiction) or some *other* twin `i ≠ j` (disjoint at depth `n` by
+`atomUCode_disjoint`, since distinct bit-sources below `2ⁿ` always disagree somewhere below `n`,
+`eq_of_deltaOf_agree_of_lt_two_pow`). -/
+theorem atomUCode_disjoint_YseqCode_of_posTwin_empty {n k' : ℕ} (hk' : atomUEmpty P n k' = 0)
+    (hjunk : atomUEmpty P (n + 1) (k' % 2 ^ n + 2 ^ n) = 1) :
+    UX (atomUCode P n k') ∩ UX (YseqCode P n) = ∅ := by
+  rw [Set.eq_empty_iff_forall_notMem]
+  rintro z ⟨hzB, hzY⟩
+  obtain ⟨i, hilt, hie, hz⟩ := (mem_UX_YseqCode_iff P n z).mp hzY
+  set j := k' % 2 ^ n with hjdef
+  have hjlt : j < 2 ^ n := Nat.mod_lt k' (Nat.two_pow_pos n)
+  have hk'j : ∀ l < n, deltaOf k' l = deltaOf j l := by
+    intro l hl; rw [hjdef, deltaOf_mod_two_pow_of_lt hl]
+  by_cases hij : i = j
+  · rw [hij] at hie; exact absurd hie (by omega)
+  · have hdisagree : ∃ l < n, deltaOf (i + 2 ^ n) l ≠ deltaOf k' l := by
+      by_contra hcon
+      push_neg at hcon
+      apply hij
+      apply eq_of_deltaOf_agree_of_lt_two_pow hilt hjlt
+      intro l hl
+      have h1 : deltaOf (i + 2 ^ n) l = deltaOf i l := deltaOf_add_two_pow_of_lt _ hl
+      have h2 := hcon l hl
+      rw [h1] at h2
+      exact h2.trans (hk'j l hl)
+    obtain ⟨l, hl, hlne⟩ := hdisagree
+    have hd : UX (atomUCode P n (i + 2 ^ n)) ∩ UX (atomUCode P n k') = ∅ :=
+      atomUCode_disjoint P n (i + 2 ^ n) k' (atomUEmpty_zero_of_succ P hie) hk' ⟨l, hl, hlne⟩
+    have hzB' : z ∈ UX (atomUCode P n (i + 2 ^ n)) := atomUCode_subset P hie hz
+    have hzmem : z ∈ UX (atomUCode P n (i + 2 ^ n)) ∩ UX (atomUCode P n k') := ⟨hzB', hzB⟩
+    rw [hd] at hzmem
+    exact absurd hzmem (Set.mem_empty_iff_false z).mp
+
+/-- **The canonical "positive twin" at depth `n`** shares `k`'s own `(pos, neg, code)` triple, since
+it agrees with `k` on every bit below `n` (`atomUCodeState_congr` applied to
+`k % 2ⁿ`/`deltaOf_mod_two_pow_of_lt`/`deltaOf_add_two_pow_of_lt`). -/
+theorem atomUCodeState_congr_twin (n k : ℕ) :
+    atomUPos P n (k % 2 ^ n + 2 ^ n) = atomUPos P n k ∧
+      atomUNeg P n (k % 2 ^ n + 2 ^ n) = atomUNeg P n k ∧
+      atomUCode P n (k % 2 ^ n + 2 ^ n) = atomUCode P n k := by
+  have hagree : ∀ i < n, deltaOf (k % 2 ^ n + 2 ^ n) i = deltaOf k i := by
+    intro i hi
+    rw [deltaOf_add_two_pow_of_lt _ hi, deltaOf_mod_two_pow_of_lt hi]
+  exact atomUCodeState_congr P hagree
+
+/-- **The closed form, "false"-branch** (mirroring `Theorem88.lean`'s `atomU_succ_eq`'s `else`
+case): for non-junk `k` with bit `n` forced `false`, the depth-`(n+1)` atom is the depth-`n` atom
+*minus* `YseqCode`. Two sub-cases on whether `k`'s own "positive twin" (bits agreeing below `n`,
+bit `n` forced `true`) is itself junk: if junk, the whole depth-`n` atom is already disjoint from
+`YseqCode`'s union (`atomUCode_disjoint_YseqCode_of_posTwin_empty`), so subtracting it changes
+nothing; if non-junk, the twin's own code is literally `splitULeft (atomUCode P n k)` (unfolding
+both `atomUCode_succ`'s at the shared ancestor), so `atomUCode_succ_true` applied to the twin
+identifies `splitULeft`'s image with `YseqCode`'s contribution, and `splitU_union`/`splitU_disjoint`
+finish the algebra `UX(splitURight c) = UX c \ UX(splitULeft c)`. -/
+theorem atomUCode_succ_false {k n : ℕ} (hne : atomUEmpty P (n + 1) k = 0)
+    (hδ : deltaOf k n = false) :
+    UX (atomUCode P (n + 1) k) = UX (atomUCode P n k) \ UX (YseqCode P n) := by
+  have hjlt : k % 2 ^ n < 2 ^ n := Nat.mod_lt k (Nat.two_pow_pos n)
+  obtain ⟨htwinPos, htwinNeg, htwinCode⟩ := atomUCodeState_congr_twin P n k
+  have hbit0 : (k / 2 ^ n) % 2 = 0 := by
+    rcases Nat.mod_two_eq_zero_or_one (k / 2 ^ n) with hh | hh
+    · exact hh
+    · exact absurd ((deltaOf_eq_true_iff k n).mpr hh) (by simp [hδ])
+  have hempJ : datomDec P (Nat.pair (atomUPos P n k) (Nat.pair n (atomUNeg P n k) + 1)) = 0 := by
+    have h := hne
+    rw [atomUEmpty_succ, hbit0, selectFn_zero] at h
+    exact h
+  have hncode : atomUCode P (n + 1) k = selectFn
+      (datomDec P (Nat.pair (Nat.pair n (atomUPos P n k) + 1) (atomUNeg P n k)))
+      (atomUCode P n k) (splitURight (atomUCode P n k)) := by
+    rw [atomUCode_succ, hbit0, selectFn_zero, hempJ, selectFn_zero]
+  have htwinBit1 : (k % 2 ^ n + 2 ^ n) / 2 ^ n % 2 = 1 := by
+    have hh := deltaOf_two_pow_add_self hjlt
+    rw [deltaOf_eq_true_iff] at hh
+    exact hh
+  have htwinEmpty : atomUEmpty P (n + 1) (k % 2 ^ n + 2 ^ n) =
+      datomDec P (Nat.pair (Nat.pair n (atomUPos P n k) + 1) (atomUNeg P n k)) := by
+    rw [atomUEmpty_succ, htwinBit1, selectFn_one, htwinPos, htwinNeg]
+  have hIle := datomDec_le_one P (Nat.pair (Nat.pair n (atomUPos P n k) + 1) (atomUNeg P n k))
+  rcases (by omega :
+      datomDec P (Nat.pair (Nat.pair n (atomUPos P n k) + 1) (atomUNeg P n k)) = 0 ∨
+      datomDec P (Nat.pair (Nat.pair n (atomUPos P n k) + 1) (atomUNeg P n k)) = 1) with hI | hI
+  · -- Genuine split at the shared ancestor: the twin's own code is `splitULeft (atomUCode P n k)`.
+    have htwinCodeVal : atomUCode P (n + 1) (k % 2 ^ n + 2 ^ n) = splitULeft (atomUCode P n k) := by
+      rw [atomUCode_succ, htwinBit1, selectFn_one, htwinPos, htwinNeg, htwinCode, hI, selectFn_zero,
+        hempJ, selectFn_zero]
+    have htwinNonjunk : atomUEmpty P (n + 1) (k % 2 ^ n + 2 ^ n) = 0 := by rw [htwinEmpty, hI]
+    have hδtwin : deltaOf (k % 2 ^ n + 2 ^ n) n = true := deltaOf_two_pow_add_self hjlt
+    have hkey := atomUCode_succ_true P htwinNonjunk hδtwin
+    rw [htwinCodeVal, htwinCode] at hkey
+    have hunion := splitU_union (atomUCode P n k)
+    have hdisj := splitU_disjoint (atomUCode P n k)
+    have hUXeq : UX (splitURight (atomUCode P n k)) =
+        UX (atomUCode P n k) \ UX (splitULeft (atomUCode P n k)) := by
+      apply Set.Subset.antisymm
+      · intro z hz
+        refine ⟨?_, fun hzL => ?_⟩
+        · rw [← hunion]; exact Set.mem_union_right _ hz
+        · have hz' : z ∈ UX (splitULeft (atomUCode P n k)) ∩ UX (splitURight (atomUCode P n k)) :=
+            ⟨hzL, hz⟩
+          rw [hdisj] at hz'
+          exact hz'
+      · rintro z ⟨hzC, hznL⟩
+        rw [← hunion] at hzC
+        exact hzC.resolve_left hznL
+    rw [hncode, hI, selectFn_zero, hUXeq, hkey]
+    apply Set.Subset.antisymm
+    · rintro z ⟨hzC, hznCY⟩
+      exact ⟨hzC, fun hzY => hznCY ⟨hzC, hzY⟩⟩
+    · rintro z ⟨hzC, hznY⟩
+      exact ⟨hzC, fun hzY => hznY hzY.2⟩
+  · -- Junk twin: the whole depth-`n` atom is already disjoint from `YseqCode`'s union.
+    have htwinNonjunk : atomUEmpty P (n + 1) (k % 2 ^ n + 2 ^ n) = 1 := by rw [htwinEmpty, hI]
+    have hk : atomUEmpty P n k = 0 := atomUEmpty_zero_of_succ P hne
+    have hcdisj : UX (atomUCode P n k) ∩ UX (YseqCode P n) = ∅ :=
+      atomUCode_disjoint_YseqCode_of_posTwin_empty P hk htwinNonjunk
+    have hEq : UX (atomUCode P n k) = UX (atomUCode P n k) \ UX (YseqCode P n) := by
+      apply Set.Subset.antisymm
+      · intro z hz
+        refine ⟨hz, fun hzY => ?_⟩
+        have hz' : z ∈ UX (atomUCode P n k) ∩ UX (YseqCode P n) := ⟨hz, hzY⟩
+        rw [hcdisj] at hz'
+        exact hz'
+      · exact Set.diff_subset
+    rw [hncode, hI, selectFn_one]
+    exact hEq
+
+/-- **`Yc P`, the `Set`-valued family underlying `YseqCode`** — the code-native analogue of
+`Theorem88.lean`'s abstract `Yseq`, used to state the `genAtom`-closed-form correspondence below. -/
+def Yc (m : ℕ) : Set ℚ := UX (YseqCode P m)
+
+/-- **The `D`-side atom splits along any prepended index** (Scott's `Δ = idxSetₙ ∪ (Δ∖idxSetₙ)`,
+pulled back through `DAtom`): needed to show that once the "negative refinement" of a nonempty atom
+is empty, the atom already coincides with its own "positive refinement" outright. -/
+theorem DAtom_union (i : ℕ) (pos neg : List ℕ) :
+    DAtom (P0 P) pos neg = DAtom (P0 P) (i :: pos) neg ∪ DAtom (P0 P) pos (i :: neg) := by
+  ext m
+  simp only [mem_DAtom, Set.mem_union, List.mem_cons, forall_eq_or_imp]
+  by_cases hm : (P0 P).X m ⊆ (P0 P).X i <;> tauto
+
+/-- **The closed-form correspondence** (mirrors `Theorem88.lean`'s `atomU_eq_genAtom`): whenever
+`k`'s bit-source is still `D`-side non-empty at depth `n`, the `U`-code `atomUCode P n k` is
+*exactly* the generic atom built from `Yc P`/`U.master` — proved by induction, using
+`atomUCode_succ_true`/`atomUCode_succ_false` to match `genAtom`'s own recursive step verbatim. -/
+theorem atomUCode_eq_genAtomYseqCode (k : ℕ) :
+    ∀ n, atomUEmpty P n k = 0 → UX (atomUCode P n k) = genAtom (Yc P) U.master (deltaOf k) n := by
+  intro n
+  induction n with
+  | zero =>
+    intro _
+    rw [atomUCode_zero, UX_UmasterIdx]
+    rfl
+  | succ n ih =>
+    intro hne
+    have ihn := ih (atomUEmpty_zero_of_succ P hne)
+    -- `Bool.eq_false_or_eq_true` enumerates `true` before `false`.
+    rcases Bool.eq_false_or_eq_true (deltaOf k n) with hδ | hδ
+    · have hstep : genAtom (Yc P) U.master (deltaOf k) (n + 1) =
+          genAtom (Yc P) U.master (deltaOf k) n ∩ Yc P n := by
+        show genAtom (Yc P) U.master (deltaOf k) n ∩
+          (if deltaOf k n then Yc P n else U.master \ Yc P n) = _
+        simp [hδ]
+      rw [hstep, ← ihn, atomUCode_succ_true P hne hδ]
+      rfl
+    · have hstep : genAtom (Yc P) U.master (deltaOf k) (n + 1) =
+          genAtom (Yc P) U.master (deltaOf k) n ∩ (U.master \ Yc P n) := by
+        show genAtom (Yc P) U.master (deltaOf k) n ∩
+          (if deltaOf k n then Yc P n else U.master \ Yc P n) = _
+        simp [hδ]
+      rw [hstep, ← ihn, atomUCode_succ_false P hne hδ]
+      have hsub : UX (atomUCode P n k) ⊆ U.master := by
+        rw [ihn]; exact genAtom_subset (Yc P) U.master (deltaOf k) n
+      apply Set.Subset.antisymm
+      · intro z hz; exact ⟨hz.1, hsub hz.1, hz.2⟩
+      · rintro z ⟨hz1, -, hz2⟩; exact ⟨hz1, hz2⟩
+
+/-- **The junction lemma**: once a bit-source's atom is still non-empty at depth `n` but becomes
+junk at depth `n + 1`, `genAtom`'s corresponding step (against `Yc P`/`U.master`) is already
+empty. Two cases on `deltaOf k n`: `true` reduces directly to
+`atomUCode_disjoint_YseqCode_of_posTwin_empty` (`k` already *is* its own positive twin); `false`
+needs the extra fact that the depth-`n` atom's own code is *unchanged* by its positive twin (since
+the "negative refinement" being `D`-side empty forces the whole atom into the positive side,
+`DAtom_union`), so `atomUCode_succ_true` at the twin identifies `atomUCode P n k` with the
+intersection against `YseqCode`'s union outright, i.e. `UX (atomUCode P n k) ⊆ Yc P n`. -/
+theorem atomUCode_inter_succ_empty_of_junk {n k : ℕ} (hn0 : atomUEmpty P n k = 0)
+    (hjunk : atomUEmpty P (n + 1) k = 1) :
+    UX (atomUCode P n k) ∩ (if deltaOf k n then Yc P n else U.master \ Yc P n) = ∅ := by
+  -- `Bool.eq_false_or_eq_true` enumerates `true` before `false`.
+  rcases Bool.eq_false_or_eq_true (deltaOf k n) with hδ | hδ
+  · -- `k` itself already has bit `n` set: `k` is (mod `2 ^ (n + 1)`) its own positive twin.
+    have hjlt0 : k % 2 ^ n < 2 ^ n := Nat.mod_lt k (Nat.two_pow_pos n)
+    have hagree : ∀ l < n + 1, deltaOf (k % 2 ^ n + 2 ^ n) l = deltaOf k l := by
+      intro l hl
+      rcases Nat.lt_succ_iff_lt_or_eq.mp hl with hl' | rfl
+      · rw [deltaOf_add_two_pow_of_lt _ hl', deltaOf_mod_two_pow_of_lt hl']
+      · rw [deltaOf_two_pow_add_self hjlt0, hδ]
+    obtain ⟨hp, hnge, -⟩ := atomUCodeState_congr P hagree
+    have htwinJunk : atomUEmpty P (n + 1) (k % 2 ^ n + 2 ^ n) = 1 := by
+      unfold atomUEmpty
+      rw [hp, hnge]
+      exact hjunk
+    rw [if_pos hδ]
+    exact atomUCode_disjoint_YseqCode_of_posTwin_empty P hn0 htwinJunk
+  · -- `k` has bit `n` unset: the "negative refinement" alone is empty, so `k`'s own atom already
+    -- coincides with its positive twin's atom (`DAtom_union`), which forces junk at `n + 1`.
+    have hbit0 : (k / 2 ^ n) % 2 = 0 := by
+      rcases Nat.mod_two_eq_zero_or_one (k / 2 ^ n) with hh | hh
+      · exact hh
+      · exact absurd ((deltaOf_eq_true_iff k n).mpr hh) (by simp [hδ])
+    have hempJ : datomDec P (Nat.pair (atomUPos P n k) (Nat.pair n (atomUNeg P n k) + 1)) = 1 := by
+      have h := hjunk
+      rw [atomUEmpty_succ, hbit0, selectFn_zero] at h
+      exact h
+    have hJempty : DAtom (P0 P) (decodeList (atomUPos P n k))
+        (n :: decodeList (atomUNeg P n k)) = ∅ := by
+      have h := (datomDec_spec P (atomUPos P n k) (Nat.pair n (atomUNeg P n k) + 1)).mp hempJ
+      rwa [decodeList_succ, unpair_pair_fst, unpair_pair_snd] at h
+    have hDunion := DAtom_union P n (decodeList (atomUPos P n k)) (decodeList (atomUNeg P n k))
+    have hIeqAll : DAtom (P0 P) (decodeList (atomUPos P n k)) (decodeList (atomUNeg P n k)) =
+        DAtom (P0 P) (n :: decodeList (atomUPos P n k)) (decodeList (atomUNeg P n k)) := by
+      rw [hDunion, hJempty, Set.union_empty]
+    have hIeqAll' : DAtom (P0 P) (decodeList (atomUPos P n k)) (decodeList (atomUNeg P n k)) =
+        DAtom (P0 P) (decodeList (Nat.pair n (atomUPos P n k) + 1)) (decodeList (atomUNeg P n k)) := by
+      rw [decodeList_succ, unpair_pair_fst, unpair_pair_snd]; exact hIeqAll
+    have hne0 : DAtom (P0 P) (decodeList (atomUPos P n k)) (decodeList (atomUNeg P n k)) ≠ ∅ := by
+      intro hcon
+      have := (atomUEmpty_eq_one_iff P n k).mpr hcon
+      omega
+    have hemptyI0 : datomDec P (Nat.pair (Nat.pair n (atomUPos P n k) + 1) (atomUNeg P n k)) = 0 := by
+      apply datomDec_eq_zero
+      rw [← hIeqAll']
+      exact hne0
+    have hjlt : k % 2 ^ n < 2 ^ n := Nat.mod_lt k (Nat.two_pow_pos n)
+    obtain ⟨htwinPos, htwinNeg, htwinCode⟩ := atomUCodeState_congr_twin P n k
+    have htwinBit1 : (k % 2 ^ n + 2 ^ n) / 2 ^ n % 2 = 1 := by
+      have hh := deltaOf_two_pow_add_self hjlt
+      rw [deltaOf_eq_true_iff] at hh
+      exact hh
+    have htwinNonjunk : atomUEmpty P (n + 1) (k % 2 ^ n + 2 ^ n) = 0 := by
+      rw [atomUEmpty_succ, htwinBit1, selectFn_one, htwinPos, htwinNeg]
+      exact hemptyI0
+    have hδtwin : deltaOf (k % 2 ^ n + 2 ^ n) n = true := deltaOf_two_pow_add_self hjlt
+    have hkey := atomUCode_succ_true P htwinNonjunk hδtwin
+    have htwinCodeVal : atomUCode P (n + 1) (k % 2 ^ n + 2 ^ n) = atomUCode P n k := by
+      rw [atomUCode_succ, htwinBit1, selectFn_one, htwinPos, htwinNeg, hemptyI0, selectFn_zero,
+        htwinCode, hempJ, selectFn_one]
+    rw [htwinCodeVal, htwinCode] at hkey
+    have hsub : UX (atomUCode P n k) ⊆ Yc P n := by
+      intro z hz
+      have hz' : z ∈ UX (atomUCode P n k) ∩ UX (YseqCode P n) := by rw [← hkey]; exact hz
+      exact hz'.2
+    rw [if_neg (by simp [hδ])]
+    apply Set.eq_empty_iff_forall_notMem.mpr
+    rintro z ⟨hz1, -, hz2⟩
+    exact hz2 (hsub hz1)
+
+/-- **`Yc P`'s `genAtom`-emptiness matches `atomUEmpty` exactly** (the code-native analogue of
+`atomU_invariant`'s emptiness-matching clause "(■)"): combines `atomUCode_eq_genAtomYseqCode`
+(non-junk, giving a nonempty `UX`-image) with `atomUCode_inter_succ_empty_of_junk` (the genuine
+transition to junk) by induction on `n`. -/
+theorem genAtom_Yc_empty_iff (n k : ℕ) :
+    genAtom (Yc P) U.master (deltaOf k) n = ∅ ↔ atomUEmpty P n k = 1 := by
+  induction n with
+  | zero =>
+    have h0 : atomUEmpty P 0 k = 0 := by
+      have hne : genAtom (idxSet (e P)) Set.univ (deltaOf k) 0 ≠ ∅ := by
+        show (Set.univ : Set ℕ) ≠ ∅
+        exact Set.univ_nonempty.ne_empty
+      exact (atomUEmpty_eq_zero_iff_genAtom P 0 k).mpr hne
+    constructor
+    · intro h
+      exact absurd h (Set.Nonempty.ne_empty U.master_mem.2.1)
+    · intro h; omega
+  | succ n ih =>
+    have hle : atomUEmpty P (n + 1) k ≤ 1 := datomDec_le_one P _
+    rcases (by omega : atomUEmpty P (n + 1) k = 0 ∨ atomUEmpty P (n + 1) k = 1) with h1 | h1
+    · have heq' := atomUCode_eq_genAtomYseqCode P k (n + 1) h1
+      constructor
+      · intro hempty
+        rw [← heq'] at hempty
+        exact absurd hempty (U_mem_UX _).2.1.ne_empty
+      · intro hcontra; omega
+    · by_cases hn0 : atomUEmpty P n k = 0
+      · have heq := atomUCode_eq_genAtomYseqCode P k n hn0
+        have hempty : genAtom (Yc P) U.master (deltaOf k) (n + 1) = ∅ := by
+          show genAtom (Yc P) U.master (deltaOf k) n ∩
+            (if deltaOf k n then Yc P n else U.master \ Yc P n) = ∅
+          rw [← heq]
+          exact atomUCode_inter_succ_empty_of_junk P hn0 h1
+        exact ⟨fun _ => h1, fun _ => hempty⟩
+      · push_neg at hn0
+        have hle0 : atomUEmpty P n k ≤ 1 := datomDec_le_one P _
+        have hn1 : atomUEmpty P n k = 1 := by omega
+        have hprev : genAtom (Yc P) U.master (deltaOf k) n = ∅ := ih.mpr hn1
+        have hempty : genAtom (Yc P) U.master (deltaOf k) (n + 1) = ∅ := by
+          show genAtom (Yc P) U.master (deltaOf k) n ∩
+            (if deltaOf k n then Yc P n else U.master \ Yc P n) = ∅
+          rw [hprev, Set.empty_inter]
+        exact ⟨fun _ => h1, fun _ => hempty⟩
+
 end Scott1980.Neighborhood
