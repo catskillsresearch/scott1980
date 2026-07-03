@@ -6194,3 +6194,52 @@ this is done, 8.8(b)(viii)'s final assembly `theorem_8_8_b` is unblocked. Per th
 an existing `subsetUChar`-style decider in `DAtomDecidable.lean`/`Recursive.lean`'s interval
 machinery before building a new one; decidability trivially implies `REPred₂`, satisfying
 `Definition72.lean`'s `IsComputableMap`.
+
+## 2026-07-03 checkpoint: Theorem 8.8(b)(vii)(4) — `D''`'s projection pair is computable, Pass — **all of (vii) now Pass**
+
+**What was built, new file `Theorem88f.lean` (imports `Theorem88e.lean` + `Definition72.lean` +
+`Proposition612.lean`), `lake build` green, zero `sorry`, zero warnings:**
+
+- **No bespoke `subsetUChar`-style decider was needed at all** — the arxiv.md plan's guess turned
+  out to be exactly right that this reduces to a *decidable* (not just r.e.) predicate, but the
+  decider was **already sitting in the codebase, fully generic**: `Definition71.lean`'s
+  `ComputablePresentation.incl_computable : RecDecidable₂ (fun n m => P.X n ⊆ P.X m)`, proved once
+  for *any* `ComputablePresentation P` (here instantiated at `P := UComputablePresentation`, giving
+  `RecDecidable₂ (fun n m => UX n ⊆ UX m)` for free).
+- **The key simplification:** `Subsystem.inj_rel`/`Subsystem.proj_rel` (Proposition 6.12) unfold
+  `i`/`j`'s relations to a `mem`-clause on *each* side plus a raw subset test — but with both sides
+  read off their own presentations (`DprimeUCodePresentation.X n = Yc P n`,
+  `UComputablePresentation.X m = UX m`), **both `mem`-clauses are automatically true**:
+  `(DprimeUCode P).mem (Yc P n)` is `⟨n, rfl⟩` and `U.mem (UX m)` is `U_mem_UX m`. So `i`'s relation
+  collapses to exactly `UX (YseqCode P n) ⊆ UX m`, and `j`'s to `UX m ⊆ UX (YseqCode P n)` — each a
+  single reindexing of `incl_computable` along `YseqCode P` (`primrec_YseqCode`, (vii)(2)) in one
+  argument (`RecDecidable.comp`), decidable hence r.e. (`RecDecidable.re`), then matched back to the
+  literal `i`/`j` relation via `REPred.of_iff`.
+- **`DprimeUCode_inj_isComputableMap`/`DprimeUCode_proj_isComputableMap`** package the two
+  directions; **`DprimeUCode_projectionPair_isComputable`** bundles both as a conjunction — the
+  headline claim of Theorem 8.8(b)(vii) in full.
+
+**Pitfall hit and fixed:** after `simp only [unpair_pair_fst, unpair_pair_snd]` inside the
+`RecDecidable.of_iff` reindexing step, the goal was left as `UX (...) ⊆ UX (...) ↔
+UComputablePresentation.X (...) ⊆ UComputablePresentation.X (...)` — `simp` alone doesn't unfold the
+structure projection `UComputablePresentation.X` back to `UX` even though they're definitionally
+equal (`X := UX` in the structure literal); a trailing `rfl` closes it immediately in both proofs.
+
+**Axiom audit:** `#print axioms` on `DprimeUCode_inj_isComputableMap`/
+`DprimeUCode_proj_isComputableMap`/`DprimeUCode_projectionPair_isComputable` all give `[propext,
+Classical.choice, Quot.sound]` — the `Classical.choice` is **pre-existing**, inherited from
+`YseqCode`/`atomUCode`'s own classicality (documented since (vii)(1)/(vii)(2)'s own audits), not new
+taint from this file.
+
+**`arxiv.md` updated**: (vii)(4) row rewritten with the proof note above, marked **Pass**; the (vii)
+umbrella row's status → **Pass (all 4 sub-parts Pass)**; the top-level 8.8(b) umbrella row's (vii)
+summary sentence rewritten to say all of (vii) is Pass, and its **Status** line → "7 of 8 parts Pass
+— (i)–(vii); only (viii) remains". **`Scott1980.lean` updated** to import `Theorem88f`.
+
+**Next:** 8.8(b)(viii), the final assembly `theorem_8_8_b` — mirrors `theorem_8_8_a`'s shape
+(`∃ D' : NeighborhoodSystem ℚ, D ≅ᴰ D' ∧ D' ◁ U`) but with the witnessing projection pair
+additionally `IsComputableMap`. **Now fully unblocked**: every ingredient already exists —
+`isomorphic_DprimeUCode P : D ≅ᴰ DprimeUCode P` (Theorem88e.lean), `DprimeUCode_subsystem P :
+DprimeUCode P ◁ U` (Theorem88e.lean), and `DprimeUCode_projectionPair_isComputable P` (this
+checkpoint) — this final part should be a matter of packaging a single existential statement, no new
+mathematical content.
