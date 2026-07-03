@@ -667,4 +667,364 @@ theorem atomUCode_disjoint :
       exact Set.subset_eq_empty
         (Set.inter_subset_inter (atomUCode_subset P hk) (atomUCode_subset P hk')) hd
 
+/-! ## Theorem 8.8(b)(vii)(2) — `YseqCode`, Scott's `Yₙ` coded
+
+Scott's `Yₙ` (`Theorem88.lean`'s `Yseq`) is the union, over the `2ⁿ` depth-`(n+1)` atoms with bit
+`n` forced `1`, of the "+"-piece chosen at that step. Here that union is built **as a `Nat.Primrec`
+fold over `U`-codes** (`yFold`/`YseqCode`), skipping any bit-source whose `D`-side atom is already
+junk (`atomUEmpty = 1`) — since a junk atom's code is *frozen at the aliasing value `0`*
+(`atomUCode_eq_zero_of_empty`), and `UX 0 = U.master` (`canonCode`'s degenerate-input fallback), a
+naive unfiltered union would corrupt every depth's result to `U.master` outright. -/
+
+/-! ### Bit-level arithmetic for `deltaOf`, via `Nat.testBit`
+
+`deltaOf` is definitionally `Nat.testBit` in disguise (`Nat.testBit_eq_decide_div_mod_eq`), so every
+fact below is a direct transcription of a core `Nat.testBit` lemma about `2ⁿ`-shifted/masked
+naturals — no bespoke bit-manipulation induction is needed. -/
+
+theorem deltaOf_eq_testBit (k i : ℕ) : deltaOf k i = k.testBit i :=
+  Nat.testBit_eq_decide_div_mod_eq.symm
+
+/-- Adding `2ⁿ` never disturbs bits strictly below `n`. -/
+theorem deltaOf_add_two_pow_of_lt {n : ℕ} (m : ℕ) {i : ℕ} (hi : i < n) :
+    deltaOf (m + 2 ^ n) i = deltaOf m i := by
+  rw [deltaOf_eq_testBit, deltaOf_eq_testBit, Nat.add_comm, Nat.testBit_two_pow_add_gt hi]
+
+/-- Adding `2ⁿ` to an `m < 2ⁿ` sets exactly bit `n` (no carry beyond it). -/
+theorem deltaOf_two_pow_add_self {n m : ℕ} (hm : m < 2 ^ n) : deltaOf (m + 2 ^ n) n = true := by
+  rw [deltaOf_eq_testBit, Nat.add_comm, Nat.testBit_two_pow_add_eq, Nat.testBit_lt_two_pow hm]
+  rfl
+
+/-- Reducing modulo `2ⁿ` never disturbs bits strictly below `n`. -/
+theorem deltaOf_mod_two_pow_of_lt {k n i : ℕ} (hi : i < n) :
+    deltaOf (k % 2 ^ n) i = deltaOf k i := by
+  rw [deltaOf_eq_testBit, deltaOf_eq_testBit, Nat.testBit_mod_two_pow]
+  simp [hi]
+
+/-! ### `encodeBits`: realizing a prescribed finite bit-prefix as an explicit `ℕ`
+
+Purely a `Prop`-level existence tool (never claimed `Nat.Primrec`): given *any* `δ : ℕ → Bool`,
+`encodeBits δ n < 2ⁿ` is a bit-source whose first `n` bits match `δ`'s. Used once, below, to turn
+the *abstract* nonemptiness fact "every index's own atom is nonempty" into a concrete witness
+bit-source for `yFold`'s search range. -/
+
+private def encodeBits (δ : ℕ → Bool) : ℕ → ℕ
+  | 0 => 0
+  | n + 1 => encodeBits δ n + (if δ n then 2 ^ n else 0)
+
+private theorem encodeBits_lt (δ : ℕ → Bool) : ∀ n, encodeBits δ n < 2 ^ n
+  | 0 => by simp [encodeBits]
+  | n + 1 => by
+      have ih := encodeBits_lt δ n
+      have hp := Nat.two_pow_pos n
+      show encodeBits δ n + (if δ n then 2 ^ n else 0) < 2 ^ (n + 1)
+      rw [pow_succ]
+      rcases Bool.eq_false_or_eq_true (δ n) with hδn | hδn <;> simp [hδn] <;> omega
+
+private theorem deltaOf_encodeBits (δ : ℕ → Bool) :
+    ∀ n i, i < n → deltaOf (encodeBits δ n) i = δ i
+  | n + 1, i, hi => by
+      have hlt := encodeBits_lt δ n
+      show deltaOf (encodeBits δ n + (if δ n then 2 ^ n else 0)) i = δ i
+      rcases Bool.eq_false_or_eq_true (δ n) with hδn | hδn
+      · have hval : encodeBits δ n + (if δ n then 2 ^ n else 0) = encodeBits δ n + 2 ^ n := by
+          rw [hδn]; simp
+        rw [hval]
+        rcases Nat.lt_succ_iff_lt_or_eq.mp hi with hi' | rfl
+        · rw [deltaOf_add_two_pow_of_lt _ hi']; exact deltaOf_encodeBits δ n i hi'
+        · rw [deltaOf_two_pow_add_self hlt, hδn]
+      · have hval : encodeBits δ n + (if δ n then 2 ^ n else 0) = encodeBits δ n := by
+          rw [hδn]; simp
+        rw [hval]
+        rcases Nat.lt_succ_iff_lt_or_eq.mp hi with hi' | rfl
+        · exact deltaOf_encodeBits δ n i hi'
+        · rw [deltaOf_eq_testBit, Nat.testBit_lt_two_pow hlt, hδn]
+
+/-! ### Existence: some bit-source among `{i + 2ⁿ ∣ i < 2ⁿ}` is always `D`-side non-empty
+
+Mirrors `Theorem88a.lean`'s `Yidx_nonempty` (every index `n` witnesses its own `idxSet e n`'s
+self-membership, `self_mem_idxSet`), transported to the bit-source encoding via `encodeBits`. -/
+
+theorem exists_atomUEmpty_zero (n : ℕ) : ∃ i < 2 ^ n, atomUEmpty P (n + 1) (i + 2 ^ n) = 0 := by
+  classical
+  set δ0 : ℕ → Bool := fun j => decide (n ∈ idxSet (e P) j) with hδ0def
+  have hδ0n : δ0 n = true := by
+    show decide (n ∈ idxSet (e P) n) = true
+    rw [decide_eq_true_iff]; exact self_mem_idxSet (e P) n
+  have hstep : genAtom (idxSet (e P)) Set.univ δ0 (n + 1) =
+      genAtom (idxSet (e P)) Set.univ δ0 n ∩ idxSet (e P) n := by
+    show genAtom (idxSet (e P)) Set.univ δ0 n ∩
+      (if δ0 n then idxSet (e P) n else Set.univ \ idxSet (e P) n) = _
+    simp [hδ0n]
+  have hxn : n ∈ genAtom (idxSet (e P)) Set.univ δ0 n :=
+    genAtom_self (idxSet (e P)) Set.univ (Set.mem_univ n) n
+  have hmem : n ∈ genAtom (idxSet (e P)) Set.univ δ0 n ∩ idxSet (e P) n :=
+    ⟨hxn, self_mem_idxSet (e P) n⟩
+  have hAne : genAtom (idxSet (e P)) Set.univ δ0 (n + 1) ≠ ∅ := by
+    rw [hstep]; exact Set.Nonempty.ne_empty ⟨n, hmem⟩
+  set m0 := encodeBits δ0 n with hm0def
+  have hm0lt : m0 < 2 ^ n := encodeBits_lt δ0 n
+  refine ⟨m0, hm0lt, ?_⟩
+  rw [atomUEmpty_eq_zero_iff_genAtom]
+  have hagree : ∀ j < n + 1, deltaOf (m0 + 2 ^ n) j = δ0 j := by
+    intro j hj
+    rcases Nat.lt_succ_iff_lt_or_eq.mp hj with hj' | rfl
+    · rw [deltaOf_add_two_pow_of_lt _ hj']; exact deltaOf_encodeBits δ0 n j hj'
+    · rw [deltaOf_two_pow_add_self hm0lt, hδ0n]
+  rw [genAtom_congr (idxSet (e P)) Set.univ hagree]
+  exact hAne
+
+/-! ### `atomUEmpty` is `Nat.Primrec` -/
+
+theorem primrec_atomUEmpty : Nat.Primrec (fun t : ℕ => atomUEmpty P t.unpair.1 t.unpair.2) :=
+  ((primrec_datomDec P).comp ((primrec_atomUPos P).pair (primrec_atomUNeg P))).of_eq
+    fun _ => rfl
+
+/-! ### The union fold: `yFoldStep`/`yFold`
+
+`yFoldStep` is written as a function of a **single** packed argument `w = pair n (pair i acc)`
+(mirroring `atomStep`'s own convention), so that feeding it directly into `Nat.Primrec.prec` needs
+no further unpair/pair bookkeeping. -/
+
+/-- One step of the depth-`n` union fold over bit-sources `i + 2ⁿ` (bit `n` forced `1`): silently
+skip over `D`-side-empty ("junk") atoms — whose code is frozen at the aliasing value `0`
+(`atomUCode_eq_zero_of_empty`) and would otherwise contribute the spurious `UX 0 = U.master` to the
+union — and union in every genuine (non-junk) atom's code via `unionUX`. The accumulator is packed
+as `(found, code)`: `found = 0` means "no genuine atom seen among the earlier `i' < i` yet" (`code`
+is junk and unused in that case); `found = 1` means `code` already holds the union of all genuine
+atoms seen so far. -/
+noncomputable def yFoldStep (w : ℕ) : ℕ :=
+  let n := w.unpair.1
+  let i := w.unpair.2.unpair.1
+  let acc := w.unpair.2.unpair.2
+  let k := i + 2 ^ n
+  selectFn (atomUEmpty P (n + 1) k) acc
+    (selectFn acc.unpair.1
+      (Nat.pair 1 (unionUX acc.unpair.2 (atomUCode P (n + 1) k)))
+      (Nat.pair 1 (atomUCode P (n + 1) k)))
+
+theorem primrec_yFoldStep : Nat.Primrec (yFoldStep P) := by
+  have hn : Nat.Primrec (fun w : ℕ => w.unpair.1) := Nat.Primrec.left
+  have hacc : Nat.Primrec (fun w : ℕ => w.unpair.2.unpair.2) :=
+    Nat.Primrec.right.comp Nat.Primrec.right
+  have hi : Nat.Primrec (fun w : ℕ => w.unpair.2.unpair.1) :=
+    Nat.Primrec.left.comp Nat.Primrec.right
+  have h2n : Nat.Primrec (fun w : ℕ => 2 ^ w.unpair.1) := primrec_two_pow hn
+  have hk : Nat.Primrec (fun w : ℕ => w.unpair.2.unpair.1 + 2 ^ w.unpair.1) :=
+    primrec_add₂ hi h2n
+  have hn1 : Nat.Primrec (fun w : ℕ => w.unpair.1 + 1) := Nat.Primrec.succ.comp hn
+  have hempty : Nat.Primrec (fun w : ℕ =>
+      atomUEmpty P (w.unpair.1 + 1) (w.unpair.2.unpair.1 + 2 ^ w.unpair.1)) :=
+    ((primrec_atomUEmpty P).comp (hn1.pair hk)).of_eq
+      fun w => by simp only [unpair_pair_fst, unpair_pair_snd]
+  have hcode : Nat.Primrec (fun w : ℕ =>
+      atomUCode P (w.unpair.1 + 1) (w.unpair.2.unpair.1 + 2 ^ w.unpair.1)) :=
+    ((primrec_atomUCode P).comp (hn1.pair hk)).of_eq
+      fun w => by simp only [unpair_pair_fst, unpair_pair_snd]
+  have hfound : Nat.Primrec (fun w : ℕ => w.unpair.2.unpair.2.unpair.1) :=
+    Nat.Primrec.left.comp hacc
+  have hval : Nat.Primrec (fun w : ℕ => w.unpair.2.unpair.2.unpair.2) :=
+    Nat.Primrec.right.comp hacc
+  have hunion : Nat.Primrec (fun w : ℕ => unionUX w.unpair.2.unpair.2.unpair.2
+      (atomUCode P (w.unpair.1 + 1) (w.unpair.2.unpair.1 + 2 ^ w.unpair.1))) :=
+    (primrec_unionUX.comp (hval.pair hcode)).of_eq
+      fun w => by simp only [unpair_pair_fst, unpair_pair_snd]
+  have hinner : Nat.Primrec (fun w : ℕ => selectFn w.unpair.2.unpair.2.unpair.1
+      (Nat.pair 1 (unionUX w.unpair.2.unpair.2.unpair.2
+        (atomUCode P (w.unpair.1 + 1) (w.unpair.2.unpair.1 + 2 ^ w.unpair.1))))
+      (Nat.pair 1 (atomUCode P (w.unpair.1 + 1) (w.unpair.2.unpair.1 + 2 ^ w.unpair.1)))) :=
+    primrec_selectFn hfound
+      ((Nat.Primrec.const 1).pair hunion)
+      ((Nat.Primrec.const 1).pair hcode)
+  exact (primrec_selectFn hempty hacc hinner).of_eq fun w => by unfold yFoldStep; simp only []
+
+/-- The depth-`n` union fold over `i < N`, starting from the "nothing found yet" accumulator
+`(0, 0)`. -/
+noncomputable def yFold (n N : ℕ) : ℕ :=
+  N.rec (Nat.pair 0 0) (fun i acc => yFoldStep P (Nat.pair n (Nat.pair i acc)))
+
+theorem yFold_zero (n : ℕ) : yFold P n 0 = Nat.pair 0 0 := rfl
+
+theorem yFold_succ (n N : ℕ) :
+    yFold P n (N + 1) = yFoldStep P (Nat.pair n (Nat.pair N (yFold P n N))) := rfl
+
+theorem primrec_yFold : Nat.Primrec (fun t : ℕ => yFold P t.unpair.1 t.unpair.2) :=
+  (Nat.Primrec.prec (Nat.Primrec.const (Nat.pair 0 0)) (primrec_yFoldStep P)).of_eq fun _ => rfl
+
+/-! ### Correctness: `yFold`'s "found" flag and running union, by induction on `N` -/
+
+theorem atomUEmpty_zero_or_one (n k : ℕ) : atomUEmpty P n k = 0 ∨ atomUEmpty P n k = 1 := by
+  have h := datomDec_le_one P (Nat.pair (atomUPos P n k) (atomUNeg P n k))
+  unfold atomUEmpty
+  omega
+
+/-- Unfolding `yFoldStep` at an explicit `(n, i, acc)` triple. -/
+theorem yFoldStep_eq (n i acc : ℕ) :
+    yFoldStep P (Nat.pair n (Nat.pair i acc)) =
+      selectFn (atomUEmpty P (n + 1) (i + 2 ^ n)) acc
+        (selectFn acc.unpair.1
+          (Nat.pair 1 (unionUX acc.unpair.2 (atomUCode P (n + 1) (i + 2 ^ n))))
+          (Nat.pair 1 (atomUCode P (n + 1) (i + 2 ^ n)))) := by
+  unfold yFoldStep
+  simp only [unpair_pair_fst, unpair_pair_snd]
+
+theorem yFold_found_le_one (n : ℕ) : ∀ N, (yFold P n N).unpair.1 ≤ 1 := by
+  intro N
+  induction N with
+  | zero => simp [yFold_zero]
+  | succ N ih =>
+    rw [yFold_succ, yFoldStep_eq]
+    rcases atomUEmpty_zero_or_one P (n + 1) (N + 2 ^ n) with h0 | h1
+    · rw [h0, selectFn_zero]
+      rcases Nat.eq_zero_or_pos (yFold P n N).unpair.1 with hf0 | hfpos
+      · rw [show (yFold P n N).unpair.1 = 0 from hf0, selectFn_zero, unpair_pair_fst]
+      · rw [show (yFold P n N).unpair.1 = 1 from by omega, selectFn_one, unpair_pair_fst]
+    · rw [h1, selectFn_one]; exact ih
+
+/-- **The "found" flag exactly tracks existence of a non-junk bit-source below `N`.** -/
+theorem yFold_found_iff (n : ℕ) :
+    ∀ N, (yFold P n N).unpair.1 = 1 ↔ ∃ i < N, atomUEmpty P (n + 1) (i + 2 ^ n) = 0 := by
+  intro N
+  induction N with
+  | zero => simp [yFold_zero]
+  | succ N ih =>
+    rw [yFold_succ, yFoldStep_eq]
+    rcases atomUEmpty_zero_or_one P (n + 1) (N + 2 ^ n) with h0 | h1
+    · rw [h0, selectFn_zero]
+      have hval1 : (selectFn (yFold P n N).unpair.1
+          (Nat.pair 1 (unionUX (yFold P n N).unpair.2 (atomUCode P (n + 1) (N + 2 ^ n))))
+          (Nat.pair 1 (atomUCode P (n + 1) (N + 2 ^ n)))).unpair.1 = 1 := by
+        have hle := yFold_found_le_one P n N
+        rcases Nat.eq_zero_or_pos (yFold P n N).unpair.1 with hf | hf
+        · rw [show (yFold P n N).unpair.1 = 0 from hf, selectFn_zero, unpair_pair_fst]
+        · rw [show (yFold P n N).unpair.1 = 1 from by omega, selectFn_one, unpair_pair_fst]
+      rw [hval1]
+      exact ⟨fun _ => ⟨N, Nat.lt_succ_self N, h0⟩, fun _ => rfl⟩
+    · rw [h1, selectFn_one, ih]
+      constructor
+      · rintro ⟨i, hi, hie⟩; exact ⟨i, Nat.lt_succ_of_lt hi, hie⟩
+      · rintro ⟨i, hi, hie⟩
+        rcases Nat.lt_succ_iff_lt_or_eq.mp hi with hi' | rfl
+        · exact ⟨i, hi', hie⟩
+        · exact absurd hie (by omega)
+
+/-- **The membership form of `yFold`'s correctness**: once a non-junk bit-source has been found
+below `N`, the running code's `UX`-image is exactly the union of the genuine (non-junk) atoms
+seen so far. -/
+theorem yFold_mem_iff (n : ℕ) :
+    ∀ N, (yFold P n N).unpair.1 = 1 →
+      ∀ z : ℚ, z ∈ UX (yFold P n N).unpair.2 ↔
+        ∃ i < N, atomUEmpty P (n + 1) (i + 2 ^ n) = 0 ∧ z ∈ UX (atomUCode P (n + 1) (i + 2 ^ n)) := by
+  intro N
+  induction N with
+  | zero => intro h; simp [yFold_zero] at h
+  | succ N ih =>
+    intro hfound1 z
+    rw [yFold_succ, yFoldStep_eq] at hfound1 ⊢
+    rcases atomUEmpty_zero_or_one P (n + 1) (N + 2 ^ n) with h0 | h1
+    · rw [h0, selectFn_zero] at hfound1 ⊢
+      rcases Nat.eq_zero_or_pos (yFold P n N).unpair.1 with hf0 | hfpos
+      · rw [show (yFold P n N).unpair.1 = 0 from hf0, selectFn_zero, unpair_pair_snd]
+        constructor
+        · intro hz; exact ⟨N, Nat.lt_succ_self N, h0, hz⟩
+        · rintro ⟨i, hi, hie, hz⟩
+          rcases Nat.lt_succ_iff_lt_or_eq.mp hi with hi' | rfl
+          · exact absurd ((yFold_found_iff P n N).mpr ⟨i, hi', hie⟩) (by rw [hf0]; omega)
+          · exact hz
+      · have hf1 : (yFold P n N).unpair.1 = 1 := by
+          have := yFold_found_le_one P n N; omega
+        rw [hf1, selectFn_one, unpair_pair_snd, UX_unionUX, Set.mem_union, ih hf1 z]
+        constructor
+        · rintro (⟨i, hi, hie, hz⟩ | hz)
+          · exact ⟨i, Nat.lt_succ_of_lt hi, hie, hz⟩
+          · exact ⟨N, Nat.lt_succ_self N, h0, hz⟩
+        · rintro ⟨i, hi, hie, hz⟩
+          rcases Nat.lt_succ_iff_lt_or_eq.mp hi with hi' | rfl
+          · exact Or.inl ⟨i, hi', hie, hz⟩
+          · exact Or.inr hz
+    · rw [h1, selectFn_one] at hfound1 ⊢
+      rw [ih hfound1 z]
+      constructor
+      · rintro ⟨i, hi, hie, hz⟩; exact ⟨i, Nat.lt_succ_of_lt hi, hie, hz⟩
+      · rintro ⟨i, hi, hie, hz⟩
+        rcases Nat.lt_succ_iff_lt_or_eq.mp hi with hi' | rfl
+        · exact ⟨i, hi', hie, hz⟩
+        · exact absurd hie (by omega)
+
+/-! ### `YseqCode`: assembling the fold at `N = 2ⁿ` -/
+
+theorem yFold_two_pow_found (n : ℕ) : (yFold P n (2 ^ n)).unpair.1 = 1 :=
+  (yFold_found_iff P n (2 ^ n)).mpr (exists_atomUEmpty_zero P n)
+
+/-- **`YseqCode`, Scott's `Yₙ` coded.** The `Nat.Primrec` union, over the `2ⁿ` bit-sources
+`i < 2ⁿ` (bit `n` forced `1`, i.e. `i + 2ⁿ`), of the genuine (non-junk) atoms `atomUCode P (n+1)
+(i + 2ⁿ)`. -/
+noncomputable def YseqCode (n : ℕ) : ℕ := (yFold P n (2 ^ n)).unpair.2
+
+theorem primrec_YseqCode : Nat.Primrec (YseqCode P) := by
+  have h2n : Nat.Primrec (fun n : ℕ => 2 ^ n) := primrec_two_pow Nat.Primrec.id
+  refine (Nat.Primrec.right.comp ((primrec_yFold P).comp (Nat.Primrec.id.pair h2n))).of_eq
+    fun n => ?_
+  show ((yFold P (Nat.pair n (2 ^ n)).unpair.1 (Nat.pair n (2 ^ n)).unpair.2)).unpair.2 = YseqCode P n
+  rw [unpair_pair_fst, unpair_pair_snd]
+  rfl
+
+/-- **The closed-form membership characterization of `YseqCode`** — the "Set-level closed form"
+this part exists to supply: a point lies in `UX (YseqCode P n)` iff it lies in some genuine
+(non-junk) depth-`(n+1)` atom with bit `n` forced `1`. -/
+theorem mem_UX_YseqCode_iff (n : ℕ) (z : ℚ) :
+    z ∈ UX (YseqCode P n) ↔
+      ∃ i < 2 ^ n, atomUEmpty P (n + 1) (i + 2 ^ n) = 0 ∧ z ∈ UX (atomUCode P (n + 1) (i + 2 ^ n)) :=
+  yFold_mem_iff P n (2 ^ n) (yFold_two_pow_found P n) z
+
+/-! ### The closed form: `YseqCode` recovers the "+"-piece of the atom recursion
+
+Mirrors `Theorem88.lean`'s `split_fst_eq_inter_Yseq`: the "+"-branch chosen at depth `n` by the
+atom recursion is exactly the intersection of the depth-`n` atom with `YseqCode`. Pairwise
+disjointness (`atomUCode_disjoint`) is what rules out any *other* atom leaking a point into
+`UX (YseqCode P n)` that isn't already forced into this one. -/
+
+theorem atomUCode_succ_true {k n : ℕ} (hne : atomUEmpty P (n + 1) k = 0)
+    (hδ : deltaOf k n = true) :
+    UX (atomUCode P (n + 1) k) = UX (atomUCode P n k) ∩ UX (YseqCode P n) := by
+  set j := k % 2 ^ n with hjdef
+  have hjlt : j < 2 ^ n := Nat.mod_lt k (Nat.two_pow_pos n)
+  have hagree : ∀ i < n + 1, deltaOf k i = deltaOf (j + 2 ^ n) i := by
+    intro i hi
+    rcases Nat.lt_succ_iff_lt_or_eq.mp hi with hi' | rfl
+    · rw [deltaOf_add_two_pow_of_lt _ hi', hjdef, deltaOf_mod_two_pow_of_lt hi']
+    · rw [deltaOf_two_pow_add_self hjlt, hδ]
+  obtain ⟨hpos_eq, hneg_eq, hcode_eq⟩ := atomUCodeState_congr P hagree
+  have hempty_eq : atomUEmpty P (n + 1) (j + 2 ^ n) = 0 := by
+    have heq : atomUEmpty P (n + 1) (j + 2 ^ n) = atomUEmpty P (n + 1) k := by
+      unfold atomUEmpty; rw [hpos_eq, hneg_eq]
+    rw [heq]; exact hne
+  apply Set.Subset.antisymm
+  · have hsub1 : UX (atomUCode P (n + 1) k) ⊆ UX (atomUCode P n k) := atomUCode_subset P hne
+    have hsub2 : UX (atomUCode P (n + 1) k) ⊆ UX (YseqCode P n) := by
+      rw [hcode_eq]
+      intro z hz
+      exact (mem_UX_YseqCode_iff P n z).mpr ⟨j, hjlt, hempty_eq, hz⟩
+    exact Set.subset_inter hsub1 hsub2
+  · rintro z ⟨hzB, hzY⟩
+    obtain ⟨i, hilt, hie, hz⟩ := (mem_UX_YseqCode_iff P n z).mp hzY
+    by_cases hagree' : ∀ p < n, deltaOf (i + 2 ^ n) p = deltaOf k p
+    · have hagreeFull : ∀ l < n + 1, deltaOf (i + 2 ^ n) l = deltaOf k l := by
+        intro l hl
+        rcases Nat.lt_succ_iff_lt_or_eq.mp hl with hl' | rfl
+        · exact hagree' l hl'
+        · rw [deltaOf_two_pow_add_self hilt, hδ]
+      have hcode_eq'' : atomUCode P (n + 1) (i + 2 ^ n) = atomUCode P (n + 1) k :=
+        (atomUCodeState_congr P hagreeFull).2.2
+      rw [← hcode_eq'']; exact hz
+    · push_neg at hagree'
+      obtain ⟨l, hl, hlne⟩ := hagree'
+      have hd : UX (atomUCode P n (i + 2 ^ n)) ∩ UX (atomUCode P n k) = ∅ :=
+        atomUCode_disjoint P n (i + 2 ^ n) k (atomUEmpty_zero_of_succ P hie)
+          (atomUEmpty_zero_of_succ P hne) ⟨l, hl, hlne⟩
+      have hzB' : z ∈ UX (atomUCode P n (i + 2 ^ n)) := atomUCode_subset P hie hz
+      have hzmem : z ∈ UX (atomUCode P n (i + 2 ^ n)) ∩ UX (atomUCode P n k) := ⟨hzB', hzB⟩
+      rw [hd] at hzmem
+      exact absurd hzmem (Set.mem_empty_iff_false z).mp
+
 end Scott1980.Neighborhood

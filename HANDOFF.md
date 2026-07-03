@@ -6038,3 +6038,68 @@ Scott's `Yₙ` closed form using this entry's `atomUCode_disjoint` for the "no o
 point in" half (mirroring `split_fst_eq_inter_Yseq`/`atomU_succ_eq`, `Theorem88.lean` ~384–450). See
 the "what's still missing" numbered plan (items 2–5) two sections above — unchanged except item 1 is
 now done.
+
+## 2026-07-02 checkpoint: Theorem 8.8(b)(vii)(2) — `YseqCode` and its closed form, Pass
+
+**What was built, all in `Theorem88d.lean`, `lake build` green, zero `sorry`:**
+
+- **Bit arithmetic for `deltaOf`:** `deltaOf_eq_testBit` identifies `deltaOf k i` with `k.testBit i`
+  outright (`Nat.testBit_eq_decide_div_mod_eq`), so `deltaOf_add_two_pow_of_lt`,
+  `deltaOf_two_pow_add_self`, `deltaOf_mod_two_pow_of_lt` (how `deltaOf` reacts to shifting by `+2ⁿ`
+  or masking by `%2ⁿ`) are direct transcriptions of core `Nat.testBit` lemmas — no bespoke induction.
+- **`encodeBits : (ℕ→Bool)→ℕ→ℕ`** (private, pure existence tool, never claimed `Primrec`): realizes
+  a prescribed finite bit-prefix as an explicit witness natural (`encodeBits_lt`,
+  `deltaOf_encodeBits`).
+- **`exists_atomUEmpty_zero`**: mirrors `Theorem88a.lean`'s `Yidx_nonempty`/`self_mem_idxSet`,
+  transported via `encodeBits`, to show some bit-source `i < 2ⁿ` always gives a genuine (`D`-side
+  non-empty) atom `atomUCode P (n+1) (i+2ⁿ)` — needed so the fold below is guaranteed non-junk by
+  `N=2ⁿ`.
+- **The fold — `yFoldStep`/`yFold` (`noncomputable`, inherits `atomUEmpty`'s classicality),
+  `primrec_yFoldStep`/`primrec_yFold`:** packs an accumulator `(found,code)`. Junk atoms alias to
+  `UX 0 = U.master` (`canonCode`'s degenerate-input fallback), so they're *skipped*, never unioned
+  in — `found=0` means no genuine atom seen yet; `found=1` means `code` holds the running
+  `unionUX`-union of all genuine atoms seen so far. Built as `Nat.Primrec.prec` over a single packed
+  argument, mirroring `atomStep`'s own convention.
+- **`YseqCode P n := (yFold P n (2^n)).unpair.2`**, `Nat.Primrec` (`primrec_YseqCode`), with the
+  closed form `mem_UX_YseqCode_iff : z ∈ UX (YseqCode P n) ↔ ∃ i<2ⁿ, atomUEmpty P (n+1) (i+2ⁿ)=0 ∧
+  z ∈ UX (atomUCode P (n+1) (i+2ⁿ))`, proved by induction on the fold's iteration count
+  (`yFold_found_iff`, `yFold_mem_iff`) plus `yFold_two_pow_found` (from `exists_atomUEmpty_zero`).
+- **Headline `atomUCode_succ_true`** (mirroring `Theorem88.lean`'s `split_fst_eq_inter_Yseq`): for
+  non-junk `k` with `deltaOf k n = true`,
+  `UX (atomUCode P (n+1) k) = UX (atomUCode P n k) ∩ UX (YseqCode P n)`.
+  - `⊆`: `atomUCode_subset` (Part 1) for the left factor; for the right factor, `atomUCodeState_congr`
+    identifies `k` with its canonical bit-source `k%2ⁿ + 2ⁿ` (same bits below `n+1`), which is
+    literally a term of `YseqCode`'s defining union.
+  - `⊇`: given `z` in both the depth-`n` atom `UX(atomUCode P n k)` and some genuine atom
+    `UX(atomUCode P (n+1) (i+2ⁿ))` from `YseqCode`'s union (`i<2ⁿ`), case on whether `i+2ⁿ` agrees
+    with `k` on every bit below `n+1`: if so, `atomUCodeState_congr` forces the two depth-`(n+1)`
+    codes literally equal, done; if not (disagree at some bit `< n`, since bit `n` is forced `1` on
+    both), Part 1's `atomUCode_disjoint` forces
+    `UX(atomUCode P n (i+2ⁿ)) ∩ UX(atomUCode P n k) = ∅` — but `atomUCode_subset` pushes `z` down
+    from depth `n+1` to depth `n` on the `i+2ⁿ` side too, giving `z` in *both* factors of that empty
+    intersection, a contradiction.
+
+**Pitfalls hit and fixed this session:**
+1. Two `omega` calls in `yFold_found_le_one`/`yFold_mem_iff` failed because the local context only
+   had `(yFold P n N).unpair.1 > 0`, not the upper bound; fixed by threading in
+   `have hle := yFold_found_le_one P n N` right before each `omega` so it can conclude `= 1`.
+2. `primrec_YseqCode`'s `.of_eq` closure needed an explicit `show`+`rw [unpair_pair_fst,
+   unpair_pair_snd]`+`rfl` rather than a bare `simp only [...]`, since the final equality
+   `(yFold P n (2^n)).unpair.2 = YseqCode P n` only closes by unfolding `YseqCode`'s own definition.
+3. `Set.not_mem_empty` doesn't exist under that name in this Mathlib snapshot; used
+   `(Set.mem_empty_iff_false z).mp` instead to close the final contradiction in `atomUCode_succ_true`.
+
+**Axiom audit:** `#print axioms` on `primrec_YseqCode`/`mem_UX_YseqCode_iff`/`atomUCode_succ_true`
+all give `[propext, Classical.choice, Quot.sound]` — identical to the pre-existing baseline
+(`primrec_atomUCode`/`atomUCode_subset` carry the same footprint), confirmed by direct comparison.
+No new taint.
+
+**`arxiv.md` updated**: (vii)(2) row rewritten with the proof note above, marked **Pass**; (vii)
+umbrella row's "1 of 4 sub-parts Pass" → "2 of 4 sub-parts Pass".
+
+**Next:** 8.8(b)(vii)(3) — assemble `D''` as a `NeighborhoodSystem ℚ` from `n ↦ UX (YseqCode P n)`
+(genuinely code-driven, unlike `Theorem88a.lean`'s `Yidx`), prove `D ≅ᴰ D''` and `D'' ◁ U`, and build
+a `ComputablePresentation D''` with master index `0`. `mem_UX_YseqCode_iff` and `atomUCode_succ_true`
+are the two facts this depends on. Likely mirrors `Theorem88a.lean`'s `DprimeU`/`theorem_8_8_a`
+assembly shape and `Theorem88c.lean`'s `DprimeUPresentation` shape for the `ComputablePresentation`
+half.
