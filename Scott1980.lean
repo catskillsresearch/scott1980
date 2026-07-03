@@ -182,3 +182,4 @@ import Scott1980.Neighborhood.Theorem88c
 import Scott1980.Neighborhood.Theorem88d
 import Scott1980.Neighborhood.Theorem88e
 import Scott1980.Neighborhood.Theorem88f
+import Scott1980.Neighborhood.Theorem88g
