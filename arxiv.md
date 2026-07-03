@@ -1928,8 +1928,44 @@ Lecture VIII covers retractions, projections, and the construction of the univer
 
 #### Theorem 8.8(c)
 * **Mathematical Target:** converse correspondence — a computable, finitary projection `a` of `U` yields an effectively given domain (`{Y∈U∣YaY}◁U` is effectively given)
+* **Lean File:** — (umbrella; see sub-items 8.8(c)(i)–8.8(c)(vi) below for the per-part Lean files)
+* **Proof Notes:** the naive reading of `arxiv.md`'s old one-line proof note ("`a`'s graph r.e. + `U`-equality decidable ⟹ `{Y∈U∣YaY}` r.e. ⟹ effectively given") glosses over a real gap: `a.rel Xₙ Xₙ` being merely **r.e.**, not decidable, means the raw index set `S := {n∣Xₙ a Xₙ}` cannot be *filtered* into a `ComputablePresentation`'s enumeration directly — `interEq_computable`/`cons_computable` need genuinely **decidable** relations and a **primitive-recursive** `.inter`, and naive filtering by an r.e. predicate gives none of these. Broken into a 6-part plan (mirroring 8.8(b)'s style) tracked as sub-rows **8.8(c)(i)–8.8(c)(vi)**: (i) extract the decidable r.e.-witness relation for the diagonal `S(n) := a.rel Xₙ Xₙ`; (ii) a `meetFold`-style primitive-recursive fold, *gated* by that witness relation at each list entry, whose accumulator is proved (by induction using `fixedNbhd_subsystem a`'s `inter_closed`) to **always** land back inside `S` — no unbounded search at any step, since the fold only ever combines two *already-witnessed* indices, never needs to find a fresh witness for a combined one; (iii) the induced enumeration `D_X : ℕ → Set α` covers `fixedNbhd a` exactly (`mem_X`/`surj`, the latter via a singleton-list code); (iv) `interEq_computable` (free, direct composition with `U`'s own decider through the primitive-recursive fold) and `cons_computable` (needs one real lemma: `D`-consistency of two fold-codes is equivalent to `U`-consistency of their underlying raw indices, via the subsystem relation both directions); (v) the `.inter` field itself, reusing `Recursive.lean`'s existing `appendListCode`/`primrec_appendListCode` (list concatenation) plus a "fold-from-a-valid-start distributes over `++`" lemma for `inter_spec`; (vi) final assembly into `ComputablePresentation (fixedNbhd a)` and the headline `theorem_8_8_c`, wired into `Domain.lean`.
+* **Status:** Deferred (all 6 parts Deferred; see sub-rows)
+
+#### Theorem 8.8(c)(i)
+* **Mathematical Target:** Part 1 of 6 — the diagonal fixed-point predicate `DiagFixed P a n := a.rel Xₙ Xₙ` (i.e. `(fixedNbhd a).mem Xₙ`, given `Xₙ` is always a `U`-neighbourhood) is recursively enumerable, given `a` is a computable map
 * **Lean File:** — (Formalization deferred)
-* **Proof Notes:** short, given Theorem 8.5's identification of a finitary projection's fixed-point set as a subsystem: if `a`'s graph is r.e. and equality of `U`-neighbourhoods is decidable, `{Y∈U∣YaY}` is r.e., hence effectively given.
+* **Proof Notes:** planned: restrict `IsComputableMap P P a`'s `REPred₂ (fun n m => a.rel Xₙ Xₘ)` to the diagonal via `REPred.comp` against the primitive-recursive `n ↦ Nat.pair n n`, then unfold `REPred`'s own definition to expose the decidable witness relation `q(i,n)` with `S(n) ↔ ∃i, q(i,n)` — the `qChar : ℕ→ℕ` extracted from this `q`'s `RecDecidable` is what Parts 2–4 gate their fold on.
+* **Status:** Deferred
+
+#### Theorem 8.8(c)(ii)
+* **Mathematical Target:** Part 2 of 6 — a `qChar`-gated, `Nat.Primrec` list-fold (`myStep`/`myFoldCode`) whose accumulator is *always* a raw `U`-index satisfying `DiagFixed`, for any input list-code
+* **Lean File:** — (Formalization deferred)
+* **Proof Notes:** planned: mirror `DAtomDecidable.lean`'s `meetStep`/`meetFold`/`meetFoldCode` shape (accumulator = raw index, no `(ok,idx)` pair needed here since an invalid or `U`-inconsistent list entry is simply *skipped*, i.e. folded in as a no-op, rather than freezing the whole computation not-ok) built via the existing `foldCode` combinator, so `Nat.Primrec` is immediate from `primrec_foldCode` given `qChar`/`U`'s `cons` decider are primitive recursive. The mathematical content is the **invariant** `DiagFixed P a (myFoldCode qChar cons c)` for every code `c`: by induction on the list, the base case is `DiagFixed P a P.masterIdx` (`a.master_rel` + `P.masterIdx_spec`), and the step either no-ops (trivial) or combines two already-`DiagFixed` raw indices via `P.inter` under a checked `U`-consistency witness, landing back in `DiagFixed` by `(fixedNbhd_subsystem a).inter_closed` plus `P.inter_spec`.
+* **Status:** Deferred
+
+#### Theorem 8.8(c)(iii)
+* **Mathematical Target:** Part 3 of 6 — the induced enumeration `D_X qChar cons c := P.X (myFoldCode qChar cons c)` is always a `fixedNbhd a`-neighbourhood (`mem_X`) and hits every one of them (`surj`)
+* **Lean File:** — (Formalization deferred)
+* **Proof Notes:** planned: `mem_X` is Part 2's invariant repackaged via `fixedNbhd_mem`. `surj`: given `Y ∈ fixedNbhd a` with raw `U`-index `n₀` (`P.surj`) and (by Part 1's `REPred` unfolding) an existentially-extracted witness `i₀` with `qChar(i₀,n₀)` decidably true, the singleton list-code `[Nat.pair i₀ n₀]` folds (starting from `P.masterIdx`, `U`-consistent with everything since `P.masterIdx` indexes `U`'s master) to a raw index `n` with `Xₙ = X n₀ ∩ U.master = X n₀ = Y`. The witness-extraction is a `Prop`-level existential elimination (fine — it is not required to be part of any primitive-recursive data).
+* **Status:** Deferred
+
+#### Theorem 8.8(c)(iv)
+* **Mathematical Target:** Part 4 of 6 — `D_X`'s `interEq`/`cons` relations are recursively decidable
+* **Lean File:** — (Formalization deferred)
+* **Proof Notes:** planned: `interEq_computable` is free — `D_X c₁ ∩ D_X c₂ = D_X c₃` unfolds *literally* to `Xₙ₁ ∩ Xₙ₂ = Xₙ₃` for `nᵢ := myFoldCode qChar cons cᵢ`, so `RecDecidable₃` follows by composing `P.interEq_computable` with the (primitive-recursive, by Part 2) triple-fold reindex. `cons_computable` needs the one genuine lemma of this theorem: `∃k, D_X k ⊆ D_X c₁ ∩ D_X c₂` (`D`-consistency) is *equivalent* to `∃k', Xk' ⊆ Xₙ₁ ∩ Xₙ₂` (`U`-consistency of the underlying raw indices) — `⟸` needs `(fixedNbhd_subsystem a).inter_closed` plus a singleton-list witness code (as in Part 3) to produce a `D`-side witness; `⟹` is immediate since any `D`-witness is automatically a `U`-witness (`fixedNbhd_subsystem a`'s `sub` clause). This reduces `cons_computable` to `P.cons_computable` composed with the same fold reindex.
+* **Status:** Deferred
+
+#### Theorem 8.8(c)(v)
+* **Mathematical Target:** Part 5 of 6 — a primitive-recursive `.inter` field for `D_X` and its `inter_spec`
+* **Lean File:** — (Formalization deferred)
+* **Proof Notes:** planned: `D_inter c₁ c₂ := appendListCode c₁ c₂`, reusing `Recursive.lean`'s existing `appendListCode`/`primrec_appendListCode`/`appendListCode_eq` (`Exercise 7.22 C9b4`) outright — no new primitive-recursive combinator needed. `inter_spec` needs a "fold-from-an-arbitrary-`DiagFixed`-valid-start distributes over list `++`" lemma: folding `l₁ ++ l₂` from `P.masterIdx` equals folding `l₂` starting from `myFold l₁`'s result, and (given the `D`-consistency hypothesis, i.e. Part 4's equivalent `U`-consistency of the two raw indices) that continuation's raw index set equals the intersection of the two separate folds' sets — an `idxSet`-style argument analogous to `DAtomDecidable.lean`'s `meetFold_foldl_spec`, using `Theorem88a.lean`'s already-proved `idxSet_eq_iff` to convert an `idxSet`-level equality back into a genuine `Set α` equality.
+* **Status:** Deferred
+
+#### Theorem 8.8(c)(vi)
+* **Mathematical Target:** Part 6 of 6 — final assembly: package Parts 1–5 into a genuine `ComputablePresentation (fixedNbhd a)` and state `theorem_8_8_c`
+* **Lean File:** — (Formalization deferred)
+* **Proof Notes:** planned: `fixedNbhd_isEffectivelyGiven {a} (hcomp : IsComputableMap P P a) : (fixedNbhd a).IsEffectivelyGiven`, packaging Parts 1–5's `D_X`/`myFoldCode`/`appendListCode` triple as a `ComputablePresentation`, then `theorem_8_8_c {a : ApproximableMap U U} (hfin : IsFinitaryProjection a) (hcomp : IsComputableMap UComputablePresentation UComputablePresentation a) : (fixedNbhd a).IsEffectivelyGiven ∧ fixedNbhd a ◁ U` (the subsystem half already exists as `fixedNbhd_subsystem a`, Theorem 8.5). Note: `hfin` is carried in the signature to match Scott's stated hypothesis on `a`, but is not actually needed by *this* implication (only `hcomp` drives the effectiveness argument) — to be called out explicitly in the file's docstring rather than silently dropped.
 * **Status:** Deferred
 
 #### Definition 8.9
