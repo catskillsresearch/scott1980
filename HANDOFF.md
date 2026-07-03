@@ -21,7 +21,11 @@ now COMPLETE**: a new general lemma `theorem_8_8_b_strong` (`Theorem88n.lean`) u
 8.8(b) to a *direct* computable projection pair `D ⇄ U` (no intermediate isomorphic copy), applied
 to `𝒰+𝒰`/`𝒰×𝒰`/`𝒰→𝒰` to fix the six maps `i_+,j_+,i_×,j_×,i_→,j_→`, with the three combinators
 `a+b`/`a×b`/`a→b` (`Definition89.lean`) a direct transcription of Scott's formulas from pre-existing
-combinators (`cond`/`whichMap`/`paired`/`proj₀,₁`/`inMap₀,₁`/`outMap₀,₁`/`curry`/`evalMap`)
+combinators (`cond`/`whichMap`/`paired`/`proj₀,₁`/`inMap₀,₁`/`outMap₀,₁`/`curry`/`evalMap`); **and
+Proposition 8.10's first half (projection-closure) is now COMPLETE** (`Proposition810.lean`, new
+file): `isProjection_sumComb`/`isProjection_prodComb`/`isProjection_arrowComb` — `a,b` projections ⟹
+`a+b`,`a×b`,`a→b` projections — assembled into `isProjection_combinators`; the second half
+(finitary-closure, `D_a*D_b≅D_{a*b}`) is a **documented deferred follow-up**, not attempted
 
 You are a Lean 4 proof engineer formalizing Dana Scott's 1981 *Lectures on a Mathematical Theory of
 Computation* (PRG-19) in:
@@ -6764,3 +6768,62 @@ remark that he doesn't know a good explicit construction for `𝒰→𝒰`).
 infrastructure (a direct computable `D ⇄ U` pair, not routed through an intermediate copy) — likely
 useful again for Exercise 8.15/8.16/8.17. **Next up:** Proposition 8.10, or continue down `arxiv.md`'s
 Lecture VIII "Deferred" rows (Exercises 8.11–8.26).
+
+## 2026-07-03 checkpoint: Proposition 8.10, first half (projection-closure) — Pass
+
+**New file `Proposition810.lean`.** `IsProjection a → IsProjection b → IsProjection (a*b)` for
+`* ∈ {+,×,→}`, i.e. `isRetraction_*Comb`/`le_idMap_*Comb` (idempotence + `≤ idMap U`) for each of
+`sumComb`/`prodComb`/`arrowComb`, assembled into `isProjection_sumComb`/`isProjection_prodComb`/
+`isProjection_arrowComb`/`isProjection_combinators`.
+
+**Four generic element-level helper lemmas** open the file (any projection pair `i,j` or retraction
+`a`, stated once, reused by all three cases): `toElementMap_of_comp_eq_idMap` (`j∘i=I_D ⟹ j(i(v))=v`),
+`toElementMap_le_of_comp_le_idMap` (`i∘j≤I_E ⟹ i(j(x))≤x`), `toElementMap_le_self_of_le_idMap`
+(`a≤I_E ⟹ a(x)≤x`), `toElementMap_idem_of_isRetraction` (`a∘a=a ⟹ a(a(x))=a(x)`).
+
+* **`×` (cleanest).** `prodComb a b = iTimes∘(prodMap a b)∘jTimes` *literally* (`prodMap a b =
+  ⟨a∘proj₀,b∘proj₁⟩`, Exercise 3.19's product-functor combinator — unfolds by `rfl`). Both closure
+  facts reduce, at the element level, to `pair_le_pair_iff`/`toElementMap_prodMap`/
+  `toElementMap_mono` plus the four generic identities above.
+
+* **`→` (via `funSpaceEquiv`).** `lamComb a b`, *transported through* `funSpaceEquiv` (Theorem 3.10,
+  `(funSpace U U).Element ≃o ApproximableMap U U`), is exactly Scott's map-level formula `f↦b∘f∘a`
+  (`toApproxMap_toElementMap_lamComb`, chaining `toElementMap_curry_apply`/`toElementMap_prodMap_pair`/
+  `evalMap_apply`). Both closure facts then reduce to the same `×`-style algebra, transported back
+  through the order-embedding `toApproxMap`.
+
+* **`+` (direct, no bridge to `sumMap`; the hard case).** `sumMap` (Exercise 3.19's raw sum-functor
+  relation) is *not* literally built from `cond`/`which`, so unlike `×`/`→` there is no cheap
+  `sumComb = i₊∘sumMap∘j₊` bridge. Instead:
+  - `toElementMap_sumComb_mem`: `sumComb`'s full elementwise mem-iff, by unfolding `sumComb_eq`
+    (`rfl`) through `toElementMap_comp`/`toElementMap_paired` down to `cond_toElementMap_mem`
+    (Exercise 3.26) — a 3-way disjunction on `which(jPlus x)` selecting `{0}`/`{1}`/neither.
+  - Three **value-formula** lemmas case-split on `sum_element_trichotomy` (Exercise 3.26):
+    `toElementMap_sumComb_of_left`/`_of_right` (Scott's literal `i₊∘in₀/₁∘a/b∘out₀/₁` formula, using
+    `which_mem_zero/one` plus the disjointness fact `not_sum_reaches_both`
+    [`inj₀_inter_inj₁`/`not_sum_mem_empty`] to rule out the other guard) and `_of_neither` (lands on
+    `U.bot`, using `inj₀/₁_ne_sumMaster` [already in `Theorem74.lean`] to rule out *both* guards).
+  - **Idempotence's "left"/"right" cases** re-enter the *same* case after applying `a`/`b` once more,
+    via the *unconditional* round-trip `outMap₀_comp_inMap₀ = idMap` (so `outMap₀(inMap₀ v) = v` needs
+    no case hypothesis) plus a new `inMap₀_toElementMap_reaches_left`/`inMap₁_toElementMap_reaches_right`
+    (the image of `in₀/₁` always reaches its own copy, witnessed by the master neighbourhood).
+  - **Idempotence's "neither" case** needs `jPlus_bot_eq_bot` (`𝒰`'s bottom maps to `𝒰+𝒰`'s bottom),
+    itself an instance of a clean **general fact** `toElementMap_bot_eq_bot_of_comp_eq_idMap`: for
+    *any* `j∘i=I_D`, `j(E.bot)` is a global lower bound of `|D|` (`D.bot≤i(v)` monotone through `j`
+    lands on `j(i(D.bot))=D.bot` via `v:=D.bot`), hence `=D.bot` by antisymmetry with `bot_le` — no
+    disjointness argument needed here, unlike an earlier draft plan.
+
+**Not attempted: Proposition 8.10's second half** (finitary-closure, `D_a*D_b ≅ D_{a*b}`) — needs
+substantially more infrastructure (a general "conjugate fixed-point-sets across a projection pair"
+lemma, plus `prodEquiv`/`funSpaceEquiv`/a coproduct-element characterization for `sum`); left as a
+documented follow-up for whenever finitary projections of `U` become the active target (e.g. via
+Theorem 8.6's `subApprox` composed with these combinators).
+
+**Zero `sorry`.** `lake build` (whole project, 3010 jobs) green, no warnings in `Proposition810.lean`.
+`#print axioms isProjection_sumComb/_prodComb/_arrowComb/_combinators` all give
+`⊆{propext,Classical.choice,Quot.sound}` — confirmed the same inherited `U`-footprint, nothing new.
+`Scott1980.lean` updated to import `Proposition810`.
+
+**Status: Proposition 8.10 (first half) is `Pass`.** **Next up:** Proposition 8.10's second half
+(finitary-closure, deferred above), or continue down `arxiv.md`'s Lecture VIII "Deferred" rows
+(Exercises 8.11–8.26).

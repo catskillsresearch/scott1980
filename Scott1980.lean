@@ -191,3 +191,4 @@ import Scott1980.Neighborhood.Theorem88l
 import Scott1980.Neighborhood.Theorem88m
 import Scott1980.Neighborhood.Theorem88n
 import Scott1980.Neighborhood.Definition89
+import Scott1980.Neighborhood.Proposition810
