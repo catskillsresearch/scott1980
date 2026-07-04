@@ -7853,3 +7853,66 @@ expected, just confirm/tidy); then Exercise 8.12(c)(vi)(7) — the still-vague "
 placeholder pending (vi)(1)–(vi)(6), now that all of those are `Pass`: needs a fresh look at
 whether (vii)'s `DomainIso` assembly needs anything beyond (5)'s six headline facts, or whether
 (vii) can proceed directly and (vi)(7) collapses to "nothing left to do".
+
+## 2026-07-04 checkpoint — Exercise 8.12(c)(vi)(6)/(vi)(7) `Pass`: **8.12(c)(vi) COMPLETE, all of (1)–(7)**
+
+**(vi)(6)**: pure confirmation, no new Lean content — (5)(d)'s odd-index specializations
+(`YPseq_subset_iff_Y_subset` etc.) already are exactly this row's original "swapped-roles" target.
+
+**(vi)(7)**: the vagueness resolved cleanly, and **not** vacuously — a genuine small new fact,
+not just transcription, and (contrary to what the exercise's target phrasing might suggest) **no
+separate "mutual extension" hypothesis beyond `NoMinimal` on both sides was needed.** Chain of
+reasoning (all in `Scott1980/Neighborhood/Exercise812c.lean`):
+
+* **`NeighborhoodSystem.NoMinimal.mem_ne_empty`** (new, fully generic, placed right after
+  `NoMinimal`'s own definition, *outside* `section AtomPair`): `D.NoMinimal` forces `¬ D.mem ∅`
+  — applying `NoMinimal` at `X := ∅` would demand a non-empty `Y ⊆ Y ∪ Z = ∅`, impossible
+  (`Set.union_empty_iff` then `Y.Nonempty.ne_empty`). A one-line proof, but previously missing and
+  exactly what was needed.
+* **`X_ne_empty`/`Y_ne_empty`**: `hXmem`/`hYmem`'s enumerated sets are never `∅` — immediate
+  corollaries.
+* **`X_eq_empty_iff_XPseq_eq_empty`/`Y_eq_empty_iff_YPseq_eq_empty`**: the slick step — collapsing
+  (5)(d)'s `i = j` inter-empty transfer facts (`X_inter_empty_iff_XPseq_inter_empty`/
+  `YPseq_inter_empty_iff_Y_inter_empty` at `i = j = n`) through `Set.inter_self` gives *exactly*
+  `X n = ∅ ↔ XPseq n = ∅` (resp. `Y n = ∅ ↔ YPseq n = ∅`) for free — no new proof content beyond
+  the substitution, since (5)(d) already proved the general two-index version.
+* **`XPseq_ne_empty`/`YPseq_ne_empty`**: combine the two facts above (never `∅`, since the
+  `X`/`Y`-side partner isn't).
+* **`XPseq_mem`/`YPseq_mem`**: resolve (vi)(4)'s `XPseq_empty_or_mem`/`YPseq_empty_or_mem`
+  disjunction against the just-proved non-emptiness, giving `D₁.mem (XPseq n)`/`D₀.mem (YPseq n)`
+  **unconditionally**.
+
+This completes the correspondence `X n ↔ XPseq n` / `Y n ↔ YPseq n` as *always* a matched pair of
+genuine neighbourhoods on both sides — exactly what (vii)'s `DomainIso` assembly needs, mirroring
+`Theorem88a.lean`'s `Yidx_nonempty`/`Yidx_mem` but derived very differently (from the
+emptiness-transfer already in hand, rather than an `idxSet`-style reflexivity trick — there is no
+`idxSet` here, since `X`/`Y` are already given enumerations of *existing* systems `D₀`/`D₁`, not
+freshly-built ones).
+
+Two small build hiccups along the way, both fixed: (1) a doc-comment containing the literal
+substring `` `-/` `` (inside backticked math) prematurely closed the block comment — reworded to
+avoid it; (2) `Set.union_eq_empty` doesn't exist in current Mathlib — the correct name is
+`Set.union_empty_iff`.
+
+Zero `sorry`; whole-project `lake build` (3163 jobs) green; `#print axioms` on the headline
+theorems (`NoMinimal.mem_ne_empty`, `X_ne_empty`, `Y_ne_empty`, `XPseq_mem`, `YPseq_mem`) all give
+`⊆{propext, Classical.choice, Quot.sound}`, matching the section's baseline. `arxiv.md`:
+8.12(c)(vi)(6)/(vi)(7) rows updated to `Pass`; **8.12(c)(vi) umbrella row rolled up to `Pass`** (all
+of (1)–(7) done); 8.12(c) umbrella row updated to reflect (i)–(vi) all `Pass`, only (vii) remains.
+
+**Status: Exercise 8.12(c)(vi) is `Pass` — COMPLETE, all of (1)–(7).** **Next up:** Exercise
+8.12(c)(vii) — the final `DomainIso D₀ D₁` assembly, the last piece of 8.12(c). This is a
+substantial undertaking (comparable to `Theorem88a.lean`'s ~150-line `Iso` section, but genuinely
+*symmetric* rather than a one-sided embedding into a freshly-built target). Before writing any
+code, **this needs its own scoping pass**: at minimum it will need (a) covering/surjectivity
+hypotheses on `X`/`Y` (`hXcover : ∀ S, D₀.mem S ↔ ∃ n, S = X n`, symmetric `hYcover`) not yet
+present anywhere in `Exercise812c.lean` (the section docstring already *describes* `X`/`Y` as
+"enumerations covering `D₀.mem`/`D₁.mem`", but no such hypothesis has actually been added to
+`section AtomPair`'s `variable` list yet), (b) an `exists_inter_index`-style lemma pair (mirroring
+`Theorem88a.lean`'s `exists_inter_index_of_dmem`/`_of_nonempty`) built from (5)(d)'s
+`X_inter_eq_iff_XPseq_inter_eq`/`YPseq_inter_eq_iff_Y_inter_eq` plus `hXcover`/`hYcover`, (c) an
+`X`/`Y`-side-zero convention fact (`X 0 = D₀.master`/`Y 0 = D₁.master`, mirroring `Theorem88a.lean`'s
+`he0`/`Yidx_zero`) if the direct `toD1`/`toD0` filter maps need `master_mem` handled the same way
+`Yidx_zero` did — needs checking whether `XPseq_mem`/`YPseq_mem` (now unconditional, no index-0
+special-casing needed) already sidestep this. Should scope into sub-parts before executing, per
+this project's usual discipline for genuinely new (non-transcription) pieces.

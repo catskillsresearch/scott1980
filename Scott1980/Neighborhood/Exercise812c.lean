@@ -130,6 +130,19 @@ def NeighborhoodSystem.NoMinimal {α : Type*} (D : NeighborhoodSystem α) : Prop
   ∀ {X : Set α}, D.mem X →
     ∃ Y Z : Set α, D.mem Y ∧ D.mem Z ∧ Y.Nonempty ∧ Z.Nonempty ∧ Y ∩ Z = ∅ ∧ Y ∪ Z = X
 
+/-- **`NoMinimal` forces `¬ D.mem ∅`, hence every genuine `D`-neighbourhood is non-empty.**
+Applying `NoMinimal` at `X := ∅` would demand a non-empty `Y ⊆ Y ∪ Z = ∅`, impossible. (Exercise
+8.12(c)(vi)(7): the one fact needed to know `hXmem`/`hYmem`'s enumerated sets are never `∅`, hence
+— via the emptiness-transfer already proved in (5)(d) — that their `atomPair`-images `XPseq`/`YPseq`
+are never `∅` either, i.e. always *genuine* neighbourhoods on the other side, no extra "extension"
+hypothesis needed.) -/
+theorem NeighborhoodSystem.NoMinimal.mem_ne_empty {α : Type*} {D : NeighborhoodSystem α}
+    (hD : D.NoMinimal) {X : Set α} (hX : D.mem X) : X ≠ ∅ := by
+  intro hXe
+  subst hXe
+  obtain ⟨Y, Z, -, -, hYne, -, -, hunion⟩ := hD hX
+  exact hYne.ne_empty (Set.union_empty_iff.mp hunion).1
+
 /-- **Difference-closure**, generalizing `U_diff_mem`/`V_diff_mem`: the set-difference of two
 neighbourhoods is again a neighbourhood, or empty. -/
 def NeighborhoodSystem.DiffClosed {α : Type*} (D : NeighborhoodSystem α) : Prop :=
@@ -1714,6 +1727,60 @@ theorem YPseq_inter_eq_iff_Y_inter_eq (i j k : ℕ) :
   rw [combinedX_odd, combinedX_odd, combinedX_odd, combinedY_odd, combinedY_odd,
     combinedY_odd] at key
   exact key
+
+/-! ### Exercise 8.12(c)(vi)(7): the bidirectional "genuine neighbourhood" glue
+
+The last ingredient (vii)'s `DomainIso` assembly needs beyond (5)'s order/intersection transfer:
+`X n`/`Y n` (being `hXmem`/`hYmem`'s enumerated sets) are *never* `∅` (`NoMinimal.mem_ne_empty`),
+and — via the `i = j` case of (5)(d)'s inter-empty transfer, collapsed through `Set.inter_self` —
+neither are their `atomPair`-images `XPseq`/`YPseq`. Combined with `XPseq_empty_or_mem`/
+`YPseq_empty_or_mem` ((vi)(4)), this makes `XPseq n`/`YPseq n` *always genuine* neighbourhoods
+(`D₁`'s/`D₀`'s resp.), completing the correspondence: no separate "mutual extension" hypothesis
+beyond `NoMinimal` on both sides is needed. -/
+
+omit hD₀pos hD₀diff hD₁pos hD₁diff hD₁nomin hYmem hD₀mne hD₁mne in
+theorem X_ne_empty (n : ℕ) : X n ≠ ∅ := hD₀nomin.mem_ne_empty (hXmem n)
+
+omit hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hXmem hD₀mne hD₁mne in
+theorem Y_ne_empty (n : ℕ) : Y n ≠ ∅ := hD₁nomin.mem_ne_empty (hYmem n)
+
+theorem X_eq_empty_iff_XPseq_eq_empty (n : ℕ) :
+    X n = ∅ ↔ XPseq D₀ D₁ hD₀nomin hD₁nomin X Y n = ∅ := by
+  have := X_inter_empty_iff_XPseq_inter_empty D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff
+    hD₁nomin X Y hXmem hYmem hD₀mne hD₁mne n n
+  rwa [Set.inter_self, Set.inter_self] at this
+
+theorem Y_eq_empty_iff_YPseq_eq_empty (n : ℕ) :
+    Y n = ∅ ↔ YPseq D₀ D₁ hD₀nomin hD₁nomin X Y n = ∅ := by
+  have := YPseq_inter_empty_iff_Y_inter_empty D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff
+    hD₁nomin X Y hXmem hYmem hD₀mne hD₁mne n n
+  rw [Set.inter_self, Set.inter_self] at this
+  exact this.symm
+
+theorem XPseq_ne_empty (n : ℕ) : XPseq D₀ D₁ hD₀nomin hD₁nomin X Y n ≠ ∅ := fun h =>
+  X_ne_empty D₀ hD₀nomin X hXmem n
+    ((X_eq_empty_iff_XPseq_eq_empty D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin X Y hXmem
+      hYmem hD₀mne hD₁mne n).mpr h)
+
+theorem YPseq_ne_empty (n : ℕ) : YPseq D₀ D₁ hD₀nomin hD₁nomin X Y n ≠ ∅ := fun h =>
+  Y_ne_empty D₁ hD₁nomin Y hYmem n
+    ((Y_eq_empty_iff_YPseq_eq_empty D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin X Y hXmem
+      hYmem hD₀mne hD₁mne n).mpr h)
+
+/-- **`XPseq n` is always a genuine `D₁`-neighbourhood** (never merely `∅`-or-`mem`): the actual
+"other side" of `X n`. -/
+theorem XPseq_mem (n : ℕ) : D₁.mem (XPseq D₀ D₁ hD₀nomin hD₁nomin X Y n) :=
+  (XPseq_empty_or_mem D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin X Y hXmem hYmem hD₀mne
+    hD₁mne n).resolve_left
+    (XPseq_ne_empty D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin X Y hXmem hYmem hD₀mne
+      hD₁mne n)
+
+/-- **`YPseq n` is always a genuine `D₀`-neighbourhood**, symmetric to `XPseq_mem`. -/
+theorem YPseq_mem (n : ℕ) : D₀.mem (YPseq D₀ D₁ hD₀nomin hD₁nomin X Y n) :=
+  (YPseq_empty_or_mem D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin X Y hXmem hYmem hD₀mne
+    hD₁mne n).resolve_left
+    (YPseq_ne_empty D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin X Y hXmem hYmem hD₀mne
+      hD₁mne n)
 
 end AtomPair
 
