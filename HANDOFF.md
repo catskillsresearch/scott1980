@@ -8403,10 +8403,61 @@ Axiom-audited: `primrec_ySubStep`/`primrec_atomPairStep`/`primrec_atomPairCodeSt
 `⊆{propext, Classical.choice, Quot.sound}`, matching the (b) baseline. Whole-project `lake build`
 (3164 jobs) green, zero `sorry`.
 
-**Status: Exercise 8.12(d)(3)(c) is `Pass`.** **Next up:** 8.12(d)(3)(d) — per-step correctness:
-whenever the recorded state (`atomPairIdx0`/`atomPairIdx1`/`atomPairJunk`) is non-junk, its packed
-indices' `P₀.X`/`P₁.X` values literally equal `atomPairG`'s corresponding component at that depth
-(instantiated at `X n := P₀.X n`, `Y n := P₁.X n`, `splitX`/`hxSplit` from `hSplitX`'s underlying
-split function, `splitY`/`hySplit` from `hSplitY`'s, and `δ` reconstructed from the bit-source `k`
-via a fresh two-bits-per-depth analogue of `Theorem88d.lean`'s `deltaOf`), mirroring
-`genAtom_atomUCode`.
+**Status: Exercise 8.12(d)(3)(c) is `Pass`.**
+
+## 2026-07-04 checkpoint — Exercise 8.12(d)(3)(d): per-step correctness against `atomPairG`
+
+Appended to `Exercise812d.lean`.
+
+**Implementation:** the two-sided, code-level analogue of `Theorem88d.lean`'s `genAtom_atomUCode`.
+`deltaPair k : ℕ → Bool × Bool` reads the two-bits-per-depth sign sequence off a bit-source `k`
+(`(k / 4 ^ i) % 2` for `.1`, `(k / 4 ^ i / 2) % 2` for `.2`), matching exactly how `atomPairStep`
+peels bits from `rem`. Built an *unconditional* per-step algebra layer first: `xSubStep_junk_eq`/
+`xSubStep_idx0_eq`/`xSubStep_idx1_eq` (and `ySubStep` counterparts) describe `xSubStep`/`ySubStep`'s
+junk flag and both output indices for an *arbitrary* input state `s` and bit `b1`/`b2`, with no
+side-hypotheses — `IsComputableSplit`'s `posIdx_spec`/`negIdx_spec` and `IsComputableDiff`'s
+`diffIdx_spec` are already unconditional equalities, so nothing here depends on `atomPairG_invariant`
+-style non-emptiness assumptions. On top of that: `junk_eq_zero_of_selectFn_eq_zero` (a `1`-flag is
+frozen forever through `selectFn junk 1 _`) gives `atomPairJunk_eq_zero_of_succ` (junk propagates
+backward down the recursion — a one-step algebraic fact, no induction needed) and, combined with
+`selectFn_one_eq_zero_iff` + fresh helper lemmas `interIdx_eq_of_empty_zero`/`diffIdx_eq_of_empty_zero`
+(bridging `emptyInterDec`/`emptyDiffDec = 0` to genuine `Set` (in)equality via `P.inter_spec`/
+`hDiff.diffIdx_spec`), gives the key lemmas `xSubStep_correct`/`ySubStep_correct`: whenever the
+previous state's indices already match some `A`/`B` and the substep's output is non-junk, the next
+state's indices match `xStepG`/`yStepG`'s outputs *exactly* (case-split on the bit `b` via
+`by_cases hb : b = true`, discharging the `Bool`-valued `if b then _ else _` conditionals with
+`simp only [hb, if_true]` / `simp only [hb, Bool.false_eq_true, if_false]` — plain `simp only [hb]`
+alone rewrites the `Bool` variable `b` itself to the literal `true`/`false` but does not by itself
+collapse the resulting `if true then _ else _`/`if false then _ else _`, hence the explicit
+`if_true`/`if_false`+`Bool.false_eq_true` additions). `atomPairCodeState_correct` is the main
+induction, mirroring `genAtom_atomUCode`'s shape: base case unfolds to `P₀.masterIdx_spec`/
+`P₁.masterIdx_spec` directly (via `simp [atomPairCodeState, atomPairBase, stateBase2]`, needed
+because the `Nat.rec` doesn't reduce under a bare `unfold`); inductive step derives the previous
+depth's junk-freeness via `atomPairJunk_eq_zero_of_succ`, extracts the two bits via `hb1`/`hb2`
+(case-split on `k / 4 ^ n % 2`/`k / 4 ^ n / 2 % 2` via `Nat.mod_two_eq_zero_or_one`, matched against
+`deltaPair`'s definition), derives the intermediate (`X`-substep-only) state's junk-freeness via
+`ySubStep_junk_eq` + `junk_eq_zero_of_selectFn_eq_zero` (no separate induction needed — junk-freeness
+of the *full* step forces junk-freeness of the embedded `xSubStep` output directly, algebraically),
+then chains `xSubStep_correct` into `ySubStep_correct` to land exactly on `atomPairG_succ_eq`'s RHS.
+
+**Lean gotchas hit:** (1) `unfold atomPairIdx0 atomPairIdx1 atomPairJunk at hjunk hidx0 hidx1 ⊢` — a
+single combined `unfold ... at` call over *several* hypotheses fails hard if any *one* named
+definition doesn't occur in *every* listed location (`hjunk` only mentions `atomPairJunk`, `hidx0`/
+`hidx1` only their own projection) — split into three separate `unfold ... at` calls, one per
+hypothesis/goal-set. (2) all explicit section variables (`P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY
+hSplitY`, unlike most sections in this file these are *not* implicit `{}`) must either all be
+supplied positionally or the desired hypothesis argument passed by name (`(h := hjunk)`) — a bare
+`atomPairJunk_eq_zero_of_succ hjunk` mis-binds `hjunk` to the first positional explicit arg `P₀`,
+raising a `Type`-vs-`Prop` mismatch. (3) the `Bool`/`ite` gotcha above (`simp only [hb]` alone
+leaves `if false = true then _ else _`/`if true = true then...` id's un-collapsed; verified the
+mechanism stand-alone in a scratch file before fixing in-place).
+
+Axiom-audited: all thirteen new theorems (`atomPairCodeState_succ` through `atomPairCodeState_correct`)
+give `⊆{propext, Classical.choice, Quot.sound}` — `Classical.choice` here is inherited from ambient
+`Set`/`NeighborhoodSystem` `Prop`-level reasoning (matching every other correctness-style theorem in
+this file, e.g. `xStepG_snd_subset`), not introduced fresh; no data/computability claim in this
+sub-part uses it beyond that ambient baseline. Whole-project `lake build` (3164 jobs) green, zero
+`sorry`.
+
+**Status: Exercise 8.12(d)(3)(d) is `Pass`.** **Next up:** 8.12(d)(3)(e) — the junk invariant +
+validity, mirroring `atomUEmpty_mono`/`atomUCode_mem`.

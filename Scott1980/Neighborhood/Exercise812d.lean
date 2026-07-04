@@ -1045,3 +1045,300 @@ theorem primrec_atomPairJunk : Nat.Primrec
       (Nat.Primrec.right.pair Nat.Primrec.left)))).of_eq fun _ => rfl
 
 end AtomPairCode
+
+/-! ## 8.12(d)(3)(d): per-step correctness against `atomPairG`
+
+Whenever the recorded state at depth `n` is non-junk, `atomPairIdx0`/`atomPairIdx1`'s packed
+indices literally index `atomPairG`'s depth-`n` component (instantiated at `X := P₀.X`, `Y :=
+P₁.X`, `δ := deltaPair k`, the two-bits-per-depth sign sequence read off the bit-source `k`) — the
+two-sided, code-level analogue of `Theorem88d.lean`'s `genAtom_atomUCode`. Unlike that single-sided
+account (where `UX` is a *total* surjection and the code is always meaningful), here both sides'
+codes are only meaningful when non-junk, so the statement is conditioned on `atomPairJunk = 0`
+throughout. -/
+
+/-- **The two-bits-per-depth sign sequence** read off a bit-source `k`, the `atomPairG`-shaped
+analogue of `Theorem88d.lean`'s `deltaOf`: the depth-`i` nibble `(k / 4 ^ i) % 2` supplies `(δ i).1`,
+and `(k / 4 ^ i / 2) % 2` supplies `(δ i).2` — matching exactly how `atomPairStep` peels two bits
+per depth from `rem` (`rem % 2`, `(rem / 2) % 2`, then `rem / 4`). -/
+def deltaPair (k : ℕ) : ℕ → Bool × Bool :=
+  fun i => (decide ((k / 4 ^ i) % 2 = 1), decide ((k / 4 ^ i / 2) % 2 = 1))
+
+theorem deltaPair_fst_eq_true_iff (k i : ℕ) : (deltaPair k i).1 = true ↔ (k / 4 ^ i) % 2 = 1 := by
+  unfold deltaPair; simp
+
+theorem deltaPair_snd_eq_true_iff (k i : ℕ) : (deltaPair k i).2 = true ↔ (k / 4 ^ i / 2) % 2 = 1 := by
+  unfold deltaPair; simp
+
+section AtomPairCorrect
+
+variable {α β : Type*} {D₀ : NeighborhoodSystem α} {D₁ : NeighborhoodSystem β}
+  (P₀ : ComputablePresentation D₀) (P₁ : ComputablePresentation D₁)
+  (hDiff0 : IsComputableDiff P₀) (hDiff1 : IsComputableDiff P₁)
+  (splitX : Set α → Set β → Set α → Set β × Set β) (hSplitX : IsComputableSplit P₀ P₁ splitX)
+  (splitY : Set β → Set α → Set β → Set α × Set α) (hSplitY : IsComputableSplit P₁ P₀ splitY)
+
+/-- **Unfolding `atomPairCodeState` one step.** -/
+theorem atomPairCodeState_succ (k n : ℕ) :
+    atomPairCodeState P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY (Nat.pair k (n + 1)) =
+      atomPairStep P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY
+        (Nat.pair k (Nat.pair n (atomPairCodeState P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY
+          hSplitY (Nat.pair k n)))) := by
+  unfold atomPairCodeState
+  simp only [unpair_pair_fst, unpair_pair_snd]
+
+/-- The unconsumed bit-source at depth `n` is exactly `k / 4 ^ n` (peeling two bits per depth). -/
+theorem stateRemC_atomPairCodeState (k n : ℕ) :
+    stateRemC (atomPairCodeState P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY
+      (Nat.pair k n)) = k / 4 ^ n := by
+  induction n with
+  | zero => simp [atomPairCodeState, atomPairBase]
+  | succ n ih =>
+    rw [atomPairCodeState_succ]
+    unfold atomPairStep pcN pcT xwB1 xwS
+    simp only [unpair_pair_fst, unpair_pair_snd, stateRemC_packStateC, ih,
+      Nat.div_div_eq_div_mul, ← pow_succ]
+
+/-! ### Unconditional per-step algebra for `xSubStep`/`ySubStep`
+
+Both sub-steps' code-level behaviour matches `xyStep` (hence `xStepG`/`yStepG`) **unconditionally**
+in the incoming `junk` flag and the bit `b1`/`b2` — no `SplitSpec'`/`atomPairG_invariant`-style side
+hypotheses needed at all: `IsComputableSplit`'s `posIdx_spec`/`negIdx_spec` are already unconditional
+equalities, and the direct-refinement side only ever needs the corresponding emptiness-decider
+readout to be `0`, which is connected to genuine set (in)equality unconditionally too (via
+`existsInterDec_spec`/`existsDiffDec_spec` + `P.inter_spec`/`hDiff.diffIdx_spec`). -/
+
+theorem xSubStep_junk_eq (s n b1 : ℕ) :
+    stateJunk (xSubStep P₀ P₁ hDiff0 splitX hSplitX (Nat.pair n (Nat.pair b1 s))) =
+      selectFn (stateJunk s) 1 (selectFn b1 (emptyInterDec P₀ (Nat.pair (stateIdx0 s) n))
+        (emptyDiffDec P₀ hDiff0 (Nat.pair (stateIdx0 s) n))) := by
+  unfold xSubStep
+  simp only [xwN, xwB1, xwS, unpair_pair_fst, unpair_pair_snd, stateJunk_packState2]
+
+theorem xSubStep_idx0_eq {s n b1 : ℕ}
+    (h : selectFn (stateJunk s) 1 (selectFn b1 (emptyInterDec P₀ (Nat.pair (stateIdx0 s) n))
+      (emptyDiffDec P₀ hDiff0 (Nat.pair (stateIdx0 s) n))) = 0) :
+    stateIdx0 (xSubStep P₀ P₁ hDiff0 splitX hSplitX (Nat.pair n (Nat.pair b1 s))) =
+      selectFn b1 (P₀.inter (stateIdx0 s) n) (hDiff0.diffIdx (stateIdx0 s) n) := by
+  unfold xSubStep
+  simp only [xwN, xwB1, xwS, unpair_pair_fst, unpair_pair_snd, stateIdx0_packState2, h,
+    selectFn_zero]
+
+theorem xSubStep_idx1_eq {s n b1 : ℕ}
+    (h : selectFn (stateJunk s) 1 (selectFn b1 (emptyInterDec P₀ (Nat.pair (stateIdx0 s) n))
+      (emptyDiffDec P₀ hDiff0 (Nat.pair (stateIdx0 s) n))) = 0) :
+    stateIdx1 (xSubStep P₀ P₁ hDiff0 splitX hSplitX (Nat.pair n (Nat.pair b1 s))) =
+      selectFn b1 (hSplitX.posIdx (stateIdx0 s) (stateIdx1 s) n)
+        (hSplitX.negIdx (stateIdx0 s) (stateIdx1 s) n) := by
+  unfold xSubStep
+  simp only [xwN, xwB1, xwS, unpair_pair_fst, unpair_pair_snd, stateIdx1_packState2, h,
+    selectFn_zero]
+
+theorem ySubStep_junk_eq (s n b2 : ℕ) :
+    stateJunk (ySubStep P₀ P₁ hDiff1 splitY hSplitY (Nat.pair n (Nat.pair b2 s))) =
+      selectFn (stateJunk s) 1 (selectFn b2 (emptyInterDec P₁ (Nat.pair (stateIdx1 s) n))
+        (emptyDiffDec P₁ hDiff1 (Nat.pair (stateIdx1 s) n))) := by
+  unfold ySubStep
+  simp only [xwN, xwB1, xwS, unpair_pair_fst, unpair_pair_snd, stateJunk_packState2]
+
+theorem ySubStep_idx0_eq {s n b2 : ℕ}
+    (h : selectFn (stateJunk s) 1 (selectFn b2 (emptyInterDec P₁ (Nat.pair (stateIdx1 s) n))
+      (emptyDiffDec P₁ hDiff1 (Nat.pair (stateIdx1 s) n))) = 0) :
+    stateIdx0 (ySubStep P₀ P₁ hDiff1 splitY hSplitY (Nat.pair n (Nat.pair b2 s))) =
+      selectFn b2 (hSplitY.posIdx (stateIdx1 s) (stateIdx0 s) n)
+        (hSplitY.negIdx (stateIdx1 s) (stateIdx0 s) n) := by
+  unfold ySubStep
+  simp only [xwN, xwB1, xwS, unpair_pair_fst, unpair_pair_snd, stateIdx0_packState2, h,
+    selectFn_zero]
+
+theorem ySubStep_idx1_eq {s n b2 : ℕ}
+    (h : selectFn (stateJunk s) 1 (selectFn b2 (emptyInterDec P₁ (Nat.pair (stateIdx1 s) n))
+      (emptyDiffDec P₁ hDiff1 (Nat.pair (stateIdx1 s) n))) = 0) :
+    stateIdx1 (ySubStep P₀ P₁ hDiff1 splitY hSplitY (Nat.pair n (Nat.pair b2 s))) =
+      selectFn b2 (P₁.inter (stateIdx1 s) n) (hDiff1.diffIdx (stateIdx1 s) n) := by
+  unfold ySubStep
+  simp only [xwN, xwB1, xwS, unpair_pair_fst, unpair_pair_snd, stateIdx1_packState2, h,
+    selectFn_zero]
+
+/-- If the outgoing `selectFn junk 1 X` reads `0`, the incoming `junk` was already `0` (a `1`
+would force the result to `1` regardless of `X`, via `selectFn`'s definition). -/
+theorem junk_eq_zero_of_selectFn_eq_zero {junk X : ℕ} (h : selectFn junk 1 X = 0) : junk = 0 := by
+  rcases Nat.eq_zero_or_pos junk with h0 | h0
+  · exact h0
+  · exfalso; unfold selectFn at h; have : 1 ≤ junk := h0; nlinarith
+
+/-- **`atomPairJunk` propagates**: once a bit-source's depth-`(n+1)` state is non-junk, its
+depth-`n` state already was (the contrapositive of "junk is frozen forever", a one-step algebraic
+fact needing no induction: `xSubStep`/`ySubStep` both force their *output* junk flag to `1`
+whenever their *input* junk flag already was, via `selectFn junk 1 _`). -/
+theorem atomPairJunk_eq_zero_of_succ {k n : ℕ}
+    (h : atomPairJunk P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY (n + 1) k = 0) :
+    atomPairJunk P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY n k = 0 := by
+  unfold atomPairJunk at h ⊢
+  rw [atomPairCodeState_succ] at h
+  unfold atomPairStep pcN pcT xwB1 xwS at h
+  simp only [unpair_pair_fst, unpair_pair_snd, stateInnerC_packStateC] at h
+  rw [ySubStep_junk_eq] at h
+  have h1 := junk_eq_zero_of_selectFn_eq_zero h
+  rw [xSubStep_junk_eq] at h1
+  exact junk_eq_zero_of_selectFn_eq_zero h1
+
+/-- `selectFn c 1 X = 0` forces **both** `c = 0` and `X = 0` (not just `c = 0`): with `c = 0`,
+`selectFn` reduces to the "else" branch `X` outright. -/
+theorem selectFn_one_eq_zero_iff {c X : ℕ} : selectFn c 1 X = 0 ↔ c = 0 ∧ X = 0 := by
+  constructor
+  · intro h
+    have hc0 : c = 0 := junk_eq_zero_of_selectFn_eq_zero h
+    subst hc0
+    simpa [selectFn_zero] using h
+  · rintro ⟨rfl, rfl⟩
+    simp [selectFn_zero]
+
+end AtomPairCorrect
+
+/-- **Genuine `∩`-index equality**, given the emptiness decider reads `0`: the raw existence fact
+(`existsInterDec_spec`) plugged straight into `Q.inter_spec` — unconditional, no `IsPositive`/
+`NoMinimal` needed. -/
+theorem interIdx_eq_of_empty_zero {γ : Type*} {W : NeighborhoodSystem γ} (Q : ComputablePresentation W)
+    {idx0 n0 : ℕ} (h : emptyInterDec Q (Nat.pair idx0 n0) = 0) :
+    Q.X (Q.inter idx0 n0) = Q.X idx0 ∩ Q.X n0 := by
+  apply Q.inter_spec
+  have hle := existsInterDec_le_one Q (Nat.pair idx0 n0)
+  have h1 : existsInterDec Q (Nat.pair idx0 n0) = 1 := by unfold emptyInterDec at h; omega
+  exact (existsInterDec_spec Q idx0 n0).mp h1
+
+/-- **Genuine `\`-index equality**, given the emptiness decider reads `0`: the raw existence fact
+(`existsDiffDec_spec`) plugged straight into `hDiff.diffIdx_spec` — unconditional. -/
+theorem diffIdx_eq_of_empty_zero {γ : Type*} {W : NeighborhoodSystem γ} {Q : ComputablePresentation W}
+    (hDiff : IsComputableDiff Q) {idx0 n0 : ℕ} (h : emptyDiffDec Q hDiff (Nat.pair idx0 n0) = 0) :
+    Q.X (hDiff.diffIdx idx0 n0) = Q.X idx0 \ Q.X n0 := by
+  apply hDiff.diffIdx_spec
+  have hle := existsDiffDec_le_one Q hDiff (Nat.pair idx0 n0)
+  have h1 : existsDiffDec Q hDiff (Nat.pair idx0 n0) = 1 := by unfold emptyDiffDec at h; omega
+  exact (existsDiffDec_spec Q hDiff idx0 n0).mp h1
+
+section AtomPairCorrect2
+
+variable {α β : Type*} {D₀ : NeighborhoodSystem α} {D₁ : NeighborhoodSystem β}
+  (P₀ : ComputablePresentation D₀) (P₁ : ComputablePresentation D₁)
+  (hDiff0 : IsComputableDiff P₀) (hDiff1 : IsComputableDiff P₁)
+  (splitX : Set α → Set β → Set α → Set β × Set β) (hSplitX : IsComputableSplit P₀ P₁ splitX)
+  (splitY : Set β → Set α → Set β → Set α × Set α) (hSplitY : IsComputableSplit P₁ P₀ splitY)
+
+/-- **The `X`-sub-step matches `xStepG` exactly**, given the previous state's indices already match
+`A`/`B` and the sub-step's output is non-junk. Unconditional in `A`/`B` themselves — no
+`SplitSpec'`/`atomPairG_invariant`-style hypotheses needed (see the section docstring above). -/
+theorem xSubStep_correct {s n : ℕ} {A : Set α} {B : Set β}
+    (hA : P₀.X (stateIdx0 s) = A) (hB : P₁.X (stateIdx1 s) = B) (b : Bool)
+    (hnonjunk : stateJunk (xSubStep P₀ P₁ hDiff0 splitX hSplitX
+        (Nat.pair n (Nat.pair (if b then 1 else 0) s))) = 0) :
+    P₀.X (stateIdx0 (xSubStep P₀ P₁ hDiff0 splitX hSplitX
+        (Nat.pair n (Nat.pair (if b then 1 else 0) s)))) = (xStepG splitX A B (P₀.X n) b).1 ∧
+    P₁.X (stateIdx1 (xSubStep P₀ P₁ hDiff0 splitX hSplitX
+        (Nat.pair n (Nat.pair (if b then 1 else 0) s)))) = (xStepG splitX A B (P₀.X n) b).2 := by
+  subst hA; subst hB
+  by_cases hb : b = true
+  · simp only [xStepG, xyStep, hb, if_true] at hnonjunk ⊢
+    rw [xSubStep_junk_eq] at hnonjunk
+    obtain ⟨-, hemp⟩ := selectFn_one_eq_zero_iff.mp hnonjunk
+    rw [selectFn_one] at hemp
+    refine ⟨?_, ?_⟩
+    · rw [xSubStep_idx0_eq (h := hnonjunk), selectFn_one]
+      exact interIdx_eq_of_empty_zero P₀ hemp
+    · rw [xSubStep_idx1_eq (h := hnonjunk), selectFn_one]
+      exact (hSplitX.posIdx_spec (stateIdx0 s) (stateIdx1 s) n).symm
+  · simp only [xStepG, xyStep, hb, Bool.false_eq_true, if_false] at hnonjunk ⊢
+    rw [xSubStep_junk_eq] at hnonjunk
+    obtain ⟨-, hemp⟩ := selectFn_one_eq_zero_iff.mp hnonjunk
+    rw [selectFn_zero] at hemp
+    refine ⟨?_, ?_⟩
+    · rw [xSubStep_idx0_eq (h := hnonjunk), selectFn_zero]
+      exact diffIdx_eq_of_empty_zero hDiff0 hemp
+    · rw [xSubStep_idx1_eq (h := hnonjunk), selectFn_zero]
+      exact (hSplitX.negIdx_spec (stateIdx0 s) (stateIdx1 s) n).symm
+
+/-- **The `Y`-sub-step matches `yStepG` exactly**, symmetric to `xSubStep_correct`. -/
+theorem ySubStep_correct {s n : ℕ} {A : Set α} {B : Set β}
+    (hA : P₀.X (stateIdx0 s) = A) (hB : P₁.X (stateIdx1 s) = B) (b : Bool)
+    (hnonjunk : stateJunk (ySubStep P₀ P₁ hDiff1 splitY hSplitY
+        (Nat.pair n (Nat.pair (if b then 1 else 0) s))) = 0) :
+    P₀.X (stateIdx0 (ySubStep P₀ P₁ hDiff1 splitY hSplitY
+        (Nat.pair n (Nat.pair (if b then 1 else 0) s)))) = (yStepG splitY A B (P₁.X n) b).1 ∧
+    P₁.X (stateIdx1 (ySubStep P₀ P₁ hDiff1 splitY hSplitY
+        (Nat.pair n (Nat.pair (if b then 1 else 0) s)))) = (yStepG splitY A B (P₁.X n) b).2 := by
+  subst hA; subst hB
+  by_cases hb : b = true
+  · simp only [yStepG, xyStep, Prod.swap, hb, if_true] at hnonjunk ⊢
+    rw [ySubStep_junk_eq] at hnonjunk
+    obtain ⟨-, hemp⟩ := selectFn_one_eq_zero_iff.mp hnonjunk
+    rw [selectFn_one] at hemp
+    refine ⟨?_, ?_⟩
+    · rw [ySubStep_idx0_eq (h := hnonjunk), selectFn_one]
+      exact (hSplitY.posIdx_spec (stateIdx1 s) (stateIdx0 s) n).symm
+    · rw [ySubStep_idx1_eq (h := hnonjunk), selectFn_one]
+      exact interIdx_eq_of_empty_zero P₁ hemp
+  · simp only [yStepG, xyStep, Prod.swap, hb, Bool.false_eq_true, if_false] at hnonjunk ⊢
+    rw [ySubStep_junk_eq] at hnonjunk
+    obtain ⟨-, hemp⟩ := selectFn_one_eq_zero_iff.mp hnonjunk
+    rw [selectFn_zero] at hemp
+    refine ⟨?_, ?_⟩
+    · rw [ySubStep_idx0_eq (h := hnonjunk), selectFn_zero]
+      exact (hSplitY.negIdx_spec (stateIdx1 s) (stateIdx0 s) n).symm
+    · rw [ySubStep_idx1_eq (h := hnonjunk), selectFn_zero]
+      exact diffIdx_eq_of_empty_zero hDiff1 hemp
+
+/-- **Per-step correctness against `atomPairG`** (the two-sided analogue of `Theorem88d.lean`'s
+`genAtom_atomUCode`): whenever depth `n`'s recorded state (for bit-source `k`) is non-junk, its
+packed `D₀`-side/`D₁`-side indices literally index `atomPairG`'s depth-`n` component,
+instantiated at `X := P₀.X`, `Y := P₁.X`, `δ := deltaPair k`. -/
+theorem atomPairCodeState_correct (k n : ℕ)
+    (hjunk : atomPairJunk P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY n k = 0) :
+    P₀.X (atomPairIdx0 P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY n k) =
+        (atomPairG D₀ D₁ splitY splitX P₀.X P₁.X (deltaPair k) n).1 ∧
+      P₁.X (atomPairIdx1 P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY n k) =
+        (atomPairG D₀ D₁ splitY splitX P₀.X P₁.X (deltaPair k) n).2 := by
+  induction n with
+  | zero =>
+    unfold atomPairIdx0 atomPairIdx1
+    simp [atomPairCodeState, atomPairBase, stateBase2]
+    exact ⟨P₀.masterIdx_spec, P₁.masterIdx_spec⟩
+  | succ n ih =>
+    have hjunk_n := atomPairJunk_eq_zero_of_succ (h := hjunk)
+    obtain ⟨hidx0, hidx1⟩ := ih hjunk_n
+    unfold atomPairJunk at hjunk
+    unfold atomPairIdx0 at hidx0
+    unfold atomPairIdx1 at hidx1
+    unfold atomPairIdx0 atomPairIdx1
+    rw [atomPairCodeState_succ] at hjunk ⊢
+    unfold atomPairStep pcN pcT xwB1 xwS at hjunk ⊢
+    simp only [unpair_pair_fst, unpair_pair_snd, stateInnerC_packStateC] at hjunk hidx0 hidx1 ⊢
+    set T := atomPairCodeState P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY (Nat.pair k n)
+      with hTdef
+    have hrem : stateRemC T = k / 4 ^ n := stateRemC_atomPairCodeState P₀ P₁ hDiff0 hDiff1
+      splitX hSplitX splitY hSplitY k n
+    have hb1 : stateRemC T % 2 = if (deltaPair k n).1 then 1 else 0 := by
+      rw [hrem]
+      rcases Nat.mod_two_eq_zero_or_one (k / 4 ^ n) with h0 | h1
+      · have hδ : (deltaPair k n).1 = false := by unfold deltaPair; simp [h0]
+        simp [hδ, h0]
+      · have hδ : (deltaPair k n).1 = true := by unfold deltaPair; simp [h1]
+        simp [hδ, h1]
+    have hb2 : stateRemC T / 2 % 2 = if (deltaPair k n).2 then 1 else 0 := by
+      rw [hrem]
+      rcases Nat.mod_two_eq_zero_or_one (k / 4 ^ n / 2) with h0 | h1
+      · have hδ : (deltaPair k n).2 = false := by unfold deltaPair; simp [h0]
+        simp [hδ, h0]
+      · have hδ : (deltaPair k n).2 = true := by unfold deltaPair; simp [h1]
+        simp [hδ, h1]
+    rw [hb1] at hjunk ⊢
+    rw [hb2] at hjunk ⊢
+    have hxjunk : stateJunk (xSubStep P₀ P₁ hDiff0 splitX hSplitX
+        (Nat.pair n (Nat.pair (if (deltaPair k n).1 then 1 else 0) (stateInnerC T)))) = 0 := by
+      have hj2 := hjunk
+      rw [ySubStep_junk_eq] at hj2
+      exact junk_eq_zero_of_selectFn_eq_zero hj2
+    obtain ⟨hx0, hx1⟩ := xSubStep_correct P₀ P₁ hDiff0 splitX hSplitX hidx0 hidx1
+      (deltaPair k n).1 hxjunk
+    rw [atomPairG_succ_eq]
+    exact ySubStep_correct P₀ P₁ hDiff1 splitY hSplitY hx0 hx1 (deltaPair k n).2 hjunk
+
+end AtomPairCorrect2
