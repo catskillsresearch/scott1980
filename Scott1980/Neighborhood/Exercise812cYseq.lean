@@ -418,4 +418,78 @@ theorem transfer_inter_eq_iffE (i j k : ℕ) (hi : X i ⊆ Δ) (_hj : X j ⊆ Δ
       heq ▸ subset_rfl
     exact Set.Subset.antisymm (h3.mpr hijk) (Set.subset_inter (h1.mpr hki) (h2.mpr hkj))
 
+/-! ### `YseqE` is non-empty (and a genuine `E`-neighbourhood) whenever `X n` is non-empty
+
+Mirrors `Theorem88.lean`'s `Yseq_zero_eq_master`/`Yseq_empty_or_mem`/`Yseq_nonempty_of_mem`.
+`YseqE_empty_or_mem` is the one place this file needs more than `hΔ`/`hEmne`/`hsplit`: `Yseq`'s own
+proof leans on `U_iUnion_mem`, which is proved directly from `U`'s presented-interval structure —
+an abstract `E` has no such structure, so `Exercise812c.lean`'s new, genuinely generic
+`iUnion_mem_or_empty` (derived from `IsPositive` + `DiffClosed` alone) is used in its place, taking
+`hEpos`/`hEdiff` as two extra explicit hypotheses. -/
+
+/-- **`YseqE E split X Δ 0 = E.master` whenever `X 0 = Δ`** (Scott's convention `X₀ = Δ`). Mirrors
+`Yseq_zero_eq_master`. -/
+theorem YseqE_zero_eq_master (h0 : X 0 = Δ) : YseqE E split X Δ 0 = E.master := by
+  set δ : ℕ → Bool := extendTrue (fun i : Fin 0 => i.elim0) with hδdef
+  have hδ0 : δ 0 = true := by simp [hδdef, extendTrue]
+  have hAB : genAtom X Δ δ 0 = ∅ ↔ atomE E split X Δ δ 0 = ∅ :=
+    ⟨fun h => absurd h hΔ.ne_empty, fun h => absurd h hEmne.ne_empty⟩
+  have hBE : atomE E split X Δ δ 0 = ∅ ∨ E.mem (atomE E split X Δ δ 0) := Or.inr E.master_mem
+  have hspec := hsplit hAB hBE (X 0)
+  have hJ : (split (genAtom X Δ δ 0) (atomE E split X Δ δ 0) (X 0)).2 = ∅ := by
+    rw [← hspec.2.2.2.1]
+    show genAtom X Δ δ 0 \ X 0 = ∅
+    rw [show genAtom X Δ δ 0 = Δ from rfl, h0]
+    exact Set.diff_self
+  have hI : (split (genAtom X Δ δ 0) (atomE E split X Δ δ 0) (X 0)).1 = E.master := by
+    have hunion := hspec.2.2.2.2.1
+    rw [hJ, Set.union_empty] at hunion
+    exact hunion
+  have hkey : atomE E split X Δ δ 1 = E.master := by rw [atomE_succ, hδ0, if_pos rfl]; exact hI
+  apply Set.Subset.antisymm (YseqE_subset_master E split X Δ hΔ hEmne hsplit 0)
+  calc E.master = atomE E split X Δ δ 1 := hkey.symm
+    _ ⊆ YseqE E split X Δ 0 := subset_YseqE E split X Δ (fun i : Fin 0 => i.elim0)
+
+/-- `YseqE E split X Δ n` is always either empty or a genuine `E`-neighbourhood: it is a finite
+union (`Fin n → Bool`) of `atomE` pieces, each of which is `∅` or `E.mem` by `atomE_invariant`, and
+`E` is closed under such finite unions by `Exercise812c.lean`'s generic `iUnion_mem_or_empty`
+(needing the extra hypotheses `hEpos`/`hEdiff`, absent from `Theorem88.lean`'s hardcoded
+`U_iUnion_mem`). Mirrors `Yseq_empty_or_mem`. -/
+theorem YseqE_empty_or_mem (hEpos : E.IsPositive) (hEdiff : E.DiffClosed) (n : ℕ) :
+    YseqE E split X Δ n = ∅ ∨ E.mem (YseqE E split X Δ n) := by
+  by_cases hne : (YseqE E split X Δ n).Nonempty
+  · exact Or.inr ((iUnion_mem_or_empty hEpos hEdiff
+      (fun δ' => (atomE_invariant E split X Δ hΔ hEmne hsplit (n + 1)).2.1 (extendTrue δ'))
+      ).resolve_left hne.ne_empty)
+  · exact Or.inl (Set.not_nonempty_iff_eq_empty.mp hne)
+
+/-- If `x ∈ X n` (and `x ∈ Δ`), then `YseqE E split X Δ n` is non-empty. Mirrors
+`Yseq_nonempty_of_mem`. -/
+theorem YseqE_nonempty_of_mem {n : ℕ} {x : α} (hxΔ : x ∈ Δ) (hxn : x ∈ X n) :
+    (YseqE E split X Δ n).Nonempty := by
+  classical
+  set δ0 : ℕ → Bool := fun k => decide (x ∈ X k) with hδ0def
+  have hδ0n : δ0 n = true := by show decide (x ∈ X n) = true; rw [decide_eq_true_iff]; exact hxn
+  have hxA : x ∈ genAtom X Δ δ0 n := genAtom_self X Δ hxΔ n
+  have hAX : x ∈ genAtom X Δ δ0 n ∩ X n := ⟨hxA, hxn⟩
+  have hAne : (genAtom X Δ δ0 n ∩ X n).Nonempty := ⟨x, hAX⟩
+  obtain ⟨hmatch, hmem, -⟩ := atomE_invariant E split X Δ hΔ hEmne hsplit n
+  have hspec := hsplit (hmatch δ0) (hmem δ0) (X n)
+  have hIne : (split (genAtom X Δ δ0 n) (atomE E split X Δ δ0 n) (X n)).1 ≠ ∅ :=
+    fun h => hAne.ne_empty (hspec.2.2.1.mpr h)
+  have hI_eq_atomE : (split (genAtom X Δ δ0 n) (atomE E split X Δ δ0 n) (X n)).1 =
+      atomE E split X Δ δ0 (n + 1) := by rw [atomE_succ, hδ0n, if_pos rfl]
+  set δ2 : ℕ → Bool := extendTrue (restrictFin δ0 n) with hδ2def
+  have hagree : ∀ i < n + 1, δ2 i = δ0 i := by
+    intro i hi
+    rcases Nat.lt_succ_iff_lt_or_eq.mp hi with hi' | rfl
+    · exact extendTrue_restrictFin_agree δ0 n i hi'
+    · simp [hδ2def, extendTrue, hδ0n]
+  have hδ2_eq : atomE E split X Δ δ2 (n + 1) = atomE E split X Δ δ0 (n + 1) :=
+    atomE_congr E split X Δ hagree
+  have hne2 : (atomE E split X Δ δ2 (n + 1)).Nonempty := by
+    rw [hδ2_eq, ← hI_eq_atomE]
+    exact Set.nonempty_iff_ne_empty.mpr hIne
+  exact hne2.mono (subset_YseqE E split X Δ (restrictFin δ0 n))
+
 end Scott1980.Neighborhood

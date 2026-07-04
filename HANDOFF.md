@@ -7305,3 +7305,54 @@ updated.
 green). **Next up:** Exercise 8.12(c)(vi)(3) (generalize the nonemptiness/membership facts —
 `Yseq_subset_master` already done above; remaining: `Yseq_zero_eq_master`/`Yseq_empty_or_mem`/
 `Yseq_nonempty_of_mem` — to the same abstract `E`).
+
+---
+
+**2026-07-04 — Exercise 8.12(c)(vi)(3) COMPLETE: `YseqE`'s nonemptiness/membership facts, plus a
+genuinely new generic union-closure theorem.** `YseqE_zero_eq_master`/`YseqE_nonempty_of_mem`
+(`Exercise812cYseq.lean`) were mechanical one-for-one transcriptions of `Theorem88.lean`'s
+`Yseq_zero_eq_master`/`Yseq_nonempty_of_mem`, with `U.master_mem`'s destructured nonemptiness
+(`.2.1`, only valid because `U.mem` unfolds to a concrete presented-interval structure) replaced by
+the already-available abstract hypothesis `hEmne : E.master.Nonempty`.
+
+**`YseqE_empty_or_mem` was the one genuine gap**, not a transcription: `Yseq_empty_or_mem` leans on
+`U_iUnion_mem` (`Definition87.lean`), which is proved *directly from `U`'s presented-interval list
+structure* (`presentedIntervals_append`, list `++`) — machinery an abstract `E` simply doesn't have.
+Rather than add a closure hypothesis by fiat, derived it from properties `E` already has for other
+reasons: **`Exercise812c.lean`** gained three new, genuinely generic theorems (not present in the
+pre-plan, discovered only while implementing — same pattern as (v)'s post-hoc split and (vi)(2)'s
+`Yseq_subset_master` dependency):
+* **`union_eq_master_diff_inter_compl`**: the De Morgan identity `X ∪ Y = M \ ((M\X) ∩ (M\Y))` for
+  `X, Y ⊆ M` — pure set algebra, proved via `ext`/`tauto` after feeding `tauto` the two specialized
+  implications `x∈X→x∈M`/`x∈Y→x∈M` (subset statements aren't auto-specialized at a point).
+* **`union_mem_or_empty`**: **any** `IsPositive` + `DiffClosed` neighbourhood system is automatically
+  closed under binary union of mem-or-∅ sets — `DiffClosed` gives `M\X`/`M\Y` mem-or-∅, `IsPositive`
+  gives their intersection mem-or-∅ (or empty, forcing `X∪Y=M` directly), and a final `DiffClosed`
+  application via the De Morgan identity recovers `X∪Y` itself mem-or-∅. This is a genuinely new
+  structural fact (`U`/`V`'s own `U_union_mem`/`V_union_mem` never needed to be derived this way —
+  they used system-specific presentation machinery instead).
+* **`iUnion_mem_or_empty`**: the `Fintype`-indexed version, by the identical `Finset.induction_on`
+  fold `U_iUnion_mem`/`V_iUnion_mem` already use, just with `union_mem_or_empty` as the one-step
+  lemma instead of a hardcoded binary-union fact.
+
+`YseqE_empty_or_mem` itself takes two new explicit hypotheses `hEpos : E.IsPositive`/
+`hEdiff : E.DiffClosed` (not threaded into the rest of the file — no other (vi)(1)–(vi)(3) lemma
+needs them) — exactly the properties `D₀`/`D₁` already carry in `Exercise812c.lean`'s
+`section AtomPair` (`hD₀pos`/`hD₀diff`/`hD₁pos`/`hD₁diff`), so (vi)(5)/(vi)(6)'s eventual
+instantiations get them for free with no new proof obligations.
+
+**Zero `sorry`.** Whole-project `lake build` (3163 jobs) green. `#print axioms` on
+`union_eq_master_diff_inter_compl`/`union_mem_or_empty`/`iUnion_mem_or_empty`/
+`YseqE_zero_eq_master`/`YseqE_empty_or_mem`/`YseqE_nonempty_of_mem` all give
+`⊆{propext,Classical.choice,Quot.sound}`, matching the existing baseline (choice inherited from
+`splitChoice'`, 8.12(c)(iii)). `arxiv.md`: 8.12(c)(vi)(3) row updated to `Pass`; umbrella
+8.12(c)(vi) row updated to "(1)–(3) `Pass`, (4)–(7) `Deferred`"; 8.12(c) umbrella status line
+updated.
+
+**Status: Exercise 8.12(c)(vi) is `Partial`** (3 of 7 sub-parts `Pass`, zero `sorry`, `lake build`
+green). This completes **(vi)(1)–(vi)(3): the full abstract, single-family, one-sided `Yseq`
+apparatus over any atomless `E`** — everything needed to instantiate the closed-form/transfer
+machinery twice (once per side) without re-deriving any general theory. **Next up:**
+Exercise 8.12(c)(vi)(4) — the genuinely new "interleaving" bridge identifying `atomPair`'s
+per-side trajectory with an ordinary single-family `atomE`-style recursion (the crux of why (vi)
+isn't just "apply (1)–(3) twice" outright).
