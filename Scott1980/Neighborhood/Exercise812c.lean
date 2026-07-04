@@ -323,6 +323,29 @@ theorem xyStep_disjoint_of_ne {α γ : Type*} {E : NeighborhoodSystem γ}
   ⟨if_swap_disjoint (inter_diff_self_eq_empty A Xn) hbb',
     if_swap_disjoint (hsplit hAB hBE Xn).2.2.2.2.2 hbb'⟩
 
+/-! ### Padding/restricting `ℕ → Bool × Bool` sign sequences
+
+The two-sided analogues of `Theorem88.lean`'s `extendTrue`/`restrictFin`, built by applying them
+componentwise to each half of the pair. Needed for 8.12(c)(vi)(4)'s `XPseq`/`YPseq`. -/
+
+/-- Pad `δ' : Fin n → Bool × Bool` to a total `ℕ → Bool × Bool`, filling positions `≥ n` with
+`(true, true)`. -/
+def extendTruePair {n : ℕ} (δ' : Fin n → Bool × Bool) : ℕ → Bool × Bool :=
+  fun i => (extendTrue (Prod.fst ∘ δ') i, extendTrue (Prod.snd ∘ δ') i)
+
+/-- Restrict `δ : ℕ → Bool × Bool` to `Fin n → Bool × Bool`. -/
+def restrictFinPair (δ : ℕ → Bool × Bool) (n : ℕ) : Fin n → Bool × Bool := fun i => δ i.val
+
+theorem extendTruePair_restrictFinPair_agree (δ : ℕ → Bool × Bool) (n i : ℕ) (hi : i < n) :
+    extendTruePair (restrictFinPair δ n) i = δ i := by
+  have h1 : extendTrue (Prod.fst ∘ restrictFinPair δ n) i = (δ i).1 :=
+    extendTrue_restrictFin_agree (Prod.fst ∘ δ) n i hi
+  have h2 : extendTrue (Prod.snd ∘ restrictFinPair δ n) i = (δ i).2 :=
+    extendTrue_restrictFin_agree (Prod.snd ∘ δ) n i hi
+  show (extendTrue (Prod.fst ∘ restrictFinPair δ n) i, extendTrue (Prod.snd ∘ restrictFinPair δ n) i)
+      = δ i
+  rw [h1, h2]
+
 /-! ### The two named sub-steps of `atomPair`, as instances of `xyStep`
 
 These, and their basic subset/disjointness properties, are stated fully generically (independent
@@ -772,6 +795,91 @@ theorem atomPair_disjoint (δ δ' : ℕ → Bool × Bool) :
         hD₀nomin hD₁pos hD₁diff hD₁nomin X Y hXmem hYmem hD₀mne hD₁mne δ' n
       exact ⟨Set.subset_eq_empty (Set.inter_subset_inter h1 h1') hd1,
         Set.subset_eq_empty (Set.inter_subset_inter h2 h2') hd2⟩
+
+/-! ### Exercise 8.12(c)(vi)(4): recovering `X n` on `D₁`'s side directly from `atomPair`
+
+**Correcting the original pre-plan.** The plan (`arxiv.md`/`HANDOFF.md`, written before any code)
+anticipated a *bridge* identifying `atomPair`'s per-side trajectory with an instance of
+`Exercise812cYseq.lean`'s single-family `atomE` (`E := D₁` for the `X`-sub-step, `E := D₀` for the
+`Y`-sub-step). **This turns out to be false**, not just difficult: `atomE`'s testing family
+`genAtom X Δ δ n` is a *free* Boolean combination (only ever intersected/subtracted directly,
+never split), whereas `atomPair`'s `A`-component is *itself* choice-split at every `Y`-sub-step
+(via `D₀.NoMinimal`) — so whenever `exists_split'`'s genuine-split case fires (generically), the
+actual `A_n` is a *proper* subset of `genAtom X Δ δ₁ n` (`δ₁ k := (δ k).1`), with different
+emptiness. Concretely: both `atomPair` components are "`atomE`-like" (choice-driven), so *neither*
+is "`genAtom`-like" (free) — unlike `Theorem88.lean`'s one-sided case, where `D`'s side stayed free
+by construction. `Exercise812cYseq.lean`'s apparatus therefore is **not** reused here (it remains
+valid, reusable general theory for any genuinely one-sided abstract `E`, just not what this specific
+bridge needs).
+
+**The actual fix**, found by re-deriving `Yseq`'s "I-formula" argument directly against `atomPair`,
+reusing only `atomPair_invariant`/`atomPair_congr`/`atomPair_disjoint` (already `Pass`, (iv)/(v))
+and `xStep_snd_subset` (already `Pass`, (v)(2)) — no `atomE` involved: `XPseq n` unions, over all
+depth-`n` histories, the `D₁`-piece obtained by the `X`-sub-step's "+" branch (the *half-step*
+value, strictly before the following `Y`-sub-step further refines it). This is *simpler* than
+`Yseq`'s own proof in one respect: since the branch is a literal argument (`true`) rather than
+`δ n`'s own value, there is no need for `Theorem88.lean`'s `Function.update`-based "`δ2`" detour —
+agreement below `n` alone suffices. -/
+
+open Classical in
+/-- **`XPseq`**: the union, over all depth-`n` histories, of the `D₁`-piece chosen by the
+`X`-sub-step's "+" branch against `X n`. Recovers `X n`'s correspondent on `D₁`'s side (the
+two-sided, half-step analogue of `Theorem88.lean`'s `Yseq`). -/
+noncomputable def XPseq (n : ℕ) : Set β :=
+  ⋃ δ' : Fin n → Bool × Bool,
+    (xStep D₁ hD₁nomin (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y (extendTruePair δ') n).1
+      (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y (extendTruePair δ') n).2 (X n) true).2
+
+omit hD₀pos hD₀diff hD₁pos hD₁diff hXmem hYmem hD₀mne hD₁mne in
+theorem subset_XPseq {n : ℕ} (δ' : Fin n → Bool × Bool) :
+    (xStep D₁ hD₁nomin (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y (extendTruePair δ') n).1
+      (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y (extendTruePair δ') n).2 (X n) true).2 ⊆
+      XPseq D₀ D₁ hD₀nomin hD₁nomin X Y n :=
+  Set.subset_iUnion
+    (fun δ' => (xStep D₁ hD₁nomin
+      (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y (extendTruePair δ') n).1
+      (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y (extendTruePair δ') n).2 (X n) true).2) δ'
+
+/-- **The "I-formula" for `XPseq`**: the `D₁`-piece chosen by the depth-`n` `X`-sub-step's "+"
+branch (for *any* history `δ`) is exactly the intersection of `atomPair δ n`'s `D₁`-side with
+`XPseq n`. Mirrors `Theorem88.lean`'s `split_fst_eq_inter_Yseq`, but proved directly against
+`atomPair`'s own invariants (no `atomE`/`genAtom` involved — see the section docstring above). -/
+theorem xStep_snd_eq_inter_XPseq (δ : ℕ → Bool × Bool) (n : ℕ) :
+    (xStep D₁ hD₁nomin (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y δ n).1
+        (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y δ n).2 (X n) true).2 =
+      (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y δ n).2 ∩ XPseq D₀ D₁ hD₀nomin hD₁nomin X Y n := by
+  obtain ⟨hAB, -, hBmem⟩ := atomPair_invariant D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff
+    hD₁nomin X Y hXmem hYmem hD₀mne hD₁mne δ n
+  set A := (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y δ n).1 with hAdef
+  set B := (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y δ n).2 with hBdef
+  set I := (xStep D₁ hD₁nomin A B (X n) true).2 with hIdef
+  apply Set.Subset.antisymm
+  · have hIsubB : I ⊆ B := xStep_snd_subset hD₁nomin hAB hBmem (X n) true
+    have hIsubX : I ⊆ XPseq D₀ D₁ hD₀nomin hD₁nomin X Y n := by
+      have hcongr : atomPair D₀ D₁ hD₀nomin hD₁nomin X Y
+          (extendTruePair (restrictFinPair δ n)) n =
+          atomPair D₀ D₁ hD₀nomin hD₁nomin X Y δ n :=
+        atomPair_congr D₀ D₁ hD₀nomin hD₁nomin X Y
+          (fun i hi => extendTruePair_restrictFinPair_agree δ n i hi)
+      have hmem := subset_XPseq D₀ D₁ hD₀nomin hD₁nomin X Y (restrictFinPair δ n)
+      rwa [hcongr] at hmem
+    exact Set.subset_inter hIsubB hIsubX
+  · rintro z ⟨hzB, hzX⟩
+    obtain ⟨δ', hz'⟩ := Set.mem_iUnion.mp hzX
+    by_cases hagree : ∀ i < n, extendTruePair δ' i = δ i
+    · have hABeq : atomPair D₀ D₁ hD₀nomin hD₁nomin X Y (extendTruePair δ') n =
+          atomPair D₀ D₁ hD₀nomin hD₁nomin X Y δ n :=
+        atomPair_congr D₀ D₁ hD₀nomin hD₁nomin X Y hagree
+      rwa [hABeq] at hz'
+    · push Not at hagree
+      obtain ⟨j, hj, hjne⟩ := hagree
+      have hdisjBB := (atomPair_disjoint D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin
+        X Y hXmem hYmem hD₀mne hD₁mne (extendTruePair δ') δ n ⟨j, hj, hjne⟩).2
+      obtain ⟨hAB', -, hBmem'⟩ := atomPair_invariant D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff
+        hD₁nomin X Y hXmem hYmem hD₀mne hD₁mne (extendTruePair δ') n
+      have hzB' : z ∈ (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y (extendTruePair δ') n).2 :=
+        xStep_snd_subset hD₁nomin hAB' hBmem' (X n) true hz'
+      exact absurd (Set.mem_inter hzB' hzB) (by rw [hdisjBB]; simp)
 
 end AtomPair
 

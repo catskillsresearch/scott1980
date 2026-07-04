@@ -7356,3 +7356,73 @@ machinery twice (once per side) without re-deriving any general theory. **Next u
 Exercise 8.12(c)(vi)(4) — the genuinely new "interleaving" bridge identifying `atomPair`'s
 per-side trajectory with an ordinary single-family `atomE`-style recursion (the crux of why (vi)
 isn't just "apply (1)–(3) twice" outright).
+
+---
+
+**2026-07-04 — Exercise 8.12(c)(vi)(4): the planned "bridge to `atomE`" is FALSE; corrected plan,
+`X n`-side ("`XPseq`") done directly against `atomPair`.** Before writing any code, checked the
+pre-plan's literal claim by hand: is `atomPair`'s `A`-component (`D₀`'s side) at depth `n` equal to
+`genAtom X D₀.master δ₁ n` (`δ₁ k := (δ k).1`), i.e. is `Theorem88.lean`'s `atomE` instance with
+`E:=D₁`, enumeration `X`, signs `δ₁` really tracking `atomPair`'s `B`-component? **No** — `atomE`'s
+testing family `genAtom X Δ δ n` is a *free* Boolean combination (only ever intersected/subtracted,
+never split), but `atomPair`'s `A`-component *is* itself choice-split at every `Y`-sub-step (via
+`D₀.NoMinimal`'s `exists_split'`, genuine-split case): concretely, `A_1` (`atomPair`'s value at
+depth 1) is the `NoMinimal`-produced piece `I2`/`J2` from splitting `A1_0 = genAtom(...)` — a
+**proper subset** whenever `B1_0` splits nontrivially (the generic case), with *different*
+emptiness. So *both* `atomPair` sides are "`atomE`-like" (choice-driven); *neither* is
+"`genAtom`-like" (free) — unlike `Theorem88.lean`'s one-sided case, where `D`'s side stayed free by
+hardcoded construction. **The (vi)(1)–(vi)(3) apparatus is therefore not reusable as a literal
+bridge for `atomPair`** — it remains valid, correct, general theory (any genuinely one-sided
+abstract `E`), just not what (vi) itself needs from here. This is exactly the kind of correction
+the resume-discipline rule anticipates ("plans get corrected once implementation starts") — caught
+by hand-checking the *literal* claim before investing in the (wrong) formalization, not mid-proof.
+
+**The actual fix**: re-derive `Yseq`'s "I-formula" argument *directly* against `atomPair`, reusing
+only already-`Pass` lemmas — `atomPair_invariant`/`atomPair_congr`/`atomPair_disjoint` ((iv)/(v))
+and `xStep_snd_subset`/`xStep_fst_subset` ((v)(2)) — with **no `atomE` involved**. Added to
+`Exercise812c.lean`:
+* **`extendTruePair`/`restrictFinPair`**: the two-sided (`Bool × Bool`) analogues of
+  `Theorem88.lean`'s `extendTrue`/`restrictFin`, built by applying them componentwise to each half
+  of the pair (avoids re-deriving the padding/restricting machinery from scratch), plus
+  **`extendTruePair_restrictFinPair_agree`** (agreement lemma, `⊆{propext}` — actually
+  choice-free).
+* **`XPseq n : Set β`**: the union, over all depth-`n` histories (`Fin n → Bool × Bool`), of the
+  `D₁`-piece chosen by the **`X`-sub-step's "+" branch** (the *half-step* value, via `xStep`
+  directly with argument `true` — strictly *before* the following `Y`-sub-step refines it
+  further). This recovers `X n`'s correspondent on `D₁`'s side.
+* **`subset_XPseq`**: trivial monotonicity (`Set.subset_iUnion`), mirroring `subset_Yseq`.
+* **`xStep_snd_eq_inter_XPseq`** (the headline "I-formula"): for *any* history `δ` and depth `n`,
+  the `X`-sub-step's "+" branch equals `(atomPair δ n).2 ∩ XPseq n`. Proved by the same two-sided
+  antisymmetry argument as `split_fst_eq_inter_Yseq`, but **actually simpler** in one respect:
+  since the branch is a literal `true` *argument* to `xStep` (not `δ n`'s own value being tested),
+  there's no need for `Theorem88.lean`'s `Function.update`-based "`δ2`" detour to force `δ n = true`
+  — agreement of histories strictly below `n` alone suffices (`atomPair δ n` only ever depends on
+  `δ` below `n`, unlike `atomU`'s recursion which threads `δ n` into its *own* depth-`n+1` step).
+  The `⊇` direction's non-agreeing case uses `atomPair_disjoint` exactly as `atomU_invariant`'s
+  disjointness clause is used in the one-sided proof.
+
+**`Y n`'s side (`YPseq`) is harder and not yet done**: unlike `X n`'s side, `yStep`'s own inputs
+(`A1`, `B1`, the *post*-`X`-sub-step values) already depend on `(δ n).1` itself, not just history
+strictly below `n` — so `YPseq`'s union needs an *extra* free `Bool` parameter for position `n`'s
+`X`-sub-step bit, and relating an arbitrary such `bx` back to a concrete history's own bit at `n`
+**will** need a `Function.update`-style construction after all (mirroring `Theorem88.lean`'s
+`split_fst_eq_inter_Yseq` exactly, for this second half — `XPseq`'s side turned out to be the "easy"
+half precisely because it's the *first* sub-step of the pair, depending only on strictly-earlier
+history).
+
+**Zero `sorry`.** Whole-project `lake build` (3163 jobs) green. `#print axioms` on
+`extendTruePair_restrictFinPair_agree` gives `⊆{propext}`; `subset_XPseq`/`xStep_snd_eq_inter_XPseq`
+give `⊆{propext,Classical.choice,Quot.sound}`, matching the existing baseline. `arxiv.md`:
+8.12(c)(vi)(4) row updated to `Partial` with the corrected mathematical target and full proof
+notes; umbrella 8.12(c)(vi) row and 8.12(c) top-level status line both updated to reflect the
+correction and partial progress.
+
+**Status: Exercise 8.12(c)(vi)(4) is `Partial`** (`X n`-side done, `Y n`-side remaining). **Next
+up:** build `YPseq` (the `Y n`-side half-step closed form) and its I-formula
+`yStep_fst_eq_inter_YPseq`, using a `Function.update`-based construction to bridge the free `bx`
+parameter to a concrete history's `(δ n).1`, reusing `xStep_spec`/`yStep_fst_subset`/
+`xStep_disjoint_of_ne`/`xStep_fst_subset` (all already `Pass`, (v)(2)/(v)(3)) exactly as
+`xStep_snd_eq_inter_XPseq` reused `atomPair_invariant`/`atomPair_congr`/`atomPair_disjoint`. Once
+both halves are done, (vi)(5)/(vi)(6) (closed-form/transfer instantiation per side) and (vi)(7)
+(assembly) can proceed — though those sub-plans should also be re-examined against `atomPair`'s
+actual structure rather than assumed correct from the pre-plan, given (vi)(4)'s correction above.
