@@ -1861,6 +1861,63 @@ theorem YPseq_zero : YPseq D₀ D₁ hD₀nomin hD₁nomin X Y 0 = D₀.master :
     rw [hunion2]
   exact hkey2.trans hgoal
 
+include hD₀pos hD₀diff hD₁pos hD₁diff hXmem hYmem hD₀mne hD₁mne in
+/-- **Exercise 8.12(c)(vii)(3), cross-parity order fact (`even`/`odd` mix).** `X i ⊆ YPseq j ↔
+XPseq i ⊆ Y j`: a direct specialization of `transfer_subset_combined` at the mixed indices
+`(2i, 2j+1)` (`combinedX`/`combinedY` at an even and an odd index respectively), simplified by the
+same `Set.inter_eq_self_of_subset_right` bookkeeping as (5)(d)'s same-parity headline facts. No new
+proof machinery — `transfer_subset_combined` already holds for arbitrary index pairs. -/
+theorem X_subset_YPseq_iff_XPseq_subset_Y (i j : ℕ) :
+    X i ⊆ YPseq D₀ D₁ hD₀nomin hD₁nomin X Y j ↔
+      XPseq D₀ D₁ hD₀nomin hD₁nomin X Y i ⊆ Y j := by
+  have key := transfer_subset_combined D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin X Y
+    hXmem hYmem hD₀mne hD₁mne (2 * i) (2 * j + 1)
+  rw [combinedX_even, combinedX_odd, combinedY_even, combinedY_odd,
+    Set.inter_eq_self_of_subset_right (D₀.sub_master (hXmem i)),
+    Set.inter_eq_self_of_subset_right
+      (XPseq_subset_master D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin X Y hXmem hYmem
+        hD₀mne hD₁mne i)] at key
+  exact key
+
+include hD₀pos hD₀diff hD₁pos hD₁diff hXmem hYmem hD₀mne hD₁mne in
+/-- **Exercise 8.12(c)(vii)(3), cross-parity order fact, other mix.** `YPseq i ⊆ X j ↔
+Y i ⊆ XPseq j`: the symmetric specialization of `transfer_subset_combined` at `(2i+1, 2j)`. -/
+theorem YPseq_subset_X_iff_Y_subset_XPseq (i j : ℕ) :
+    YPseq D₀ D₁ hD₀nomin hD₁nomin X Y i ⊆ X j ↔
+      Y i ⊆ XPseq D₀ D₁ hD₀nomin hD₁nomin X Y j := by
+  have key := transfer_subset_combined D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin X Y
+    hXmem hYmem hD₀mne hD₁mne (2 * i + 1) (2 * j)
+  rw [combinedX_odd, combinedX_even, combinedY_odd, combinedY_even,
+    Set.inter_eq_self_of_subset_right
+      (YPseq_subset_master D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin X Y hXmem hYmem
+        hD₀mne hD₁mne i),
+    Set.inter_eq_self_of_subset_right (D₁.sub_master (hYmem i))] at key
+  exact key
+
+include hD₀pos hD₀diff hD₁pos hD₁diff hXmem hYmem hD₀mne hD₁mne hXcover in
+/-- **Exercise 8.12(c)(vii)(3), `exists_inter_index` (`D₀ → D₁` direction).** Given a `D₀`-side
+witness that `X i ∩ X j` is itself a neighbourhood, `hXcover` names it as some `X m`, and (5)(d)'s
+`X_inter_eq_iff_XPseq_inter_eq` pushes the same equation across to `XPseq`. Direct transcription of
+`Theorem88a.lean`'s `exists_inter_index_of_dmem`. -/
+theorem exists_inter_index_X {i j : ℕ} (hDij : D₀.mem (X i ∩ X j)) :
+    ∃ m, X i ∩ X j = X m ∧
+      XPseq D₀ D₁ hD₀nomin hD₁nomin X Y i ∩ XPseq D₀ D₁ hD₀nomin hD₁nomin X Y j =
+        XPseq D₀ D₁ hD₀nomin hD₁nomin X Y m := by
+  obtain ⟨m, hm⟩ := (hXcover (X i ∩ X j)).mp hDij
+  exact ⟨m, hm, (X_inter_eq_iff_XPseq_inter_eq D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff
+    hD₁nomin X Y hXmem hYmem hD₀mne hD₁mne i j m).mp hm⟩
+
+include hD₀pos hD₀diff hD₁pos hD₁diff hXmem hYmem hD₀mne hD₁mne hYcover in
+/-- **Exercise 8.12(c)(vii)(3), `exists_inter_index` (`D₁ → D₀` direction).** Symmetric to
+`exists_inter_index_X`, using `hYcover` and `YPseq_inter_eq_iff_Y_inter_eq`. -/
+theorem exists_inter_index_Y {i j : ℕ} (hDij : D₁.mem (Y i ∩ Y j)) :
+    ∃ m, Y i ∩ Y j = Y m ∧
+      YPseq D₀ D₁ hD₀nomin hD₁nomin X Y i ∩ YPseq D₀ D₁ hD₀nomin hD₁nomin X Y j =
+        YPseq D₀ D₁ hD₀nomin hD₁nomin X Y m := by
+  obtain ⟨m, hm⟩ := (hYcover (Y i ∩ Y j)).mp hDij
+  exact ⟨m, hm, (YPseq_inter_eq_iff_Y_inter_eq D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff
+    hD₁nomin X Y hXmem hYmem hD₀mne hD₁mne i j m).mpr hm⟩
+
 end Iso
 
 end Scott1980.Neighborhood

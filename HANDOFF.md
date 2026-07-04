@@ -7970,3 +7970,23 @@ matching `XPseq_subset_master`'s pre-existing baseline (choice already unavoidab
 cross-parity specializations of `transfer_subset_combined`/`transfer_inter_eq_combined` needed for
 `up_mem`/`inter_mem`'s mixed-parity cases, plus `exists_inter_index`-style lemmas from `hXcover`/
 `hYcover`.
+
+## 2026-07-04 checkpoint — Exercise 8.12(c)(vii)(3): cross-parity order + `exists_inter_index` pair
+
+Four theorems, as scoped, all zero-new-machinery specializations: `X_subset_YPseq_iff_XPseq_subset_Y`
+/`YPseq_subset_X_iff_Y_subset_XPseq` (`transfer_subset_combined` at the mixed indices
+`(2i,2j+1)`/`(2i+1,2j)`, same bookkeeping as (5)(d)); `exists_inter_index_X`/`exists_inter_index_Y`
+(`hXcover`/`hYcover` name a `D₀`/`D₁`-side intersection witness as `X m`/`Y m`, then (5)(d)'s
+`X_inter_eq_iff_XPseq_inter_eq`/`YPseq_inter_eq_iff_Y_inter_eq` push the equation across — direct
+transcription of `Theorem88a.lean`'s `exists_inter_index_of_dmem`). **Confirmed the `_of_nonempty`
+variant is not needed here**: that pattern exists in `Theorem88a.lean` only because `DprimeU`/`U`
+are built from scratch and their closure axioms take raw nonemptiness; here `D₀`/`D₁` are
+pre-existing systems whose `inter_mem` already takes a direct membership witness. All four needed
+`include ... in` (the (vii)(2) auto-include gotcha recurs for every proof-only hypothesis use).
+
+Zero `sorry`; `lake build Scott1980.Neighborhood.Exercise812c` green; all four axiom-audited to
+`⊆{propext, Classical.choice, Quot.sound}`, matching baseline. `arxiv.md`: 8.12(c)(vii)(3) → `Pass`.
+
+**Status: Exercise 8.12(c)(vii)(1)–(3) are `Pass`.** **Next up:** Exercise 8.12(c)(vii)(4) — build
+`toD1 : D₀.Element → D₁.Element` (the pushforward filter), using (vi)(7)'s `XPseq_mem`, (2)'s
+`XPseq_zero`, and (3)'s `exists_inter_index_X`/`X_subset_YPseq_iff_XPseq_subset_Y`.
