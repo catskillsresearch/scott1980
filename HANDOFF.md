@@ -7804,3 +7804,52 @@ style as `Theorem88a.lean`'s `embed_subset_iff` specializing `transfer_subset_if
 Once (d) lands, 8.12(c)(vi)(5) (and, since (vi)(6) is already merged into it, 8.12(c)(vi) itself
 modulo (vi)(7)'s still-vague placeholder) will be fully `Pass`, unblocking (vii)'s final `DomainIso`
 assembly.
+
+## 2026-07-04 checkpoint — Exercise 8.12(c)(vi)(5)(d) `Pass`: **8.12(c)(vi)(5) COMPLETE, all of (a)–(d)**
+
+**One correction to the pre-plan, found immediately**: `Theorem88.lean`'s
+`transfer_subset_iff`/`transfer_inter_empty_iff`/`transfer_double_subset_iff`/
+`transfer_inter_eq_iff` are hardcoded to the concrete `X`/`Δ`/`Yseq split X Δ`/`U.master` (unlike
+`transfer_dir`, which *is* fully generic over two independent carriers and was reused verbatim
+throughout) — exactly the same situation (vi)(2) hit building `Exercise812cYseq.lean`'s
+`transfer_*_iffE`. So this needed fresh one-for-one transcriptions for the `combinedX`/`combinedY`
+pair, all added to `Scott1980/Neighborhood/Exercise812c.lean` (still inside `section AtomPair`,
+before `end AtomPair`):
+
+* **`combinedX_subset_master`/`combinedY_subset_master`** (new, not in the original plan):
+  `combinedX i`/`combinedY i` are always `⊆ D₀.master`/`D₁.master` for *arbitrary* `i` (not just
+  even/odd-specialized) — a parity case split (`by omega`) unfolding via `combinedX_even`/`_odd`
+  to `D₀.sub_master (hXmem _)`/`YPseq_subset_master` (resp. `combinedY_even`/`_odd` to
+  `XPseq_subset_master`/`D₁.sub_master (hYmem _)`). Needed as `transfer_inter_eq_combined`'s
+  `hi`/`hk` hypotheses, mirroring `Theorem88.lean`'s own `X i ⊆ Δ` preconditions on
+  `transfer_inter_eq_iff`.
+* **`transfer_empty_combined`/`transfer_subset_combined`/`transfer_inter_empty_combined`/
+  `transfer_double_subset_combined`/`transfer_inter_eq_combined`** — routine transcriptions of
+  `Theorem88.lean`'s originals (`ext`/`tauto`/`Set.diff_eq_empty`-`Set.not_nonempty_iff_eq_empty`
+  bookkeeping identical throughout), `Δ ↦ D₀.master`, `X ↦ combinedX`, `U.master ↦ D₁.master`,
+  `Yseq split X Δ ↦ combinedY`, `hcore` argument ↦ (c)'s `hcore`.
+* **The six headline specializations** (the actual deliverable): `X_subset_iff_XPseq_subset`,
+  `YPseq_subset_iff_Y_subset`, `X_inter_empty_iff_XPseq_inter_empty`,
+  `YPseq_inter_empty_iff_Y_inter_empty`, `X_inter_eq_iff_XPseq_inter_eq`,
+  `YPseq_inter_eq_iff_Y_inter_eq` — each instantiates the matching `transfer_*_combined` lemma at
+  `(2i,2j[,2k])` (even) or `(2i+1,2j+1[,2k+1])` (odd), unfolds via (b)'s `combinedX_even`/
+  `combinedX_odd`/`combinedY_even`/`combinedY_odd`, and discharges the `∩ master` bookkeeping via
+  `Set.inter_eq_self_of_subset_right` fed by `D₀.sub_master`/`D₁.sub_master`/
+  `XPseq_subset_master`/`YPseq_subset_master` — exactly the planned `rfl`/`simp`-level unwinding.
+
+Built almost entirely clean; only hiccups were two unused-simp-arg lints (`Nat.lt_succ_iff` in two
+of the transcribed `hn` side-proofs, since plain `simp` already closes the arithmetic goal without
+it — removed both).
+
+Zero `sorry`; whole-project `lake build` (3163 jobs) green; `#print axioms` on all six headline
+theorems give `⊆{propext, Classical.choice, Quot.sound}`, matching the section's baseline.
+`arxiv.md`: 8.12(c)(vi)(5)(d) row updated to `Pass`; **8.12(c)(vi)(5) umbrella row rolled up to
+`Pass`** (all of (a)–(d) done, with (c) itself fully done across (1)–(4)); 8.12(c)(vi) umbrella row
+updated to reflect (1)–(5) all `Pass`.
+
+**Status: Exercise 8.12(c)(vi)(5) is `Pass` — COMPLETE, all of (a)–(d).** **Next up:** Exercise
+8.12(c)(vi)(6) — already recorded as a placeholder row, content merged into (5) (no new work
+expected, just confirm/tidy); then Exercise 8.12(c)(vi)(7) — the still-vague "bidirectional glue"
+placeholder pending (vi)(1)–(vi)(6), now that all of those are `Pass`: needs a fresh look at
+whether (vii)'s `DomainIso` assembly needs anything beyond (5)'s six headline facts, or whether
+(vii) can proceed directly and (vi)(7) collapses to "nothing left to do".

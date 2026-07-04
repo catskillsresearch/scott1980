@@ -1442,6 +1442,279 @@ theorem hcore (δ' : ℕ → Bool) (n : ℕ) :
     exact hcore_odd D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin X Y hXmem hYmem hD₀mne
       hD₁mne δ' (n / 2)
 
+/-! ### Exercise 8.12(c)(vi)(5)(d): the headline bidirectional transfer facts
+
+Instantiates `Theorem88.lean`'s fully generic `transfer_dir` with `Z1 := combinedX`,
+`M1 := D₀.master`, `Z2 := combinedY`, `M2 := D₁.master`, and (c)'s `hcore`, transcribing
+`Theorem88.lean`'s own `transfer_empty_iff`/`transfer_subset_iff`/`transfer_inter_empty_iff`/
+`transfer_double_subset_iff`/`transfer_inter_eq_iff` (all hardcoded to the concrete `X`/`Δ`/
+`Yseq split X Δ`/`U.master`, hence not directly reusable) one-for-one with `Δ ↦ D₀.master`,
+`X ↦ combinedX`, `U.master ↦ D₁.master`, `Yseq split X Δ ↦ combinedY`. The headline deliverable
+(further down) then specializes each even/even and odd/odd index pair back down to plain
+statements about `X`/`XPseq` and `YPseq`/`Y`, unfolding via (b)'s `combinedX_even`/`combinedX_odd`/
+`combinedY_even`/`combinedY_odd` and discharging the `∩ master` bookkeeping with `D₀.sub_master`/
+`XPseq_subset_master`/`YPseq_subset_master`/`D₁.sub_master`. -/
+
+/-- `combinedX i` is always `⊆ D₀.master`: at even positions it is `X (i/2)`, a `D₀.mem` set
+(via `D₀.sub_master`); at odd positions it is `YPseq (i/2)`, already known `⊆ D₀.master`. -/
+theorem combinedX_subset_master (i : ℕ) :
+    combinedX D₀ D₁ hD₀nomin hD₁nomin X Y i ⊆ D₀.master := by
+  rcases (by omega : i % 2 = 0 ∨ i % 2 = 1) with hi | hi
+  · rw [show i = 2 * (i / 2) from by omega, combinedX_even]
+    exact D₀.sub_master (hXmem (i / 2))
+  · rw [show i = 2 * (i / 2) + 1 from by omega, combinedX_odd]
+    exact YPseq_subset_master D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin X Y hXmem hYmem
+      hD₀mne hD₁mne (i / 2)
+
+/-- `combinedY i` is always `⊆ D₁.master`, symmetric to `combinedX_subset_master`: at even
+positions it is `XPseq (i/2)`, already known `⊆ D₁.master`; at odd positions it is `Y (i/2)`, a
+`D₁.mem` set (via `D₁.sub_master`). -/
+theorem combinedY_subset_master (i : ℕ) :
+    combinedY D₀ D₁ hD₀nomin hD₁nomin X Y i ⊆ D₁.master := by
+  rcases (by omega : i % 2 = 0 ∨ i % 2 = 1) with hi | hi
+  · rw [show i = 2 * (i / 2) from by omega, combinedY_even]
+    exact XPseq_subset_master D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin X Y hXmem hYmem
+      hD₀mne hD₁mne (i / 2)
+  · rw [show i = 2 * (i / 2) + 1 from by omega, combinedY_odd]
+    exact D₁.sub_master (hYmem (i / 2))
+
+theorem transfer_empty_combined {cs : List (ℕ × Bool)} {n : ℕ} (hn : ∀ p ∈ cs, p.1 < n) :
+    {x ∈ D₀.master | ∀ p ∈ cs, (p.2 = true ↔ x ∈ combinedX D₀ D₁ hD₀nomin hD₁nomin X Y p.1)}.Nonempty ↔
+      {y ∈ D₁.master |
+        ∀ p ∈ cs, (p.2 = true ↔ y ∈ combinedY D₀ D₁ hD₀nomin hD₁nomin X Y p.1)}.Nonempty := by
+  have hc := hcore D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin X Y hXmem hYmem hD₀mne
+    hD₁mne
+  have hc' : ∀ δ n, genAtom (combinedY D₀ D₁ hD₀nomin hD₁nomin X Y) D₁.master δ n = ∅ ↔
+      genAtom (combinedX D₀ D₁ hD₀nomin hD₁nomin X Y) D₀.master δ n = ∅ :=
+    fun δ n => (hc δ n).symm
+  exact ⟨transfer_dir (combinedX D₀ D₁ hD₀nomin hD₁nomin X Y) D₀.master
+      (combinedY D₀ D₁ hD₀nomin hD₁nomin X Y) D₁.master hc hn,
+    transfer_dir (combinedY D₀ D₁ hD₀nomin hD₁nomin X Y) D₁.master
+      (combinedX D₀ D₁ hD₀nomin hD₁nomin X Y) D₀.master hc' hn⟩
+
+theorem transfer_subset_combined (i j : ℕ) :
+    D₀.master ∩ combinedX D₀ D₁ hD₀nomin hD₁nomin X Y i ⊆ combinedX D₀ D₁ hD₀nomin hD₁nomin X Y j ↔
+      D₁.master ∩ combinedY D₀ D₁ hD₀nomin hD₁nomin X Y i ⊆
+        combinedY D₀ D₁ hD₀nomin hD₁nomin X Y j := by
+  have key := transfer_empty_combined D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin X Y
+    hXmem hYmem hD₀mne hD₁mne (cs := [(i, true), (j, false)]) (n := max i j + 1)
+    (by simp only [List.mem_cons, List.not_mem_nil, or_false]
+        rintro p (rfl | rfl) <;> simp)
+  have hLHS : {x ∈ D₀.master |
+      ∀ p ∈ [(i, true), (j, false)], (p.2 = true ↔ x ∈ combinedX D₀ D₁ hD₀nomin hD₁nomin X Y p.1)}
+      = (D₀.master ∩ combinedX D₀ D₁ hD₀nomin hD₁nomin X Y i) \
+        combinedX D₀ D₁ hD₀nomin hD₁nomin X Y j := by
+    ext x
+    simp only [Set.mem_setOf_eq, List.mem_cons, List.not_mem_nil, or_false,
+      forall_eq_or_imp, forall_eq, Set.mem_diff, Set.mem_inter_iff]
+    tauto
+  have hRHS : {y ∈ D₁.master |
+      ∀ p ∈ [(i, true), (j, false)], (p.2 = true ↔ y ∈ combinedY D₀ D₁ hD₀nomin hD₁nomin X Y p.1)}
+      = (D₁.master ∩ combinedY D₀ D₁ hD₀nomin hD₁nomin X Y i) \
+        combinedY D₀ D₁ hD₀nomin hD₁nomin X Y j := by
+    ext y
+    simp only [Set.mem_setOf_eq, List.mem_cons, List.not_mem_nil, or_false,
+      forall_eq_or_imp, forall_eq, Set.mem_diff, Set.mem_inter_iff]
+    tauto
+  rw [hLHS, hRHS] at key
+  rw [← Set.diff_eq_empty, ← Set.diff_eq_empty, ← Set.not_nonempty_iff_eq_empty,
+    ← Set.not_nonempty_iff_eq_empty, not_iff_not]
+  exact key
+
+theorem transfer_inter_empty_combined (i j : ℕ) :
+    D₀.master ∩ combinedX D₀ D₁ hD₀nomin hD₁nomin X Y i ∩ combinedX D₀ D₁ hD₀nomin hD₁nomin X Y j =
+        ∅ ↔
+      D₁.master ∩ combinedY D₀ D₁ hD₀nomin hD₁nomin X Y i ∩
+          combinedY D₀ D₁ hD₀nomin hD₁nomin X Y j = ∅ := by
+  have key := transfer_empty_combined D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin X Y
+    hXmem hYmem hD₀mne hD₁mne (cs := [(i, true), (j, true)]) (n := max i j + 1)
+    (by simp only [List.mem_cons, List.not_mem_nil, or_false]
+        rintro p (rfl | rfl) <;> simp)
+  have hLHS : {x ∈ D₀.master |
+      ∀ p ∈ [(i, true), (j, true)], (p.2 = true ↔ x ∈ combinedX D₀ D₁ hD₀nomin hD₁nomin X Y p.1)}
+      = D₀.master ∩ combinedX D₀ D₁ hD₀nomin hD₁nomin X Y i ∩
+          combinedX D₀ D₁ hD₀nomin hD₁nomin X Y j := by
+    ext x
+    simp only [Set.mem_setOf_eq, List.mem_cons, List.not_mem_nil, or_false,
+      forall_eq_or_imp, forall_eq, Set.mem_inter_iff]
+    tauto
+  have hRHS : {y ∈ D₁.master |
+      ∀ p ∈ [(i, true), (j, true)], (p.2 = true ↔ y ∈ combinedY D₀ D₁ hD₀nomin hD₁nomin X Y p.1)}
+      = D₁.master ∩ combinedY D₀ D₁ hD₀nomin hD₁nomin X Y i ∩
+          combinedY D₀ D₁ hD₀nomin hD₁nomin X Y j := by
+    ext y
+    simp only [Set.mem_setOf_eq, List.mem_cons, List.not_mem_nil, or_false,
+      forall_eq_or_imp, forall_eq, Set.mem_inter_iff]
+    tauto
+  rw [hLHS, hRHS] at key
+  rw [← Set.not_nonempty_iff_eq_empty, ← Set.not_nonempty_iff_eq_empty, not_iff_not]
+  exact key
+
+theorem transfer_double_subset_combined (i j k : ℕ) :
+    D₀.master ∩ combinedX D₀ D₁ hD₀nomin hD₁nomin X Y i ∩ combinedX D₀ D₁ hD₀nomin hD₁nomin X Y j ⊆
+        combinedX D₀ D₁ hD₀nomin hD₁nomin X Y k ↔
+      D₁.master ∩ combinedY D₀ D₁ hD₀nomin hD₁nomin X Y i ∩
+          combinedY D₀ D₁ hD₀nomin hD₁nomin X Y j ⊆ combinedY D₀ D₁ hD₀nomin hD₁nomin X Y k := by
+  have key := transfer_empty_combined D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin X Y
+    hXmem hYmem hD₀mne hD₁mne (cs := [(i, true), (j, true), (k, false)])
+    (n := max i (max j k) + 1)
+    (by simp only [List.mem_cons, List.not_mem_nil, or_false]
+        rintro p (rfl | rfl | rfl) <;>
+          simp [(Nat.le_max_left j k).trans (Nat.le_max_right i (max j k)),
+            (Nat.le_max_right j k).trans (Nat.le_max_right i (max j k))])
+  have hLHS : {x ∈ D₀.master | ∀ p ∈ [(i, true), (j, true), (k, false)],
+      (p.2 = true ↔ x ∈ combinedX D₀ D₁ hD₀nomin hD₁nomin X Y p.1)}
+      = (D₀.master ∩ combinedX D₀ D₁ hD₀nomin hD₁nomin X Y i ∩
+          combinedX D₀ D₁ hD₀nomin hD₁nomin X Y j) \ combinedX D₀ D₁ hD₀nomin hD₁nomin X Y k := by
+    ext x
+    simp only [Set.mem_setOf_eq, List.mem_cons, List.not_mem_nil, or_false,
+      forall_eq_or_imp, forall_eq, Set.mem_diff, Set.mem_inter_iff]
+    tauto
+  have hRHS : {y ∈ D₁.master | ∀ p ∈ [(i, true), (j, true), (k, false)],
+      (p.2 = true ↔ y ∈ combinedY D₀ D₁ hD₀nomin hD₁nomin X Y p.1)}
+      = (D₁.master ∩ combinedY D₀ D₁ hD₀nomin hD₁nomin X Y i ∩
+          combinedY D₀ D₁ hD₀nomin hD₁nomin X Y j) \ combinedY D₀ D₁ hD₀nomin hD₁nomin X Y k := by
+    ext y
+    simp only [Set.mem_setOf_eq, List.mem_cons, List.not_mem_nil, or_false,
+      forall_eq_or_imp, forall_eq, Set.mem_diff, Set.mem_inter_iff]
+    tauto
+  rw [hLHS, hRHS] at key
+  rw [← Set.diff_eq_empty, ← Set.diff_eq_empty, ← Set.not_nonempty_iff_eq_empty,
+    ← Set.not_nonempty_iff_eq_empty, not_iff_not]
+  exact key
+
+theorem transfer_inter_eq_combined (i j k : ℕ)
+    (hi : combinedX D₀ D₁ hD₀nomin hD₁nomin X Y i ⊆ D₀.master)
+    (hk : combinedX D₀ D₁ hD₀nomin hD₁nomin X Y k ⊆ D₀.master) :
+    combinedX D₀ D₁ hD₀nomin hD₁nomin X Y i ∩ combinedX D₀ D₁ hD₀nomin hD₁nomin X Y j =
+        combinedX D₀ D₁ hD₀nomin hD₁nomin X Y k ↔
+      combinedY D₀ D₁ hD₀nomin hD₁nomin X Y i ∩ combinedY D₀ D₁ hD₀nomin hD₁nomin X Y j =
+        combinedY D₀ D₁ hD₀nomin hD₁nomin X Y k := by
+  have h1 : combinedX D₀ D₁ hD₀nomin hD₁nomin X Y k ⊆ combinedX D₀ D₁ hD₀nomin hD₁nomin X Y i ↔
+      combinedY D₀ D₁ hD₀nomin hD₁nomin X Y k ⊆ combinedY D₀ D₁ hD₀nomin hD₁nomin X Y i := by
+    have := transfer_subset_combined D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin X Y
+      hXmem hYmem hD₀mne hD₁mne k i
+    rwa [Set.inter_eq_self_of_subset_right hk,
+      Set.inter_eq_self_of_subset_right
+        (combinedY_subset_master D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin X Y hXmem
+          hYmem hD₀mne hD₁mne k)] at this
+  have h2 : combinedX D₀ D₁ hD₀nomin hD₁nomin X Y k ⊆ combinedX D₀ D₁ hD₀nomin hD₁nomin X Y j ↔
+      combinedY D₀ D₁ hD₀nomin hD₁nomin X Y k ⊆ combinedY D₀ D₁ hD₀nomin hD₁nomin X Y j := by
+    have := transfer_subset_combined D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin X Y
+      hXmem hYmem hD₀mne hD₁mne k j
+    rwa [Set.inter_eq_self_of_subset_right hk,
+      Set.inter_eq_self_of_subset_right
+        (combinedY_subset_master D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin X Y hXmem
+          hYmem hD₀mne hD₁mne k)] at this
+  have h3 : combinedX D₀ D₁ hD₀nomin hD₁nomin X Y i ∩ combinedX D₀ D₁ hD₀nomin hD₁nomin X Y j ⊆
+        combinedX D₀ D₁ hD₀nomin hD₁nomin X Y k ↔
+      combinedY D₀ D₁ hD₀nomin hD₁nomin X Y i ∩ combinedY D₀ D₁ hD₀nomin hD₁nomin X Y j ⊆
+        combinedY D₀ D₁ hD₀nomin hD₁nomin X Y k := by
+    have := transfer_double_subset_combined D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin
+      X Y hXmem hYmem hD₀mne hD₁mne i j k
+    rwa [Set.inter_eq_self_of_subset_right hi,
+      Set.inter_eq_self_of_subset_right
+        (combinedY_subset_master D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin X Y hXmem
+          hYmem hD₀mne hD₁mne i)] at this
+  constructor
+  · intro heq
+    have hki : combinedX D₀ D₁ hD₀nomin hD₁nomin X Y k ⊆ combinedX D₀ D₁ hD₀nomin hD₁nomin X Y i :=
+      heq ▸ Set.inter_subset_left
+    have hkj : combinedX D₀ D₁ hD₀nomin hD₁nomin X Y k ⊆ combinedX D₀ D₁ hD₀nomin hD₁nomin X Y j :=
+      heq ▸ Set.inter_subset_right
+    have hijk : combinedX D₀ D₁ hD₀nomin hD₁nomin X Y i ∩ combinedX D₀ D₁ hD₀nomin hD₁nomin X Y j ⊆
+        combinedX D₀ D₁ hD₀nomin hD₁nomin X Y k := heq ▸ subset_rfl
+    exact Set.Subset.antisymm (h3.mp hijk) (Set.subset_inter (h1.mp hki) (h2.mp hkj))
+  · intro heq
+    have hki : combinedY D₀ D₁ hD₀nomin hD₁nomin X Y k ⊆ combinedY D₀ D₁ hD₀nomin hD₁nomin X Y i :=
+      heq ▸ Set.inter_subset_left
+    have hkj : combinedY D₀ D₁ hD₀nomin hD₁nomin X Y k ⊆ combinedY D₀ D₁ hD₀nomin hD₁nomin X Y j :=
+      heq ▸ Set.inter_subset_right
+    have hijk : combinedY D₀ D₁ hD₀nomin hD₁nomin X Y i ∩ combinedY D₀ D₁ hD₀nomin hD₁nomin X Y j ⊆
+        combinedY D₀ D₁ hD₀nomin hD₁nomin X Y k := heq ▸ subset_rfl
+    exact Set.Subset.antisymm (h3.mpr hijk) (Set.subset_inter (h1.mpr hki) (h2.mpr hkj))
+
+/-! ### The headline facts: specializing `transfer_*_combined` to even/even and odd/odd indices
+
+The actual deliverable of Exercise 8.12(c)(vi)(5): plain statements about `X`/`XPseq` (from the
+even-index specialization) and `YPseq`/`Y` (from the odd-index specialization), needed for (vii)'s
+`DomainIso` assembly. -/
+
+theorem X_subset_iff_XPseq_subset (i j : ℕ) :
+    X i ⊆ X j ↔
+      XPseq D₀ D₁ hD₀nomin hD₁nomin X Y i ⊆ XPseq D₀ D₁ hD₀nomin hD₁nomin X Y j := by
+  have key := transfer_subset_combined D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin X Y
+    hXmem hYmem hD₀mne hD₁mne (2 * i) (2 * j)
+  rw [combinedX_even, combinedX_even, combinedY_even, combinedY_even,
+    Set.inter_eq_self_of_subset_right (D₀.sub_master (hXmem i)),
+    Set.inter_eq_self_of_subset_right
+      (XPseq_subset_master D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin X Y hXmem hYmem
+        hD₀mne hD₁mne i)] at key
+  exact key
+
+theorem YPseq_subset_iff_Y_subset (i j : ℕ) :
+    YPseq D₀ D₁ hD₀nomin hD₁nomin X Y i ⊆ YPseq D₀ D₁ hD₀nomin hD₁nomin X Y j ↔ Y i ⊆ Y j := by
+  have key := transfer_subset_combined D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin X Y
+    hXmem hYmem hD₀mne hD₁mne (2 * i + 1) (2 * j + 1)
+  rw [combinedX_odd, combinedX_odd, combinedY_odd, combinedY_odd,
+    Set.inter_eq_self_of_subset_right
+      (YPseq_subset_master D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin X Y hXmem hYmem
+        hD₀mne hD₁mne i),
+    Set.inter_eq_self_of_subset_right (D₁.sub_master (hYmem i))] at key
+  exact key
+
+theorem X_inter_empty_iff_XPseq_inter_empty (i j : ℕ) :
+    X i ∩ X j = ∅ ↔
+      XPseq D₀ D₁ hD₀nomin hD₁nomin X Y i ∩ XPseq D₀ D₁ hD₀nomin hD₁nomin X Y j = ∅ := by
+  have key := transfer_inter_empty_combined D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin
+    X Y hXmem hYmem hD₀mne hD₁mne (2 * i) (2 * j)
+  rw [combinedX_even, combinedX_even, combinedY_even, combinedY_even,
+    Set.inter_eq_self_of_subset_right (D₀.sub_master (hXmem i)),
+    Set.inter_eq_self_of_subset_right
+      (XPseq_subset_master D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin X Y hXmem hYmem
+        hD₀mne hD₁mne i)] at key
+  exact key
+
+theorem YPseq_inter_empty_iff_Y_inter_empty (i j : ℕ) :
+    YPseq D₀ D₁ hD₀nomin hD₁nomin X Y i ∩ YPseq D₀ D₁ hD₀nomin hD₁nomin X Y j = ∅ ↔
+      Y i ∩ Y j = ∅ := by
+  have key := transfer_inter_empty_combined D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin
+    X Y hXmem hYmem hD₀mne hD₁mne (2 * i + 1) (2 * j + 1)
+  rw [combinedX_odd, combinedX_odd, combinedY_odd, combinedY_odd,
+    Set.inter_eq_self_of_subset_right
+      (YPseq_subset_master D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin X Y hXmem hYmem
+        hD₀mne hD₁mne i),
+    Set.inter_eq_self_of_subset_right (D₁.sub_master (hYmem i))] at key
+  exact key
+
+theorem X_inter_eq_iff_XPseq_inter_eq (i j k : ℕ) :
+    X i ∩ X j = X k ↔
+      XPseq D₀ D₁ hD₀nomin hD₁nomin X Y i ∩ XPseq D₀ D₁ hD₀nomin hD₁nomin X Y j =
+        XPseq D₀ D₁ hD₀nomin hD₁nomin X Y k := by
+  have key := transfer_inter_eq_combined D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin X Y
+    hXmem hYmem hD₀mne hD₁mne (2 * i) (2 * j) (2 * k)
+    (combinedX_subset_master D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin X Y hXmem hYmem
+      hD₀mne hD₁mne (2 * i))
+    (combinedX_subset_master D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin X Y hXmem hYmem
+      hD₀mne hD₁mne (2 * k))
+  rw [combinedX_even, combinedX_even, combinedX_even, combinedY_even, combinedY_even,
+    combinedY_even] at key
+  exact key
+
+theorem YPseq_inter_eq_iff_Y_inter_eq (i j k : ℕ) :
+    YPseq D₀ D₁ hD₀nomin hD₁nomin X Y i ∩ YPseq D₀ D₁ hD₀nomin hD₁nomin X Y j =
+        YPseq D₀ D₁ hD₀nomin hD₁nomin X Y k ↔
+      Y i ∩ Y j = Y k := by
+  have key := transfer_inter_eq_combined D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin X Y
+    hXmem hYmem hD₀mne hD₁mne (2 * i + 1) (2 * j + 1) (2 * k + 1)
+    (combinedX_subset_master D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin X Y hXmem hYmem
+      hD₀mne hD₁mne (2 * i + 1))
+    (combinedX_subset_master D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin X Y hXmem hYmem
+      hD₀mne hD₁mne (2 * k + 1))
+  rw [combinedX_odd, combinedX_odd, combinedX_odd, combinedY_odd, combinedY_odd,
+    combinedY_odd] at key
+  exact key
+
 end AtomPair
 
 end Scott1980.Neighborhood
