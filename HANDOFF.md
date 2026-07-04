@@ -8068,3 +8068,52 @@ extension property is witnessed computably, the resulting isomorphism is an `Eff
 expected comparable in scope to Theorem 8.8(b)'s 8-sub-part, multi-file effort — **scope/plan
 first** (per this project's discipline for genuinely new, non-transcription pieces) before
 executing, mirroring how (c)(v)/(c)(vi)(5)/(c)(vii) were each scoped before execution.
+
+## 2026-07-04 checkpoint — Exercise 8.12(d) scoped, stopping before executing (user confirmed)
+
+Investigated what an effective refinement of (c)'s `domainIso812c` needs, comparing against
+Theorem 8.8(b)'s precedent (its own effective refinement of 8.8(a), 8 sub-parts, ~2,400 lines
+across `Theorem88b.lean`–`Theorem88g.lean`) and against `Exercise812c.lean`'s actual `SplitSpec'`/
+`splitChoice'` design. **Key finding, cuts both ways:**
+
+- **Harder than 8.8(b) in one respect:** 8.8(b) only ever needs to split `U`'s side (`D`'s side only
+  needs its *index relations* decidable — `DAtomDecidable.lean` is fully presentation-generic
+  already, reusable as-is for both `D₀`/`D₁` here). (c)'s `xStep`/`yStep` split **both** sides
+  alternately, and unlike `U`, `D₀`/`D₁` are arbitrary effectively-given systems with no interval-
+  style concrete structure to build a `splitU`-style deterministic split from.
+- **More tractable in another:** re-reading `exists_split'`'s actual proof (lines 226–258) shows the
+  split witness never needs to relate to the probe set beyond a *nonemptiness match* — in the
+  genuine-split case it's *any* `NoMinimal`-witnessed disjoint nonempty pair of the target, with all
+  the cross-side bookkeeping handled entirely by the *transfer* lemmas independently of the split's
+  specific choice. This means a fully generic "effective `NoMinimal` split via unbounded search"
+  theorem is plausible: given a `ComputablePresentation` and a `NoMinimal`-witnessed target, search
+  pairs `(m,m')` for the decidable predicate "disjoint ∧ union = target" (nonemptiness is free, via
+  (c)(vi)(7)'s `NoMinimal.mem_ne_empty` — no `mem` set is ever `∅`), guaranteed to halt since
+  `NoMinimal` promises a witness exists — exactly the "unbounded search inside an r.e. predicate"
+  idiom already used in Theorem 7.6's `fixMap_isComputable`, and flagged as the intended fallback in
+  `Definition71.lean`'s own `ComputablePresentation.inter` docstring.
+
+**Design decision flagged for the user, not resolved unilaterally:** attempt the fully generic
+search-based split theorem above (real new math, extra effort, but applies to *any* effectively-
+given pair) vs. the safer `Theorem88b.lean`-style route (generalize the whole (c) apparatus over an
+**abstract** "`splitX`/`splitY` computable + `SplitSpec'`" hypothesis, deferring "does one exist" to
+whoever instantiates it — i.e. to (e)/(f), which would build bespoke computable splits for `U`
+(largely reusable from Theorem 8.8(b)'s `SplitU.lean`) and `V` (new, expected comparably easy).
+**Recommended the safer route** (matches this project's established parametrize-then-instantiate
+pattern, avoids extra research risk inside (d) itself). Broken into a **tentative 6-sub-part plan**
+in `arxiv.md` under this assumption: (1) generalize the whole (c) construction over abstract
+`splitX`/`splitY` (mirroring `Theorem88b.lean`'s "6a"); (2) define "computable split relative to two
+presentations" (a new `Prop`, mirroring `IsComputableMap`'s shape); (3) the code-level two-sided
+atom recursion `atomPairCode` (mirroring `Theorem88d.lean`'s `atomUCodeState`); (4) `XPseqCode`/
+`YPseqCode` closed forms (mirroring `YseqCode`); (5) `toD1`/`toD0` computability, reusing
+`DAtomDecidable.lean` unchanged; (6) final `EffectiveIso` assembly.
+
+**User confirmed (via `AskQuestion`): scope first and stop for review — do not start executing (d)
+in this session.** All work this session (8.12(c)(vi)(5)(d) through 8.12(c)(vii)(6), closing out
+Exercise 8.12(c) in full, plus this (d) scoping) is committed and pushed.
+
+**Status: Exercise 8.12(d) is `Deferred` — scoped into a tentative 6-part plan, awaiting the user's
+call on the design decision above (generic search-based split vs. abstract-hypothesis route) before
+executing.** **Next up:** either resolve the design decision and execute (d)(1)–(6) sub-part by
+sub-part (mirroring how (c)(v)/(c)(vi)(5)/(c)(vii) were each executed after scoping), or move on to
+a different item if the user prefers to leave 8.12(d)–(g) for a future session.
