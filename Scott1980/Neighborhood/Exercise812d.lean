@@ -1403,3 +1403,47 @@ theorem atomPairIdx1_mem (n k : ℕ) :
   P₁.mem_X _
 
 end AtomPairCorrect2
+
+/-! ## 8.12(d)(3)(f): disjointness across disagreeing, non-junk sign-sequences
+
+Mirrors `Theorem88d.lean`'s `atomUCode_disjoint`. Completes 8.12(d)(3). Unlike `atomUCode_disjoint`
+(which reproves disjointness by induction at the code level, since `Theorem88d.lean`'s `U`/`D`
+account has no free-standing `Set`-level disjointness fact to transfer from), here the *entire*
+mathematical content is already `atomPairG_disjoint` from `(d)(1)` — this sub-part is purely a
+transfer along `(d)(3)(d)`'s `atomPairCodeState_correct`, so needs `(d)(1)`'s full hypothesis list
+(`SplitSpec'` for `splitX`/`splitY`, `IsPositive`/`DiffClosed`/`Nonempty` for `D₀`/`D₁`) in addition
+to `(d)(3)`'s own computability hypotheses. -/
+
+section AtomPairCorrect3
+
+variable {α β : Type*} {D₀ : NeighborhoodSystem α} {D₁ : NeighborhoodSystem β}
+  (P₀ : ComputablePresentation D₀) (P₁ : ComputablePresentation D₁)
+  (hDiff0 : IsComputableDiff P₀) (hDiff1 : IsComputableDiff P₁)
+  (splitX : Set α → Set β → Set α → Set β × Set β) (hSplitX : IsComputableSplit P₀ P₁ splitX)
+  (splitY : Set β → Set α → Set β → Set α × Set α) (hSplitY : IsComputableSplit P₁ P₀ splitY)
+  (hD₀pos : D₀.IsPositive) (hD₀diff : D₀.DiffClosed) (hxSplit : SplitSpec' D₁ splitX)
+  (hD₁pos : D₁.IsPositive) (hD₁diff : D₁.DiffClosed) (hySplit : SplitSpec' D₀ splitY)
+  (hD₀mne : D₀.master.Nonempty) (hD₁mne : D₁.master.Nonempty)
+
+include hD₀pos hD₀diff hxSplit hD₁pos hD₁diff hySplit hD₀mne hD₁mne in
+/-- **Disjointness at the code level**: two bit-sources `k`/`k'` disagreeing (via `deltaPair`)
+somewhere below depth `n`, with *both* recorded states still non-junk at `n`, index disjoint sets
+on both the `D₀`-side and the `D₁`-side. Immediate from `atomPairCodeState_correct` (rewriting both
+sides' indexed sets as `atomPairG` components) plus `atomPairG_disjoint` (from `(d)(1)`). -/
+theorem atomPairCodeState_disjoint {n k k' : ℕ}
+    (hk : atomPairJunk P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY n k = 0)
+    (hk' : atomPairJunk P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY n k' = 0)
+    (hne : ∃ i < n, deltaPair k i ≠ deltaPair k' i) :
+    P₀.X (atomPairIdx0 P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY n k) ∩
+        P₀.X (atomPairIdx0 P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY n k') = ∅ ∧
+      P₁.X (atomPairIdx1 P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY n k) ∩
+        P₁.X (atomPairIdx1 P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY n k') = ∅ := by
+  obtain ⟨h0, h1⟩ := atomPairCodeState_correct P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY
+    k n hk
+  obtain ⟨h0', h1'⟩ := atomPairCodeState_correct P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY
+    k' n hk'
+  rw [h0, h0', h1, h1']
+  exact atomPairG_disjoint D₀ D₁ hD₀pos hD₀diff splitY hySplit hD₁pos hD₁diff splitX hxSplit
+    P₀.X P₁.X P₀.mem_X P₁.mem_X hD₀mne hD₁mne (deltaPair k) (deltaPair k') n hne
+
+end AtomPairCorrect3
