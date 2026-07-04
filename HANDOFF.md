@@ -8590,7 +8590,46 @@ depends on **no axioms at all** (fully constructive — even better than `IsComp
 corollary, which needs the ambient `Classical`/`propext`/`Quot.sound` footprint via `DiffClosed`'s
 dichotomy). Whole-project `lake build` (3164 jobs) green, zero `sorry`.
 
-**Status: Exercise 8.12(d)(4)(a) is `Pass`.** **Next up:** `(d)(4)(b)` — `XPseqG`/`YPseqG`, the
-classical `Set`-level generalization of `Exercise812c.lean`'s `XPseq`/`YPseq` over abstract
-`splitX`/`splitY`, transcribing `XPseq_mem`/`XPseq_zero`/`YPseq_mem`/`YPseq_zero` onto the
-abstracted definitions.
+**Status: Exercise 8.12(d)(4)(a) is `Pass`.**
+
+## 2026-07-04 checkpoint — Exercise 8.12(d)(4)(b): scope simplification + `mem_union_of_mem`
+
+**The planned `XPseqG`/`YPseqG` turns out unnecessary.** Investigating what `(d)(4)(c)`/`(d)`'s
+folds actually need to discharge `unionIdx_spec`'s existential hypothesis at each step revealed
+that `XPseq_mem`'s real proof (`Exercise812c.lean`) goes through the heavy `combinedX`/`combinedY`/
+`transfer_inter_empty_combined` detour (≈1000 lines) — machinery for identifying `XPseq n` with
+*Scott's specific* recovered neighbourhood (relating emptiness back to `X n`'s), not for the bare
+fact the fold needs: a finite growing union of already-`mem` pieces stays `mem`. That's available
+for free from hypotheses already ambient everywhere in this file (`IsPositive`, `DiffClosed`,
+`NoMinimal`), via `Exercise812c.lean`'s own generic `union_mem_or_empty` (dichotomy `=∅∨mem`, from
+`IsPositive`+`DiffClosed` alone) plus one line ruling out `∅` when both inputs are *already* `mem`
+(hence nonempty via `NoMinimal.mem_ne_empty`; `X ∪ Y ⊇ X ≠ ∅`).
+
+**New lemma:** `NeighborhoodSystem.mem_union_of_mem {D} (hpos hdiff hnomin) {X Y} (hX : D.mem X)
+(hY : D.mem Y) : D.mem (X ∪ Y) := (union_mem_or_empty hpos hdiff (Or.inr hX) (Or.inr hY))
+.resolve_left fun h => hnomin.mem_ne_empty hX (Set.subset_eq_empty Set.subset_union_left h)`.
+This is exactly what the upcoming folds use: each half-step atom is unconditionally `P.mem_X`-
+genuine (total, regardless of code-level junk — cf. `atomPairIdx0_mem`/`atomPairIdx1_mem`), so the
+running union of finitely many is genuine by one-line induction via this lemma, with **no** need
+to touch `XPseq`/`YPseq`/`combinedX` or redo `(d)(1)`'s `splitX`/`splitY` abstraction again.
+
+Axiom-audited: depends on `[propext, Classical.choice, Quot.sound]` (ambient baseline, via
+`union_mem_or_empty`'s own classical case-split). Whole-project `lake build` green, zero `sorry`.
+Committed/pushed.
+
+**Status: Exercise 8.12(d)(4)(b) is `Pass`.** **Next up:** `(d)(4)(c)` — `XPseqCode`: the `X`-side
+half-step atom (re-running `xSubStep` on the depth-`n` two-sided state with its own bit forced to
+`1`/`"+"`, harvesting `stateIdx1`/`stateJunk`), `XFoldStep`/`XFold` (mirroring `yFoldStep`/`yFold`
+over `i < 4ⁿ`, using `(a)`'s `unionIdx` in place of `unionUX`), and conditional correctness
+(`found_le_one`/`found_iff`/`mem_of_found`(new, using `(b)`)/`mem_iff`) — stated *conditionally* on
+the fold's "found" flag, mirroring `yFold_mem_iff`'s own phrasing exactly. **Known gap, flagged
+rather than faked:** the *unconditional* closed form at `N = 4ⁿ` (mirroring `Theorem88d.lean`'s
+`exists_atomUEmpty_zero`/`yFold_two_pow_found`) needs "some `i < 4ⁿ` is non-junk *and* its `X`-side
+direct-refine against `X n` is specifically non-empty" — investigation found a promising
+purely-algebraic route (an inductive "children's `A₁`-branches always union back to the exact
+parent `Aₙ`" covering identity, from `SplitSpec'`'s unconditional `I ∪ J = B` plus the trivial
+`(A∩X)∪(A\X)=A`, needing no case-adaptivity) but it additionally needs a not-yet-proven
+"code-level junk exactly tracks classical emptiness" *biconditional* (only the forward direction is
+currently `Pass`, via `(d)(3)(d)`'s `atomPairCodeState_correct`) to transport the classical covering
+argument back to code-level indices — substantial enough to warrant its own future sub-part rather
+than blocking `(c)`/`(d)` today.

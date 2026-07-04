@@ -1507,3 +1507,37 @@ theorem union_exists (hunion : V.UnionClosed) (n m : ℕ) :
   P.surj (hunion (P.mem_X n) (P.mem_X m))
 
 end IsComputableUnion
+
+/-! ## 8.12(d)(4)(b): unions of already-genuine neighbourhoods are genuine
+
+**Scope note (adjustment from the original `arxiv.md` scoping, discovered during execution):** the
+original scoping anticipated `XPseqG`/`YPseqG`, a classical `Set`-level generalization of
+`Exercise812c.lean`'s `XPseq`/`YPseq` over abstract `splitX`/`splitY`, transcribing
+`XPseq_mem`/`XPseq_zero`/`YPseq_mem`/`YPseq_zero` onto the abstracted definitions, as the
+prerequisite for `(d)(4)(c)`/`(d)`'s code-level folds. On inspection this is both **unnecessary**
+and, worse, **not the right shape**: `XPseq_mem` (`Exercise812c.lean`) is proved via the heavy
+`combinedX`/`combinedY`/`transfer_inter_empty_combined` detour, which exists to relate `XPseq n`'s
+*emptiness* back to `X n`'s (so as to rule out the `∅` branch of a prior dichotomy) — machinery that
+is about identifying `XPseq n` with *Scott's specific* recovered neighbourhood, not about the bare
+fact the upcoming code-level fold actually needs: that a *finite, growing union* of already-`mem`
+pieces stays `mem`. That bare fact is available far more cheaply, directly from the two hypotheses
+already in scope everywhere in this file (`IsPositive`, `DiffClosed`) plus `NoMinimal`, via
+`Exercise812c.lean`'s own generic `union_mem_or_empty` (proved from `IsPositive`/`DiffClosed` alone,
+**no** `NoMinimal` needed there since it only claims the *dichotomy* `= ∅ ∨ mem`) composed with one
+line ruling out the `∅` branch whenever both inputs are *already* known `mem` (so *already* known
+non-empty, via `NoMinimal`). This lemma is *the* prerequisite `(d)(4)(c)`/`(d)`'s folds actually
+use to discharge `IsComputableUnion.unionIdx_spec`'s existential hypothesis at every step: each
+half-step atom folded in is unconditionally `P.mem_X`-genuine (`ComputablePresentation.mem_X` is
+total, regardless of any code-level "junk" bookkeeping — cf. `atomPairIdx0_mem`/`atomPairIdx1_mem`,
+`(d)(3)(e)`), so the running union of finitely many such atoms is genuine by a one-line induction
+via this lemma, with **no** need to first relate any of it back to `XPseq`/`YPseq` or to redo any
+part of `(d)(1)`'s already-completed abstraction over `splitX`/`splitY`. -/
+
+/-- **A union of two already-genuine neighbourhoods is again genuine** (sharper than
+`union_mem_or_empty`'s bare dichotomy): under `NoMinimal`, a `mem` set is never empty
+(`NoMinimal.mem_ne_empty`), so `X ∪ Y ⊇ X ≠ ∅` rules out the dichotomy's `∅` branch outright. -/
+theorem NeighborhoodSystem.mem_union_of_mem {γ : Type*} {D : NeighborhoodSystem γ}
+    (hpos : D.IsPositive) (hdiff : D.DiffClosed) (hnomin : D.NoMinimal) {X Y : Set γ}
+    (hX : D.mem X) (hY : D.mem Y) : D.mem (X ∪ Y) :=
+  (union_mem_or_empty hpos hdiff (Or.inr hX) (Or.inr hY)).resolve_left fun h =>
+    hnomin.mem_ne_empty hX (Set.subset_eq_empty Set.subset_union_left h)
