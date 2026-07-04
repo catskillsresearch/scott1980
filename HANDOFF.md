@@ -8211,3 +8211,61 @@ recursion `atomPairCode` (state: a pair of `P₀`/`P₁` indices, updated altern
 `IsComputableSplit`-witnessed `posIdx`/`negIdx`), mirroring `Theorem88d.lean`'s
 `atomUCodeState`/`atomStep`, plus the per-step correctness theorem connecting it back to `(d)(1)`'s
 abstract `atomPairG`.
+
+## 2026-07-04 checkpoint — Exercise 8.12(d)(3) re-scoped before executing (user confirmed)
+
+Before writing any code for `atomPairCode`, re-read `Theorem88d.lean` in full as the actual
+precedent (rather than just its docstring summary), and found (d)(3) as originally scoped is not a
+single reviewable sub-part — it needs its own multi-part breakdown. Two concrete discoveries:
+
+1. **A missing prerequisite.** `Theorem88d.lean`'s central trick is to never build a `Set`-valued
+   split/step function — track an explicit presentation-index as state from the first step, since
+   there's no way to effectively recover "the" canonical index of an arbitrary `Set`. That means
+   `atomPairG`'s recursion needs **both** intersection *and* set-difference to stay effectively
+   indexed at every step. But `ComputablePresentation` (Definition 7.1) only requires the
+   **intersection** relation/index (`inter`/`cons_computable`) to be computable — there's no
+   analogous "diff index" primitive. `Theorem88d.lean` never needed one because `U`/`V` have
+   bespoke, concrete diff constructions (`SplitU.lean`, bitmask XOR); an *arbitrary* effectively-
+   given `D₀`/`D₁` has no such guarantee. So a new prerequisite hypothesis (mirroring `inter`/
+   `cons_computable`'s shape, but for `\`) is needed before `atomPairCode` can be built at all.
+
+2. **The real scale of the state machine.** The bulk of `Theorem88d.lean`'s ~1300 lines is its
+   **junk/decidable-emptiness tracking** (`atomUEmpty`, `datomDec`, freezing at a junk sentinel once
+   a branch goes empty, `atomUCode_disjoint`'s restriction to non-junk branches) — needed because
+   `SplitSpec'`'s "direct" sub-step (`A ∩ Xn`/`A \ Xn`) can genuinely be empty (unlike the split
+   sub-step's two outputs, never literally `∅` by `NoMinimal.mem_ne_empty`, (c)(vi)(7)). `atomPairG`
+   alternates **two** interleaved sides, so a faithful `atomPairCode` needs this whole apparatus
+   built — and kept mutually in sync — **twice**, not once.
+
+3. **A partial compensation, found while analyzing the above:** the *split* sub-step's own
+   emptiness-decidability turns out to be **free** — `SplitSpec'`'s clause `A ∩ Xn = ∅ ↔
+   (split A B Xn).1 = ∅` means "is the split output empty" reduces exactly to "is the direct side's
+   intersection/difference empty", so once the direct-side deciders exist (`cons_computable` for
+   `∩`, the new hypothesis's decider for `\`), the split side's decidability comes for free via this
+   `iff` — no separate decidability field needed on `(d)(2)`'s `IsComputableSplit`.
+
+**Asked the user how to proceed** (re-scope (d)(3) into its own sub-parts and stop for review, vs.
+add the diff hypothesis and push through in one session, vs. pause 8.12(d) entirely). **User chose:
+re-scope (d)(3) into its own numbered sub-parts, mirroring how (c)(vii) and (d) itself were scoped,
+then stop for review.**
+
+Wrote the re-scoping to `arxiv.md`: `(d)(3)` is now an umbrella row plus 6 sub-rows
+`(d)(3)(a)`–`(f)`:
+- **(a)** `IsComputableDiff`: the missing `diffIdx`/decidability prerequisite (finding 1), mirroring
+  `inter`/`cons_computable`'s shape, one structure serving both `P₀`/`P₁` (same design as `(d)(2)`'s
+  `IsComputableSplit`).
+- **(b)** the `X`-sub-step's code-level state transition (intersect/diff the `D₀`-side index
+  directly, split the `D₁`-side index via `(d)(2)`).
+- **(c)** the `Y`-sub-step's state transition (symmetric), combined into the full
+  `atomPairCodeState`, mirroring `atomUCodeState`/`atomStep`.
+- **(d)** per-step correctness against `(d)(1)`'s `atomPairG`, mirroring `genAtom_atomUCode`.
+- **(e)** the junk invariant + validity, mirroring `atomUEmpty_mono`/`atomUCode_mem`.
+- **(f)** disjointness across disagreeing, non-junk sign-sequences, mirroring `atomUCode_disjoint`;
+  completes 8.12(d)(3).
+
+No code changes this checkpoint — `(d)(1)`/`(d)(2)` remain the only `Pass`ed pieces of `(d)`.
+
+**Status: Exercise 8.12(d)(3) is `Deferred`, re-scoped into 6 sub-parts `(d)(3)(a)`–`(f)` above,
+awaiting confirmation before executing.** **Next up:** either execute `(d)(3)(a)` (the
+`IsComputableDiff` prerequisite) and continue sub-part by sub-part, or revisit scope/priorities for
+the rest of 8.12(d) in a future session.
