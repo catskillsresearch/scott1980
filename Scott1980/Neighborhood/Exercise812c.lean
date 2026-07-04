@@ -2017,6 +2017,103 @@ def toD0 (y : D₁.Element) : D₀.Element where
         hYmem hD₀mne hD₁mne k j).mp hj
     exact ⟨j, hYPj_eq_Xk, hj ▸ hyXPk⟩
 
+include hD₀pos hD₀diff hD₁pos hD₁diff hXmem hYmem hD₀mne hD₁mne in
+/-- **Exercise 8.12(c)(vii)(6), the same-family `embed_eq_iff` companion.** `X i = X j ↔
+XPseq i = XPseq j`, needed by `domainIso812c`'s `map_rel_iff'`. Unlike `up_mem`'s two-*family* renaming
+(needing (4)'s `XPseq_eq_Y_iff_X_eq_YPseq`), `map_rel_iff'` only ever compares two `XPseq`-indices
+against each other, so the ordinary same-family pattern — `X_subset_iff_XPseq_subset` applied in
+each direction, packaged via `Set.Subset.antisymm` — suffices, exactly as `Theorem88a.lean`'s own
+`embed_eq_iff` (single index family). -/
+theorem X_eq_iff_XPseq_eq (i j : ℕ) :
+    X i = X j ↔ XPseq D₀ D₁ hD₀nomin hD₁nomin X Y i = XPseq D₀ D₁ hD₀nomin hD₁nomin X Y j := by
+  constructor
+  · intro h
+    exact Set.Subset.antisymm
+      ((X_subset_iff_XPseq_subset D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin X Y hXmem
+        hYmem hD₀mne hD₁mne i j).mp h.subset)
+      ((X_subset_iff_XPseq_subset D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin X Y hXmem
+        hYmem hD₀mne hD₁mne j i).mp h.symm.subset)
+  · intro h
+    exact Set.Subset.antisymm
+      ((X_subset_iff_XPseq_subset D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin X Y hXmem
+        hYmem hD₀mne hD₁mne i j).mpr h.subset)
+      ((X_subset_iff_XPseq_subset D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin X Y hXmem
+        hYmem hD₀mne hD₁mne j i).mpr h.symm.subset)
+
+include hD₀pos hD₀diff hD₁pos hD₁diff hXmem hYmem hD₀mne hD₁mne hXcover hYcover hX0 hY0 in
+/-- **Exercise 8.12(c)(vii)(6), final assembly.** The order isomorphism `D₀.Element ≃o D₁.Element`.
+`toD1`/`toD0` are mutually inverse (via (4)'s `XPseq_eq_Y_iff_X_eq_YPseq`, resolving which index in
+the *other* family represents a given neighbourhood) and preserve/reflect `≤` (via
+`X_eq_iff_XPseq_eq`) — direct transcription of `Theorem88a.lean`'s `domainIso`, generalized from one
+shared index family (`e`/`Yidx`) to genuinely two (`X`/`XPseq` and `Y`/`YPseq`). -/
+noncomputable def domainIso812c : DomainIso D₀ D₁ where
+  toFun := toD1 D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin X Y hXmem hYmem hD₀mne hD₁mne
+    hXcover hYcover hX0
+  invFun := toD0 D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin X Y hXmem hYmem hD₀mne
+    hD₁mne hXcover hYcover hX0 hY0
+  left_inv x := by
+    apply Element.ext
+    intro S
+    constructor
+    · rintro ⟨n, hn, k, hk, hxk⟩
+      have hXeq : X k = YPseq D₀ D₁ hD₀nomin hD₁nomin X Y n :=
+        (XPseq_eq_Y_iff_X_eq_YPseq D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin X Y hXmem
+          hYmem hD₀mne hD₁mne k n).mp hk.symm
+      rw [hn, ← hXeq]
+      exact hxk
+    · intro hS
+      obtain ⟨m, hm⟩ := (hXcover S).mp (x.sub hS)
+      have hxXm : x.mem (X m) := hm ▸ hS
+      obtain ⟨n, hn⟩ := (hYcover (XPseq D₀ D₁ hD₀nomin hD₁nomin X Y m)).mp
+        (XPseq_mem D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin X Y hXmem hYmem hD₀mne
+          hD₁mne m)
+      have hSYPn : S = YPseq D₀ D₁ hD₀nomin hD₁nomin X Y n :=
+        hm.trans ((XPseq_eq_Y_iff_X_eq_YPseq D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin
+          X Y hXmem hYmem hD₀mne hD₁mne m n).mp hn)
+      exact ⟨n, hSYPn, m, hn.symm, hxXm⟩
+  right_inv y := by
+    apply Element.ext
+    intro T
+    constructor
+    · rintro ⟨n, hn, k, hk, hyk⟩
+      have hXPeq : XPseq D₀ D₁ hD₀nomin hD₁nomin X Y n = Y k :=
+        (XPseq_eq_Y_iff_X_eq_YPseq D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin X Y hXmem
+          hYmem hD₀mne hD₁mne n k).mpr hk
+      rw [hn, hXPeq]
+      exact hyk
+    · intro hT
+      obtain ⟨m, hm⟩ := (hYcover T).mp (y.sub hT)
+      have hyYm : y.mem (Y m) := hm ▸ hT
+      obtain ⟨n, hn⟩ := (hXcover (YPseq D₀ D₁ hD₀nomin hD₁nomin X Y m)).mp
+        (YPseq_mem D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin X Y hXmem hYmem hD₀mne
+          hD₁mne m)
+      have hTXPn : T = XPseq D₀ D₁ hD₀nomin hD₁nomin X Y n :=
+        hm.trans (((XPseq_eq_Y_iff_X_eq_YPseq D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff
+          hD₁nomin X Y hXmem hYmem hD₀mne hD₁mne n m).mpr hn.symm).symm)
+      exact ⟨n, hTXPn, m, hn.symm, hyYm⟩
+  map_rel_iff' := by
+    intro x x2
+    constructor
+    · intro hle S hxS
+      obtain ⟨n, hn⟩ := (hXcover S).mp (x.sub hxS)
+      have hxn : x.mem (X n) := hn ▸ hxS
+      obtain ⟨k, hk, hx2k⟩ := hle _
+        (⟨n, rfl, hxn⟩ : (toD1 D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin X Y hXmem
+          hYmem hD₀mne hD₁mne hXcover hYcover hX0 x).mem (XPseq D₀ D₁ hD₀nomin hD₁nomin X Y n))
+      rw [hn, (X_eq_iff_XPseq_eq D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin X Y hXmem
+        hYmem hD₀mne hD₁mne n k).mpr hk]
+      exact hx2k
+    · intro hle T hT
+      obtain ⟨n, hn, hxn⟩ := hT
+      exact ⟨n, hn, hle _ hxn⟩
+
+include hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin X Y hXmem hYmem hD₀mne hD₁mne hXcover
+  hYcover hX0 hY0 in
+/-- **Exercise 8.12(c)(vii)(6), headline.** `D₀ ≅ᴰ D₁`: completes Exercise 8.12(c) in full. -/
+theorem isomorphic_812c : D₀ ≅ᴰ D₁ :=
+  ⟨domainIso812c D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin X Y hXmem hYmem hD₀mne
+    hD₁mne hXcover hYcover hX0 hY0⟩
+
 end Iso
 
 end Scott1980.Neighborhood

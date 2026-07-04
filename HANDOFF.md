@@ -8019,3 +8019,52 @@ and `hXcover`/`hYcover` to resolve index ambiguity, mirroring `domainIso`'s `lef
 and order-preserving/-reflecting (`map_rel_iff'`), assembling `domainIso : DomainIso D₀ D₁` and the
 headline `isomorphic : D₀ ≅ᴰ D₁` — this closes out **Exercise 8.12(c) in full**. After that, only
 **Exercise 8.12(d)** (effective refinement) remains for the whole of Exercise 8.12.
+
+## 2026-07-04 checkpoint — Exercise 8.12(c)(vii)(6): `domainIso812c`/`isomorphic_812c`; **8.12(c) COMPLETE**
+
+Final assembly. `left_inv`/`right_inv` (mutual-inverse of `toD1`/`toD0`) each need (4)'s
+`XPseq_eq_Y_iff_X_eq_YPseq` twice — once directly, once via an extra outer `.symm` on the derived
+equation (the two "round trip" directions aren't perfectly symmetric in which side needs the extra
+flip, worked out by hand from the raw existential destructuring in each case). `map_rel_iff'`
+(order-preserving/-reflecting) only ever compares two `XPseq`-indices against each other (never
+crosses families), so it needed just one new same-family lemma, `X_eq_iff_XPseq_eq (i j) :
+X i = X j ↔ XPseq i = XPseq j` — the direct antisymmetry-of-`X_subset_iff_XPseq_subset` corollary,
+exactly `Theorem88a.lean`'s own `embed_eq_iff` pattern (single family, no cross-renaming needed).
+
+**Two build issues, both fixed:**
+1. **Name collision, only visible on the whole-project build** (single-file `lake build
+   Scott1980.Neighborhood.Exercise812c` was green throughout): `domainIso` already exists in
+   `Theorem88a.lean` within the same `Scott1980.Neighborhood` namespace. Renamed to
+   `domainIso812c`/`isomorphic_812c` (matching the `isomorphic_DprimeU`/`isomorphic_powerSystem`-
+   style naming already used elsewhere for exercise-specific headline isomorphism theorems).
+   **Lesson: always run a whole-project `lake build` before declaring an item done, not just the
+   single target file** — name clashes across files in the same namespace won't show up otherwise.
+2. **Confirmed and documented the `include`/auto-bound gotcha's actual scope** (first hit in
+   (vii)(2)): `def foo (...) : T where field1 := term1  field2 := by tac2  ...` auto-includes any
+   `variable` referenced *anywhere* across *all* its fields (term- or tactic-mode alike) as an
+   implicit parameter of the whole declaration — confirmed by `toD1`/`toD0` compiling fine despite
+   many used variables (`X`, `Y`, `hD₀nomin`, `hD₁nomin`) never appearing in an explicit `include`
+   line, merely because *some* field's term-mode value happened to mention them by name. But a
+   plain `theorem foo := term` or `:= by tac` (**not** a `where`-structure) does **not** get this
+   auto-scan treatment at all — confirmed by `isomorphic_812c`'s own build failure (needed
+   `hD₀nomin`/`hD₁nomin`/`X`/`Y` added to its `include` line despite being literally written in its
+   one-line term `⟨domainIso812c ... hD₀nomin ... X Y ...⟩`). **Practical rule of thumb for the
+   rest of this project**: for a `def ... where`, just make sure at least one field's value
+   mentions every variable the *other* fields need (usually true automatically); for a plain
+   `theorem`/`lemma`, always list *every* variable used anywhere in the proof in an explicit
+   `include ... in` line (placed *before* the docstring, not after).
+
+Zero `sorry`; whole-project `lake build` (3163 jobs) green; `X_eq_iff_XPseq_eq`/`domainIso812c`/
+`isomorphic_812c` all axiom-audited to `⊆{propext, Classical.choice, Quot.sound}`, matching
+baseline (choice inherited from `splitChoice'`, unavoidable, same as every other headline result in
+this file). `arxiv.md`: 8.12(c)(vii)(6) → `Pass`; **8.12(c)(vii) umbrella rolled up to `Pass`** (all
+6 sub-parts); **8.12(c) umbrella rolled up to `Pass` — Exercise 8.12(c) is now fully COMPLETE**
+(all of (i)–(vii), including (v)'s 5 sub-sub-parts and (vi)'s 7 sub-parts); the master Exercise 8.12
+row updated to reflect (a)–(c) all `Pass`, only (d)–(g) remain.
+
+**Status: Exercise 8.12(c) is `Pass` — COMPLETE in full, all sub-parts (i)–(vii).** **Next up:**
+Exercise 8.12(d) — the effective refinement of (c) (if `D₀`,`D₁` are effectively given and (c)'s
+extension property is witnessed computably, the resulting isomorphism is an `EffectiveIso`),
+expected comparable in scope to Theorem 8.8(b)'s 8-sub-part, multi-file effort — **scope/plan
+first** (per this project's discipline for genuinely new, non-transcription pieces) before
+executing, mirroring how (c)(v)/(c)(vi)(5)/(c)(vii) were each scoped before execution.
