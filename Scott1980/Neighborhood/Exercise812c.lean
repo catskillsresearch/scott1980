@@ -1402,6 +1402,29 @@ theorem hcore_even (δ' : ℕ → Bool) (n : ℕ) :
   exact (atomPair_invariant D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin X Y hXmem hYmem
     hD₀mne hD₁mne (deinterleaveδ δ') n).1
 
+/-- **The odd-index case of `hcore`** (Exercise 8.12(c)(vi)(5)(c)(3)): for any `δ' : ℕ → Bool` and
+any `n`, `genAtom combinedX δ' (2*n+1) = ∅ ↔ genAtom combinedY δ' (2*n+1) = ∅`. Direct
+instantiation: de-interleave `δ'` (via (c)(1)), rewrite both `genAtom`s at the odd depth
+`2 * n + 1` down to the `X`-sub-step's own two sides (`(xStep … (deinterleaveδ δ' n).1).1`/`.2`) via
+(b)'s odd-depth half-step identities `genAtom_combinedX_succ_eq`/`genAtom_combinedY_succ_eq` (fed
+by (b)'s even-depth closed forms `atomPair_fst_eq_genAtom`/`atomPair_snd_eq_genAtom` for their own
+`hn` hypotheses), then close directly with `xStep_spec_bit`'s matching-emptiness clause (already
+`Pass`, (vi)(4)(c)). -/
+theorem hcore_odd (δ' : ℕ → Bool) (n : ℕ) :
+    genAtom (combinedX D₀ D₁ hD₀nomin hD₁nomin X Y) D₀.master δ' (2 * n + 1) = ∅ ↔
+      genAtom (combinedY D₀ D₁ hD₀nomin hD₁nomin X Y) D₁.master δ' (2 * n + 1) = ∅ := by
+  rw [← combinedδ_deinterleaveδ δ',
+    genAtom_combinedX_succ_eq D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin X Y hXmem
+      hYmem hD₀mne hD₁mne (deinterleaveδ δ') n
+      (atomPair_fst_eq_genAtom D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin X Y hXmem
+        hYmem hD₀mne hD₁mne (deinterleaveδ δ') n),
+    genAtom_combinedY_succ_eq D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin X Y hXmem
+      hYmem hD₀mne hD₁mne (deinterleaveδ δ') n
+      (atomPair_snd_eq_genAtom D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin X Y hXmem
+        hYmem hD₀mne hD₁mne (deinterleaveδ δ') n)]
+  exact (xStep_spec_bit D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin X Y hXmem hYmem
+    hD₀mne hD₁mne (deinterleaveδ δ') n ((deinterleaveδ δ') n).1).1.symm
+
 end AtomPair
 
 end Scott1980.Neighborhood

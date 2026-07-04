@@ -7741,3 +7741,35 @@ D₁.master δ' (2*n+1) = ∅`, via (b)'s odd-depth half-step closed forms
 `hcore_even` at `n`, then closed with `xStep_spec_bit`'s matching-emptiness clause (already `Pass`,
 (vi)(4)(c)) — expected to be a direct instantiation, no new mathematical content, same style as
 (2).
+
+## 2026-07-04 checkpoint — Exercise 8.12(c)(vi)(5)(c)(3) `Pass`: the odd-index `hcore` case
+
+**`hcore_odd (δ' : ℕ → Bool) (n : ℕ) : genAtom combinedX D₀.master δ' (2*n+1) = ∅ ↔ genAtom
+combinedY D₁.master δ' (2*n+1) = ∅`** (`Scott1980/Neighborhood/Exercise812c.lean`, appended after
+`hcore_even`, still before `end AtomPair`): `rw [← combinedδ_deinterleaveδ δ',
+genAtom_combinedX_succ_eq … (deinterleaveδ δ') n (atomPair_fst_eq_genAtom … (deinterleaveδ δ') n),
+genAtom_combinedY_succ_eq … (deinterleaveδ δ') n (atomPair_snd_eq_genAtom … (deinterleaveδ δ')
+n)]` reduces the goal to `(xStep D₁ hD₁nomin A B (X n) bx).1 = ∅ ↔ (xStep D₁ hD₁nomin A B (X n)
+bx).2 = ∅` (`A,B := atomPair (deinterleaveδ δ') n`, `bx := (deinterleaveδ δ' n).1` — the `X`-side
+bit, since the *odd* interleaved position corresponds to `combinedX`/`combinedY`'s test against
+`YPseq`/`XPseq` which are literally the `X`-sub-step's own two outputs, per (b)'s
+`genAtom_combinedX_succ_eq`/`genAtom_combinedY_succ_eq`), closed directly by
+`(xStep_spec_bit … (deinterleaveδ δ') n bx).1.symm` (already `Pass`, (vi)(4)(c); `.symm` needed
+since `xStep_spec_bit`'s own clause is stated in the reverse orientation, `.2 = ∅ ↔ .1 = ∅`) — the
+planned direct instantiation, no new mathematical content.
+
+Unlike (2), **this one built clean on the first try**: applying (2)'s freshly-documented lesson
+(supply every leading `D₀ D₁ hD₀pos … hD₁mne` argument explicitly to each of the four rewrite
+lemmas from the start, rather than relying on unification) avoided the `rw`-side-goal pitfall
+entirely.
+
+Zero `sorry`; whole-project `lake build` (3163 jobs) green; `#print axioms` on `hcore_odd` gives
+`⊆{propext, Classical.choice, Quot.sound}`, matching the section's baseline. `arxiv.md`:
+8.12(c)(vi)(5)(c)(3) row updated to `Pass`; 8.12(c)(vi)(5)(c) umbrella row updated to show (1)–(3)
+`Pass`, (4) `Deferred`.
+
+**Status: Exercise 8.12(c)(vi)(5)(c)(3) is `Pass`.** **Next up:** Exercise 8.12(c)(vi)(5)(c)(4) —
+the final assembly: case-split an arbitrary `n` on parity (matching `n = 2*k` against (2)'s
+`hcore_even` and `n = 2*k+1` against (3)'s `hcore_odd`) to produce the headline `∀ (δ' : ℕ → Bool)
+n, genAtom combinedX D₀.master δ' n = ∅ ↔ genAtom combinedY D₁.master δ' n = ∅` — pure glue, no new
+content, completing (c) and unblocking (d)'s `transfer_*` instantiation.
