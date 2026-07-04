@@ -6981,35 +6981,43 @@ Exercise 8.12 row updated to `Partial`. `Scott1980.lean` updated to import `Exer
 Exercise 8.13 (logicians: `U ≅` filters of the free Boolean algebra on `ℵ₀` generators) or return to
 complete Exercise 8.12's deferred back-and-forth isomorphism.
 
-**2026-07-04 — Exercise 8.12's deferred isomorphism broken into a 6-part plan, `arxiv.md` only
+**2026-07-04 — Exercise 8.12's deferred isomorphism broken into a 7-part plan, `arxiv.md` only
 (no proofs yet).** Following the precedent of Theorem 8.8 (split into 15 files / ~4,470 lines across
-(a)/(b)/(c) sub-parts), the remaining `U≅V` work is now tracked as **`arxiv.md` sub-rows
-Exercise 8.12(a)–8.12(f)**, all `Deferred`, none yet started:
+(a)/(b)/(c) sub-parts), Exercise 8.12 is now tracked as **`arxiv.md` sub-rows Exercise 8.12(a)–(g)**.
+(Correction from an earlier same-day pass: the *already-built* `V` construction was initially only
+described in the umbrella row's prose, with numbering starting at the first *deferred* item — that
+was inconsistent with how Theorem 8.8's sub-rows work, where every sub-row, done or not, gets its
+own numbered slot. Fixed by giving `V`'s construction its own row, 8.12(a), marked `Pass`, and
+shifting the six deferred items to (b)–(g).)
 
-* **(a)** `V`'s `ComputablePresentation` — tractable, self-contained (no back-and-forth), needs
- `Nat.Primrec` bit-manipulation for `upsample`/`levelSet`. Can go green independently of (b)–(f);
- **recommended starting point** for a future session since it de-risks nothing conceptually new.
-* **(b)** New general non-effective lemma: two countable atomless neighbourhood systems, each
- satisfying a mutual one-step extension property relative to the other, are order-isomorphic. This
- is the genuinely new abstract infrastructure — Theorem 8.8(a)'s `exists_split`/`Theorem88.lean`
- back-and-forth is *one-sided* (embeds arbitrary `D` into `U`, only ever splits `U`'s side via
- `U_no_minimal`) and does **not** directly generalize to a symmetric two-sided match. Expected to
- reuse the `List`-of-matched-pairs recursive idiom but symmetrized (alternately enumerate both
- sides, split whichever is "behind").
-* **(c)** Effective refinement of (b) — analogous in difficulty to Theorem 8.8(b)'s own 8-part
- refinement of 8.8(a) (`Theorem88b.lean`–`Theorem88g.lean`); needs a code-native
+* **(a) — `Pass`.** `V`'s construction, closure, and faithfulness — everything already built in
+ `Exercise812.lean` (zero `sorry`): `affine`/`levelSet`/`upsample`, `V : NeighborhoodSystem ℕ`,
+ `V_no_minimal`, `V_mem_iff_finiteUnion`.
+* **(b) — `Deferred`.** `V`'s `ComputablePresentation` — tractable, self-contained (no
+ back-and-forth), needs `Nat.Primrec` bit-manipulation for `upsample`/`levelSet`. Can go green
+ independently of (c)–(g); **recommended starting point** for a future session since it de-risks
+ nothing conceptually new.
+* **(c) — `Deferred`.** New general non-effective lemma: two countable atomless neighbourhood
+ systems, each satisfying a mutual one-step extension property relative to the other, are
+ order-isomorphic. This is the genuinely new abstract infrastructure — Theorem 8.8(a)'s
+ `exists_split`/`Theorem88.lean` back-and-forth is *one-sided* (embeds arbitrary `D` into `U`, only
+ ever splits `U`'s side via `U_no_minimal`) and does **not** directly generalize to a symmetric
+ two-sided match. Expected to reuse the `List`-of-matched-pairs recursive idiom but symmetrized
+ (alternately enumerate both sides, split whichever is "behind").
+* **(d) — `Deferred`.** Effective refinement of (c) — analogous in difficulty to Theorem 8.8(b)'s
+ own 8-part refinement of 8.8(a) (`Theorem88b.lean`–`Theorem88g.lean`); needs a code-native
  `atomUCode`/`YseqCode`-style back-and-forth recursion, symmetrized.
-* **(d)** `U` satisfies (b)/(c)'s extension property relative to `V` — the real combinatorics where
- the `[1/3,2/3)` obstruction (documented in `Exercise812.lean`'s docstring / the umbrella `arxiv.md`
- row) must actually be resolved via density of `ℚ`, not sidestepped.
-* **(e)** `V` satisfies the symmetric extension property relative to `U`, via density of dyadic
- rationals — expected easier than (d) since `V`'s pieces are coarser.
-* **(f)** Assembly of (b)/(c) via (d)/(e) into the concrete `U ≅ᴰ V` effective isomorphism, closing
- the exercise — expected to need no new mathematical content, mirroring `theorem_8_8_a`/`_b`'s own
- assembly steps.
+* **(e) — `Deferred`.** `U` satisfies (c)/(d)'s extension property relative to `V` — the real
+ combinatorics where the `[1/3,2/3)` obstruction (documented in `Exercise812.lean`'s docstring /
+ the umbrella `arxiv.md` row) must actually be resolved via density of `ℚ`, not sidestepped.
+* **(f) — `Deferred`.** `V` satisfies the symmetric extension property relative to `U`, via density
+ of dyadic rationals — expected easier than (e) since `V`'s pieces are coarser.
+* **(g) — `Deferred`.** Assembly of (c)/(d) via (e)/(f) into the concrete `U ≅ᴰ V` effective
+ isomorphism, closing the exercise — expected to need no new mathematical content, mirroring
+ `theorem_8_8_a`/`_b`'s own assembly steps.
 
 **No Lean code changed in this checkpoint** — this is purely a scoping/planning update
-(`arxiv.md`'s Exercise 8.12 row restructured into an umbrella + 6 sub-rows, all `Deferred`) so a
-future session can pick up any one part independently instead of re-deriving the whole scope from
-scratch. `Exercise812.lean` itself, `V`'s theorems, and the build are all unchanged from the prior
-checkpoint above.
+(`arxiv.md`'s Exercise 8.12 row restructured into an umbrella + 7 sub-rows, (a) `Pass` and
+(b)–(g) `Deferred`) so a future session can pick up any one part independently instead of
+re-deriving the whole scope from scratch. `Exercise812.lean` itself, `V`'s theorems, and the build
+are all unchanged from the prior checkpoint above.
