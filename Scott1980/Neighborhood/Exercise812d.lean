@@ -1966,3 +1966,635 @@ to transport this back to the code level is the *converse* half of `(d)(3)(d)`'s
 `atomPairCodeState_correct` — currently only "`junk = 0` ⟹ code matches classical" is `Pass`; "code
 classical is non-empty ⟹ `junk = 0`" (the biconditional) is not yet proved, and is a large enough
 piece of new work to warrant its own future sub-part rather than blocking `(d)(4)(c)`/`(d)` today. -/
+
+/-! ## 8.12(d)(4)(d): `YPseqCode`, the code-level `Y`-side union fold
+
+Symmetric to `(d)(4)(c)`'s `XPseqCode`, but genuinely harder in one respect (matching
+`Exercise812c.lean`'s own `YPseq` docstring): `ySubStep`'s inputs already depend on position `n`'s
+own `X`-sub-step bit, so the half-step atom needs an *extra* free bit `bx`, and the resulting fold
+is a union over *two* indices (`i < 4ⁿ` and `bx ∈ {0,1}`), not one. Rather than combine `i`/`bx`
+into a single `2·4ⁿ`-element fold, this is built as an **outer `2`-way union of two inner `4ⁿ`-folds**
+(`YFoldInner n 0 _`, `YFoldInner n 1 _`, one per literal value of `bx`) via a new, reusable
+`combineFound2` helper — simpler than threading `bx` through the recursion state itself, since
+`Nat.Primrec.prec` already needs `n` held fixed as its own outer parameter, and pairing `bx`
+alongside it costs nothing. -/
+
+/-- **Combine two `(found, code)` packed fold results into one**: union their codes via `hUnion`
+when both found something, and simply propagate whichever single side found something otherwise
+(mirroring `XFoldStep`/`YFoldStep`'s own "skip junk, else union" shape one level up). Generic in any
+`IsComputableUnion`, reused below for `YPseqCode`'s "outer 2-way union" of its two `bx`-fixed inner
+folds. -/
+noncomputable def combineFound2 {γ : Type*} {W : NeighborhoodSystem γ}
+    {Q : ComputablePresentation W} (hUnion : IsComputableUnion Q) (r0 r1 : ℕ) : ℕ :=
+  selectFn r0.unpair.1
+    (selectFn r1.unpair.1 (Nat.pair 1 (hUnion.unionIdx r0.unpair.2 r1.unpair.2)) r0)
+    r1
+
+theorem primrec_combineFound2 {γ : Type*} {W : NeighborhoodSystem γ}
+    {Q : ComputablePresentation W} (hUnion : IsComputableUnion Q) :
+    Nat.Primrec (fun t : ℕ => combineFound2 hUnion t.unpair.1 t.unpair.2) := by
+  have h0 : Nat.Primrec (fun t : ℕ => t.unpair.1) := Nat.Primrec.left
+  have h1 : Nat.Primrec (fun t : ℕ => t.unpair.2) := Nat.Primrec.right
+  have hf0 : Nat.Primrec (fun t : ℕ => t.unpair.1.unpair.1) := Nat.Primrec.left.comp h0
+  have hf1 : Nat.Primrec (fun t : ℕ => t.unpair.2.unpair.1) := Nat.Primrec.left.comp h1
+  have hv0 : Nat.Primrec (fun t : ℕ => t.unpair.1.unpair.2) := Nat.Primrec.right.comp h0
+  have hv1 : Nat.Primrec (fun t : ℕ => t.unpair.2.unpair.2) := Nat.Primrec.right.comp h1
+  have hunion : Nat.Primrec
+      (fun t : ℕ => hUnion.unionIdx t.unpair.1.unpair.2 t.unpair.2.unpair.2) :=
+    (hUnion.unionIdx_primrec.comp (hv0.pair hv1)).of_eq
+      fun t => by simp only [unpair_pair_fst, unpair_pair_snd]
+  have hinner : Nat.Primrec (fun t : ℕ => selectFn t.unpair.2.unpair.1
+      (Nat.pair 1 (hUnion.unionIdx t.unpair.1.unpair.2 t.unpair.2.unpair.2)) t.unpair.1) :=
+    primrec_selectFn hf1 ((Nat.Primrec.const 1).pair hunion) h0
+  exact (primrec_selectFn hf0 hinner h1).of_eq fun t => by unfold combineFound2; simp only []
+
+theorem combineFound2_found_le_one {γ : Type*} {W : NeighborhoodSystem γ}
+    {Q : ComputablePresentation W} (hUnion : IsComputableUnion Q) {r0 r1 : ℕ}
+    (h0 : r0.unpair.1 ≤ 1) (h1 : r1.unpair.1 ≤ 1) :
+    (combineFound2 hUnion r0 r1).unpair.1 ≤ 1 := by
+  unfold combineFound2
+  rcases Nat.eq_zero_or_pos r0.unpair.1 with hr0 | hr0
+  · rw [hr0, selectFn_zero]; exact h1
+  · rw [show r0.unpair.1 = 1 from by omega, selectFn_one]
+    rcases Nat.eq_zero_or_pos r1.unpair.1 with hr1 | hr1
+    · rw [hr1, selectFn_zero]; exact h0
+    · rw [show r1.unpair.1 = 1 from by omega, selectFn_one, unpair_pair_fst]
+
+theorem combineFound2_found_iff {γ : Type*} {W : NeighborhoodSystem γ}
+    {Q : ComputablePresentation W} (hUnion : IsComputableUnion Q) {r0 r1 : ℕ}
+    (h0 : r0.unpair.1 ≤ 1) (h1 : r1.unpair.1 ≤ 1) :
+    (combineFound2 hUnion r0 r1).unpair.1 = 1 ↔ r0.unpair.1 = 1 ∨ r1.unpair.1 = 1 := by
+  unfold combineFound2
+  rcases Nat.eq_zero_or_pos r0.unpair.1 with hr0 | hr0
+  · rw [hr0, selectFn_zero]; omega
+  · rw [show r0.unpair.1 = 1 from by omega, selectFn_one]
+    rcases Nat.eq_zero_or_pos r1.unpair.1 with hr1 | hr1
+    · rw [hr1, selectFn_zero]; omega
+    · rw [show r1.unpair.1 = 1 from by omega, selectFn_one, unpair_pair_fst]; omega
+
+theorem combineFound2_mem_of_found {γ : Type*} {W : NeighborhoodSystem γ}
+    {Q : ComputablePresentation W} (hpos : W.IsPositive) (hdiff : W.DiffClosed)
+    (hnomin : W.NoMinimal) (hUnion : IsComputableUnion Q) {r0 r1 : ℕ}
+    (h0 : r0.unpair.1 ≤ 1) (h1 : r1.unpair.1 ≤ 1)
+    (hmem0 : r0.unpair.1 = 1 → W.mem (Q.X r0.unpair.2))
+    (hmem1 : r1.unpair.1 = 1 → W.mem (Q.X r1.unpair.2)) :
+    (combineFound2 hUnion r0 r1).unpair.1 = 1 →
+      W.mem (Q.X (combineFound2 hUnion r0 r1).unpair.2) := by
+  unfold combineFound2
+  rcases Nat.eq_zero_or_pos r0.unpair.1 with hr0 | hr0
+  · rw [hr0, selectFn_zero]
+    exact hmem1
+  · rw [show r0.unpair.1 = 1 from by omega, selectFn_one]
+    have hmem0' := hmem0 (by omega)
+    rcases Nat.eq_zero_or_pos r1.unpair.1 with hr1 | hr1
+    · rw [hr1, selectFn_zero]
+      exact fun _ => hmem0'
+    · rw [show r1.unpair.1 = 1 from by omega, selectFn_one, unpair_pair_snd]
+      intro _
+      have hmem1' := hmem1 (by omega)
+      have hex : ∃ k, Q.X k = Q.X r0.unpair.2 ∪ Q.X r1.unpair.2 :=
+        Q.surj (NeighborhoodSystem.mem_union_of_mem hpos hdiff hnomin hmem0' hmem1')
+      rw [hUnion.unionIdx_spec hex]
+      exact NeighborhoodSystem.mem_union_of_mem hpos hdiff hnomin hmem0' hmem1'
+
+theorem combineFound2_mem_iff {γ : Type*} {W : NeighborhoodSystem γ}
+    {Q : ComputablePresentation W} (hpos : W.IsPositive) (hdiff : W.DiffClosed)
+    (hnomin : W.NoMinimal) (hUnion : IsComputableUnion Q) {r0 r1 : ℕ}
+    (h0 : r0.unpair.1 ≤ 1) (h1 : r1.unpair.1 ≤ 1)
+    (hmem0 : r0.unpair.1 = 1 → W.mem (Q.X r0.unpair.2))
+    (hmem1 : r1.unpair.1 = 1 → W.mem (Q.X r1.unpair.2))
+    (hfound : (combineFound2 hUnion r0 r1).unpair.1 = 1) (z : γ) :
+    z ∈ Q.X (combineFound2 hUnion r0 r1).unpair.2 ↔
+      (r0.unpair.1 = 1 ∧ z ∈ Q.X r0.unpair.2) ∨ (r1.unpair.1 = 1 ∧ z ∈ Q.X r1.unpair.2) := by
+  unfold combineFound2 at hfound ⊢
+  rcases Nat.eq_zero_or_pos r0.unpair.1 with hr0 | hr0
+  · rw [hr0, selectFn_zero] at hfound ⊢
+    constructor
+    · intro hz; exact Or.inr ⟨hfound, hz⟩
+    · rintro (⟨h, -⟩ | ⟨-, hz⟩)
+      · omega
+      · exact hz
+  · rw [show r0.unpair.1 = 1 from by omega, selectFn_one] at hfound ⊢
+    have hmem0' := hmem0 (by omega)
+    rcases Nat.eq_zero_or_pos r1.unpair.1 with hr1 | hr1
+    · rw [hr1, selectFn_zero] at hfound ⊢
+      constructor
+      · intro hz; exact Or.inl ⟨by omega, hz⟩
+      · rintro (⟨-, hz⟩ | ⟨h, -⟩)
+        · exact hz
+        · omega
+    · rw [show r1.unpair.1 = 1 from by omega, selectFn_one, unpair_pair_snd]
+      have hmem1' := hmem1 (by omega)
+      have hex : ∃ k, Q.X k = Q.X r0.unpair.2 ∪ Q.X r1.unpair.2 :=
+        Q.surj (NeighborhoodSystem.mem_union_of_mem hpos hdiff hnomin hmem0' hmem1')
+      rw [hUnion.unionIdx_spec hex, Set.mem_union]
+      constructor
+      · rintro (hz | hz)
+        · exact Or.inl ⟨by omega, hz⟩
+        · exact Or.inr ⟨by omega, hz⟩
+      · rintro (⟨-, hz⟩ | ⟨-, hz⟩)
+        · exact Or.inl hz
+        · exact Or.inr hz
+
+section YPseqCode
+
+variable {α β : Type*} {D₀ : NeighborhoodSystem α} {D₁ : NeighborhoodSystem β}
+  (P₀ : ComputablePresentation D₀) (P₁ : ComputablePresentation D₁)
+  (hDiff0 : IsComputableDiff P₀) (hDiff1 : IsComputableDiff P₁)
+  (splitX : Set α → Set β → Set α → Set β × Set β) (hSplitX : IsComputableSplit P₀ P₁ splitX)
+  (splitY : Set β → Set α → Set β → Set α × Set α) (hSplitY : IsComputableSplit P₁ P₀ splitY)
+  (hD₀pos : D₀.IsPositive) (hD₀diff : D₀.DiffClosed) (hD₀nomin : D₀.NoMinimal)
+  (hUnion0 : IsComputableUnion P₀)
+
+/-- **The `Y`-side half-step atom's packed state** at depth `n`, index `i`, and free `X`-sub-step
+bit `bx`: run `xSubStep` first at bit `bx` (arbitrary — `YPseq`'s classical definition
+(`Exercise812c.lean`) unions over *both* `δ' : Fin n → Bool × Bool` and a free `bx : Bool` for
+position `n`'s own `X`-sub-step bit, since `yStep`'s own inputs already depend on it), then
+`ySubStep` with its own bit forced to `1` (the `"+"`/`true` branch). -/
+noncomputable def yPseqAtomState (n i bx : ℕ) : ℕ :=
+  ySubStep P₀ P₁ hDiff1 splitY hSplitY (Nat.pair n (Nat.pair 1
+    (xSubStep P₀ P₁ hDiff0 splitX hSplitX (Nat.pair n (Nat.pair bx
+      (packState2 (atomPairIdx0 P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY n i)
+        (atomPairIdx1 P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY n i)
+        (atomPairJunk P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY n i)))))))
+
+/-- The half-step atom's `D₀`-side index (`ySubStep`'s `"+"`/pos branch is the *split* side, since
+`ySubStep` refines `D₁` directly and `D₀` via `hSplitY`). -/
+noncomputable def yPseqAtomIdx (n i bx : ℕ) : ℕ :=
+  stateIdx0 (yPseqAtomState P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY n i bx)
+
+/-- The half-step atom's junk flag. -/
+noncomputable def yPseqAtomJunk (n i bx : ℕ) : ℕ :=
+  stateJunk (yPseqAtomState P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY n i bx)
+
+theorem primrec_yPseqAtomState : Nat.Primrec
+    (fun t : ℕ => yPseqAtomState P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY
+      t.unpair.1 t.unpair.2.unpair.1 t.unpair.2.unpair.2) := by
+  have hn : Nat.Primrec (fun t : ℕ => t.unpair.1) := Nat.Primrec.left
+  have hi : Nat.Primrec (fun t : ℕ => t.unpair.2.unpair.1) :=
+    Nat.Primrec.left.comp Nat.Primrec.right
+  have hbx : Nat.Primrec (fun t : ℕ => t.unpair.2.unpair.2) :=
+    Nat.Primrec.right.comp Nat.Primrec.right
+  have hni : Nat.Primrec (fun t : ℕ => Nat.pair t.unpair.1 t.unpair.2.unpair.1) := hn.pair hi
+  have hidx0 : Nat.Primrec (fun t : ℕ =>
+      atomPairIdx0 P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY t.unpair.1
+        t.unpair.2.unpair.1) :=
+    ((primrec_atomPairIdx0 P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY).comp hni).of_eq
+      fun t => by simp only [unpair_pair_fst, unpair_pair_snd]
+  have hidx1 : Nat.Primrec (fun t : ℕ =>
+      atomPairIdx1 P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY t.unpair.1
+        t.unpair.2.unpair.1) :=
+    ((primrec_atomPairIdx1 P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY).comp hni).of_eq
+      fun t => by simp only [unpair_pair_fst, unpair_pair_snd]
+  have hjunk : Nat.Primrec (fun t : ℕ =>
+      atomPairJunk P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY t.unpair.1
+        t.unpair.2.unpair.1) :=
+    ((primrec_atomPairJunk P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY).comp hni).of_eq
+      fun t => by simp only [unpair_pair_fst, unpair_pair_snd]
+  have hpacked : Nat.Primrec (fun t : ℕ => packState2
+      (atomPairIdx0 P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY t.unpair.1
+        t.unpair.2.unpair.1)
+      (atomPairIdx1 P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY t.unpair.1
+        t.unpair.2.unpair.1)
+      (atomPairJunk P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY t.unpair.1
+        t.unpair.2.unpair.1)) :=
+    (hidx0.pair (hidx1.pair hjunk)).of_eq fun _ => rfl
+  have hxinner : Nat.Primrec (fun t : ℕ => Nat.pair t.unpair.2.unpair.2 (packState2
+      (atomPairIdx0 P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY t.unpair.1
+        t.unpair.2.unpair.1)
+      (atomPairIdx1 P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY t.unpair.1
+        t.unpair.2.unpair.1)
+      (atomPairJunk P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY t.unpair.1
+        t.unpair.2.unpair.1))) :=
+    hbx.pair hpacked
+  have hxarg : Nat.Primrec (fun t : ℕ => Nat.pair t.unpair.1 (Nat.pair t.unpair.2.unpair.2
+      (packState2 (atomPairIdx0 P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY t.unpair.1
+          t.unpair.2.unpair.1)
+        (atomPairIdx1 P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY t.unpair.1
+          t.unpair.2.unpair.1)
+        (atomPairJunk P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY t.unpair.1
+          t.unpair.2.unpair.1)))) :=
+    hn.pair hxinner
+  have hxstep : Nat.Primrec (fun t : ℕ => xSubStep P₀ P₁ hDiff0 splitX hSplitX (Nat.pair
+      t.unpair.1 (Nat.pair t.unpair.2.unpair.2 (packState2
+        (atomPairIdx0 P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY t.unpair.1
+          t.unpair.2.unpair.1)
+        (atomPairIdx1 P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY t.unpair.1
+          t.unpair.2.unpair.1)
+        (atomPairJunk P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY t.unpair.1
+          t.unpair.2.unpair.1))))) :=
+    (primrec_xSubStep P₀ P₁ hDiff0 splitX hSplitX).comp hxarg
+  have hystep_arg : Nat.Primrec (fun t : ℕ => Nat.pair t.unpair.1 (Nat.pair 1
+      (xSubStep P₀ P₁ hDiff0 splitX hSplitX (Nat.pair t.unpair.1 (Nat.pair t.unpair.2.unpair.2
+        (packState2 (atomPairIdx0 P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY t.unpair.1
+            t.unpair.2.unpair.1)
+          (atomPairIdx1 P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY t.unpair.1
+            t.unpair.2.unpair.1)
+          (atomPairJunk P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY t.unpair.1
+            t.unpair.2.unpair.1))))))) :=
+    hn.pair ((Nat.Primrec.const 1).pair hxstep)
+  exact ((primrec_ySubStep P₀ P₁ hDiff1 splitY hSplitY).comp hystep_arg).of_eq fun _ => rfl
+
+theorem primrec_yPseqAtomIdx : Nat.Primrec
+    (fun t : ℕ => yPseqAtomIdx P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY
+      t.unpair.1 t.unpair.2.unpair.1 t.unpair.2.unpair.2) :=
+  (primrec_stateIdx0.comp (primrec_yPseqAtomState P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY
+    hSplitY)).of_eq fun _ => rfl
+
+theorem primrec_yPseqAtomJunk : Nat.Primrec
+    (fun t : ℕ => yPseqAtomJunk P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY
+      t.unpair.1 t.unpair.2.unpair.1 t.unpair.2.unpair.2) :=
+  (primrec_stateJunk.comp (primrec_yPseqAtomState P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY
+    hSplitY)).of_eq fun _ => rfl
+
+theorem yPseqAtomJunk_le_one {bx : ℕ} (hbx : bx ≤ 1) (n i : ℕ) :
+    yPseqAtomJunk P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY n i bx ≤ 1 := by
+  unfold yPseqAtomJunk yPseqAtomState
+  rw [ySubStep_junk_eq, selectFn_one]
+  refine selectFn_le_one ?_ (le_refl 1) (emptyInterDec_le_one P₁ _)
+  rw [xSubStep_junk_eq, stateJunk_packState2]
+  exact selectFn_le_one (atomPairJunk_le_one P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY i n)
+    (le_refl 1) (selectFn_le_one hbx (emptyInterDec_le_one P₀ _) (emptyDiffDec_le_one P₀ hDiff0 _))
+
+theorem yPseqAtomJunk_zero_or_one {bx : ℕ} (hbx : bx ≤ 1) (n i : ℕ) :
+    yPseqAtomJunk P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY n i bx = 0 ∨
+      yPseqAtomJunk P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY n i bx = 1 := by
+  have := yPseqAtomJunk_le_one P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hbx n i
+  omega
+
+/-- **The half-step atom is always genuine** on `D₀`'s side, regardless of junk status. -/
+theorem yPseqAtomIdx_mem (n i bx : ℕ) :
+    D₀.mem (P₀.X (yPseqAtomIdx P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY n i bx)) :=
+  P₀.mem_X _
+
+/-- One step of the depth-`n`, bit-`bx` union fold over `i < N`: identical shape to `XFoldStep`,
+folding via `(d)(4)(a)`'s `hUnion0.unionIdx` on `D₀`'s side instead of `D₁`'s. -/
+noncomputable def YFoldStep (w : ℕ) : ℕ :=
+  let n := w.unpair.1.unpair.1
+  let bx := w.unpair.1.unpair.2
+  let i := w.unpair.2.unpair.1
+  let acc := w.unpair.2.unpair.2
+  selectFn (yPseqAtomJunk P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY n i bx) acc
+    (selectFn acc.unpair.1
+      (Nat.pair 1 (hUnion0.unionIdx acc.unpair.2
+        (yPseqAtomIdx P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY n i bx)))
+      (Nat.pair 1 (yPseqAtomIdx P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY n i bx)))
+
+theorem YFoldStep_eq (n bx i acc : ℕ) :
+    YFoldStep P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0
+        (Nat.pair (Nat.pair n bx) (Nat.pair i acc)) =
+      selectFn (yPseqAtomJunk P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY n i bx) acc
+        (selectFn acc.unpair.1
+          (Nat.pair 1 (hUnion0.unionIdx acc.unpair.2
+            (yPseqAtomIdx P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY n i bx)))
+          (Nat.pair 1 (yPseqAtomIdx P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY n i bx))) := by
+  unfold YFoldStep
+  simp only [unpair_pair_fst, unpair_pair_snd]
+
+theorem primrec_YFoldStep :
+    Nat.Primrec (YFoldStep P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0) := by
+  have hn : Nat.Primrec (fun w : ℕ => w.unpair.1.unpair.1) :=
+    Nat.Primrec.left.comp Nat.Primrec.left
+  have hbx : Nat.Primrec (fun w : ℕ => w.unpair.1.unpair.2) :=
+    Nat.Primrec.right.comp Nat.Primrec.left
+  have hi : Nat.Primrec (fun w : ℕ => w.unpair.2.unpair.1) :=
+    Nat.Primrec.left.comp Nat.Primrec.right
+  have hacc : Nat.Primrec (fun w : ℕ => w.unpair.2.unpair.2) :=
+    Nat.Primrec.right.comp Nat.Primrec.right
+  have hnibx : Nat.Primrec (fun w : ℕ => Nat.pair w.unpair.1.unpair.1
+      (Nat.pair w.unpair.2.unpair.1 w.unpair.1.unpair.2)) := hn.pair (hi.pair hbx)
+  have hjunk : Nat.Primrec (fun w : ℕ =>
+      yPseqAtomJunk P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY w.unpair.1.unpair.1
+        w.unpair.2.unpair.1 w.unpair.1.unpair.2) :=
+    ((primrec_yPseqAtomJunk P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY).comp hnibx).of_eq
+      fun w => by simp only [unpair_pair_fst, unpair_pair_snd]
+  have hidx : Nat.Primrec (fun w : ℕ =>
+      yPseqAtomIdx P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY w.unpair.1.unpair.1
+        w.unpair.2.unpair.1 w.unpair.1.unpair.2) :=
+    ((primrec_yPseqAtomIdx P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY).comp hnibx).of_eq
+      fun w => by simp only [unpair_pair_fst, unpair_pair_snd]
+  have hfound : Nat.Primrec (fun w : ℕ => w.unpair.2.unpair.2.unpair.1) :=
+    Nat.Primrec.left.comp hacc
+  have hval : Nat.Primrec (fun w : ℕ => w.unpair.2.unpair.2.unpair.2) :=
+    Nat.Primrec.right.comp hacc
+  have hunion : Nat.Primrec (fun w : ℕ => hUnion0.unionIdx w.unpair.2.unpair.2.unpair.2
+      (yPseqAtomIdx P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY w.unpair.1.unpair.1
+        w.unpair.2.unpair.1 w.unpair.1.unpair.2)) :=
+    (hUnion0.unionIdx_primrec.comp (hval.pair hidx)).of_eq
+      fun w => by simp only [unpair_pair_fst, unpair_pair_snd]
+  have hinner : Nat.Primrec (fun w : ℕ => selectFn w.unpair.2.unpair.2.unpair.1
+      (Nat.pair 1 (hUnion0.unionIdx w.unpair.2.unpair.2.unpair.2
+        (yPseqAtomIdx P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY w.unpair.1.unpair.1
+          w.unpair.2.unpair.1 w.unpair.1.unpair.2)))
+      (Nat.pair 1 (yPseqAtomIdx P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY
+        w.unpair.1.unpair.1 w.unpair.2.unpair.1 w.unpair.1.unpair.2))) :=
+    primrec_selectFn hfound ((Nat.Primrec.const 1).pair hunion) ((Nat.Primrec.const 1).pair hidx)
+  exact (primrec_selectFn hjunk hacc hinner).of_eq fun w => by unfold YFoldStep; simp only []
+
+/-- The depth-`n`, bit-`bx` union fold over `i < N`, starting from `(0, 0)`. `n`/`bx` are held
+fixed across the recursion by packing them together as `Nat.Primrec.prec`'s own outer parameter. -/
+noncomputable def YFoldInner (n bx N : ℕ) : ℕ :=
+  N.rec (Nat.pair 0 0) (fun i acc => YFoldStep P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY
+    hUnion0 (Nat.pair (Nat.pair n bx) (Nat.pair i acc)))
+
+theorem YFoldInner_zero (n bx : ℕ) :
+    YFoldInner P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0 n bx 0 =
+      Nat.pair 0 0 := rfl
+
+theorem YFoldInner_succ (n bx N : ℕ) :
+    YFoldInner P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0 n bx (N + 1) =
+      YFoldStep P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0
+        (Nat.pair (Nat.pair n bx) (Nat.pair N (YFoldInner P₀ P₁ hDiff0 hDiff1 splitX hSplitX
+          splitY hSplitY hUnion0 n bx N))) := rfl
+
+/-- **Auxiliary single-argument-`z` repackaging of `YFoldInner`**, matching `Nat.Primrec.prec`'s
+own shape exactly (`z := nb` used *directly*, with no `Nat.pair`/`unpair` round-trip needed for
+`rfl` to see through) — mirroring `XFold`'s own successful pattern, where `z := n` needed no
+repackaging at all since `XFold` has only one "held-fixed" parameter. `YFoldInner` needs *two*
+(`n`, `bx`), so this auxiliary exists purely to keep `primrec_YFoldInner`'s own proof cheap: the
+`Nat.pair`/`unpair` round-trip (`pair_unpair`, *not* definitionally `rfl` — it needs the `Nat.sqrt`
+case split) is pushed into `unpair_pair_fst`/`_snd`-driven `simp`, not the kernel's `whnf`. -/
+noncomputable def YFoldInnerPair (nb N : ℕ) : ℕ :=
+  N.rec (Nat.pair 0 0) (fun i acc => YFoldStep P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY
+    hUnion0 (Nat.pair nb (Nat.pair i acc)))
+
+theorem primrec_YFoldInnerPair : Nat.Primrec
+    (fun t : ℕ => YFoldInnerPair P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0
+      t.unpair.1 t.unpair.2) :=
+  (Nat.Primrec.prec (Nat.Primrec.const (Nat.pair 0 0))
+    (primrec_YFoldStep P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0)).of_eq
+    fun _ => rfl
+
+theorem YFoldInner_eq_pair (n bx N : ℕ) :
+    YFoldInner P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0 n bx N =
+      YFoldInnerPair P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0
+        (Nat.pair n bx) N := rfl
+
+theorem primrec_YFoldInner : Nat.Primrec
+    (fun t : ℕ => YFoldInner P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0
+      t.unpair.1.unpair.1 t.unpair.1.unpair.2 t.unpair.2) := by
+  have h1 : Nat.Primrec (fun t : ℕ => Nat.pair t.unpair.1.unpair.1 t.unpair.1.unpair.2) :=
+    (Nat.Primrec.left.comp Nat.Primrec.left).pair (Nat.Primrec.right.comp Nat.Primrec.left)
+  have h2 : Nat.Primrec (fun t : ℕ => Nat.pair
+      (Nat.pair t.unpair.1.unpair.1 t.unpair.1.unpair.2) t.unpair.2) :=
+    h1.pair Nat.Primrec.right
+  exact ((primrec_YFoldInnerPair P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0).comp
+    h2).of_eq fun t => by
+      simp only [unpair_pair_fst, unpair_pair_snd]
+      exact (YFoldInner_eq_pair P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0
+        t.unpair.1.unpair.1 t.unpair.1.unpair.2 t.unpair.2).symm
+
+theorem YFoldInner_found_le_one {bx : ℕ} (hbx : bx ≤ 1) (n : ℕ) :
+    ∀ N, (YFoldInner P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0 n bx N).unpair.1
+      ≤ 1 := by
+  intro N
+  induction N with
+  | zero => simp [YFoldInner_zero]
+  | succ N ih =>
+    rw [YFoldInner_succ, YFoldStep_eq]
+    rcases yPseqAtomJunk_zero_or_one P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hbx n N with
+      h0 | h1
+    · rw [h0, selectFn_zero]
+      rcases Nat.eq_zero_or_pos
+          (YFoldInner P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0 n bx N).unpair.1
+        with hf0 | hfpos
+      · rw [show (YFoldInner P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0 n bx N
+          ).unpair.1 = 0 from hf0, selectFn_zero, unpair_pair_fst]
+      · rw [show (YFoldInner P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0 n bx N
+          ).unpair.1 = 1 from by omega, selectFn_one, unpair_pair_fst]
+    · rw [h1, selectFn_one]; exact ih
+
+/-- **The "found" flag exactly tracks existence of a non-junk half-step atom below `N`.** -/
+theorem YFoldInner_found_iff {bx : ℕ} (hbx : bx ≤ 1) (n : ℕ) :
+    ∀ N, (YFoldInner P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0 n bx N).unpair.1 = 1
+      ↔ ∃ i < N, yPseqAtomJunk P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY n i bx = 0 := by
+  intro N
+  induction N with
+  | zero => simp [YFoldInner_zero]
+  | succ N ih =>
+    rw [YFoldInner_succ, YFoldStep_eq]
+    rcases yPseqAtomJunk_zero_or_one P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hbx n N with
+      h0 | h1
+    · rw [h0, selectFn_zero]
+      have hval1 : (selectFn
+          (YFoldInner P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0 n bx N).unpair.1
+          (Nat.pair 1 (hUnion0.unionIdx
+            (YFoldInner P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0 n bx N).unpair.2
+            (yPseqAtomIdx P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY n N bx)))
+          (Nat.pair 1 (yPseqAtomIdx P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY n N bx))
+          ).unpair.1 = 1 := by
+        have hle := YFoldInner_found_le_one P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY
+          hUnion0 hbx n N
+        rcases Nat.eq_zero_or_pos
+            (YFoldInner P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0 n bx N).unpair.1
+          with hf | hf
+        · rw [show (YFoldInner P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0 n bx N
+            ).unpair.1 = 0 from hf, selectFn_zero, unpair_pair_fst]
+        · rw [show (YFoldInner P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0 n bx N
+            ).unpair.1 = 1 from by omega, selectFn_one, unpair_pair_fst]
+      rw [hval1]
+      exact ⟨fun _ => ⟨N, Nat.lt_succ_self N, h0⟩, fun _ => rfl⟩
+    · rw [h1, selectFn_one, ih]
+      constructor
+      · rintro ⟨i, hi, hie⟩; exact ⟨i, Nat.lt_succ_of_lt hi, hie⟩
+      · rintro ⟨i, hi, hie⟩
+        rcases Nat.lt_succ_iff_lt_or_eq.mp hi with hi' | rfl
+        · exact ⟨i, hi', hie⟩
+        · exact absurd hie (by omega)
+
+include hD₀pos hD₀diff hD₀nomin in
+/-- **Once "found", the running union's code is always `D₀`-genuine.** Exactly mirrors
+`XFold_mem_of_found`, with `hUnion0`/`D₀` in place of `hUnion1`/`D₁`. -/
+theorem YFoldInner_mem_of_found {bx : ℕ} (hbx : bx ≤ 1) (n : ℕ) :
+    ∀ N, (YFoldInner P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0 n bx N).unpair.1 = 1
+      → D₀.mem (P₀.X (YFoldInner P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0
+        n bx N).unpair.2) := by
+  intro N
+  induction N with
+  | zero => intro h; simp [YFoldInner_zero] at h
+  | succ N ih =>
+    intro hfound1
+    rw [YFoldInner_succ, YFoldStep_eq] at hfound1 ⊢
+    rcases yPseqAtomJunk_zero_or_one P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hbx n N with
+      h0 | h1
+    · rw [h0, selectFn_zero] at hfound1 ⊢
+      have hle := YFoldInner_found_le_one P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0
+        hbx n N
+      rcases Nat.eq_zero_or_pos
+          (YFoldInner P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0 n bx N).unpair.1
+        with hf0 | hfpos
+      · rw [show (YFoldInner P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0 n bx N
+          ).unpair.1 = 0 from hf0, selectFn_zero, unpair_pair_snd]
+        exact yPseqAtomIdx_mem P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY n N bx
+      · have hf1 : (YFoldInner P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0 n bx N
+            ).unpair.1 = 1 := by omega
+        rw [hf1, selectFn_one, unpair_pair_snd]
+        have hprevmem := ih hf1
+        have hnewmem := yPseqAtomIdx_mem P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY n N bx
+        have hex : ∃ k, P₀.X k =
+            P₀.X (YFoldInner P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0 n bx N
+              ).unpair.2 ∪
+              P₀.X (yPseqAtomIdx P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY n N bx) :=
+          P₀.surj (NeighborhoodSystem.mem_union_of_mem hD₀pos hD₀diff hD₀nomin hprevmem hnewmem)
+        rw [hUnion0.unionIdx_spec hex]
+        exact NeighborhoodSystem.mem_union_of_mem hD₀pos hD₀diff hD₀nomin hprevmem hnewmem
+    · rw [h1, selectFn_one] at hfound1 ⊢
+      exact ih hfound1
+
+include hD₀pos hD₀diff hD₀nomin in
+/-- **The membership form of `YFoldInner`'s correctness**, exactly mirroring `XFold_mem_iff`. -/
+theorem YFoldInner_mem_iff {bx : ℕ} (hbx : bx ≤ 1) (n : ℕ) :
+    ∀ N, (YFoldInner P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0 n bx N).unpair.1 = 1
+      → ∀ z : α, z ∈ P₀.X (YFoldInner P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0
+          n bx N).unpair.2 ↔
+        ∃ i < N, yPseqAtomJunk P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY n i bx = 0 ∧
+          z ∈ P₀.X (yPseqAtomIdx P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY n i bx) := by
+  intro N
+  induction N with
+  | zero => intro h; simp [YFoldInner_zero] at h
+  | succ N ih =>
+    intro hfound1 z
+    rw [YFoldInner_succ, YFoldStep_eq] at hfound1 ⊢
+    rcases yPseqAtomJunk_zero_or_one P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hbx n N with
+      h0 | h1
+    · rw [h0, selectFn_zero] at hfound1 ⊢
+      have hle := YFoldInner_found_le_one P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0
+        hbx n N
+      rcases Nat.eq_zero_or_pos
+          (YFoldInner P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0 n bx N).unpair.1
+        with hf0 | hfpos
+      · rw [show (YFoldInner P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0 n bx N
+          ).unpair.1 = 0 from hf0, selectFn_zero, unpair_pair_snd]
+        constructor
+        · intro hz; exact ⟨N, Nat.lt_succ_self N, h0, hz⟩
+        · rintro ⟨i, hi, hie, hz⟩
+          rcases Nat.lt_succ_iff_lt_or_eq.mp hi with hi' | rfl
+          · exact absurd ((YFoldInner_found_iff P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY
+              hUnion0 hbx n N).mpr ⟨i, hi', hie⟩) (by rw [hf0]; omega)
+          · exact hz
+      · have hf1 : (YFoldInner P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0 n bx N
+            ).unpair.1 = 1 := by omega
+        rw [hf1, selectFn_one, unpair_pair_snd]
+        have hprevmem := YFoldInner_mem_of_found P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY
+          hD₀pos hD₀diff hD₀nomin hUnion0 hbx n N hf1
+        have hnewmem := yPseqAtomIdx_mem P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY n N bx
+        have hex : ∃ k, P₀.X k =
+            P₀.X (YFoldInner P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0 n bx N
+              ).unpair.2 ∪
+              P₀.X (yPseqAtomIdx P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY n N bx) :=
+          P₀.surj (NeighborhoodSystem.mem_union_of_mem hD₀pos hD₀diff hD₀nomin hprevmem hnewmem)
+        rw [hUnion0.unionIdx_spec hex, Set.mem_union, ih hf1 z]
+        constructor
+        · rintro (⟨i, hi, hie, hz⟩ | hz)
+          · exact ⟨i, Nat.lt_succ_of_lt hi, hie, hz⟩
+          · exact ⟨N, Nat.lt_succ_self N, h0, hz⟩
+        · rintro ⟨i, hi, hie, hz⟩
+          rcases Nat.lt_succ_iff_lt_or_eq.mp hi with hi' | rfl
+          · exact Or.inl ⟨i, hi', hie, hz⟩
+          · exact Or.inr hz
+    · rw [h1, selectFn_one] at hfound1 ⊢
+      rw [ih hfound1 z]
+      constructor
+      · rintro ⟨i, hi, hie, hz⟩; exact ⟨i, Nat.lt_succ_of_lt hi, hie, hz⟩
+      · rintro ⟨i, hi, hie, hz⟩
+        rcases Nat.lt_succ_iff_lt_or_eq.mp hi with hi' | rfl
+        · exact ⟨i, hi', hie, hz⟩
+        · exact absurd hie (by omega)
+
+/-- **`YPseqCode`, the code-level analogue of `Exercise812c.lean`'s `YPseq`.** The outer `2`-way
+`combineFound2` union of the two `bx`-fixed inner folds `YFoldInner n 0 (4ⁿ)`/`YFoldInner n 1 (4ⁿ)`. -/
+noncomputable def YPseqCode (n : ℕ) : ℕ :=
+  (combineFound2 hUnion0
+    (YFoldInner P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0 n 0 (4 ^ n))
+    (YFoldInner P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0 n 1 (4 ^ n))).unpair.2
+
+theorem primrec_YPseqCode : Nat.Primrec
+    (YPseqCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0) := by
+  have h4n : Nat.Primrec (fun n : ℕ => 4 ^ n) := primrec_pow₂ (Nat.Primrec.const 4) Nat.Primrec.id
+  have hr0 : Nat.Primrec (fun n : ℕ =>
+      YFoldInner P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0 n 0 (4 ^ n)) := by
+    have harg : Nat.Primrec (fun n : ℕ => Nat.pair (Nat.pair n 0) (4 ^ n)) :=
+      (Nat.Primrec.id.pair (Nat.Primrec.const 0)).pair h4n
+    exact ((primrec_YFoldInner P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0).comp
+      harg).of_eq fun n => by simp only [unpair_pair_fst, unpair_pair_snd]
+  have hr1 : Nat.Primrec (fun n : ℕ =>
+      YFoldInner P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0 n 1 (4 ^ n)) := by
+    have harg : Nat.Primrec (fun n : ℕ => Nat.pair (Nat.pair n 1) (4 ^ n)) :=
+      (Nat.Primrec.id.pair (Nat.Primrec.const 1)).pair h4n
+    exact ((primrec_YFoldInner P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0).comp
+      harg).of_eq fun n => by simp only [unpair_pair_fst, unpair_pair_snd]
+  have hcomb : Nat.Primrec (fun n : ℕ => combineFound2 hUnion0
+      (YFoldInner P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0 n 0 (4 ^ n))
+      (YFoldInner P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0 n 1 (4 ^ n))) :=
+    ((primrec_combineFound2 hUnion0).comp (hr0.pair hr1)).of_eq
+      fun n => by simp only [unpair_pair_fst, unpair_pair_snd]
+  exact (Nat.Primrec.right.comp hcomb).of_eq fun _ => rfl
+
+include hD₀pos hD₀diff hD₀nomin in
+/-- **Once "found" at `N = 4ⁿ`** (on either `bx`-branch), **`YPseqCode n` is `D₀`-genuine.** -/
+theorem YPseqCode_mem {n : ℕ}
+    (hfound : (combineFound2 hUnion0
+      (YFoldInner P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0 n 0 (4 ^ n))
+      (YFoldInner P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0 n 1 (4 ^ n))
+      ).unpair.1 = 1) :
+    D₀.mem (P₀.X (YPseqCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0 n)) :=
+  combineFound2_mem_of_found hD₀pos hD₀diff hD₀nomin hUnion0
+    (YFoldInner_found_le_one P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0
+      (Nat.zero_le 1) n (4 ^ n))
+    (YFoldInner_found_le_one P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0
+      (le_refl 1) n (4 ^ n))
+    (YFoldInner_mem_of_found P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hD₀pos hD₀diff
+      hD₀nomin hUnion0 (Nat.zero_le 1) n (4 ^ n))
+    (YFoldInner_mem_of_found P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hD₀pos hD₀diff
+      hD₀nomin hUnion0 (le_refl 1) n (4 ^ n))
+    hfound
+
+include hD₀pos hD₀diff hD₀nomin in
+/-- **The closed-form membership characterization of `YPseqCode`, conditional on "found" at
+`N = 4ⁿ`**: a point lies in `P₀.X (YPseqCode n)` iff it lies in some genuine (non-junk) half-step
+atom `yPseqAtomIdx n i bx`, for `i < 4ⁿ` on *either* `bx`-branch. -/
+theorem mem_YPseqCode_iff {n : ℕ}
+    (hfound : (combineFound2 hUnion0
+      (YFoldInner P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0 n 0 (4 ^ n))
+      (YFoldInner P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0 n 1 (4 ^ n))
+      ).unpair.1 = 1) (z : α) :
+    z ∈ P₀.X (YPseqCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0 n) ↔
+      (∃ i < 4 ^ n, yPseqAtomJunk P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY n i 0 = 0 ∧
+        z ∈ P₀.X (yPseqAtomIdx P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY n i 0)) ∨
+      (∃ i < 4 ^ n, yPseqAtomJunk P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY n i 1 = 0 ∧
+        z ∈ P₀.X (yPseqAtomIdx P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY n i 1)) := by
+  have hle0 := YFoldInner_found_le_one P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0
+    (Nat.zero_le 1) n (4 ^ n)
+  have hle1 := YFoldInner_found_le_one P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0
+    (le_refl 1) n (4 ^ n)
+  have hmem0 := YFoldInner_mem_of_found P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hD₀pos
+    hD₀diff hD₀nomin hUnion0 (Nat.zero_le 1) n (4 ^ n)
+  have hmem1 := YFoldInner_mem_of_found P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hD₀pos
+    hD₀diff hD₀nomin hUnion0 (le_refl 1) n (4 ^ n)
+  have heq : YPseqCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0 n =
+      (combineFound2 hUnion0
+        (YFoldInner P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0 n 0 (4 ^ n))
+        (YFoldInner P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0 n 1 (4 ^ n))
+        ).unpair.2 := rfl
+  rw [heq, combineFound2_mem_iff hD₀pos hD₀diff hD₀nomin hUnion0 hle0 hle1 hmem0 hmem1 hfound z]
+  constructor
+  · rintro (⟨hf0, hz⟩ | ⟨hf1, hz⟩)
+    · exact Or.inl ((YFoldInner_mem_iff P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hD₀pos
+        hD₀diff hD₀nomin hUnion0 (Nat.zero_le 1) n (4 ^ n) hf0 z).mp hz)
+    · exact Or.inr ((YFoldInner_mem_iff P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hD₀pos
+        hD₀diff hD₀nomin hUnion0 (le_refl 1) n (4 ^ n) hf1 z).mp hz)
+  · rintro (⟨i, hi, hie, hz⟩ | ⟨i, hi, hie, hz⟩)
+    · have hf0 : (YFoldInner P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0 n 0 (4 ^ n)
+          ).unpair.1 = 1 :=
+        (YFoldInner_found_iff P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0
+          (Nat.zero_le 1) n (4 ^ n)).mpr ⟨i, hi, hie⟩
+      exact Or.inl ⟨hf0, (YFoldInner_mem_iff P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY
+        hD₀pos hD₀diff hD₀nomin hUnion0 (Nat.zero_le 1) n (4 ^ n) hf0 z).mpr ⟨i, hi, hie, hz⟩⟩
+    · have hf1 : (YFoldInner P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0 n 1 (4 ^ n)
+          ).unpair.1 = 1 :=
+        (YFoldInner_found_iff P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0
+          (le_refl 1) n (4 ^ n)).mpr ⟨i, hi, hie⟩
+      exact Or.inr ⟨hf1, (YFoldInner_mem_iff P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY
+        hD₀pos hD₀diff hD₀nomin hUnion0 (le_refl 1) n (4 ^ n) hf1 z).mpr ⟨i, hi, hie, hz⟩⟩
+
+end YPseqCode

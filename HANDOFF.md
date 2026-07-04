@@ -8679,3 +8679,59 @@ jobs) green, zero `sorry`. Committed/pushed.
 above). **Next up:** `(d)(4)(d)` — `YPseqCode`, the `Y`-side fold symmetric to `(c)` but with an
 extra free `bx : Bool` layer (an outer `2`-way union of two inner `4ⁿ`-folds, matching
 `Exercise812c.lean`'s `YPseq` definition), plus its own conditional closed form.
+
+## 2026-07-04 checkpoint — Exercise 8.12(d)(4)(d): `YPseqCode`
+
+Appended to `Exercise812d.lean`, after `(d)(4)(c)`'s deferred-gap docstring.
+
+**The extra `bx` layer:** `Exercise812c.lean`'s own `YPseq` docstring flags that `ySubStep`'s inputs
+already depend on position `n`'s own `X`-sub-step bit, so the half-step atom needs a free `bx`, not
+just the depth-`n` state: `yPseqAtomState n i bx` runs `xSubStep` at bit `bx` (arbitrary) then
+`ySubStep` at bit `1` (forced); `yPseqAtomIdx`/`yPseqAtomJunk` harvest `stateIdx0`/`stateJunk`
+(`D₀`-side — `ySubStep`'s `"+"` branch is the *split* side, since `ySubStep` refines `D₁` directly
+and `D₀` via `hSplitY`, symmetric to `xSubStep`).
+
+**Outer `2`-way union of two inner folds, not one `2·4ⁿ`-element fold:** `YFoldInner n bx N` is
+structurally `XFold`'s exact twin (`n`/`bx` both held fixed across the `i`-recursion, packed
+together as `Nat.Primrec.prec`'s own outer parameter), instantiated at `bx = 0` and `bx = 1`
+literally, then combined by a new, reusable `combineFound2` helper (generic in any
+`IsComputableUnion`): unions both codes when both sides found something, else propagates whichever
+single side found something (or neither, if neither did). Simpler than threading `bx` through the
+`i`-recursion state itself.
+
+**A genuine Lean gotcha, caught and fixed via a cheap workaround, not brute force:** the first
+attempt at `primrec_YFoldInner` (proving `Nat.Primrec.prec`'s shape matches `YFoldInner`'s two
+separate `n`/`bx` arguments via `.of_eq fun _ => rfl`) hit a `(deterministic) timeout at whnf` —
+bumping `maxHeartbeats` to `1000000` did *not* fix it (still timed out), because the needed
+equality genuinely is *not* `rfl`: `prec`'s own `z` is `t.unpair.1` used as a single opaque blob,
+but `YFoldInner`'s two-argument form needs `z` reconstructed as `Nat.pair t.unpair.1.unpair.1
+t.unpair.1.unpair.2` — and `Nat.pair (Nat.unpair a).1 (Nat.unpair a).2 = a` (`pair_unpair` in
+`Recursive.lean`) is a genuine theorem needing a `Nat.sqrt` case split, not a kernel-`rfl` fact
+(unlike the *other* direction, `unpair (pair a b) = (a, b)`, which the codebase's
+`unpair_pair_fst`/`_snd` simp lemmas handle cheaply everywhere else). **Fix:** introduced
+`YFoldInnerPair`, a `z`-repackaged auxiliary taking a single packed `nb` argument directly — this
+one *does* match `prec`'s shape with no round-trip needed (mirrors `XFold`'s own successful
+one-parameter pattern exactly) — then derived `primrec_YFoldInner` from it via `.comp` plus
+`unpair_pair_fst`/`_snd`-driven `simp` (not `rfl`) to bridge the two-argument/packed forms. Zero
+`maxHeartbeats` bump needed once this was in place.
+
+**Correctness:** `YFoldInner`'s four theorems (`found_le_one`/`found_iff`/`mem_of_found`/`mem_iff`)
+are verbatim mirrors of `XFold`'s own four (swap `D₁`/`P₁`/`hUnion1` for `D₀`/`P₀`/`hUnion0`, thread
+a held-fixed `bx`/`hbx : bx ≤ 1` throughout). `combineFound2`'s own four correctness theorems are
+new content one level up: `found_le_one`/`found_iff` by direct case split on both sides' found
+flags (no induction needed — it's a single combining step, not a fold); `mem_of_found`/`mem_iff`
+reuse `(d)(4)(b)`'s `mem_union_of_mem` exactly as `XFold_mem_of_found` did, one level higher.
+`YPseqCode n := (combineFound2 (YFoldInner n 0 (4ⁿ)) (YFoldInner n 1 (4ⁿ))).unpair.2`;
+`YPseqCode_mem`/`mem_YPseqCode_iff` specialize both fold layers together, conditional on the
+*combined* found flag (found on *either* `bx`-branch suffices for the whole thing to be genuine).
+
+Axiom-audited: `primrec_YPseqCode`/`YPseqCode_mem`/`mem_YPseqCode_iff`/`combineFound2_mem_iff` all
+depend on `[propext, Classical.choice, Quot.sound]` (ambient baseline, matching `(c)`). Whole-project
+`lake build` (3164 jobs) green, zero `sorry`, zero linter errors in the edited file.
+
+**Status: Exercise 8.12(d)(4)(d) is `Pass`** (conditional correctness, exactly as `(c)`; same
+deferred unconditional-found gap, doubled over `bx`). **All of `8.12(d)(4)(a)`–`(d)` are now
+`Pass`.** **Next up:** `(d)(5)` — `toD1`/`toD0`'s underlying maps are `IsComputableMap`; per the
+`(d)(4)` scoping note, likely reuses `Approximable.lean`'s `ofIso` (Theorem 2.7) applied to
+`domainIso812c` rather than bespoke re-derivation, with `XPseqCode`/`YPseqCode` consumed as the r.e.
+witnesses for `(ofIso domainIso812c).rel`'s unfolding.
