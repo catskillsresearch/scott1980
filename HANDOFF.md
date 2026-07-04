@@ -8364,3 +8364,49 @@ precedent — not a new choice-dependency). Whole-project `lake build` (3164 job
 symmetric state transition (intersect/diff the `D₁`-side index directly by `n`, split the
 `D₀`-side index via `hSplitY`), composed with `xSubStep` into the full `n → n + 1` transition
 `atomPairCodeState` (via `Nat.Primrec.prec`, mirroring `atomUCodeState`/`atomStep`).
+
+## 2026-07-04 checkpoint — Exercise 8.12(d)(3)(c): `ySubStep` + full `atomPairCodeState`
+
+Appended to `Exercise812d.lean`.
+
+**`ySubStep`**: symmetric to `xSubStep` — refines `D₁`'s index directly against `P₁.X n` (via
+`P₁.inter`/`hDiff1.diffIdx`, selected by bit `b2`), and `D₀`'s index via the matching branch of
+`hSplitY : IsComputableSplit P₁ P₀ splitY` (roles swapped relative to `hSplitX`). Reuses `xwN`/
+`xwB1`/`xwS` unchanged (they are pure `ℕ`-arithmetic projections, not tied to `X` specifically, so
+no duplicate definitions were needed). `primrec_ySubStep`'s proof is `primrec_xSubStep`'s proof
+with `P₀`/`hDiff0` ↔ `P₁`/`hDiff1` and the split argument order swapped throughout.
+
+**`atomPairStep`**: the full `n → n + 1` transition — one `xSubStep` (bit `rem % 2`) then one
+`ySubStep` (bit `(rem / 2) % 2`) at the *same* depth `n`, then `rem / 4` peels both consumed bits.
+The bit-source `k` now supplies **two** bits per depth (matching `atomPairG`'s `δ : ℕ → Bool ×
+Bool`), tracked via a persistent `rem` field in a fresh outer pairing `packStateC (rem s)`
+wrapping (b)'s two-sided `packState2` triple `s`. `pcN`/`pcT` extract the outer `(depth, state)`
+components from the `Nat.Primrec.prec`-mandated `w = pair k (pair n state)` convention (`k` itself
+is unused inside the step body — only present because that is how `Nat.Primrec.prec`'s recursor is
+shaped, exactly as `Theorem88d.lean`'s own `k` goes unused inside `atomStep`).
+`atomPairCodeState`/`primrec_atomPairCodeState` assemble the full recursion via
+`Nat.Primrec.prec`, mirroring `atomUCodeState` exactly. Added the natural output API,
+`atomPairIdx0`/`atomPairIdx1`/`atomPairJunk` (depth-`n`, bit-source-`k` projections, mirroring
+`atomUPos`/`atomUNeg`/`atomUCode`) with their own `Nat.Primrec`-ness lemmas. **No correctness
+claim against `atomPairG` yet** — that is explicitly `(d)(3)(d)`'s job, kept out of scope here.
+
+**Lean gotchas hit:** (1) tried to reuse `Theorem88d.lean`'s own `wY`/`wState` projections by
+name, forgetting `Exercise812d.lean` doesn't import that file (and shouldn't — `Theorem88d.lean`
+is about the unrelated single-sided `U`/`D` construction) — fixed with local aliases `pcN`/`pcT`
+defined over the already-available `xwN`/`xwB1`/`xwS`. (2) No general "divide by a constant"
+`Nat.Primrec` helper exists in `Recursive.lean` (only `primrec_div2`, i.e. `/2`) — built `/4` from
+two composed `primrec_div2`s plus `Nat.div_div_eq_div_mul`, rather than inventing a new general
+primitive.
+
+Axiom-audited: `primrec_ySubStep`/`primrec_atomPairStep`/`primrec_atomPairCodeState`/
+`primrec_atomPairIdx0`/`primrec_atomPairIdx1`/`primrec_atomPairJunk` all give
+`⊆{propext, Classical.choice, Quot.sound}`, matching the (b) baseline. Whole-project `lake build`
+(3164 jobs) green, zero `sorry`.
+
+**Status: Exercise 8.12(d)(3)(c) is `Pass`.** **Next up:** 8.12(d)(3)(d) — per-step correctness:
+whenever the recorded state (`atomPairIdx0`/`atomPairIdx1`/`atomPairJunk`) is non-junk, its packed
+indices' `P₀.X`/`P₁.X` values literally equal `atomPairG`'s corresponding component at that depth
+(instantiated at `X n := P₀.X n`, `Y n := P₁.X n`, `splitX`/`hxSplit` from `hSplitX`'s underlying
+split function, `splitY`/`hySplit` from `hSplitY`'s, and `δ` reconstructed from the bit-source `k`
+via a fresh two-bits-per-depth analogue of `Theorem88d.lean`'s `deltaOf`), mirroring
+`genAtom_atomUCode`.

@@ -813,3 +813,235 @@ theorem primrec_xSubStep : Nat.Primrec (xSubStep P₀ P₁ hDiff0 splitX hSplitX
     simp only []
 
 end XSubStep
+
+/-! ## 8.12(d)(3)(c): the `Y`-sub-step, composed into the full `atomPairCodeState`
+
+`ySubStep` is symmetric to `xSubStep` (refines `D₁`'s index directly, `D₀`'s index via the split
+`hSplitY`), using the *same* packed-argument convention (`xwN`/`xwB1`/`xwS`, reused unchanged since
+they are pure `ℕ`-arithmetic, not tied to `X`). `atomPairStep` composes one `xSubStep` then one
+`ySubStep` at the same depth `n`, and `atomPairCodeState` assembles the full recursion via
+`Nat.Primrec.prec`, mirroring `Theorem88d.lean`'s `atomUCodeState`/`atomStep` exactly — including
+reusing its `wY`/`wState` packed-argument projections for the *outer* `(bit-source, depth, state)`
+wrapping. The bit-source `k` supplies **two** bits per depth (`(δ n).1`, `(δ n).2`), peeled via a
+persistent `rem` field (divided by `4` each full step, mirroring `atomStep`'s `remK / 2`) carried
+alongside the two-sided `packState2` triple in a fresh outer pairing, `packStateC`. -/
+
+section YSubStep
+
+variable {α β : Type*} {D₀ : NeighborhoodSystem α} {D₁ : NeighborhoodSystem β}
+  (P₀ : ComputablePresentation D₀) (P₁ : ComputablePresentation D₁)
+  (hDiff1 : IsComputableDiff P₁)
+  (splitY : Set β → Set α → Set β → Set α × Set α) (hSplitY : IsComputableSplit P₁ P₀ splitY)
+
+/-- **The `Y`-sub-step.** Symmetric to `xSubStep`: refines `D₁`'s side (`idx1`) directly against
+`P₁.X n`, and `D₀`'s side (`idx0`) via the matching branch of the split `hSplitY`. Same packed
+argument convention `w = pair n (pair b2 s)`. -/
+noncomputable def ySubStep (w : ℕ) : ℕ :=
+  let n := xwN w
+  let b2 := xwB1 w
+  let s := xwS w
+  let idx0 := stateIdx0 s
+  let idx1 := stateIdx1 s
+  let junk := stateJunk s
+  let directIdx := selectFn b2 (P₁.inter idx1 n) (hDiff1.diffIdx idx1 n)
+  let directEmpty := selectFn b2 (emptyInterDec P₁ (Nat.pair idx1 n))
+    (emptyDiffDec P₁ hDiff1 (Nat.pair idx1 n))
+  let splitIdx := selectFn b2 (hSplitY.posIdx idx1 idx0 n) (hSplitY.negIdx idx1 idx0 n)
+  let newJunk := selectFn junk 1 directEmpty
+  packState2 (selectFn newJunk 0 splitIdx) (selectFn newJunk 0 directIdx) newJunk
+
+theorem primrec_ySubStep : Nat.Primrec (ySubStep P₀ P₁ hDiff1 splitY hSplitY) := by
+  have hn : Nat.Primrec xwN := primrec_xwN
+  have hb2 : Nat.Primrec xwB1 := primrec_xwB1
+  have hs : Nat.Primrec xwS := primrec_xwS
+  have hidx0 : Nat.Primrec (fun w => stateIdx0 (xwS w)) := primrec_stateIdx0.comp hs
+  have hidx1 : Nat.Primrec (fun w => stateIdx1 (xwS w)) := primrec_stateIdx1.comp hs
+  have hjunk : Nat.Primrec (fun w => stateJunk (xwS w)) := primrec_stateJunk.comp hs
+  have hinter : Nat.Primrec (fun w => P₁.inter (stateIdx1 (xwS w)) (xwN w)) :=
+    (P₁.inter_primrec.comp (hidx1.pair hn)).of_eq
+      fun w => by simp only [unpair_pair_fst, unpair_pair_snd]
+  have hdiffidx : Nat.Primrec (fun w => hDiff1.diffIdx (stateIdx1 (xwS w)) (xwN w)) :=
+    (hDiff1.diffIdx_primrec.comp (hidx1.pair hn)).of_eq
+      fun w => by simp only [unpair_pair_fst, unpair_pair_snd]
+  have hemptyInter : Nat.Primrec (fun w => emptyInterDec P₁ (Nat.pair (stateIdx1 (xwS w)) (xwN w))) :=
+    (primrec_emptyInterDec P₁).comp (hidx1.pair hn)
+  have hemptyDiff : Nat.Primrec
+      (fun w => emptyDiffDec P₁ hDiff1 (Nat.pair (stateIdx1 (xwS w)) (xwN w))) :=
+    (primrec_emptyDiffDec P₁ hDiff1).comp (hidx1.pair hn)
+  have hposIdx : Nat.Primrec
+      (fun w => hSplitY.posIdx (stateIdx1 (xwS w)) (stateIdx0 (xwS w)) (xwN w)) :=
+    (hSplitY.posIdx_primrec.comp (hidx1.pair (hidx0.pair hn))).of_eq
+      fun w => by simp only [unpair_pair_fst, unpair_pair_snd]
+  have hnegIdx : Nat.Primrec
+      (fun w => hSplitY.negIdx (stateIdx1 (xwS w)) (stateIdx0 (xwS w)) (xwN w)) :=
+    (hSplitY.negIdx_primrec.comp (hidx1.pair (hidx0.pair hn))).of_eq
+      fun w => by simp only [unpair_pair_fst, unpair_pair_snd]
+  have hdirectIdx : Nat.Primrec (fun w => selectFn (xwB1 w)
+      (P₁.inter (stateIdx1 (xwS w)) (xwN w)) (hDiff1.diffIdx (stateIdx1 (xwS w)) (xwN w))) :=
+    primrec_selectFn hb2 hinter hdiffidx
+  have hdirectEmpty : Nat.Primrec (fun w => selectFn (xwB1 w)
+      (emptyInterDec P₁ (Nat.pair (stateIdx1 (xwS w)) (xwN w)))
+      (emptyDiffDec P₁ hDiff1 (Nat.pair (stateIdx1 (xwS w)) (xwN w)))) :=
+    primrec_selectFn hb2 hemptyInter hemptyDiff
+  have hsplitIdx : Nat.Primrec (fun w => selectFn (xwB1 w)
+      (hSplitY.posIdx (stateIdx1 (xwS w)) (stateIdx0 (xwS w)) (xwN w))
+      (hSplitY.negIdx (stateIdx1 (xwS w)) (stateIdx0 (xwS w)) (xwN w))) :=
+    primrec_selectFn hb2 hposIdx hnegIdx
+  have hnewJunk : Nat.Primrec (fun w => selectFn (stateJunk (xwS w)) 1 (selectFn (xwB1 w)
+      (emptyInterDec P₁ (Nat.pair (stateIdx1 (xwS w)) (xwN w)))
+      (emptyDiffDec P₁ hDiff1 (Nat.pair (stateIdx1 (xwS w)) (xwN w))))) :=
+    primrec_selectFn hjunk (Nat.Primrec.const 1) hdirectEmpty
+  have hidx0' : Nat.Primrec (fun w => selectFn (selectFn (stateJunk (xwS w)) 1 (selectFn (xwB1 w)
+      (emptyInterDec P₁ (Nat.pair (stateIdx1 (xwS w)) (xwN w)))
+      (emptyDiffDec P₁ hDiff1 (Nat.pair (stateIdx1 (xwS w)) (xwN w))))) 0
+      (selectFn (xwB1 w) (hSplitY.posIdx (stateIdx1 (xwS w)) (stateIdx0 (xwS w)) (xwN w))
+        (hSplitY.negIdx (stateIdx1 (xwS w)) (stateIdx0 (xwS w)) (xwN w)))) :=
+    primrec_selectFn hnewJunk (Nat.Primrec.const 0) hsplitIdx
+  have hidx1' : Nat.Primrec (fun w => selectFn (selectFn (stateJunk (xwS w)) 1 (selectFn (xwB1 w)
+      (emptyInterDec P₁ (Nat.pair (stateIdx1 (xwS w)) (xwN w)))
+      (emptyDiffDec P₁ hDiff1 (Nat.pair (stateIdx1 (xwS w)) (xwN w))))) 0
+      (selectFn (xwB1 w) (P₁.inter (stateIdx1 (xwS w)) (xwN w))
+        (hDiff1.diffIdx (stateIdx1 (xwS w)) (xwN w)))) :=
+    primrec_selectFn hnewJunk (Nat.Primrec.const 0) hdirectIdx
+  exact (hidx0'.pair (hidx1'.pair hnewJunk)).of_eq fun w => by
+    unfold ySubStep packState2
+    simp only []
+
+end YSubStep
+
+/-! ### The outer `(bit-source, depth, state)` wrapping and the full recursion -/
+
+/-- Pack the persistent bit-source remainder `rem` alongside the current two-sided
+`packState2`-shaped inner state `s`. -/
+def packStateC (rem s : ℕ) : ℕ := Nat.pair rem s
+
+def stateRemC (t : ℕ) : ℕ := t.unpair.1
+def stateInnerC (t : ℕ) : ℕ := t.unpair.2
+
+@[simp] theorem stateRemC_packStateC (a b : ℕ) : stateRemC (packStateC a b) = a := by
+  unfold stateRemC packStateC; simp only [unpair_pair_fst]
+@[simp] theorem stateInnerC_packStateC (a b : ℕ) : stateInnerC (packStateC a b) = b := by
+  unfold stateInnerC packStateC; simp only [unpair_pair_snd]
+
+theorem primrec_stateRemC : Nat.Primrec stateRemC := Nat.Primrec.left
+theorem primrec_stateInnerC : Nat.Primrec stateInnerC := Nat.Primrec.right
+
+section AtomPairCode
+
+variable {α β : Type*} {D₀ : NeighborhoodSystem α} {D₁ : NeighborhoodSystem β}
+  (P₀ : ComputablePresentation D₀) (P₁ : ComputablePresentation D₁)
+  (hDiff0 : IsComputableDiff P₀) (hDiff1 : IsComputableDiff P₁)
+  (splitX : Set α → Set β → Set α → Set β × Set β) (hSplitX : IsComputableSplit P₀ P₁ splitX)
+  (splitY : Set β → Set α → Set β → Set α × Set α) (hSplitY : IsComputableSplit P₁ P₀ splitY)
+
+/-- The initial state at depth `0`: `A₀ = D₀.master`, `B₀ = D₁.master` (never junk), bit-source
+remainder `k` untouched. -/
+def atomPairBase (k : ℕ) : ℕ := packStateC k (stateBase2 P₀.masterIdx P₁.masterIdx)
+
+theorem primrec_atomPairBase : Nat.Primrec (atomPairBase P₀ P₁) :=
+  (Nat.Primrec.id.pair (Nat.Primrec.const (stateBase2 P₀.masterIdx P₁.masterIdx))).of_eq
+    fun k => by unfold atomPairBase packStateC; simp only [id_eq]
+
+/-- Extract the depth `n` from the *outer* packed argument `w = pair k (pair n state)` (the
+bit-source `k` itself is unused inside `atomPairStep`'s body — it is only threaded through by the
+shape of `Nat.Primrec.prec`, exactly as `Theorem88d.lean`'s own `k` is unused inside `atomStep`). -/
+def pcN (w : ℕ) : ℕ := xwB1 w
+/-- Extract the current packed `(rem, s)` state from `w = pair k (pair n state)`. -/
+def pcT (w : ℕ) : ℕ := xwS w
+
+theorem primrec_pcN : Nat.Primrec pcN := primrec_xwB1
+theorem primrec_pcT : Nat.Primrec pcT := primrec_xwS
+
+/-- **The full per-depth step**: one `xSubStep` (bit `rem % 2`) followed by one `ySubStep` (bit
+`(rem / 2) % 2`) at the same depth `n`, then peel both consumed bits from `rem` (`rem / 4`).
+Packed-argument convention `w = pair k (pair n state)`, mirroring `Theorem88d.lean`'s `atomStep`
+convention `w = pair k (pair y state)`. -/
+noncomputable def atomPairStep (w : ℕ) : ℕ :=
+  let n := pcN w
+  let T := pcT w
+  let rem := stateRemC T
+  let s := stateInnerC T
+  let b1 := rem % 2
+  let b2 := (rem / 2) % 2
+  let s1 := xSubStep P₀ P₁ hDiff0 splitX hSplitX (Nat.pair n (Nat.pair b1 s))
+  let s2 := ySubStep P₀ P₁ hDiff1 splitY hSplitY (Nat.pair n (Nat.pair b2 s1))
+  packStateC (rem / 4) s2
+
+theorem primrec_atomPairStep :
+    Nat.Primrec (atomPairStep P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY) := by
+  have hy : Nat.Primrec pcN := primrec_pcN
+  have hst : Nat.Primrec pcT := primrec_pcT
+  have hrem : Nat.Primrec (fun w => stateRemC (pcT w)) := primrec_stateRemC.comp hst
+  have hs : Nat.Primrec (fun w => stateInnerC (pcT w)) := primrec_stateInnerC.comp hst
+  have hb1 : Nat.Primrec (fun w => stateRemC (pcT w) % 2) := primrec_mod2.comp hrem
+  have hb2 : Nat.Primrec (fun w => stateRemC (pcT w) / 2 % 2) :=
+    primrec_mod2.comp (primrec_div2.comp hrem)
+  have hw1 : Nat.Primrec (fun w => Nat.pair (pcN w) (Nat.pair (stateRemC (pcT w) % 2)
+      (stateInnerC (pcT w)))) := hy.pair (hb1.pair hs)
+  have hs1 : Nat.Primrec (fun w => xSubStep P₀ P₁ hDiff0 splitX hSplitX
+      (Nat.pair (pcN w) (Nat.pair (stateRemC (pcT w) % 2) (stateInnerC (pcT w))))) :=
+    (primrec_xSubStep P₀ P₁ hDiff0 splitX hSplitX).comp hw1
+  have hw2 : Nat.Primrec (fun w => Nat.pair (pcN w) (Nat.pair (stateRemC (pcT w) / 2 % 2)
+      (xSubStep P₀ P₁ hDiff0 splitX hSplitX
+        (Nat.pair (pcN w) (Nat.pair (stateRemC (pcT w) % 2) (stateInnerC (pcT w))))))) :=
+    hy.pair (hb2.pair hs1)
+  have hs2 : Nat.Primrec (fun w => ySubStep P₀ P₁ hDiff1 splitY hSplitY
+      (Nat.pair (pcN w) (Nat.pair (stateRemC (pcT w) / 2 % 2)
+        (xSubStep P₀ P₁ hDiff0 splitX hSplitX
+          (Nat.pair (pcN w) (Nat.pair (stateRemC (pcT w) % 2) (stateInnerC (pcT w)))))))) :=
+    (primrec_ySubStep P₀ P₁ hDiff1 splitY hSplitY).comp hw2
+  have hrem' : Nat.Primrec (fun w => stateRemC (pcT w) / 4) := by
+    have : Nat.Primrec (fun w => stateRemC (pcT w) / 2 / 2) :=
+      primrec_div2.comp (primrec_div2.comp hrem)
+    exact this.of_eq fun w => by rw [Nat.div_div_eq_div_mul]
+  exact (hrem'.pair hs2).of_eq fun w => by
+    unfold atomPairStep packStateC
+    simp only []
+
+/-- **`atomPairCodeState`, the full recursion.** `atomPairCodeState (pair k n)` is the depth-`n`
+packed state for bit-source `k` (whose bits `(k / 4ʸ) % 2`/`((k / 4ʸ) / 2) % 2` supply `(δ y).1`/
+`(δ y).2` at every depth `y < n`) — mirroring `Theorem88d.lean`'s `atomUCodeState` exactly. -/
+noncomputable def atomPairCodeState (t : ℕ) : ℕ :=
+  t.unpair.2.rec (atomPairBase P₀ P₁ t.unpair.1) (fun y IH =>
+    atomPairStep P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY
+      (Nat.pair t.unpair.1 (Nat.pair y IH)))
+
+theorem primrec_atomPairCodeState :
+    Nat.Primrec (atomPairCodeState P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY) :=
+  (Nat.Primrec.prec (primrec_atomPairBase P₀ P₁)
+    (primrec_atomPairStep P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY)).of_eq fun _ => rfl
+
+/-- **The depth-`n` `D₀`-side index**, for bit-source `k`. -/
+noncomputable def atomPairIdx0 (n k : ℕ) : ℕ :=
+  stateIdx0 (stateInnerC (atomPairCodeState P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY
+    (Nat.pair k n)))
+
+/-- **The depth-`n` `D₁`-side index**, for bit-source `k`. -/
+noncomputable def atomPairIdx1 (n k : ℕ) : ℕ :=
+  stateIdx1 (stateInnerC (atomPairCodeState P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY
+    (Nat.pair k n)))
+
+/-- **The depth-`n` shared junk flag**, for bit-source `k` (`1` iff both sides are already `∅`). -/
+noncomputable def atomPairJunk (n k : ℕ) : ℕ :=
+  stateJunk (stateInnerC (atomPairCodeState P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY
+    (Nat.pair k n)))
+
+theorem primrec_atomPairIdx0 : Nat.Primrec
+    (fun t : ℕ => atomPairIdx0 P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY t.unpair.1 t.unpair.2) :=
+  (primrec_stateIdx0.comp (primrec_stateInnerC.comp
+    ((primrec_atomPairCodeState P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY).comp
+      (Nat.Primrec.right.pair Nat.Primrec.left)))).of_eq fun _ => rfl
+
+theorem primrec_atomPairIdx1 : Nat.Primrec
+    (fun t : ℕ => atomPairIdx1 P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY t.unpair.1 t.unpair.2) :=
+  (primrec_stateIdx1.comp (primrec_stateInnerC.comp
+    ((primrec_atomPairCodeState P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY).comp
+      (Nat.Primrec.right.pair Nat.Primrec.left)))).of_eq fun _ => rfl
+
+theorem primrec_atomPairJunk : Nat.Primrec
+    (fun t : ℕ => atomPairJunk P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY t.unpair.1 t.unpair.2) :=
+  (primrec_stateJunk.comp (primrec_stateInnerC.comp
+    ((primrec_atomPairCodeState P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY).comp
+      (Nat.Primrec.right.pair Nat.Primrec.left)))).of_eq fun _ => rfl
+
+end AtomPairCode
