@@ -881,6 +881,135 @@ theorem xStep_snd_eq_inter_XPseq (δ : ℕ → Bool × Bool) (n : ℕ) :
         xStep_snd_subset hD₁nomin hAB' hBmem' (X n) true hz'
       exact absurd (Set.mem_inter hzB' hzB) (by rw [hdisjBB]; simp)
 
+/-! ### Exercise 8.12(c)(vi)(4)(b)–(d): recovering `Y n` on `D₀`'s side directly from `atomPair`
+
+Symmetric to `XPseq` above, but genuinely harder: `yStep`'s own inputs (the *post*-`X`-sub-step
+values `A1`/`B1`) already depend on `(δ n).1` itself, not just history strictly below `n` — unlike
+`xStep`'s inputs (`atomPair δ n`), which depend only on history strictly below `n`. So `YPseq`'s
+union needs an *extra* free `Bool` parameter `bx` for position `n`'s `X`-sub-step bit ((b) below),
+and relating an arbitrary such `bx` back to a concrete history's own bit needs a
+`Function.update`-style bridge ((c) below, `xStep_spec_bit`, a drop-in generalization of
+`xStep_spec` to an arbitrary bit rather than `δ n`'s own) before the "I-formula" itself ((d)) can
+go through. -/
+
+open Classical in
+/-- **`YPseq`** (8.12(c)(vi)(4)(b)): the union, over all depth-`n` histories *and* a free `Bool`
+`bx` for position `n`'s `X`-sub-step bit, of the `D₀`-piece chosen by the `Y`-sub-step's "+" branch
+against `Y n`. Recovers `Y n`'s correspondent on `D₀`'s side. -/
+noncomputable def YPseq (n : ℕ) : Set α :=
+  ⋃ (δ' : Fin n → Bool × Bool) (bx : Bool),
+    (yStep D₀ hD₀nomin
+      (xStep D₁ hD₁nomin (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y (extendTruePair δ') n).1
+        (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y (extendTruePair δ') n).2 (X n) bx).1
+      (xStep D₁ hD₁nomin (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y (extendTruePair δ') n).1
+        (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y (extendTruePair δ') n).2 (X n) bx).2
+      (Y n) true).1
+
+omit hD₀pos hD₀diff hD₁pos hD₁diff hXmem hYmem hD₀mne hD₁mne in
+theorem subset_YPseq {n : ℕ} (δ' : Fin n → Bool × Bool) (bx : Bool) :
+    (yStep D₀ hD₀nomin
+        (xStep D₁ hD₁nomin (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y (extendTruePair δ') n).1
+          (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y (extendTruePair δ') n).2 (X n) bx).1
+        (xStep D₁ hD₁nomin (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y (extendTruePair δ') n).1
+          (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y (extendTruePair δ') n).2 (X n) bx).2
+        (Y n) true).1 ⊆ YPseq D₀ D₁ hD₀nomin hD₁nomin X Y n := by
+  intro z hz
+  exact Set.mem_iUnion.mpr ⟨δ', Set.mem_iUnion.mpr ⟨bx, hz⟩⟩
+
+/-- **`xStep_spec_bit`** (8.12(c)(vi)(4)(c)): a drop-in generalization of `xStep_spec` to an
+*arbitrary* bit `bx`, not just `δ n`'s own first component — the `SplitSpec'` preconditions `yStep`
+needs, transported across the `X`-sub-step at bit `bx`, for *any* history `δ`. Proved by
+transporting `xStep_spec` itself across a `Function.update`-adjusted history `δ''` that agrees with
+`δ` below `n` and has `(δ'' n).1 = bx` exactly — the two-sided analogue of `Theorem88.lean`'s
+`Function.update`-based `δ2` device in `split_fst_eq_inter_Yseq`. -/
+theorem xStep_spec_bit (δ : ℕ → Bool × Bool) (n : ℕ) (bx : Bool) :
+    ((xStep D₁ hD₁nomin (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y δ n).1
+        (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y δ n).2 (X n) bx).2 = ∅ ↔
+      (xStep D₁ hD₁nomin (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y δ n).1
+        (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y δ n).2 (X n) bx).1 = ∅) ∧
+      ((xStep D₁ hD₁nomin (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y δ n).1
+          (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y δ n).2 (X n) bx).1 = ∅ ∨
+        D₀.mem (xStep D₁ hD₁nomin (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y δ n).1
+          (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y δ n).2 (X n) bx).1) := by
+  set δ'' := Function.update (extendTruePair (restrictFinPair δ n)) n (bx, true) with hδ''def
+  have hagree : ∀ i < n, δ'' i = δ i := by
+    intro i hi
+    have h1 : δ'' i = (extendTruePair (restrictFinPair δ n)) i := by
+      simp [hδ''def, Function.update_of_ne (ne_of_lt hi)]
+    rw [h1]; exact extendTruePair_restrictFinPair_agree δ n i hi
+  have hbit : (δ'' n).1 = bx := by simp [hδ''def]
+  have hcongr : atomPair D₀ D₁ hD₀nomin hD₁nomin X Y δ'' n =
+      atomPair D₀ D₁ hD₀nomin hD₁nomin X Y δ n := atomPair_congr D₀ D₁ hD₀nomin hD₁nomin X Y hagree
+  have hspec := xStep_spec D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin X Y hXmem hYmem
+    hD₀mne hD₁mne δ'' n
+  rwa [hcongr, hbit] at hspec
+
+/-- **The "I-formula" for `YPseq`** (8.12(c)(vi)(4)(d)): the `D₀`-piece chosen by the `Y`-sub-step's
+"+" branch (applied to the post-`X`-sub-step values at *any* history `δ`'s own bit `(δ n).1`) is
+exactly the intersection of that post-`X`-sub-step `D₀`-value with `YPseq n`. Mirrors
+`xStep_snd_eq_inter_XPseq`, but needs `xStep_spec_bit`'s bridge (unlike `XPseq`'s proof) to handle
+the `⊇` direction's "history agrees below `n` but the union's bit differs from `(δ n).1`" case. -/
+theorem yStep_fst_eq_inter_YPseq (δ : ℕ → Bool × Bool) (n : ℕ) :
+    (yStep D₀ hD₀nomin
+        (xStep D₁ hD₁nomin (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y δ n).1
+          (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y δ n).2 (X n) (δ n).1).1
+        (xStep D₁ hD₁nomin (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y δ n).1
+          (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y δ n).2 (X n) (δ n).1).2
+        (Y n) true).1 =
+      (xStep D₁ hD₁nomin (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y δ n).1
+          (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y δ n).2 (X n) (δ n).1).1 ∩
+        YPseq D₀ D₁ hD₀nomin hD₁nomin X Y n := by
+  obtain ⟨hBA, hAmem⟩ := xStep_spec_bit D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin
+    X Y hXmem hYmem hD₀mne hD₁mne δ n (δ n).1
+  set A1 := (xStep D₁ hD₁nomin (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y δ n).1
+    (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y δ n).2 (X n) (δ n).1).1 with hA1def
+  set B1 := (xStep D₁ hD₁nomin (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y δ n).1
+    (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y δ n).2 (X n) (δ n).1).2 with hB1def
+  set J := (yStep D₀ hD₀nomin A1 B1 (Y n) true).1 with hJdef
+  apply Set.Subset.antisymm
+  · have hJsubA1 : J ⊆ A1 := yStep_fst_subset hD₀nomin hBA hAmem (Y n) true
+    have hJsubY : J ⊆ YPseq D₀ D₁ hD₀nomin hD₁nomin X Y n := by
+      have hcongr : atomPair D₀ D₁ hD₀nomin hD₁nomin X Y
+          (extendTruePair (restrictFinPair δ n)) n =
+          atomPair D₀ D₁ hD₀nomin hD₁nomin X Y δ n :=
+        atomPair_congr D₀ D₁ hD₀nomin hD₁nomin X Y
+          (fun i hi => extendTruePair_restrictFinPair_agree δ n i hi)
+      have hmem := subset_YPseq D₀ D₁ hD₀nomin hD₁nomin X Y (restrictFinPair δ n) (δ n).1
+      rwa [hcongr] at hmem
+    exact Set.subset_inter hJsubA1 hJsubY
+  · rintro z ⟨hzA1, hzY⟩
+    obtain ⟨δ', hz'⟩ := Set.mem_iUnion.mp hzY
+    obtain ⟨bx, hz''⟩ := Set.mem_iUnion.mp hz'
+    by_cases hagree : ∀ i < n, extendTruePair δ' i = δ i
+    · have hABeq : atomPair D₀ D₁ hD₀nomin hD₁nomin X Y (extendTruePair δ') n =
+          atomPair D₀ D₁ hD₀nomin hD₁nomin X Y δ n :=
+        atomPair_congr D₀ D₁ hD₀nomin hD₁nomin X Y hagree
+      by_cases hbxeq : bx = (δ n).1
+      · rw [hABeq, hbxeq] at hz''
+        exact hz''
+      · obtain ⟨hAB, -, hBmem⟩ := atomPair_invariant D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff
+          hD₁nomin X Y hXmem hYmem hD₀mne hD₁mne δ n
+        have hxdisj := xStep_disjoint_of_ne hD₁nomin hAB hBmem (X n) hbxeq
+        rw [hABeq] at hz''
+        have hzA1' : z ∈ (xStep D₁ hD₁nomin (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y δ n).1
+            (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y δ n).2 (X n) bx).1 := by
+          obtain ⟨hBA', hAmem'⟩ := xStep_spec_bit D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff
+            hD₁nomin X Y hXmem hYmem hD₀mne hD₁mne δ n bx
+          exact yStep_fst_subset hD₀nomin hBA' hAmem' (Y n) true hz''
+        exact absurd (Set.mem_inter hzA1' hzA1) (by rw [hxdisj.1]; simp)
+    · push Not at hagree
+      obtain ⟨j, hj, hjne⟩ := hagree
+      have hdisjAA := (atomPair_disjoint D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin
+        X Y hXmem hYmem hD₀mne hD₁mne (extendTruePair δ') δ n ⟨j, hj, hjne⟩).1
+      have hzA1' : z ∈ (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y (extendTruePair δ') n).1 := by
+        obtain ⟨hBA', hAmem'⟩ := xStep_spec_bit D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff
+          hD₁nomin X Y hXmem hYmem hD₀mne hD₁mne (extendTruePair δ') n bx
+        have hJ'subA1' := yStep_fst_subset hD₀nomin hBA' hAmem' (Y n) true hz''
+        exact xStep_fst_subset D₁ hD₁nomin _ _ (X n) bx hJ'subA1'
+      have hzAfull : z ∈ (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y δ n).1 :=
+        xStep_fst_subset D₁ hD₁nomin _ _ (X n) (δ n).1 hzA1
+      exact absurd (Set.mem_inter hzA1' hzAfull) (by rw [hdisjAA]; simp)
+
 end AtomPair
 
 end Scott1980.Neighborhood

@@ -7426,3 +7426,56 @@ parameter to a concrete history's `(δ n).1`, reusing `xStep_spec`/`yStep_fst_su
 both halves are done, (vi)(5)/(vi)(6) (closed-form/transfer instantiation per side) and (vi)(7)
 (assembly) can proceed — though those sub-plans should also be re-examined against `atomPair`'s
 actual structure rather than assumed correct from the pre-plan, given (vi)(4)'s correction above.
+
+---
+
+**2026-07-04 — `arxiv.md` restructured: 8.12(c)(vi)(4) split into (a)–(d), then (b)–(d)
+COMPLETE — `Exercise 8.12(c)(vi)(4)` is now fully `Pass`.** Per user request, first split the
+single (vi)(4) row in `arxiv.md` into 4 sub-sub-sub-sub-parts: **(a)** the already-complete `X n`-
+side (`extendTruePair`/`restrictFinPair`/`XPseq`/`subset_XPseq`/`xStep_snd_eq_inter_XPseq`,
+marked `Pass`), and **(b)**/(c)/(d) the remaining `Y n`-side work as three concrete `Deferred`
+steps (define `YPseq`; the `Function.update`-based bit-realization bridge; the I-formula).
+Committed/pushed that restructuring alone first, then implemented (b)–(d) in series:
+
+* **(b) `YPseq`/`subset_YPseq`**: `YPseq n := ⋃ (δ' : Fin n → Bool × Bool) (bx : Bool), (yStep D₀
+  hD₀nomin A1 B1 (Y n) true).1` where `A1`/`B1` are `xStep`'s outputs at bit `bx` on
+  `atomPair (extendTruePair δ') n` — the extra free `bx` (absent from `XPseq`) is forced because
+  `yStep`'s own inputs already depend on position `n`'s `X`-sub-step bit, not just history below
+  `n`. `subset_YPseq` is two nested `Set.mem_iUnion.mpr`, as trivial as `subset_XPseq`.
+* **(c) `xStep_spec_bit`**: a drop-in generalization of `xStep_spec` (8.12(c)(v)(2)) to an
+  arbitrary bit `bx` rather than `δ n`'s own — exactly the `Function.update`-based bridge
+  anticipated in the corrected (vi)(4) plan, and in `Theorem88.lean`'s own
+  `split_fst_eq_inter_Yseq` (its `δ2`/`δ3` device). `δ'' := Function.update
+  (extendTruePair (restrictFinPair δ n)) n (bx, true)`; agreement below `n` via
+  `Function.update_of_ne` + `extendTruePair_restrictFinPair_agree`; `(δ'' n).1 = bx` by `simp`;
+  then `xStep_spec` at `δ''`, transported by `atomPair_congr`'s agreement fact and the bit fact
+  (`rwa [hcongr, hbit] at hspec`).
+* **(d) `yStep_fst_eq_inter_YPseq`**: the `Y n`-side I-formula, assembled from (b)+(c) plus
+  `yStep_fst_subset`/`xStep_disjoint_of_ne`/`xStep_fst_subset`/`atomPair_disjoint`/
+  `atomPair_invariant`. The `⊇` direction needed a genuine **3-way** case split on the union
+  witness `(δ', bx)` (`XPseq`'s proof only needed 2, since it had no extra `bx`): (i) history
+  agrees below `n` *and* `bx = (δ n).1` — literally the same value after two `rw`s; (ii) history
+  agrees below `n` but `bx ≠ (δ n).1` — `xStep_disjoint_of_ne` at `δ`'s own `A`,`B`, plus
+  `xStep_spec_bit`-at-`bx`, gives disjoint `xStep`-`.1` outputs directly; (iii) history disagrees
+  strictly below `n` — `atomPair_disjoint`'s `.1` clause, with `xStep_fst_subset` (unconditional)
+  bounding *both* sides' `xStep`-`.1` outputs back up to the full `atomPair`-`.1` values first
+  (needed one extra step vs. `XPseq`'s proof, caught by a failed `rw` during development: `hzA1`
+  wasn't literally `z ∈ (atomPair δ n).1`, only `z ∈ A1 ⊆ (atomPair δ n).1`).
+
+**Zero `sorry`.** Whole-project `lake build` (3163 jobs) green. `#print axioms` on
+`subset_YPseq`/`xStep_spec_bit`/`yStep_fst_eq_inter_YPseq` all give
+`⊆{propext,Classical.choice,Quot.sound}`, matching the baseline. `arxiv.md`: (vi)(4)(b)–(d) rows
+updated to `Pass`; (vi)(4) umbrella row updated to `Pass` (all 4 sub-parts done); 8.12(c)(vi)
+umbrella row updated to "(1)–(4) `Pass`, (5)–(7) `Deferred`"; 8.12(c) top-level status line
+updated.
+
+**Status: Exercise 8.12(c)(vi)(4) is fully `Pass`.** This completes the entire two-sided
+half-step closed-form layer (`XPseq`/`YPseq` and their I-formulas) that (vi)(1)–(vi)(3)'s
+abstract apparatus turned out not to bridge to directly. **Next up:** Exercise 8.12(c)(vi)(5) —
+re-examine its pre-plan (written before (vi)(4)'s correction) against what's actually now
+available (`XPseq`/`xStep_snd_eq_inter_XPseq` and `YPseq`/`yStep_fst_eq_inter_YPseq`, both
+half-step, `atomPair`-native closed forms — not `YseqE` instances), and adjust before
+implementing: likely needs its own transfer-lemma layer built on `XPseq`/`YPseq` directly
+(possibly reusing (vi)(2)'s *purely combinatorial* `transfer_dir` core, which never depended on
+`genAtom`/`atomE` specifically), rather than a literal `E:=D₀`/`E:=D₁` instantiation of
+`Exercise812cYseq.lean`.
