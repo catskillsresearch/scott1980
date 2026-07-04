@@ -2287,9 +2287,9 @@ Lecture VIII covers retractions, projections, and the construction of the univer
 
 #### Exercise 8.12(d)(3)(a)
 * **Mathematical Target:** `IsComputableDiff`: a computable "diff index" hypothesis mirroring `ComputablePresentation`'s `inter`/`cons_computable` pair, but for `\` (the missing prerequisite Scott's Definition 7.1 doesn't provide)
-* **Lean File:** — (not yet started)
-* **Proof Notes:** `diffIdx : ℕ → ℕ → ℕ`, `Nat.Primrec`, with `diffIdx_spec : (∃ k, X k = X n \ X m) → X (diffIdx n m) = X n \ X m` (mirroring `inter_spec` exactly) plus a `RecDecidable₂` decider for "`X n \ X m` is a genuine neighbourhood" (mirroring `cons_computable`). One generic structure serves both `P₀` and `P₁`, same design as (d)(2)'s `IsComputableSplit`.
-* **Status:** Deferred
+* **Lean File:** `Scott1980/Neighborhood/Exercise812d.lean`
+* **Proof Notes:** `diffIdx : ℕ → ℕ → ℕ`, `Nat.Primrec` (`diffIdx_primrec`), with `diffIdx_spec : (∃ k, X k = X n \ X m) → X (diffIdx n m) = X n \ X m` (mirroring `inter_spec` exactly) plus `diff_computable : RecDecidable₂ (fun n m => ∃ k, X k = X n \ X m)` (mirroring `cons_computable`'s role for `∩`). One generic structure serves both `P₀` and `P₁`, same design as (d)(2)'s `IsComputableSplit`. Added a derived (not structure-bundled) consequence, `diff_exists_iff_ne_empty`, showing that under `DiffClosed` + `NoMinimal` the structure's existential phrasing "`X n \ X m` is a genuine neighbourhood" coincides with "`X n \ X m` is non-empty" (via `DiffClosed`'s `X\Y=∅ ∨ mem(X\Y)` dichotomy plus `NoMinimal.mem_ne_empty`/`surj`) — kept off the structure itself (mirroring how `DiffClosed`/`NoMinimal` are separate hypotheses elsewhere), but available for `(d)(3)(b)`–`(f)` to read `diff_computable` as a genuine emptiness decider directly. Needed `open Domain.Recursive` added to the file (for `RecDecidable₂`, not previously referenced in this file). Axiom-audited: `diff_exists_iff_ne_empty` gives `⊆{propext, Classical.choice, Quot.sound}`, matching the (c)/(d) baseline. Whole-project `lake build` (3164 jobs) green, zero `sorry`.
+* **Status:** Pass
 
 #### Exercise 8.12(d)(3)(b)
 * **Mathematical Target:** The `X`-sub-step's code-level state transition

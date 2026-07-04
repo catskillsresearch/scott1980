@@ -41,7 +41,7 @@ We also verify, as a sanity check that the abstraction is not vacuous and genuin
 
 namespace Scott1980.Neighborhood
 
-open NeighborhoodSystem
+open NeighborhoodSystem Domain.Recursive
 
 /-! ### The two named sub-steps of `atomPair`, generalized over an abstract split
 
@@ -491,5 +491,65 @@ theorem negIdx_mem (h : IsComputableSplit P Q split) (n m k : ℕ) :
   rw [h.negIdx_spec]; exact Q.mem_X _
 
 end IsComputableSplit
+
+/-! ## 8.12(d)(3)(a): `IsComputableDiff` — the missing "diff index" prerequisite
+
+`ComputablePresentation` (Definition 7.1) only makes **intersection** effective (`inter`/
+`inter_spec`, guarded by the consistency decider `cons_computable`). `atomPairG`'s recursion
+(`xStepG`/`yStepG`) needs the *direct* refinement `A \ Xn` to stay effectively indexed at every
+step too (the "split" sub-step is handled by `IsComputableSplit` above), and Definition 7.1 simply
+has no such primitive for `\`. `IsComputableDiff` supplies exactly that, mirroring `inter`/
+`inter_primrec`/`inter_spec`'s shape — with `cons_computable`'s role (deciding *consistency*,
+i.e. whether the operation's output is a genuine neighbourhood) played here by `diff_computable`.
+
+Both `IsComputableSplit`'s clause `A ∩ Xn = ∅ ↔ (split A B Xn).1 = ∅` (`SplitSpec'`) and
+`NeighborhoodSystem.DiffClosed` (`X \ Y = ∅ ∨ D.mem (X \ Y)`, and no neighbourhood is `∅` under
+`NoMinimal`) together mean "`X n \ X m` is a genuine neighbourhood" and "`X n \ X m` is non-empty"
+coincide propositionally; `diff_computable` is phrased as the *existence* form (matching
+`cons_computable`'s own phrasing) so it stays a direct structural mirror, but every later sub-part
+is free to read it as an emptiness decider via that coincidence. One structure serves **both**
+`P₀` and `P₁` symmetrically — no separate hypothesis needed per side. -/
+
+/-- **`IsComputableDiff P`**: set-difference relative to the presentation `P` is computable — a
+primitive-recursive `diffIdx : ℕ → ℕ → ℕ` indexing `X n \ X m` whenever that difference is a
+genuine neighbourhood (`diffIdx_spec`, mirroring `inter_spec` exactly), together with a decider
+for that very side-condition (`diff_computable`, mirroring `cons_computable`). Only `diffIdx` is
+data; the rest are `Prop`s, so this stays choice-free to *state* (any particular instance may of
+course need `Classical.choice` to *construct*, exactly like `inter`/`cons_computable` themselves
+would for an arbitrary effectively-given system). -/
+structure IsComputableDiff {α : Type*} {V : NeighborhoodSystem α} (P : ComputablePresentation V) where
+  /-- Index of `X n \ X m`, as a function of the two input indices. -/
+  diffIdx : ℕ → ℕ → ℕ
+  /-- `diffIdx` is primitive recursive (on the `Nat.pair` coding of `n, m`). -/
+  diffIdx_primrec : Nat.Primrec (fun t => diffIdx t.unpair.1 t.unpair.2)
+  /-- `diffIdx n m` genuinely indexes `X n \ X m` whenever that difference is (exactly) some
+  `X k` — i.e. whenever it is a genuine neighbourhood. -/
+  diffIdx_spec : ∀ {n m : ℕ}, (∃ k, P.X k = P.X n \ P.X m) → P.X (diffIdx n m) = P.X n \ P.X m
+  /-- **7.1(i)-for-`\`**: "`X n \ X m` is a genuine neighbourhood" is recursively decidable in
+  `n, m`, mirroring `cons_computable`'s role for `∩`. -/
+  diff_computable : RecDecidable₂ (fun n m => ∃ k, P.X k = P.X n \ P.X m)
+
+namespace IsComputableDiff
+
+variable {α : Type*} {V : NeighborhoodSystem α} {P : ComputablePresentation V}
+
+/-- **The emptiness/genuineness dichotomy**, transported through `DiffClosed` +
+`NoMinimal.mem_ne_empty`: for a `DiffClosed`, `NoMinimal` system, "`X n \ X m` is a genuine
+neighbourhood" and "`X n \ X m` is non-empty" are the *same* proposition — so `diff_computable`
+may equally be read as an emptiness decider. Not needed to *state* `IsComputableDiff` (kept off
+the structure itself, matching how `DiffClosed`/`NoMinimal` are separate hypotheses from
+`ComputablePresentation` elsewhere in this file), but recorded here once for later sub-parts to
+reuse directly instead of re-deriving. -/
+theorem diff_exists_iff_ne_empty (hdiff : V.DiffClosed) (hnomin : V.NoMinimal) (n m : ℕ) :
+    (∃ k, P.X k = P.X n \ P.X m) ↔ P.X n \ P.X m ≠ ∅ := by
+  constructor
+  · rintro ⟨k, hk⟩ hempty
+    exact NoMinimal.mem_ne_empty hnomin (P.mem_X k) (hk.trans hempty)
+  · intro hne
+    rcases hdiff (P.mem_X n) (P.mem_X m) with hempty | hmem
+    · exact absurd hempty hne
+    · exact P.surj hmem
+
+end IsComputableDiff
 
 end Scott1980.Neighborhood

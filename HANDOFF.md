@@ -8269,3 +8269,46 @@ No code changes this checkpoint — `(d)(1)`/`(d)(2)` remain the only `Pass`ed p
 awaiting confirmation before executing.** **Next up:** either execute `(d)(3)(a)` (the
 `IsComputableDiff` prerequisite) and continue sub-part by sub-part, or revisit scope/priorities for
 the rest of 8.12(d) in a future session.
+
+## 2026-07-04 checkpoint — Exercise 8.12(d)(3)(a): `IsComputableDiff`
+
+User asked to proceed through 8.12(d)(3)'s sub-parts (a) through (f) one at a time, each with its
+own commit/push. Appended to `Exercise812d.lean`.
+
+**Implementation:** `IsComputableDiff {α} {V} (P : ComputablePresentation V)` — a direct structural
+mirror of `ComputablePresentation`'s own `inter`/`inter_primrec`/`inter_spec` triple, but for `\`:
+`diffIdx : ℕ → ℕ → ℕ` (data), `diffIdx_primrec : Nat.Primrec (fun t => diffIdx t.unpair.1
+t.unpair.2)`, `diffIdx_spec : (∃ k, X k = X n \ X m) → X (diffIdx n m) = X n \ X m` (mirroring
+`inter_spec` exactly, precondition phrased as *equality* rather than `inter_spec`'s `⊆`, since
+`⊆`-consistency and exact-equality provably coincide for `∩` via `NeighborhoodSystem.inter_mem` +
+`surj`, but there is no analogous "sub-neighbourhood of the diff" primitive to phrase an `⊆`-style
+precondition against for `\`), and `diff_computable : RecDecidable₂ (fun n m => ∃ k, X k = X n \
+X m)` playing `cons_computable`'s role. Only `diffIdx` is data, so the structure is choice-free to
+*state*. One generic structure serves both `P₀` and `P₁` symmetrically (same design win as (d)(2)'s
+`IsComputableSplit`) — no separate `X`/`Y`-flavoured version needed.
+
+**Added one derived fact** (not bundled into the structure, to mirror how `DiffClosed`/`NoMinimal`
+are kept as separate hypotheses elsewhere in this file rather than folded into
+`ComputablePresentation`/`IsComputableSplit`): `diff_exists_iff_ne_empty` — under `V.DiffClosed` +
+`V.NoMinimal`, "`∃ k, X k = X n \ X m`" (the structure's existential phrasing) coincides exactly
+with "`X n \ X m ≠ ∅`" (`DiffClosed`'s `X\Y=∅ ∨ mem(X\Y)` dichotomy rules out a third option;
+`NoMinimal.mem_ne_empty` rules out the "empty but somehow indexed" case; `surj` supplies the index
+from `mem`). This is exactly finding 3 from the (d)(3) re-scoping checkpoint made precise: once
+`(b)`/`(c)` instantiate `diff_computable` against a *concrete* `DiffClosed`+`NoMinimal` system,
+this lemma lets them read it directly as the emptiness decider `atomStep`'s `datomDec`-style
+case-analysis needs, with no further derivation.
+
+**Lean gotcha hit:** `RecDecidable₂` wasn't in scope (`Domain.Recursive` not previously referenced
+by name in this file, only `Nat.Primrec`/`ComputablePresentation`) — added `Domain.Recursive` to
+the file's `open` line.
+
+Axiom-audited: `diff_exists_iff_ne_empty` gives `⊆{propext, Classical.choice, Quot.sound}`,
+matching the (c)/(d) baseline (it is a `Prop`-level consequence, not a data construction, so
+`Classical.choice` here is within the project's choice discipline). Whole-project `lake build`
+(3164 jobs) green, zero `sorry`.
+
+**Status: Exercise 8.12(d)(3)(a) is `Pass`.** **Next up:** 8.12(d)(3)(b) — the `X`-sub-step's
+code-level state transition (per-depth state packing both sides' presentation-index plus a
+junk/non-junk flag per side, `Theorem88d.lean`'s `packState` style; intersect/diff the `D₀`-side
+index directly by `n` via `P₀.inter`/(a)'s `diffIdx`, split the `D₁`-side index via (d)(2)'s
+`IsComputableSplit`), as a single `Nat.Primrec` function.
