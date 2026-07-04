@@ -1447,3 +1447,63 @@ theorem atomPairCodeState_disjoint {n k k' : ℕ}
     P₀.X P₁.X P₀.mem_X P₁.mem_X hD₀mne hD₁mne (deltaPair k) (deltaPair k') n hne
 
 end AtomPairCorrect3
+
+/-! ## 8.12(d)(4)(a): `IsComputableUnion` — the missing "union index" prerequisite
+
+`ComputablePresentation` (Definition 7.1) only makes **intersection** effective (`inter`/
+`inter_spec`, guarded by `cons_computable`), because `NeighborhoodSystem.inter_mem` makes
+intersection a *primitive* closure property of a neighbourhood system — unlike `∩`, `∪` is not
+required to stay inside `V.mem` at all. `Exercise812c.lean`'s `XPseq`/`YPseq` (`(d)(4)`'s eventual
+code-level targets, `XPseqCode`/`YPseqCode`) are nonetheless *growing unions* of atoms that Scott's
+own `NoMinimal`/`SplitSpec'` argument (`XPseq_mem`/`YPseq_mem`, already `Pass`) shows land back
+inside `D₁.mem`/`D₀.mem` — but only as a `Prop`-level existential (via `P.surj`), giving no way to
+*compute* the resulting index. `IsComputableUnion` supplies exactly that missing effective witness,
+mirroring `IsComputableDiff` (`(d)(3)(a)`)'s shape verbatim but for `∪` instead of `\`. One
+structure again serves **both** `P₀` and `P₁` symmetrically. -/
+
+/-- **Union-closure**, the `∪` analogue of `NeighborhoodSystem.DiffClosed`: the union of two
+neighbourhoods is again a neighbourhood. Unlike `DiffClosed`, no "`-or-∅`" branch is needed — a
+union of two `NoMinimal`-nonempty neighbourhoods is automatically itself non-empty, so the only
+question `UnionClosed` settles is whether the union stays inside `V.mem`. -/
+def NeighborhoodSystem.UnionClosed {α : Type*} (D : NeighborhoodSystem α) : Prop :=
+  ∀ {X Y : Set α}, D.mem X → D.mem Y → D.mem (X ∪ Y)
+
+/-- **`IsComputableUnion P`**: set-union relative to the presentation `P` is computable — a
+primitive-recursive `unionIdx : ℕ → ℕ → ℕ` indexing `X n ∪ X m` whenever that union is a genuine
+neighbourhood (`unionIdx_spec`, mirroring `inter_spec`/`IsComputableDiff.diffIdx_spec` exactly),
+together with a decider for that side-condition (`union_computable`, mirroring
+`cons_computable`/`IsComputableDiff.diff_computable`). Only `unionIdx` is data; the rest are
+`Prop`s, so this stays choice-free to *state* (any particular instance may of course need
+`Classical.choice` to *construct*, exactly like `inter`/`cons_computable`/`IsComputableDiff`
+themselves would for an arbitrary effectively-given system). -/
+structure IsComputableUnion {α : Type*} {V : NeighborhoodSystem α} (P : ComputablePresentation V)
+    where
+  /-- Index of `X n ∪ X m`, as a function of the two input indices. -/
+  unionIdx : ℕ → ℕ → ℕ
+  /-- `unionIdx` is primitive recursive (on the `Nat.pair` coding of `n, m`). -/
+  unionIdx_primrec : Nat.Primrec (fun t => unionIdx t.unpair.1 t.unpair.2)
+  /-- `unionIdx n m` genuinely indexes `X n ∪ X m` whenever that union is (exactly) some `X k` —
+  i.e. whenever it is a genuine neighbourhood. -/
+  unionIdx_spec : ∀ {n m : ℕ}, (∃ k, P.X k = P.X n ∪ P.X m) → P.X (unionIdx n m) = P.X n ∪ P.X m
+  /-- **7.1(i)-for-`∪`**: "`X n ∪ X m` is a genuine neighbourhood" is recursively decidable in
+  `n, m`, mirroring `cons_computable`'s role for `∩`. -/
+  union_computable : RecDecidable₂ (fun n m => ∃ k, P.X k = P.X n ∪ P.X m)
+
+namespace IsComputableUnion
+
+variable {α : Type*} {V : NeighborhoodSystem α} {P : ComputablePresentation V}
+
+/-- **Under `UnionClosed`, the existential is unconditionally true** — every `X n ∪ X m` is a
+genuine neighbourhood, hence indexed by `P.surj`. Mirrors
+`IsComputableDiff.diff_exists_iff_ne_empty`, but simpler: `∪` has no "-or-empty" branch to rule
+out, so this is a plain existence fact rather than an `iff`. Not needed to *state*
+`IsComputableUnion` (kept off the structure itself, matching how `DiffClosed`/`UnionClosed` are
+separate hypotheses from `ComputablePresentation` elsewhere in this file); recorded here for
+convenience, though the eventual `(d)(4)(c)`/`(d)` instantiation is expected to discharge
+`unionIdx_spec`'s hypothesis directly from `XPseq_mem`/`YPseq_mem`-style facts specific to the
+atoms actually in play, rather than from a blanket `UnionClosed` on all of `D`. -/
+theorem union_exists (hunion : V.UnionClosed) (n m : ℕ) :
+    ∃ k, P.X k = P.X n ∪ P.X m :=
+  P.surj (hunion (P.mem_X n) (P.mem_X m))
+
+end IsComputableUnion

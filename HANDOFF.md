@@ -8532,3 +8532,65 @@ matching the established baseline. Whole-project `lake build` (3164 jobs) green,
 fully `Pass`.** **Next up:** 8.12(d)(4)–(6) (currently `Deferred`, awaiting scoping/confirmation)
 — the code-level `XPseqCode`/`YPseqCode` sequences, their computability, and the final effective
 domain isomorphism assembling `(d)(1)`–`(3)` into `EffectiveIso`.
+
+## 2026-07-04 checkpoint — Exercise 8.12(d)(4) scoped into 4 sub-parts (a)–(d)
+
+Re-scoping investigation in `arxiv.md`, done before writing any code, comparing against
+`Theorem88d.lean`'s `YseqCode`/`unionUX` precedent and `Approximable.lean`/`Theorem88n.lean`'s
+`ofIso` precedent. Key findings:
+
+1. **A genuinely new missing prerequisite.** `Theorem88d.lean`'s `unionUX` is bespoke to `U`'s
+   list-based codes and its unconditional union-closure; neither generalizes, since Scott's
+   `ComputablePresentation` (Definition 7.1) gives an intersection-index primitive but no union
+   analogue (`V.mem` isn't required closed under `∪` at all). `XPseq_mem`/`YPseq_mem` (already
+   `Pass`, (c)(vii)) show the *specific* unions in play here land back in `D₁.mem`/`D₀.mem`, but
+   only as a `Prop`-level existential — no effective index.
+2. **Union sizes match `deltaPair`'s existing base-4 convention** (`4ⁿ`/`2·4ⁿ`, not `2ⁿ`) —
+   `(d)(3)(d)`'s `deltaPair` and `(d)(1)`'s `atomPairG_congr` are directly reusable, no new
+   bit-source encoding needed.
+3. **A classical generalization `(d)(1)`'s own docstring deferred here**: `XPseq`/`YPseq` are still
+   hardcoded to `splitChoice'`-based `xStep`/`atomPair`; a light `XPseqG`/`YPseqG` transcription
+   over abstract `splitX`/`splitY` is needed as a `Set`-level anchor, mirroring `Theorem88d.lean`'s
+   `genAtom` layer.
+4. **A downstream simplification for `(d)(6)`** (doesn't shrink `(d)(4)`'s scope): `Approximable.lean`'s
+   `ofIso` (Theorem 2.7) + `Theorem88n.lean`'s precedent (`isoInj := ofIso (domainIsoCode P)`) means
+   `EffectiveIso`'s `toMap`/`invMap` likely reuse `domainIso812c` directly via `ofIso`, rather than
+   rebuilding bespoke `ApproximableMap`s duplicating `toD1`/`toD0`. Unlike `Theorem88n.lean` (`D`/`D''`
+   share one index family via a literal involution `eIdx`), `D₀`/`D₁` have independent index
+   families, so the resulting relation's r.e.-ness still genuinely needs `XPseqCode`/`YPseqCode`.
+
+Re-scoped into `(d)(4)(a)`–`(d)`: (a) `IsComputableUnion` prerequisite, (b) `XPseqG`/`YPseqG`
+(light classical generalization), (c) `XPseqCode` (X-side fold + closed form), (d) `YPseqCode`
+(Y-side fold, extra `bx`-union layer, + closed form). Cross-reference notes added to `(d)(5)`/`(d)(6)`'s
+rows. Committed/pushed (`1a99460`).
+
+## 2026-07-04 checkpoint — Exercise 8.12(d)(4)(a): `IsComputableUnion`
+
+Appended to `Exercise812d.lean`, after `(d)(3)(f)`'s `atomPairCodeState_disjoint`.
+
+**Implementation:** direct structural mirror of `(d)(3)(a)`'s `IsComputableDiff`, but for `∪`
+instead of `\`: `IsComputableUnion P` bundles a primitive-recursive `unionIdx : ℕ → ℕ → ℕ` with
+`unionIdx_spec : (∃ k, X k = X n ∪ X m) → X (unionIdx n m) = X n ∪ X m` (mirroring `inter_spec`
+exactly) plus `union_computable : RecDecidable₂ (fun n m => ∃ k, X k = X n ∪ X m)` (mirroring
+`cons_computable`). One generic structure serves both `P₀` and `P₁`. Also added
+`NeighborhoodSystem.UnionClosed` (the `∪` analogue of `Exercise812c.lean`'s `DiffClosed`, but
+simpler — no "`-or-∅`" branch needed, since a union of two neighbourhoods is never empty whenever
+either side isn't) and a bonus corollary `IsComputableUnion.union_exists`, showing that under
+`UnionClosed` the existential in `unionIdx_spec` is unconditionally satisfiable (`P.surj` applied
+to `hunion (P.mem_X n) (P.mem_X m)`) — simpler than `IsComputableDiff.diff_exists_iff_ne_empty`
+since there's no dichotomy to derive, just a plain existence fact. Kept off the structure itself,
+same design rationale as `DiffClosed`/`NoMinimal` being separate from `ComputablePresentation`
+elsewhere in this file; explicitly noted in the docstring that the eventual `(d)(4)(c)`/`(d)`
+instantiation is expected to discharge `unionIdx_spec`'s hypothesis directly from
+`XPseq_mem`/`YPseq_mem`-style facts specific to the atoms in play, not from a blanket
+`UnionClosed` on all of `D`.
+
+No Lean gotchas — a clean, direct transcription. Axiom-audited: `IsComputableUnion.union_exists`
+depends on **no axioms at all** (fully constructive — even better than `IsComputableDiff`'s own
+corollary, which needs the ambient `Classical`/`propext`/`Quot.sound` footprint via `DiffClosed`'s
+dichotomy). Whole-project `lake build` (3164 jobs) green, zero `sorry`.
+
+**Status: Exercise 8.12(d)(4)(a) is `Pass`.** **Next up:** `(d)(4)(b)` — `XPseqG`/`YPseqG`, the
+classical `Set`-level generalization of `Exercise812c.lean`'s `XPseq`/`YPseq` over abstract
+`splitX`/`splitY`, transcribing `XPseq_mem`/`XPseq_zero`/`YPseq_mem`/`YPseq_zero` onto the
+abstracted definitions.
