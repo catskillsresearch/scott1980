@@ -1359,6 +1359,33 @@ theorem atomPair_snd_eq_genAtom (δ : ℕ → Bool × Bool) (n : ℕ) :
       · simp only [hb, Bool.false_eq_true, if_false]
         exact (inter_diff_eq_diff_of_subset hB1sub).symm
 
+/-! ### Exercise 8.12(c)(vi)(5)(c)(1): de-interleaving a sign sequence, and its round trip
+
+The first of the four sub-parts of (c)'s planned `hcore` fact for `transfer_dir`. Given an
+arbitrary `δ' : ℕ → Bool` (a sign sequence for the *interleaved* families `combinedX`/`combinedY`),
+`deinterleaveδ δ'` reads it two values at a time into a `ℕ → Bool × Bool` sign sequence for the
+*paired* family `atomPair` — the inverse of `combinedδ`. `combinedδ_deinterleaveδ` confirms
+re-interleaving recovers `δ'` exactly, feeding both (c)(2)'s even-index case and (c)(3)'s
+odd-index case. -/
+
+/-- The de-interleaving map: reads `δ'`'s values two at a time, `(δ' (2*k), δ' (2*k+1))`, as the
+`k`-th pair of bits — the inverse of `combinedδ`. -/
+def deinterleaveδ (δ' : ℕ → Bool) (k : ℕ) : Bool × Bool := (δ' (2 * k), δ' (2 * k + 1))
+
+omit hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin hXmem hYmem hD₀mne hD₁mne in
+/-- **Round-trip identity** (Exercise 8.12(c)(vi)(5)(c)(1)): re-interleaving `deinterleaveδ δ'`
+recovers `δ'` exactly. Proved by `funext` plus a parity case split on the point `m`, closed by
+`combinedδ_even`/`combinedδ_odd` and `omega`. -/
+theorem combinedδ_deinterleaveδ (δ' : ℕ → Bool) :
+    combinedδ (deinterleaveδ δ') = δ' := by
+  funext m
+  unfold combinedδ deinterleaveδ
+  split
+  · rename_i hm
+    rw [show 2 * (m / 2) = m from by omega]
+  · rename_i hm
+    rw [show 2 * (m / 2) + 1 = m from by omega]
+
 end AtomPair
 
 end Scott1980.Neighborhood

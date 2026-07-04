@@ -2160,8 +2160,32 @@ Lecture VIII covers retractions, projections, and the construction of the univer
 
 #### Exercise 8.12(c)(vi)(5)(c)
 * **Mathematical Target:** The matching-emptiness fact `∀ (δ' : ℕ → Bool) n, genAtom combinedX D₀.master δ' n = ∅ ↔ genAtom combinedY D₁.master δ' n = ∅` — the `hcore` hypothesis `Theorem88.lean`'s `transfer_dir` needs, for the interleaved families
+* **Lean File:** `Scott1980/Neighborhood/Exercise812c.lean` (not yet started) — umbrella; broken into 4 sub-parts (1)–(4) below, since the single planned paragraph is actually a definition + round-trip lemma + two independent case proofs + a final assembly, not one atomic step
+* **Proof Notes:** pure assembly overall, no new mathematical content, but genuinely multiple Lean steps: **(1)** define the de-interleaving map and prove the round-trip identity feeding both later cases; **(2)** the even-index case, via (b) + `atomPair_invariant`; **(3)** the odd-index case, via (b) + `xStep_spec_bit`; **(4)** assemble (1)–(3) (parity case-split on `n`) into the headline `∀ δ' n, …` statement. See sub-rows for the scoped breakdown.
+* **Status:** Partial ((1) `Pass`, fully choice-free `⊆{propext,Quot.sound}`; (2)–(4) `Deferred`)
+
+#### Exercise 8.12(c)(vi)(5)(c)(1)
+* **Mathematical Target:** Given arbitrary `δ' : ℕ → Bool`, de-interleave it into `δ k := (δ' (2*k), δ' (2*k+1)) : ℕ → Bool × Bool`, and prove that re-interleaving recovers `δ'` exactly: `combinedδ δ = δ'`
+* **Lean File:** `Scott1980/Neighborhood/Exercise812c.lean`
+* **Proof Notes:** `deinterleaveδ (δ' : ℕ → Bool) (k : ℕ) : Bool × Bool := (δ' (2 * k), δ' (2 * k + 1))` (plain `def`, no section variables needed, mirroring `combinedδ` itself). `combinedδ_deinterleaveδ : combinedδ (deinterleaveδ δ') = δ'`: `funext m`, `unfold combinedδ deinterleaveδ`, `split` on the resulting `if`, each branch closed by `rw [show 2 * (m / 2) = m from by omega]` (resp. `+ 1`) — the `Prod.fst`/`Prod.snd` projections of the literal pair reduce definitionally, so `rw`'s automatic closing `rfl` finishes each branch with no further tactics. Needed the same `omit hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin hXmem hYmem hD₀mne hD₁mne in` annotation as the neighboring `combinedδ_even`/`combinedδ_odd` (the theorem statement mentions no section variables, but per (b)'s documented `include`/`omit` pitfall, all ten still needed to be listed to avoid phantom leading parameters). Zero `sorry`; whole-project `lake build` (3163 jobs) green; `#print axioms` on `combinedδ_deinterleaveδ` gives `⊆{propext, Quot.sound}` — fully choice-free (no `Classical.choice`), strictly better than the section's `splitChoice'`-tainted baseline, since this lemma is pure arithmetic bookkeeping independent of the atom construction.
+* **Status:** Pass
+
+#### Exercise 8.12(c)(vi)(5)(c)(2)
+* **Mathematical Target:** The even-index case of `hcore`: `genAtom combinedX D₀.master δ' (2*n) = ∅ ↔ genAtom combinedY D₁.master δ' (2*n) = ∅`
 * **Lean File:** `Scott1980/Neighborhood/Exercise812c.lean` (not yet started)
-* **Proof Notes:** planned as pure assembly, no new mathematical content: given arbitrary `δ' : ℕ → Bool`, de-interleave it into `δ k := (δ' (2*k), δ' (2*k+1)) : ℕ → Bool × Bool` (re-interleaving recovers `δ'` exactly, i.e. `combinedδ δ = δ'`, by (b)'s definitions); case-split `n`'s parity — the even case reduces via (b) to `atomPair_invariant`'s clause (a) (already `Pass`, (iv)); the odd case reduces via (b) to `xStep_spec_bit`'s matching-emptiness clause (already `Pass`, (vi)(4)(c)). No disjointness or new invariant needed (unlike `Theorem88.lean`'s `atomU_invariant`, whose disjointness clause is only needed internally by (vi)(4)'s already-proved `XPseq`/`YPseq` I-formulas, not again here).
+* **Proof Notes:** rewrite both sides via (b)'s `atomPair_fst_eq_genAtom`/`atomPair_snd_eq_genAtom` (using (1)'s round-trip identity to identify `δ'` with `combinedδ δ`) to `(atomPair δ n).1 = ∅ ↔ (atomPair δ n).2 = ∅`, then close directly with `atomPair_invariant`'s clause (a) (already `Pass`, (iv)) — no new content, a direct instantiation.
+* **Status:** Deferred
+
+#### Exercise 8.12(c)(vi)(5)(c)(3)
+* **Mathematical Target:** The odd-index case of `hcore`: `genAtom combinedX D₀.master δ' (2*n+1) = ∅ ↔ genAtom combinedY D₁.master δ' (2*n+1) = ∅`
+* **Lean File:** `Scott1980/Neighborhood/Exercise812c.lean` (not yet started)
+* **Proof Notes:** rewrite both sides via (b)'s odd-depth half-step closed forms (using (1)'s round-trip identity) to the `xStep`-output-emptiness statement at bit `(δ n).2`/history `δ`, then close directly with `xStep_spec_bit`'s matching-emptiness clause (already `Pass`, (vi)(4)(c)) — no new content, a direct instantiation.
+* **Status:** Deferred
+
+#### Exercise 8.12(c)(vi)(5)(c)(4)
+* **Mathematical Target:** Final assembly: `∀ (δ' : ℕ → Bool) n, genAtom combinedX D₀.master δ' n = ∅ ↔ genAtom combinedY D₁.master δ' n = ∅`, the actual `hcore` deliverable of (c)
+* **Lean File:** `Scott1980/Neighborhood/Exercise812c.lean` (not yet started)
+* **Proof Notes:** case-split arbitrary `n` on parity (`Nat.even_or_odd`/`rcases … with ⟨k, rfl⟩ | ⟨k, rfl⟩`, matching `n = 2*k` against (2)'s statement and `n = 2*k+1` against (3)'s) — pure glue, no new content once (2)/(3) are in place.
 * **Status:** Deferred
 
 #### Exercise 8.12(c)(vi)(5)(d)

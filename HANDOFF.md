@@ -7662,3 +7662,42 @@ the `hcore` matching-emptiness fact `∀ (δ' : ℕ → Bool) n, genAtom combine
 genAtom combinedY D₁.master δ' n = ∅` for arbitrary `δ'`, by de-interleaving it into a
 `ℕ → Bool × Bool` history and reducing to `atomPair_invariant` (even depths)/`xStep_spec_bit` (odd
 depths) via (b)'s definitions — pure assembly, no new mathematical content expected.
+
+## 2026-07-04 checkpoint — Exercise 8.12(c)(vi)(5)(c) scoped into (1)–(4); (1) `Pass`
+
+User asked (before any code) whether 8.12(c)(vi)(5)(c) was one step or several. Re-reading its
+existing pre-plan (above) showed it bundles four logically separate pieces — a de-interleaving
+`def`+round-trip lemma, an even-index case, an odd-index case, and a final parity-split assembly —
+so it was **scoped, not executed**, into `arxiv.md` rows **8.12(c)(vi)(5)(c)(1)–(4)** (mirroring
+the project's existing `(vi)(4)(a)–(d)`/`(vi)(5)(a)–(d)` sub-lettering convention, using numbers
+here since letters are already taken one level up), all `Deferred`. The umbrella `(c)` row was
+kept as a 4-item table-of-contents.
+
+**Then (1) was implemented and is now `Pass`** (`Scott1980/Neighborhood/Exercise812c.lean`, appended
+after `atomPair_snd_eq_genAtom`, before `end AtomPair`):
+* **`deinterleaveδ (δ' : ℕ → Bool) (k : ℕ) : Bool × Bool := (δ' (2*k), δ' (2*k+1))`** — a plain
+  `def`, the inverse of `combinedδ`, needing no section variables (mirrors `combinedδ` itself,
+  which also takes no `D₀`/`D₁`/etc.).
+* **`combinedδ_deinterleaveδ : combinedδ (deinterleaveδ δ') = δ'`** — `funext m`, `unfold combinedδ
+  deinterleaveδ`, `split` on the resulting `if m % 2 = 0`, each branch closed by a single
+  `rw [show 2 * (m / 2) = m from by omega]` (resp. `+ 1`); the `Prod.fst`/`.snd` projections of the
+  literal pair reduce definitionally so `rw`'s automatic closing `rfl` finishes both branches with
+  no extra tactics. Needed the **same 10-name `omit hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff
+  hD₁nomin hXmem hYmem hD₀mne hD₁mne in`** annotation as the neighboring `combinedδ_even`/
+  `combinedδ_odd`, confirming (b)'s documented `include`/`omit` pitfall generalizes: even though
+  this theorem's statement mentions zero section variables, all ten still must be listed explicitly
+  to avoid phantom leading parameters.
+
+Zero `sorry`; whole-project `lake build` (3163 jobs) green; `#print axioms` on
+`combinedδ_deinterleaveδ` gives **`⊆{propext, Quot.sound}` — fully choice-free**, strictly better
+than the section's `splitChoice'`-tainted `Classical.choice` baseline (this lemma is pure arithmetic
+bookkeeping about `combinedδ`, independent of the atom construction itself). `deinterleaveδ` itself
+depends on no axioms at all. `arxiv.md`: 8.12(c)(vi)(5)(c) umbrella row updated to show the 4-way
+split with (1) `Pass`; new row **8.12(c)(vi)(5)(c)(1)** added as `Pass`.
+
+**Status: Exercise 8.12(c)(vi)(5)(c)(1) is `Pass`.** **Next up:** Exercise 8.12(c)(vi)(5)(c)(2) —
+the even-index case of `hcore`: rewrite both sides via (b)'s `atomPair_fst_eq_genAtom`/
+`atomPair_snd_eq_genAtom` (using (1)'s round-trip identity to identify an arbitrary `δ'` with
+`combinedδ δ` for the de-interleaved `δ := deinterleaveδ δ'`) down to `(atomPair δ n).1 = ∅ ↔
+(atomPair δ n).2 = ∅`, then close directly with `atomPair_invariant`'s clause (a) (already `Pass`,
+(iv)) — expected to be a direct instantiation, no new mathematical content.
