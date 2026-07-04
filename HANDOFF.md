@@ -7231,3 +7231,39 @@ code changed this checkpoint — `arxiv.md`'s 8.12(c)(vi) row restructured into 
 **Status: Exercise 8.12(c)(vi) is `Deferred`, 0 of 7 sub-parts started** — this is a *plan* only,
 not yet attempted; boundaries may shift once (1) is actually underway (as happened with (v)'s own
 post-hoc 5-way split). **Next up:** Exercise 8.12(c)(vi)(1).
+
+**2026-07-04 — Exercise 8.12(c)(vi)(1) COMPLETE: the abstract `Yseq` closed-form apparatus, new
+file `Exercise812cYseq.lean`.** As anticipated in the plan above, `extendTrue`/`restrictFin` and
+the generic `genAtom_*` lemmas were reused **verbatim** from `Theorem88.lean` — no re-proving.
+Built fresh, generalizing `atomU`-onward (`Theorem88.lean` lines 223–484) from hardcoded `U` to an
+abstract `E : NeighborhoodSystem γ`:
+
+* **`atomE`** (the `atomU`-analogue) + `atomE_zero`/`atomE_succ`/`atomE_congr`.
+  **Lesson (a real build failure this session, now understood and documented):** a recursive `def`
+  using the equation compiler does **not** pick up `variable`s referenced only in its equations —
+  unlike `theorem`s under `include`, which force inclusion regardless of use (verified directly via
+  `#check`/a toy example: `def foo := n + 1` under `include h` does *not* gain `h`, but
+  `theorem bar := h` — or even an unused `theorem baz : n+0=n := by omega` — does). Fix: `atomE`
+  re-declares `E`/`split` as its own explicit leading parameters, exactly mirroring how `atomU`
+  itself already re-declares `split` (`Theorem88.lean` line 235) even though it's also a `variable`.
+* **`atomE_invariant`** (needs `hΔ : Δ.Nonempty`, a **new** `hEmne : E.master.Nonempty` — replacing
+  `Theorem88.lean`'s hardcoded `U.master ≠ ∅` witness computation `⟨0, by norm_num [U]⟩`, since an
+  abstract `E` has no concrete witness — and `hsplit : SplitSpec' E split`) + `atomE_succ_subset`.
+* **`YseqE`/`subset_YseqE`** (declared `omit hΔ hEmne hsplit in`, mirroring `Yseq`/`subset_Yseq`).
+* **`split_fst_eq_inter_YseqE`** (the "I-formula", hardest single lemma, using `atomE_invariant`'s
+  disjointness clause) + `atomE_subset_master` + **`atomE_succ_eq`** (closed form) +
+  **`atomE_eq_genAtom`** (`atomE` coincides with `genAtom (YseqE …) E.master`).
+
+Once the `atomE`/`variable` signature quirk was found, the rest was a one-for-one transcription
+(`U`↦`E`, `Set ℚ`↦`Set γ`, `atomU`↦`atomE`, `Yseq`↦`YseqE`, `SplitSpec`↦`SplitSpec'`,
+`split_fst_subset`↦`split_fst_subset'`, already generalized in (iii)). **Zero `sorry`.**
+Whole-project `lake build` (3163 jobs) green. `#print axioms` on `atomE_invariant`/
+`atomE_succ_subset`/`split_fst_eq_inter_YseqE`/`atomE_subset_master`/`atomE_succ_eq`/
+`atomE_eq_genAtom` all give `⊆{propext,Classical.choice,Quot.sound}`, matching the existing
+baseline (choice inherited from `splitChoice'`, 8.12(c)(iii)). `arxiv.md`: 8.12(c)(vi)(1) row
+updated to `Pass`; umbrella 8.12(c)(vi) row updated to `Partial`. `Scott1980.lean` updated to
+import `Exercise812cYseq`.
+
+**Status: Exercise 8.12(c)(vi) is `Partial`** (1 of 7 sub-parts `Pass`, zero `sorry`, `lake build`
+green). **Next up:** Exercise 8.12(c)(vi)(2) (generalize the finite-constraint transfer lemma
+family — `transfer_dir`/`transfer_empty_iff` and its 4 corollaries — to the same abstract `E`).
