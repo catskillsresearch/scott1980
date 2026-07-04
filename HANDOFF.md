@@ -7773,3 +7773,34 @@ the final assembly: case-split an arbitrary `n` on parity (matching `n = 2*k` ag
 `hcore_even` and `n = 2*k+1` against (3)'s `hcore_odd`) to produce the headline `∀ (δ' : ℕ → Bool)
 n, genAtom combinedX D₀.master δ' n = ∅ ↔ genAtom combinedY D₁.master δ' n = ∅` — pure glue, no new
 content, completing (c) and unblocking (d)'s `transfer_*` instantiation.
+
+## 2026-07-04 checkpoint — Exercise 8.12(c)(vi)(5)(c)(4) `Pass`: `hcore` assembled, **(c) COMPLETE**
+
+**`hcore (δ' : ℕ → Bool) (n : ℕ) : genAtom combinedX D₀.master δ' n = ∅ ↔ genAtom combinedY
+D₁.master δ' n = ∅`** (`Scott1980/Neighborhood/Exercise812c.lean`, appended after `hcore_odd`,
+still before `end AtomPair`): `rcases (by omega : n % 2 = 0 ∨ n % 2 = 1) with hn | hn`, each branch
+`rw [show n = 2 * (n/2) from by omega]` (resp. `+ 1`) then `exact hcore_even/hcore_odd … δ' (n/2)`
+— pure glue, no new content, exactly as planned. Deliberately used a **hand-rolled `omega`-derived
+parity disjunction** rather than `Nat.even_or_odd`/`Nat.even_or_odd'`, matching (c)(1)'s
+`combinedδ_deinterleaveδ` style and this project's standing lesson that `Nat.even_or_odd` pulls
+`Classical.choice` in the pinned Mathlib (moot for `hcore`'s own footprint, already tainted via
+`hcore_even`/`hcore_odd`, but kept consistent regardless). Built clean on the first try.
+
+Zero `sorry`; whole-project `lake build` (3163 jobs) green; `#print axioms` on `hcore` gives
+`⊆{propext, Classical.choice, Quot.sound}`, matching the section's baseline. `arxiv.md`:
+8.12(c)(vi)(5)(c)(4) row updated to `Pass`; **8.12(c)(vi)(5)(c) umbrella row rolled up to `Pass`**
+(all of (1)–(4) done); 8.12(c)(vi)(5) and 8.12(c)(vi) umbrella rows updated to reflect (a)/(b)/(c)
+`Pass`, only (d) remains `Deferred`.
+
+**Status: Exercise 8.12(c)(vi)(5)(c) is `Pass` — COMPLETE, all 4 sub-parts.** **Next up:** Exercise
+8.12(c)(vi)(5)(d) — the actual deliverable of (5): instantiate `Theorem88.lean`'s `transfer_dir`/
+`transfer_empty_iff`/`transfer_subset_iff`/`transfer_inter_empty_iff`/`transfer_double_subset_iff`/
+`transfer_inter_eq_iff` with `Z1 := combinedX`, `M1 := D₀.master`, `Z2 := combinedY`,
+`M2 := D₁.master`, `hcore` from (c), then specialize the resulting even/even and odd/odd index-pair
+statements back down to plain `X i ⊆ X j ↔ XPseq i ⊆ XPseq j` / `Y i ⊆ Y j ↔ YPseq i ⊆ YPseq j`
+(+ inter-empty/inter-eq analogues) by unfolding `combinedX (2i) = X i`/`combinedX (2i+1) =
+YPseq i` (definitionally, from (b)) — expected to be routine `rfl`/`simp`-level unwinding, the same
+style as `Theorem88a.lean`'s `embed_subset_iff` specializing `transfer_subset_iff` via `idxSet`.
+Once (d) lands, 8.12(c)(vi)(5) (and, since (vi)(6) is already merged into it, 8.12(c)(vi) itself
+modulo (vi)(7)'s still-vague placeholder) will be fully `Pass`, unblocking (vii)'s final `DomainIso`
+assembly.

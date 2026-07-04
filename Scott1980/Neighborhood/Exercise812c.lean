@@ -1425,6 +1425,23 @@ theorem hcore_odd (δ' : ℕ → Bool) (n : ℕ) :
   exact (xStep_spec_bit D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin X Y hXmem hYmem
     hD₀mne hD₁mne (deinterleaveδ δ') n ((deinterleaveδ δ') n).1).1.symm
 
+/-- **`hcore`** (Exercise 8.12(c)(vi)(5)(c)(4), final assembly): for any `δ' : ℕ → Bool` and any
+`n`, `genAtom combinedX δ' n = ∅ ↔ genAtom combinedY δ' n = ∅` — the actual `hcore` hypothesis
+`Theorem88.lean`'s `transfer_dir` needs for the interleaved families `combinedX`/`combinedY`. Pure
+glue: a parity case split on `n` (via `omega`, not `Nat.even_or_odd`/`Nat.even_or_odd'`, matching
+this file's established choice-free-arithmetic style) matching `n = 2 * (n/2)` against (2)'s
+`hcore_even` and `n = 2 * (n/2) + 1` against (3)'s `hcore_odd`. -/
+theorem hcore (δ' : ℕ → Bool) (n : ℕ) :
+    genAtom (combinedX D₀ D₁ hD₀nomin hD₁nomin X Y) D₀.master δ' n = ∅ ↔
+      genAtom (combinedY D₀ D₁ hD₀nomin hD₁nomin X Y) D₁.master δ' n = ∅ := by
+  rcases (by omega : n % 2 = 0 ∨ n % 2 = 1) with hn | hn
+  · rw [show n = 2 * (n / 2) from by omega]
+    exact hcore_even D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin X Y hXmem hYmem hD₀mne
+      hD₁mne δ' (n / 2)
+  · rw [show n = 2 * (n / 2) + 1 from by omega]
+    exact hcore_odd D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin X Y hXmem hYmem hD₀mne
+      hD₁mne δ' (n / 2)
+
 end AtomPair
 
 end Scott1980.Neighborhood
