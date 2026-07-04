@@ -195,3 +195,4 @@ import Scott1980.Neighborhood.Proposition810
 import Scott1980.Neighborhood.Proposition810b
 import Scott1980.Neighborhood.Exercise811
 import Scott1980.Neighborhood.Exercise812
+import Scott1980.Neighborhood.LevelSetPrimrec

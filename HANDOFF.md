@@ -7021,3 +7021,49 @@ shifting the six deferred items to (b)–(g).)
 (b)–(g) `Deferred`) so a future session can pick up any one part independently instead of
 re-deriving the whole scope from scratch. `Exercise812.lean` itself, `V`'s theorems, and the build
 are all unchanged from the prior checkpoint above.
+
+**2026-07-04 — Exercise 8.12(b) COMPLETE: `V`'s `ComputablePresentation`, new file
+`Scott1980/Neighborhood/LevelSetPrimrec.lean`.** Closes the "tractable, self-contained" sub-part
+flagged in the 7-part plan above; builds from scratch the `Nat.Primrec` bit-manipulation
+infrastructure `Exercise812.lean`'s docstring flagged as missing:
+
+* **Bit extraction** (`myDivPow2`/`myModPow2`/`myTestBit`): iterate "halve" via `Nat.Primrec.prec`
+ (same idiom as `Recursive.lean`'s `myLor`), matching `Nat.testBit_eq_decide_div_mod_eq`.
+* **`myLand`** (bitwise AND): a hand-built choice-free primitive-recursive `&&&`, a bit-for-bit
+ mirror of `myLor` (`lowOr`/`lorStep`↦`lowAnd`/`landStep`, `Nat.testBit_lor`↦`Nat.testBit_and`).
+* **`myUpsample`** (the missing piece): realized *arithmetically*, not bit-by-bit — one level-step
+ duplicates a mask's low `2^k` bits into a second copy shifted up by `2^k` positions
+ (`myUpsampleStep k m := 2^(2^k)·m' + m'`, `m' := myModPow2 m (2^k)`; truncating first, via
+ `Nat.testBit_two_pow_mul_add`, is what makes this correct regardless of the input's junk high
+ bits), iterated `k'-k` times via `Nat.Primrec.prec` jointly tracking `(level,mask)`, with a final
+ `myModPow2` re-truncation so the output is *always* bounded (`myUpsample_lt`) even when `k=k'`.
+* **Non-emptiness** (`myLevelSetNonempty`): `levelSet_nonempty_iff`'s bounded `∃ℓ<2^k,testBit` is a
+ direct instance of the existing `bExistsFn` combinator with `myTestBit` as body.
+* **Canonicalization** (`canonIdx`/`VX`): mirrors `UComputablePresentation.lean`'s `canonCode` but
+ simpler (a `(k,m)` pair is always syntactically well-formed, only possibly empty): keep `n=pair k
+ m` if `levelSet k m` is non-empty, else fall back to the master code `pair 0 1`.
+* **Scott's two relations**: intersection is `myUpsample`-both-then-`myLand` at level `max k₁ k₂`
+ (`levelSet_myInter`, computable mirror of `levelSet_inter`); consistency reduces to non-emptiness
+ of that raw intersection (`Vcons_iff_nonempty_inter`/`V_cons_computable`); equality reduces to
+ equality of `myUpsample`-normalized masks — bounded hence *unique* by a new injectivity lemma
+ `levelSet_inj_of_lt` (`levelSet_eq_iff_myUpsample_eq`/`V_interEq_computable`), decided by
+ `RecDecidable.natEq`.
+* Assembled into `VComputablePresentation : ComputablePresentation V` and the headline
+ `V_isEffectivelyGiven : V.IsEffectivelyGiven`.
+
+**Zero `sorry`.** `lake build` (whole project, 3161 jobs) green. `#print axioms` on
+`V_isEffectivelyGiven`, `VComputablePresentation`, `V_interEq_computable`, `V_cons_computable`,
+`levelSet_myUpsample`, `myLevelSetNonempty_eq_one_iff` all give
+`⊆{propext,Classical.choice,Quot.sound}` — same inherited `ℕ`/`Finset`/`Set` API artifact 8.12(a)
+already documents (not a new choice made in this file); `myLand_eq_land` itself is fully
+choice-free (`⊆{propext,Quot.sound}`). `arxiv.md`: 8.12(b) row updated to `Pass` with a dense
+proof note; umbrella Exercise 8.12 row's status line updated to "(a),(b) `Pass`; (c)–(g)
+`Deferred`". `Scott1980.lean` updated to import `LevelSetPrimrec`.
+
+**Status: Exercise 8.12 is `Partial`** — (a) `V`'s structure and (b) its computable presentation
+are both `Pass`; (c)–(g) (the general two-sided back-and-forth lemma, its effective refinement,
+`U`/`V`'s extension properties, and final assembly into `U≅V`) remain `Deferred`, none yet
+started. **Next up:** Exercise 8.12(c) (the new general non-effective back-and-forth
+order-isomorphism lemma — the first genuinely new piece of abstract theory in the remaining plan)
+would be the natural next sub-part, or Exercise 8.13 as an alternative if a break from the 8.12
+back-and-forth apparatus is preferred.
