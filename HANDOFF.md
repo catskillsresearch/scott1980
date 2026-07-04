@@ -7267,3 +7267,41 @@ import `Exercise812cYseq`.
 **Status: Exercise 8.12(c)(vi) is `Partial`** (1 of 7 sub-parts `Pass`, zero `sorry`, `lake build`
 green). **Next up:** Exercise 8.12(c)(vi)(2) (generalize the finite-constraint transfer lemma
 family — `transfer_dir`/`transfer_empty_iff` and its 4 corollaries — to the same abstract `E`).
+
+---
+
+**2026-07-04 — Exercise 8.12(c)(vi)(2) COMPLETE: the transfer lemma family generalized to
+abstract `E`.** Confirmed the plan's prediction exactly: `transfer_dir` (`Theorem88.lean`) needed
+**zero** re-proof — it was already stated fully generically over two independent carrier types
+`β1 β2`, connected only by a shared `genAtom`-emptiness correspondence `hcore` — the only change
+needed was removing its `private` modifier (private declarations aren't visible outside their
+defining file regardless of how generic their statement is) so `Exercise812cYseq.lean` could call
+it directly.
+
+**`Exercise812cYseq.lean`** (now 439 lines), appended after (vi)(1)'s `atomE_eq_genAtom`:
+* **`transfer_empty_iffE`/`transfer_subset_iffE`/`transfer_inter_empty_iffE`/
+  `transfer_double_subset_iffE`/`transfer_inter_eq_iffE`** — one-for-one transcriptions of
+  `Theorem88.lean`'s `transfer_empty_iff`/`transfer_subset_iff`/`transfer_inter_empty_iff`/
+  `transfer_double_subset_iff`/`transfer_inter_eq_iff`, with `U.master`↦`E.master`, `Yseq`↦`YseqE`,
+  `atomU_invariant`↦`atomE_invariant`, `atomU_eq_genAtom`↦`atomE_eq_genAtom` (all already available
+  from (vi)(1)). Genuinely mechanical once `transfer_dir` was made reusable.
+* **One accounting correction, found only while implementing** (same pattern as (c)(v)'s post-hoc
+  5-way split — plans shift once code is actually written): `transfer_inter_eq_iff`'s proof
+  genuinely calls `Yseq_subset_master`, which the pre-plan had filed under (vi)(3) (the
+  nonemptiness/membership sub-part), not (vi)(2). Rather than block (vi)(2) on (vi)(3), added a new
+  **`YseqE_subset_master`** here (one line, via (vi)(1)'s `atomE_subset_master` +
+  `Set.iUnion_subset`) and used it directly — (vi)(3) will simply not need to re-derive it when its
+  turn comes.
+
+**Zero `sorry`.** Whole-project `lake build` (3163 jobs) green. `#print axioms` on `transfer_dir`/
+`transfer_empty_iffE`/`transfer_subset_iffE`/`transfer_inter_empty_iffE`/
+`transfer_double_subset_iffE`/`YseqE_subset_master`/`transfer_inter_eq_iffE` all give
+`⊆{propext,Classical.choice,Quot.sound}`, matching the existing baseline (choice inherited from
+`splitChoice'`, 8.12(c)(iii)). `arxiv.md`: 8.12(c)(vi)(2) row updated to `Pass`; umbrella
+8.12(c)(vi) row updated to "(1)–(2) `Pass`, (3)–(7) `Deferred`"; 8.12(c) umbrella status line
+updated.
+
+**Status: Exercise 8.12(c)(vi) is `Partial`** (2 of 7 sub-parts `Pass`, zero `sorry`, `lake build`
+green). **Next up:** Exercise 8.12(c)(vi)(3) (generalize the nonemptiness/membership facts —
+`Yseq_subset_master` already done above; remaining: `Yseq_zero_eq_master`/`Yseq_empty_or_mem`/
+`Yseq_nonempty_of_mem` — to the same abstract `E`).

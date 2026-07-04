@@ -277,4 +277,145 @@ theorem atomE_eq_genAtom (δ : ℕ → Bool) :
   | (n + 1) => by
       rw [atomE_succ_eq E split X Δ hΔ hEmne hsplit, atomE_eq_genAtom δ n]; rfl
 
+/-! ### The general finite-constraint transfer lemma, generalized to an abstract `E`
+
+Mirrors `Theorem88.lean`'s `transfer_empty_iff`/`transfer_subset_iff`/`transfer_inter_empty_iff`/
+`transfer_double_subset_iff`/`transfer_inter_eq_iff`, replacing the hardcoded `U`/`Yseq` by an
+abstract `E`/`YseqE`. `transfer_dir` itself needs **no** re-proof: it is already stated fully
+generically over two independent carrier types, connected only by a shared `genAtom`-emptiness
+correspondence — reused verbatim from `Theorem88.lean`. -/
+
+/-- **The transfer lemma, generalized to `E`.** A finite Boolean combination of the `X i` is
+non-empty in `D`'s carrier `Δ` iff the *same* Boolean combination of `YseqE E split X Δ i` is
+non-empty in `E.master`. Mirrors `transfer_empty_iff`. -/
+theorem transfer_empty_iffE {cs : List (ℕ × Bool)} {n : ℕ} (hn : ∀ p ∈ cs, p.1 < n) :
+    {x ∈ Δ | ∀ p ∈ cs, (p.2 = true ↔ x ∈ X p.1)}.Nonempty ↔
+      {y ∈ E.master | ∀ p ∈ cs, (p.2 = true ↔ y ∈ YseqE E split X Δ p.1)}.Nonempty := by
+  have hcore : ∀ δ n, genAtom X Δ δ n = ∅ ↔ genAtom (YseqE E split X Δ) E.master δ n = ∅ :=
+    fun δ n => (atomE_invariant E split X Δ hΔ hEmne hsplit n).1 δ
+      |>.trans (by rw [atomE_eq_genAtom E split X Δ hΔ hEmne hsplit])
+  have hcore' : ∀ δ n, genAtom (YseqE E split X Δ) E.master δ n = ∅ ↔ genAtom X Δ δ n = ∅ :=
+    fun δ n => (hcore δ n).symm
+  exact ⟨transfer_dir X Δ (YseqE E split X Δ) E.master hcore hn,
+    transfer_dir (YseqE E split X Δ) E.master X Δ hcore' hn⟩
+
+/-- Subset transfer, generalized to `E`: `X i ⊆ X j` (restricted to `Δ`) iff `YseqE i ⊆ YseqE j`
+(restricted to `E.master`). Mirrors `transfer_subset_iff`. -/
+theorem transfer_subset_iffE (i j : ℕ) :
+    Δ ∩ X i ⊆ X j ↔ E.master ∩ YseqE E split X Δ i ⊆ YseqE E split X Δ j := by
+  have key := transfer_empty_iffE E split X Δ hΔ hEmne hsplit (cs := [(i, true), (j, false)])
+    (n := max i j + 1)
+    (by simp only [List.mem_cons, List.not_mem_nil, or_false]
+        rintro p (rfl | rfl) <;> simp [Nat.lt_succ_iff])
+  have hLHS : {x ∈ Δ | ∀ p ∈ [(i, true), (j, false)], (p.2 = true ↔ x ∈ X p.1)}
+      = (Δ ∩ X i) \ X j := by
+    ext x
+    simp only [Set.mem_setOf_eq, List.mem_cons, List.not_mem_nil, or_false,
+      forall_eq_or_imp, forall_eq, Set.mem_diff, Set.mem_inter_iff]
+    tauto
+  have hRHS : {y ∈ E.master |
+      ∀ p ∈ [(i, true), (j, false)], (p.2 = true ↔ y ∈ YseqE E split X Δ p.1)}
+      = (E.master ∩ YseqE E split X Δ i) \ YseqE E split X Δ j := by
+    ext y
+    simp only [Set.mem_setOf_eq, List.mem_cons, List.not_mem_nil, or_false,
+      forall_eq_or_imp, forall_eq, Set.mem_diff, Set.mem_inter_iff]
+    tauto
+  rw [hLHS, hRHS] at key
+  rw [← Set.diff_eq_empty, ← Set.diff_eq_empty, ← Set.not_nonempty_iff_eq_empty,
+    ← Set.not_nonempty_iff_eq_empty, not_iff_not]
+  exact key
+
+/-- Intersection transfer, generalized to `E`: `X i ∩ X j` is empty on `Δ` iff `YseqE i ∩ YseqE j`
+is empty on `E.master`. Mirrors `transfer_inter_empty_iff`. -/
+theorem transfer_inter_empty_iffE (i j : ℕ) :
+    Δ ∩ X i ∩ X j = ∅ ↔ E.master ∩ YseqE E split X Δ i ∩ YseqE E split X Δ j = ∅ := by
+  have key := transfer_empty_iffE E split X Δ hΔ hEmne hsplit (cs := [(i, true), (j, true)])
+    (n := max i j + 1)
+    (by simp only [List.mem_cons, List.not_mem_nil, or_false]
+        rintro p (rfl | rfl) <;> simp [Nat.lt_succ_iff])
+  have hLHS : {x ∈ Δ | ∀ p ∈ [(i, true), (j, true)], (p.2 = true ↔ x ∈ X p.1)}
+      = Δ ∩ X i ∩ X j := by
+    ext x
+    simp only [Set.mem_setOf_eq, List.mem_cons, List.not_mem_nil, or_false,
+      forall_eq_or_imp, forall_eq, Set.mem_inter_iff]
+    tauto
+  have hRHS : {y ∈ E.master |
+      ∀ p ∈ [(i, true), (j, true)], (p.2 = true ↔ y ∈ YseqE E split X Δ p.1)}
+      = E.master ∩ YseqE E split X Δ i ∩ YseqE E split X Δ j := by
+    ext y
+    simp only [Set.mem_setOf_eq, List.mem_cons, List.not_mem_nil, or_false,
+      forall_eq_or_imp, forall_eq, Set.mem_inter_iff]
+    tauto
+  rw [hLHS, hRHS] at key
+  rw [← Set.not_nonempty_iff_eq_empty, ← Set.not_nonempty_iff_eq_empty, not_iff_not]
+  exact key
+
+/-- Three-term subset transfer, generalized to `E`: `X i ∩ X j ⊆ X k` (restricted to `Δ`) iff
+`YseqE i ∩ YseqE j ⊆ YseqE k` (restricted to `E.master`). Mirrors `transfer_double_subset_iff`. -/
+theorem transfer_double_subset_iffE (i j k : ℕ) :
+    Δ ∩ X i ∩ X j ⊆ X k ↔
+      E.master ∩ YseqE E split X Δ i ∩ YseqE E split X Δ j ⊆ YseqE E split X Δ k := by
+  have key := transfer_empty_iffE E split X Δ hΔ hEmne hsplit
+    (cs := [(i, true), (j, true), (k, false)]) (n := max i (max j k) + 1)
+    (by simp only [List.mem_cons, List.not_mem_nil, or_false]
+        rintro p (rfl | rfl | rfl) <;>
+          simp [Nat.lt_succ_iff,
+            (Nat.le_max_left j k).trans (Nat.le_max_right i (max j k)),
+            (Nat.le_max_right j k).trans (Nat.le_max_right i (max j k))])
+  have hLHS : {x ∈ Δ | ∀ p ∈ [(i, true), (j, true), (k, false)], (p.2 = true ↔ x ∈ X p.1)}
+      = (Δ ∩ X i ∩ X j) \ X k := by
+    ext x
+    simp only [Set.mem_setOf_eq, List.mem_cons, List.not_mem_nil, or_false,
+      forall_eq_or_imp, forall_eq, Set.mem_diff, Set.mem_inter_iff]
+    tauto
+  have hRHS : {y ∈ E.master |
+      ∀ p ∈ [(i, true), (j, true), (k, false)], (p.2 = true ↔ y ∈ YseqE E split X Δ p.1)}
+      = (E.master ∩ YseqE E split X Δ i ∩ YseqE E split X Δ j) \ YseqE E split X Δ k := by
+    ext y
+    simp only [Set.mem_setOf_eq, List.mem_cons, List.not_mem_nil, or_false,
+      forall_eq_or_imp, forall_eq, Set.mem_diff, Set.mem_inter_iff]
+    tauto
+  rw [hLHS, hRHS] at key
+  rw [← Set.diff_eq_empty, ← Set.diff_eq_empty, ← Set.not_nonempty_iff_eq_empty,
+    ← Set.not_nonempty_iff_eq_empty, not_iff_not]
+  exact key
+
+/-- `YseqE E split X Δ n` is always a subset of `E.master`. Needed by `transfer_inter_eq_iffE`
+below; mirrors `Yseq_subset_master` (`Theorem88.lean`), pulled forward from 8.12(c)(vi)(3)'s
+planned scope since `transfer_inter_eq_iff`'s proof genuinely depends on it. -/
+theorem YseqE_subset_master (n : ℕ) : YseqE E split X Δ n ⊆ E.master :=
+  Set.iUnion_subset fun δ' =>
+    atomE_subset_master E split X Δ hΔ hEmne hsplit (extendTrue δ') (n + 1)
+
+/-- **Equation transfer, generalized to `E`.** If `X k = X i ∩ X j` on `D`'s side (with all three
+sets `⊆ Δ`), then `YseqE k = YseqE i ∩ YseqE j` on `E`'s side, and conversely. Mirrors
+`transfer_inter_eq_iff`. -/
+theorem transfer_inter_eq_iffE (i j k : ℕ) (hi : X i ⊆ Δ) (_hj : X j ⊆ Δ) (hk : X k ⊆ Δ) :
+    X i ∩ X j = X k ↔ YseqE E split X Δ i ∩ YseqE E split X Δ j = YseqE E split X Δ k := by
+  have h1 : X k ⊆ X i ↔ YseqE E split X Δ k ⊆ YseqE E split X Δ i := by
+    have := transfer_subset_iffE E split X Δ hΔ hEmne hsplit k i
+    rwa [Set.inter_eq_self_of_subset_right hk,
+      Set.inter_eq_self_of_subset_right (YseqE_subset_master E split X Δ hΔ hEmne hsplit k)] at this
+  have h2 : X k ⊆ X j ↔ YseqE E split X Δ k ⊆ YseqE E split X Δ j := by
+    have := transfer_subset_iffE E split X Δ hΔ hEmne hsplit k j
+    rwa [Set.inter_eq_self_of_subset_right hk,
+      Set.inter_eq_self_of_subset_right (YseqE_subset_master E split X Δ hΔ hEmne hsplit k)] at this
+  have h3 : X i ∩ X j ⊆ X k ↔
+      YseqE E split X Δ i ∩ YseqE E split X Δ j ⊆ YseqE E split X Δ k := by
+    have := transfer_double_subset_iffE E split X Δ hΔ hEmne hsplit i j k
+    rwa [Set.inter_eq_self_of_subset_right hi,
+      Set.inter_eq_self_of_subset_right (YseqE_subset_master E split X Δ hΔ hEmne hsplit i)] at this
+  constructor
+  · intro heq
+    have hki : X k ⊆ X i := heq ▸ Set.inter_subset_left
+    have hkj : X k ⊆ X j := heq ▸ Set.inter_subset_right
+    have hijk : X i ∩ X j ⊆ X k := heq ▸ subset_rfl
+    exact Set.Subset.antisymm (h3.mp hijk) (Set.subset_inter (h1.mp hki) (h2.mp hkj))
+  · intro heq
+    have hki : YseqE E split X Δ k ⊆ YseqE E split X Δ i := heq ▸ Set.inter_subset_left
+    have hkj : YseqE E split X Δ k ⊆ YseqE E split X Δ j := heq ▸ Set.inter_subset_right
+    have hijk : YseqE E split X Δ i ∩ YseqE E split X Δ j ⊆ YseqE E split X Δ k :=
+      heq ▸ subset_rfl
+    exact Set.Subset.antisymm (h3.mpr hijk) (Set.subset_inter (h1.mpr hki) (h2.mpr hkj))
+
 end Scott1980.Neighborhood

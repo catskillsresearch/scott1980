@@ -493,9 +493,11 @@ one-line corollaries by unfolding the constraint set. -/
 -- One-directional half of the transfer lemma, stated fully generically (over two independent
 -- carrier types related only by a shared `genAtom`-emptiness correspondence `hcore`) so that it
 -- can be reused, symmetrically, for both directions of the two-sided statement
--- `transfer_empty_iff`.
+-- `transfer_empty_iff`. Not `private`: also reused verbatim by `Exercise812cYseq.lean`'s
+-- `transfer_empty_iffE` (8.12(c)(vi)(2)), since it is already fully generic over two independent
+-- carrier types.
 omit hΔ hsplit in
-private theorem transfer_dir {β1 β2 : Type*} (Z1 : ℕ → Set β1) (M1 : Set β1) (Z2 : ℕ → Set β2)
+theorem transfer_dir {β1 β2 : Type*} (Z1 : ℕ → Set β1) (M1 : Set β1) (Z2 : ℕ → Set β2)
     (M2 : Set β2) (hcore : ∀ δ n, genAtom Z1 M1 δ n = ∅ ↔ genAtom Z2 M2 δ n = ∅)
     {cs : List (ℕ × Bool)} {n : ℕ} (hn : ∀ p ∈ cs, p.1 < n)
     (hne : {x ∈ M1 | ∀ p ∈ cs, (p.2 = true ↔ x ∈ Z1 p.1)}.Nonempty) :
