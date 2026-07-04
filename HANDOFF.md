@@ -7618,3 +7618,47 @@ the interleaved families `combinedX`/`combinedY`/`combinedδ` and prove the clos
 identification of `atomPair`'s own values with `genAtom` over these interleaved families
 (`(atomPair δ n).1 = genAtom combinedX D₀.master (combinedδ δ) (2*n)`, plus the odd-depth half-step
 statement, and the `combinedY`/`.2` mirror), by a single induction using (a)'s two closed forms.
+
+---
+
+**2026-07-04 — Exercise 8.12(c)(vi)(5)(b) COMPLETE: `combinedX`/`combinedY`/`combinedδ` and the
+closed-form identification.** Implemented as scoped. `combinedX`/`combinedY`/`combinedδ` defined
+exactly per plan; `combinedX_even`/`combinedX_odd`/`combinedY_even`/`combinedY_odd`/`combinedδ_even`/
+`combinedδ_odd` give the per-parity unfoldings (`rw [if_pos/if_neg (by omega), show (2*k)/2 = k from
+by omega]`). Two half-step lemmas (`genAtom_combinedX_succ_eq`/`genAtom_combinedY_succ_eq`) each
+chain `genAtom_succ'` (a new `rfl`-restated rewritable form of `genAtom`'s recursive equation, added
+since `genAtom` is a raw pattern-match `def` that `rw` can't otherwise fire on `2*n+1+1`-shaped
+literals) + a parity unfold + (a)'s *other* closed form (`yStep_fst_succ_eq` for the `X`-family's odd
+step, `xStep_snd_succ_eq` for the `Y`-family's even step) + `inter_diff_eq_diff_of_subset` (new
+generic `A ∩ (M\Z) = A\Z` fact for `A ⊆ M`, needed to match `genAtom`'s `M \ Z` shape). The two
+headline theorems (`atomPair_fst_eq_genAtom`/`atomPair_snd_eq_genAtom`) are then a single
+`induction n`, `succ` case chaining `atomPair_succ_eq` → (a)'s closed form at the *other* sub-step's
+bit → `genAtom_succ'` → the matching half-step lemma → closes by `rfl`.
+
+**Debugging note — a second, subtler instance of the (vi)(5)(a)-documented `include`/`omit`
+pitfall.** `combinedδ_even`/`combinedδ_odd`'s `omit` line was copied from the neighboring
+`combinedX_even`/`combinedY_even` (which genuinely need `D₀ D₁ hD₀nomin hD₁nomin`) and so omitted
+only 8 of the section's 10 blanket-`include`d hypotheses, leaving `hD₀nomin`/`hD₁nomin` (hence
+`D₀`/`D₁`) force-included as *unused* leading parameters of `combinedδ_even`/`_odd` despite never
+appearing in their statements. Bare `rw [combinedδ_even]` then leaves these phantom parameters as
+unconstrained metavariables (nothing in the rewrite pattern mentions them), which Lean reports as
+bizarre leftover goals (`⊢ NeighborhoodSystem ?m`, `⊢ NoMinimal ?D₀`, `⊢ Type ?u`) attached to the
+*calling* theorem's `:= by` position — cascading through every caller and persisting even when the
+caller's body is replaced by `sorry` (the phantom metavariables are created while elaborating the
+`rw` lemma itself). Diagnosed by explicitly supplying the "hidden" args
+(`combinedδ_even D₀ D₁ hD₀nomin hD₁nomin δ n`) and getting a genuine, informative type mismatch
+confirming the extra parameters were real. **Fix:** extend both `omit` lines to the full 10-name
+list. **Takeaway:** an `omit` list must always be checked against the *specific lemma's own
+conclusion*, never copy-pasted from a neighboring lemma with different needs.
+
+**Zero `sorry`.** Whole-project `lake build` green. `#print axioms` on `atomPair_fst_eq_genAtom`/
+`atomPair_snd_eq_genAtom` gives `⊆{propext, Classical.choice, Quot.sound}`, matching the baseline
+(choice inherited from `splitChoice'`, 8.12(c)(iii)). `arxiv.md`: 8.12(c)(vi)(5)(b) row updated to
+`Pass`; 8.12(c)(vi)(5) and 8.12(c)(vi) umbrella rows updated to reflect (a)/(b) `Pass`, (c)/(d)
+`Deferred`.
+
+**Status: Exercise 8.12(c)(vi)(5)(b) is `Pass`.** **Next up:** Exercise 8.12(c)(vi)(5)(c) — assemble
+the `hcore` matching-emptiness fact `∀ (δ' : ℕ → Bool) n, genAtom combinedX D₀.master δ' n = ∅ ↔
+genAtom combinedY D₁.master δ' n = ∅` for arbitrary `δ'`, by de-interleaving it into a
+`ℕ → Bool × Bool` history and reducing to `atomPair_invariant` (even depths)/`xStep_spec_bit` (odd
+depths) via (b)'s definitions — pure assembly, no new mathematical content expected.

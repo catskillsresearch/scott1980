@@ -312,6 +312,24 @@ theorem if_swap_disjoint {γ : Type*} {P Q : Set γ} (hPQ : P ∩ Q = ∅) {b b'
 theorem inter_diff_self_eq_empty {γ : Type*} (P Q : Set γ) : (P ∩ Q) ∩ (P \ Q) = ∅ := by
   ext x; simp only [Set.mem_inter_iff, Set.mem_diff, Set.mem_empty_iff_false, iff_false]; tauto
 
+/-- **`A ∩ (M \ Z) = A \ Z` whenever `A ⊆ M`**: needed to turn a `genAtom`-style "intersect with
+`M \ Z`" step into a literal `A \ Z` once `A` is known to already lie inside `M`. Generic set-theory
+fact, used by 8.12(c)(vi)(5)(b)'s `genAtom_combinedX_succ_eq` below. -/
+theorem inter_diff_eq_diff_of_subset {γ : Type*} {A M Z : Set γ} (h : A ⊆ M) :
+    A ∩ (M \ Z) = A \ Z := by
+  ext x
+  simp only [Set.mem_inter_iff, Set.mem_diff]
+  constructor
+  · rintro ⟨hxA, -, hxZ⟩; exact ⟨hxA, hxZ⟩
+  · rintro ⟨hxA, hxZ⟩; exact ⟨hxA, h hxA, hxZ⟩
+
+/-- **`genAtom`'s own recursive equation, as a rewritable lemma** (mirrors `Theorem88.lean`'s
+`atomU_succ`; `genAtom`'s `def` is a direct structural match on its `Nat` argument, so this holds by
+`rfl`, but stating it separately lets `rw` fire on `Nat`-literal successor forms like `2 * n + 1 + 1`
+without needing to unfold `genAtom` itself). -/
+theorem genAtom_succ' {γ : Type*} (Z : ℕ → Set γ) (M : Set γ) (δ : ℕ → Bool) (n : ℕ) :
+    genAtom Z M δ (n + 1) = genAtom Z M δ n ∩ (if δ n then Z n else M \ Z n) := rfl
+
 /-- **`xyStep`'s two outputs, at two *different* sign bits, are pairwise disjoint** — the local,
 one-step content behind `atomPair`'s eventual pairwise-disjointness invariant. -/
 theorem xyStep_disjoint_of_ne {α γ : Type*} {E : NeighborhoodSystem γ}
@@ -1201,6 +1219,145 @@ theorem YPseq_empty_or_mem (n : ℕ) :
   obtain ⟨hBA, hAmem⟩ := xStep_spec_bit D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin X Y
     hXmem hYmem hD₀mne hD₁mne (extendTruePair δ') n bx
   exact splitChoice'_isSplitSpec D₀ hD₀nomin hBA hAmem (Y n) |>.1
+
+/-! ### Exercise 8.12(c)(vi)(5)(b): `atomPair` as a `genAtom` over an interleaved family
+
+The interleaved families `combinedX`/`combinedY` and shared sign-interleaving map `combinedδ`
+(mirroring `Theorem88.lean`'s `atomU_eq_genAtom`, but half-stepped): `combinedX` alternates between
+`X`'s own enumeration (even positions) and `YPseq`'s recovered `D₀`-side pieces (odd positions);
+`combinedY` alternates symmetrically between `XPseq` (even) and `Y` (odd); `combinedδ` interleaves
+`δ`'s two components the same way. The headline facts, `atomPair_fst_eq_genAtom`/
+`atomPair_snd_eq_genAtom` below, identify `atomPair δ n`'s two sides with `genAtom` over these
+families at depth `2 * n` — proved via the odd-depth half-step identities `genAtom_combinedX_succ_eq`/
+`genAtom_combinedY_succ_eq`, which in turn are exactly (vi)(5)(a)'s two closed-form lemmas
+(`yStep_fst_succ_eq`/`xStep_snd_succ_eq`) each performed once per level of `n`, as anticipated. -/
+
+/-- The interleaved family testing `D₀`'s side: at even positions, `X`'s own enumeration; at odd
+positions, `YPseq`'s recovered `D₀`-side pieces. -/
+noncomputable def combinedX (n : ℕ) : Set α :=
+  if n % 2 = 0 then X (n / 2) else YPseq D₀ D₁ hD₀nomin hD₁nomin X Y (n / 2)
+
+/-- The interleaved family testing `D₁`'s side: at even positions, `XPseq`'s recovered `D₁`-side
+pieces; at odd positions, `Y`'s own enumeration. -/
+noncomputable def combinedY (n : ℕ) : Set β :=
+  if n % 2 = 0 then XPseq D₀ D₁ hD₀nomin hD₁nomin X Y (n / 2) else Y (n / 2)
+
+/-- The shared sign-interleaving map: at even positions, the `X`-sub-step's own bit; at odd
+positions, the `Y`-sub-step's own bit. -/
+def combinedδ (δ : ℕ → Bool × Bool) (n : ℕ) : Bool :=
+  if n % 2 = 0 then (δ (n / 2)).1 else (δ (n / 2)).2
+
+omit hD₀pos hD₀diff hD₁pos hD₁diff hXmem hYmem hD₀mne hD₁mne in
+theorem combinedX_even (k : ℕ) : combinedX D₀ D₁ hD₀nomin hD₁nomin X Y (2 * k) = X k := by
+  unfold combinedX
+  rw [if_pos (by omega : (2 * k) % 2 = 0), show (2 * k) / 2 = k from by omega]
+
+omit hD₀pos hD₀diff hD₁pos hD₁diff hXmem hYmem hD₀mne hD₁mne in
+theorem combinedX_odd (k : ℕ) :
+    combinedX D₀ D₁ hD₀nomin hD₁nomin X Y (2 * k + 1) = YPseq D₀ D₁ hD₀nomin hD₁nomin X Y k := by
+  unfold combinedX
+  rw [if_neg (by omega : ¬ (2 * k + 1) % 2 = 0), show (2 * k + 1) / 2 = k from by omega]
+
+omit hD₀pos hD₀diff hD₁pos hD₁diff hXmem hYmem hD₀mne hD₁mne in
+theorem combinedY_even (k : ℕ) :
+    combinedY D₀ D₁ hD₀nomin hD₁nomin X Y (2 * k) = XPseq D₀ D₁ hD₀nomin hD₁nomin X Y k := by
+  unfold combinedY
+  rw [if_pos (by omega : (2 * k) % 2 = 0), show (2 * k) / 2 = k from by omega]
+
+omit hD₀pos hD₀diff hD₁pos hD₁diff hXmem hYmem hD₀mne hD₁mne in
+theorem combinedY_odd (k : ℕ) : combinedY D₀ D₁ hD₀nomin hD₁nomin X Y (2 * k + 1) = Y k := by
+  unfold combinedY
+  rw [if_neg (by omega : ¬ (2 * k + 1) % 2 = 0), show (2 * k + 1) / 2 = k from by omega]
+
+omit hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin hXmem hYmem hD₀mne hD₁mne in
+theorem combinedδ_even (δ : ℕ → Bool × Bool) (k : ℕ) : combinedδ δ (2 * k) = (δ k).1 := by
+  unfold combinedδ
+  rw [if_pos (by omega : (2 * k) % 2 = 0), show (2 * k) / 2 = k from by omega]
+
+omit hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin hXmem hYmem hD₀mne hD₁mne in
+theorem combinedδ_odd (δ : ℕ → Bool × Bool) (k : ℕ) : combinedδ δ (2 * k + 1) = (δ k).2 := by
+  unfold combinedδ
+  rw [if_neg (by omega : ¬ (2 * k + 1) % 2 = 0), show (2 * k + 1) / 2 = k from by omega]
+
+/-- **The odd-depth half-step identity for `combinedX`**: given `atomPair δ n`'s `α`-side agrees
+with `genAtom combinedX` at the even depth `2 * n`, it also agrees at the odd depth `2 * n + 1` with
+the `Y`-sub-step's own (choice-split) `α`-side output — via (vi)(5)(a)'s closed form
+`yStep_fst_succ_eq`, run at `combinedδ`/`combinedY`'s odd value `(δ n).2`. -/
+theorem genAtom_combinedX_succ_eq (δ : ℕ → Bool × Bool) (n : ℕ)
+    (hn : (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y δ n).1 =
+      genAtom (combinedX D₀ D₁ hD₀nomin hD₁nomin X Y) D₀.master (combinedδ δ) (2 * n)) :
+    genAtom (combinedX D₀ D₁ hD₀nomin hD₁nomin X Y) D₀.master (combinedδ δ) (2 * n + 1) =
+      (xStep D₁ hD₁nomin (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y δ n).1
+        (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y δ n).2 (X n) (δ n).1).1 := by
+  rw [genAtom_succ', ← hn, combinedδ_even, combinedX_even]
+  have hAsub : (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y δ n).1 ⊆ D₀.master :=
+    atomPair_fst_subset_master D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin X Y hXmem
+      hYmem hD₀mne hD₁mne δ n
+  simp only [xStep, xyStep]
+  rcases Bool.eq_false_or_eq_true (δ n).1 with hb | hb
+  · simp only [hb, if_true]
+  · simp only [hb, Bool.false_eq_true, if_false]
+    exact inter_diff_eq_diff_of_subset hAsub
+
+/-- **The odd-depth half-step identity for `combinedY`**: given `atomPair δ n`'s `β`-side agrees
+with `genAtom combinedY` at the even depth `2 * n`, it also agrees at the odd depth `2 * n + 1` with
+the `X`-sub-step's own (choice-split) `β`-side output — via (vi)(5)(a)'s closed form
+`xStep_snd_succ_eq`, run at `combinedδ`/`combinedX`'s even value `(δ n).1`. -/
+theorem genAtom_combinedY_succ_eq (δ : ℕ → Bool × Bool) (n : ℕ)
+    (hn : (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y δ n).2 =
+      genAtom (combinedY D₀ D₁ hD₀nomin hD₁nomin X Y) D₁.master (combinedδ δ) (2 * n)) :
+    genAtom (combinedY D₀ D₁ hD₀nomin hD₁nomin X Y) D₁.master (combinedδ δ) (2 * n + 1) =
+      (xStep D₁ hD₁nomin (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y δ n).1
+        (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y δ n).2 (X n) (δ n).1).2 := by
+  rw [genAtom_succ', ← hn, combinedδ_even, combinedY_even]
+  exact (xStep_snd_succ_eq D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin X Y hXmem hYmem
+    hD₀mne hD₁mne δ n (δ n).1).symm
+
+/-- **Headline closed form, `α`-side** (Exercise 8.12(c)(vi)(5)(b)): `atomPair δ n`'s `α`-side
+coincides with `genAtom` over the interleaved family `combinedX` at the doubled depth `2 * n`.
+Proved by induction on `n`, each step performing the two half-step rewrites
+`genAtom_combinedX_succ_eq` (`X`-sub-step half, elementary) then `yStep_fst_succ_eq` ((vi)(5)(a)'s
+`Y`-sub-step closed form) — mirrors `Theorem88.lean`'s one-line `atomU_eq_genAtom`, just with each
+level's step split into the two named half-steps. -/
+theorem atomPair_fst_eq_genAtom (δ : ℕ → Bool × Bool) (n : ℕ) :
+    (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y δ n).1 =
+      genAtom (combinedX D₀ D₁ hD₀nomin hD₁nomin X Y) D₀.master (combinedδ δ) (2 * n) := by
+  induction n with
+  | zero => rfl
+  | succ n hIH =>
+      have hodd := genAtom_combinedX_succ_eq D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin
+        X Y hXmem hYmem hD₀mne hD₁mne δ n hIH
+      have hstep := yStep_fst_succ_eq D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin X Y
+        hXmem hYmem hD₀mne hD₁mne δ n (δ n).2
+      have h2 : 2 * (n + 1) = 2 * n + 1 + 1 := by ring
+      rw [atomPair_succ_eq, hstep, h2, genAtom_succ', combinedδ_odd, combinedX_odd, hodd]
+
+/-- **Headline closed form, `β`-side** (Exercise 8.12(c)(vi)(5)(b)), symmetric to
+`atomPair_fst_eq_genAtom`: `atomPair δ n`'s `β`-side coincides with `genAtom` over the interleaved
+family `combinedY` at depth `2 * n`, via `genAtom_combinedY_succ_eq` ((vi)(5)(a)'s `X`-sub-step
+closed form `xStep_snd_succ_eq`) then the `Y`-sub-step's direct `β`-side output (elementary, no
+closed form needed — it is literally `if (δ n).2 then B1 ∩ Y n else B1 \ Y n` by `yStep`'s own
+definition). -/
+theorem atomPair_snd_eq_genAtom (δ : ℕ → Bool × Bool) (n : ℕ) :
+    (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y δ n).2 =
+      genAtom (combinedY D₀ D₁ hD₀nomin hD₁nomin X Y) D₁.master (combinedδ δ) (2 * n) := by
+  induction n with
+  | zero => rfl
+  | succ n hIH =>
+      have hodd := genAtom_combinedY_succ_eq D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin
+        X Y hXmem hYmem hD₀mne hD₁mne δ n hIH
+      have h2 : 2 * (n + 1) = 2 * n + 1 + 1 := by ring
+      rw [atomPair_succ_eq, h2, genAtom_succ', combinedδ_odd, combinedY_odd, hodd]
+      obtain ⟨hAB, -, hBmem⟩ := atomPair_invariant D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff
+        hD₁nomin X Y hXmem hYmem hD₀mne hD₁mne δ n
+      have hB1sub := (xStep_snd_subset hD₁nomin hAB hBmem (X n) (δ n).1).trans
+        (atomPair_snd_subset_master D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin X Y hXmem
+          hYmem hD₀mne hD₁mne δ n)
+      simp only [yStep, xyStep, Prod.swap]
+      rcases Bool.eq_false_or_eq_true (δ n).2 with hb | hb
+      · simp only [hb, if_true]
+      · simp only [hb, Bool.false_eq_true, if_false]
+        exact (inter_diff_eq_diff_of_subset hB1sub).symm
 
 end AtomPair
 
