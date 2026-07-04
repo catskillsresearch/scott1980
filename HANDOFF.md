@@ -7901,18 +7901,36 @@ theorems (`NoMinimal.mem_ne_empty`, `X_ne_empty`, `Y_ne_empty`, `XPseq_mem`, `YP
 of (1)–(7) done); 8.12(c) umbrella row updated to reflect (i)–(vi) all `Pass`, only (vii) remains.
 
 **Status: Exercise 8.12(c)(vi) is `Pass` — COMPLETE, all of (1)–(7).** **Next up:** Exercise
-8.12(c)(vii) — the final `DomainIso D₀ D₁` assembly, the last piece of 8.12(c). This is a
-substantial undertaking (comparable to `Theorem88a.lean`'s ~150-line `Iso` section, but genuinely
-*symmetric* rather than a one-sided embedding into a freshly-built target). Before writing any
-code, **this needs its own scoping pass**: at minimum it will need (a) covering/surjectivity
-hypotheses on `X`/`Y` (`hXcover : ∀ S, D₀.mem S ↔ ∃ n, S = X n`, symmetric `hYcover`) not yet
-present anywhere in `Exercise812c.lean` (the section docstring already *describes* `X`/`Y` as
-"enumerations covering `D₀.mem`/`D₁.mem`", but no such hypothesis has actually been added to
-`section AtomPair`'s `variable` list yet), (b) an `exists_inter_index`-style lemma pair (mirroring
-`Theorem88a.lean`'s `exists_inter_index_of_dmem`/`_of_nonempty`) built from (5)(d)'s
-`X_inter_eq_iff_XPseq_inter_eq`/`YPseq_inter_eq_iff_Y_inter_eq` plus `hXcover`/`hYcover`, (c) an
-`X`/`Y`-side-zero convention fact (`X 0 = D₀.master`/`Y 0 = D₁.master`, mirroring `Theorem88a.lean`'s
-`he0`/`Yidx_zero`) if the direct `toD1`/`toD0` filter maps need `master_mem` handled the same way
-`Yidx_zero` did — needs checking whether `XPseq_mem`/`YPseq_mem` (now unconditional, no index-0
-special-casing needed) already sidestep this. Should scope into sub-parts before executing, per
-this project's usual discipline for genuinely new (non-transcription) pieces.
+8.12(c)(vii) — the final `DomainIso D₀ D₁` assembly, the last piece of 8.12(c).
+
+## 2026-07-04 checkpoint — Exercise 8.12(c)(vii) scoped into 6 sub-parts, stopping before executing
+
+Investigated `Theorem88a.lean`'s `Iso`-section pattern (pushforward/pullback filter maps
+`toDprimeU`/`toD`, mutual-inverse + order-preservation) adapted from *embedding an arbitrary `D`
+into a freshly-built `D'`* to *directly relating two pre-existing `D₀`/`D₁`* via the already-proved
+`X n ↔ XPseq n`/`Y n ↔ YPseq n` correspondence. Three genuine gaps found (none showstoppers):
+
+1. `section AtomPair`'s `variable` list never actually declared `X`/`Y` as *covering* enumerations
+   — the section docstring merely *describes* them that way. Needs `hXcover`/`hYcover` (mirroring
+   `Theorem88a.lean`'s `hcover`), plus Scott's zero-convention `hX0 : X 0 = D₀.master`/
+   `hY0 : Y 0 = D₁.master` (mirroring `he0`).
+2. The pushforward filter's `master_mem` needs `XPseq 0 = D₁.master`/`YPseq 0 = D₀.master` — not
+   yet proved, needs its own `Yseq_zero_eq_master`-style argument adapted to `atomPair`'s two-step
+   recursion.
+3. `up_mem`'s cross-parity case is **not** missing new machinery: `transfer_subset_combined`/
+   `transfer_inter_eq_combined` already hold for *arbitrary* index pairs (5(d) only specialized the
+   same-parity headline cases) — applying them at mixed parities `(2i, 2j+1)` gives exactly
+   `X i ⊆ YPseq j ↔ XPseq i ⊆ Y j` for free, just not yet named/specialized.
+
+Broken into **8.12(c)(vii)(1)–(6)** in `arxiv.md` (hypotheses+zero-convention; the
+`XPseq 0`/`YPseq 0` facts; the cross-parity order/inter-eq specializations; `toD1`; `toD0`;
+mutual-inverse+order-iso assembly), mirroring how (vi)(5)(c) was scoped before executing.
+**Stopping here, per this project's discipline for genuinely new (non-transcription) pieces, to
+let the user weigh in on how much of this ~150-line-sized assembly to execute now** vs.
+continuing incrementally sub-part by sub-part (as with (vi)(5)(c)) in a future session.
+
+**Status: Exercise 8.12(c)(vii) is `Deferred` — scoped into 6 sub-parts, none yet executed.**
+**Next up:** Exercise 8.12(c)(vii)(1) (add `hXcover`/`hYcover`/`hX0`/`hY0`), then (2)–(6) in order;
+after (vii) is `Pass`, only **Exercise 8.12(d)** (effective refinement of (c), expected comparable
+in scope to Theorem 8.8(b)'s 8-sub-part, multi-file effort) remains to close out Exercise 8.12
+entirely.

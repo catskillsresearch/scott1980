@@ -2208,8 +2208,44 @@ Lecture VIII covers retractions, projections, and the construction of the univer
 
 #### Exercise 8.12(c)(vii)
 * **Mathematical Target:** Part 7 of 7 — final assembly of (iv)/(v)/(vi)'s ingredients into the headline `DomainIso D₀ D₁` (`D₀.Element ≃o D₁.Element`), completing Exercise 8.12(c)
-* **Lean File:** — (not yet started)
-* **Proof Notes:** expected to mirror `Theorem88a.lean`'s `domainIso` assembly pattern (pushforward/pullback filter construction from the matched-atom correspondence), but symmetric in both directions rather than a one-sided embedding.
+* **Lean File:** `Scott1980/Neighborhood/Exercise812c.lean` (in progress); umbrella — see sub-rows **8.12(c)(vii)(1)–(6)** below, mirroring how (c)(vi)(5)(c) was scoped before executing
+* **Proof Notes:** **scoped 2026-07-04, stopping before executing** (per this project's discipline for genuinely new, non-transcription pieces — mirroring how (vi)(5)(c) itself was scoped before executing). Investigated what `Theorem88a.lean`'s `Iso`-section pattern (pushforward/pullback filter construction `toDprimeU`/`toD`, mutual-inverse + order-preservation) needs when adapted from *embedding an arbitrary `D` into a freshly-built `D'`* to *directly relating two pre-existing systems `D₀`/`D₁`* via the already-proved `X n ↔ XPseq n`/`Y n ↔ YPseq n` correspondence. Three genuine gaps found, none showstoppers: **(a)** `section AtomPair`'s `variable` list has never actually declared `X`/`Y` as *covering* enumerations (`hXcover : ∀ S, D₀.mem S ↔ ∃ n, S = X n`, symmetric `hYcover`) — the section docstring merely *describes* them that way; this needs adding, mirroring `Theorem88a.lean`'s `hcover`. **(b)** `master_mem` for the pushforward filter needs `XPseq 0 = D₁.master`/`YPseq 0 = D₀.master` (Scott's convention `X 0 = D₀.master`/`Y 0 = D₁.master`, mirroring `Yseq_zero_eq_master`'s argument) — not yet proved, needs its own short inductive unfolding of `atomPair`'s two-step recursion at `n = 0`. **(c)** `up_mem`'s *cross-parity* case (`XPseq i ⊆ Y j ⟹ x`'s witness on `X`/`YPseq j`) is **not** vacuous or missing new machinery — it drops out of the *already-proved* `transfer_subset_combined`/`transfer_inter_eq_combined` (which hold for *arbitrary* index pairs `i,j`, not just same-parity — (5)(d) only specialized the same-parity headline cases) applied at *mixed* parities `(2i, 2j+1)`, giving exactly `X i ⊆ YPseq j ↔ XPseq i ⊆ Y j` after the same `Set.inter_eq_self_of_subset_right` bookkeeping as (5)(d)'s other specializations — genuinely new *named* lemmas, but zero new proof *machinery*. Broken into 6 sub-parts (**8.12(c)(vii)(1)–(6)**, see below); **stopping here pending user direction on how much of the ~150-line `Iso`-section-sized assembly to execute in this session** vs. continuing incrementally sub-part by sub-part as with (vi)(5)(c).
+* **Status:** Deferred — scoped into sub-parts, none yet executed
+
+#### Exercise 8.12(c)(vii)(1)
+* **Mathematical Target:** Add the covering/surjectivity hypotheses `hXcover : ∀ S, D₀.mem S ↔ ∃ n, S = X n` and `hYcover : ∀ S, D₁.mem S ↔ ∃ n, S = Y n` to the construction (mirroring `Theorem88a.lean`'s `hcover`), plus Scott's zero-convention hypotheses `hX0 : X 0 = D₀.master`/`hY0 : Y 0 = D₁.master` (mirroring `he0`) — the missing hypotheses `section AtomPair`'s docstring already assumed but never formally declared
+* **Lean File:** `Scott1980/Neighborhood/Exercise812c.lean`
+* **Proof Notes:** planned as a fresh `section Iso` (or extension of `section AtomPair`) adding these four hypotheses as `variable`s/`include`s; no proof content of its own beyond stating them, though downstream lemmas will need to thread them through the usual long argument lists.
+* **Status:** Deferred
+
+#### Exercise 8.12(c)(vii)(2)
+* **Mathematical Target:** `XPseq 0 = D₁.master` and `YPseq 0 = D₀.master`, given (1)'s `hX0`/`hY0`
+* **Lean File:** `Scott1980/Neighborhood/Exercise812c.lean`
+* **Proof Notes:** planned to mirror `Theorem88.lean`'s `Yseq_zero_eq_master` argument (unfold one step of the two-sided recursion at `n = 0` against `X 0 = D₀.master`/`Y 0 = D₁.master`, use `hsplit`'s spec to force the "`-`"-branch empty and the "`+`"-branch to swallow the whole master), adapted from `Yseq`'s single-step recursion to `atomPair`'s `xStep ∘ yStep` two-step recursion (so likely needs the `X`-side and `Y`-side argued as two separate half-steps).
+* **Status:** Deferred
+
+#### Exercise 8.12(c)(vii)(3)
+* **Mathematical Target:** The cross-parity specializations of `transfer_subset_combined`/`transfer_inter_eq_combined` needed for `up_mem`/`inter_mem`'s mixed cases: `X i ⊆ YPseq j ↔ XPseq i ⊆ Y j` (order) and an `exists_inter_index`-style pair of lemmas (mirroring `Theorem88a.lean`'s `exists_inter_index_of_dmem`/`_of_nonempty`) built from `X_inter_eq_iff_XPseq_inter_eq`/`YPseq_inter_eq_iff_Y_inter_eq` ((5)(d)) plus (1)'s `hXcover`/`hYcover`, for both the `D₀→D₁` and `D₁→D₀` directions
+* **Lean File:** `Scott1980/Neighborhood/Exercise812c.lean`
+* **Proof Notes:** the order fact is a direct specialization of the *already-proved, not-yet-specialized-to-mixed-parity* `transfer_subset_combined` at `(2i, 2j+1)`/`(2i+1, 2j)`, zero new machinery (see (vii)'s umbrella notes). The `exists_inter_index` pair needs `hXcover`/`hYcover` to name a `D₀.mem`/`D₁.mem` witness set as some `X m`/`Y m`, then pushes the equation across via (5)(d)'s inter-eq facts — direct transcription of `Theorem88a.lean`'s pattern.
+* **Status:** Deferred
+
+#### Exercise 8.12(c)(vii)(4)
+* **Mathematical Target:** `toD1 : D₀.Element → D₁.Element`, the pushforward filter `{T | ∃ n, T = XPseq n ∧ x.mem (X n)}`, proved to satisfy all of `Element`'s axioms (`sub`, `master_mem`, `inter_mem`, `up_mem`)
+* **Lean File:** `Scott1980/Neighborhood/Exercise812c.lean`
+* **Proof Notes:** `sub` from (vi)(7)'s `XPseq_mem`; `master_mem` from (2)'s `XPseq 0 = D₁.master`; `inter_mem` from (3)'s `exists_inter_index_of_dmem`-style lemma; `up_mem` needs (1)'s `hYcover` to name the target `D₁.mem` set as some `Y j`, then (3)'s cross-parity order fact — direct transcription of `Theorem88a.lean`'s `toDprimeU`.
+* **Status:** Deferred
+
+#### Exercise 8.12(c)(vii)(5)
+* **Mathematical Target:** `toD0 : D₁.Element → D₀.Element`, the symmetric pullback filter `{S | ∃ n, S = YPseq n ∧ y.mem (Y n)}`, proved to satisfy all of `Element`'s axioms
+* **Lean File:** `Scott1980/Neighborhood/Exercise812c.lean`
+* **Proof Notes:** exact mirror of (4) with the two sides' roles swapped (`YPseq_mem`, `YPseq 0 = D₀.master`, the `D₁→D₀` `exists_inter_index` lemma, `hXcover` for `up_mem`).
+* **Status:** Deferred
+
+#### Exercise 8.12(c)(vii)(6)
+* **Mathematical Target:** `toD1`/`toD0` are mutually inverse and order-preserving/-reflecting, assembling `domainIso : DomainIso D₀ D₁` and the headline `isomorphic : D₀ ≅ᴰ D₁`, completing Exercise 8.12(c) in full
+* **Lean File:** `Scott1980/Neighborhood/Exercise812c.lean`
+* **Proof Notes:** direct transcription of `Theorem88a.lean`'s `domainIso`'s `left_inv`/`right_inv`/`map_rel_iff'` fields, using `hXcover`/`hYcover` to resolve "which index represents a given neighbourhood" ambiguity (mirroring `embed_eq_iff`'s role there) — this needs an `X`/`XPseq`-level (resp. `Y`/`YPseq`-level) inclusion-antisymmetry-to-equality fact analogous to `embed_eq_iff`, itself a direct corollary of (5)(d)'s `X_subset_iff_XPseq_subset` (resp. `YPseq_subset_iff_Y_subset`) applied twice.
 * **Status:** Deferred
 
 #### Exercise 8.12(d)
