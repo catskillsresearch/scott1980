@@ -7701,3 +7701,43 @@ the even-index case of `hcore`: rewrite both sides via (b)'s `atomPair_fst_eq_ge
 `combinedδ δ` for the de-interleaved `δ := deinterleaveδ δ'`) down to `(atomPair δ n).1 = ∅ ↔
 (atomPair δ n).2 = ∅`, then close directly with `atomPair_invariant`'s clause (a) (already `Pass`,
 (iv)) — expected to be a direct instantiation, no new mathematical content.
+
+## 2026-07-04 checkpoint — Exercise 8.12(c)(vi)(5)(c)(2) `Pass`: the even-index `hcore` case
+
+**`hcore_even (δ' : ℕ → Bool) (n : ℕ) : genAtom combinedX D₀.master δ' (2*n) = ∅ ↔ genAtom
+combinedY D₁.master δ' (2*n) = ∅`** (`Scott1980/Neighborhood/Exercise812c.lean`, appended after
+`combinedδ_deinterleaveδ`, still before `end AtomPair`): `rw [← combinedδ_deinterleaveδ δ', ←
+atomPair_fst_eq_genAtom … (deinterleaveδ δ') n, ← atomPair_snd_eq_genAtom … (deinterleaveδ δ') n]`
+reduces the goal to `(atomPair (deinterleaveδ δ') n).1 = ∅ ↔ (atomPair (deinterleaveδ δ') n).2 = ∅`,
+closed directly by `atomPair_invariant`'s `.1` clause (already `Pass`, (iv)) — exactly the planned
+direct instantiation, no new mathematical content.
+
+**One implementation wrinkle, worth recording**: the naive one-line `rw [←
+atomPair_fst_eq_genAtom, ← atomPair_snd_eq_genAtom]` (leaving `D₀ D₁ hD₀pos hD₀diff … hD₁mne` for
+Lean to infer via unification) fails — unlike the `combinedδ_even`/`_odd` `include`/`omit`
+pitfall (which produces bogus *unused* phantom parameters), here the parameters are genuinely
+*used* by the lemma but simply don't occur in the specific sub-term pattern `rw` matches against
+(`genAtom (combinedX …) D₀.master (combinedδ δ) (2*n)` mentions `D₀ D₁ hD₀nomin hD₁nomin X Y` but
+not `hD₀pos hD₀diff hD₁pos hD₁diff hXmem hYmem hD₀mne hD₁mne`) — so `rw` cannot unify them and
+instead leaves them as new goals (`⊢ D₀.IsPositive`, `⊢ D₀.master.Nonempty`, etc.), each trivially
+closable by `assumption` but *not* auto-discharged by `rw` itself, unlike `apply`'s optional
+`<;> assumption` convention. **Fix**: supply every leading argument explicitly in the `rw` call
+(`atomPair_fst_eq_genAtom D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin X Y hXmem hYmem
+hD₀mne hD₁mne (deinterleaveδ δ') n`), matching the file's existing calling convention used
+throughout (e.g. `genAtom_combinedX_succ_eq D₀ D₁ hD₀pos … hD₁mne δ n hIH`). **Lesson**: `rw [←
+lemma]` with a multi-hypothesis lemma only infers arguments that appear in the matched pattern;
+everything else must be supplied positionally, it will not fall back to `assumption` search.
+
+Zero `sorry`; whole-project `lake build` (3163 jobs) green; `#print axioms` on `hcore_even` gives
+`⊆{propext, Classical.choice, Quot.sound}`, matching the section's baseline (choice inherited from
+`atomPair_invariant`/`splitChoice'`, 8.12(c)(iii) — no new taint). `arxiv.md`: 8.12(c)(vi)(5)(c)(2)
+row updated to `Pass`; 8.12(c)(vi)(5)(c) umbrella row updated to show (1)/(2) `Pass`, (3)/(4)
+`Deferred`.
+
+**Status: Exercise 8.12(c)(vi)(5)(c)(2) is `Pass`.** **Next up:** Exercise 8.12(c)(vi)(5)(c)(3) —
+the odd-index case of `hcore`: `genAtom combinedX D₀.master δ' (2*n+1) = ∅ ↔ genAtom combinedY
+D₁.master δ' (2*n+1) = ∅`, via (b)'s odd-depth half-step closed forms
+(`genAtom_combinedX_succ_eq`/`genAtom_combinedY_succ_eq`) composed with (2)'s even-depth
+`hcore_even` at `n`, then closed with `xStep_spec_bit`'s matching-emptiness clause (already `Pass`,
+(vi)(4)(c)) — expected to be a direct instantiation, no new mathematical content, same style as
+(2).

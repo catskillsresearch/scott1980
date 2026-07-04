@@ -1386,6 +1386,22 @@ theorem combinedδ_deinterleaveδ (δ' : ℕ → Bool) :
   · rename_i hm
     rw [show 2 * (m / 2) + 1 = m from by omega]
 
+/-- **The even-index case of `hcore`** (Exercise 8.12(c)(vi)(5)(c)(2)): for any `δ' : ℕ → Bool` and
+any `n`, `genAtom combinedX δ' (2*n) = ∅ ↔ genAtom combinedY δ' (2*n) = ∅`. Direct instantiation:
+de-interleave `δ'` (via (c)(1)), rewrite both `genAtom`s back to `atomPair (deinterleaveδ δ') n`'s
+two sides via (b)'s `atomPair_fst_eq_genAtom`/`atomPair_snd_eq_genAtom`, then close with
+`atomPair_invariant`'s clause (a) (already `Pass`, (iv)). -/
+theorem hcore_even (δ' : ℕ → Bool) (n : ℕ) :
+    genAtom (combinedX D₀ D₁ hD₀nomin hD₁nomin X Y) D₀.master δ' (2 * n) = ∅ ↔
+      genAtom (combinedY D₀ D₁ hD₀nomin hD₁nomin X Y) D₁.master δ' (2 * n) = ∅ := by
+  rw [← combinedδ_deinterleaveδ δ',
+    ← atomPair_fst_eq_genAtom D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin X Y hXmem
+      hYmem hD₀mne hD₁mne (deinterleaveδ δ') n,
+    ← atomPair_snd_eq_genAtom D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin X Y hXmem
+      hYmem hD₀mne hD₁mne (deinterleaveδ δ') n]
+  exact (atomPair_invariant D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin X Y hXmem hYmem
+    hD₀mne hD₁mne (deinterleaveδ δ') n).1
+
 end AtomPair
 
 end Scott1980.Neighborhood

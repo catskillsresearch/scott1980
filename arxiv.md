@@ -2162,7 +2162,7 @@ Lecture VIII covers retractions, projections, and the construction of the univer
 * **Mathematical Target:** The matching-emptiness fact `∀ (δ' : ℕ → Bool) n, genAtom combinedX D₀.master δ' n = ∅ ↔ genAtom combinedY D₁.master δ' n = ∅` — the `hcore` hypothesis `Theorem88.lean`'s `transfer_dir` needs, for the interleaved families
 * **Lean File:** `Scott1980/Neighborhood/Exercise812c.lean` (not yet started) — umbrella; broken into 4 sub-parts (1)–(4) below, since the single planned paragraph is actually a definition + round-trip lemma + two independent case proofs + a final assembly, not one atomic step
 * **Proof Notes:** pure assembly overall, no new mathematical content, but genuinely multiple Lean steps: **(1)** define the de-interleaving map and prove the round-trip identity feeding both later cases; **(2)** the even-index case, via (b) + `atomPair_invariant`; **(3)** the odd-index case, via (b) + `xStep_spec_bit`; **(4)** assemble (1)–(3) (parity case-split on `n`) into the headline `∀ δ' n, …` statement. See sub-rows for the scoped breakdown.
-* **Status:** Partial ((1) `Pass`, fully choice-free `⊆{propext,Quot.sound}`; (2)–(4) `Deferred`)
+* **Status:** Partial ((1)/(2) `Pass` — (1) fully choice-free `⊆{propext,Quot.sound}`, (2) `⊆{propext,Classical.choice,Quot.sound}` matching baseline; (3)/(4) `Deferred`)
 
 #### Exercise 8.12(c)(vi)(5)(c)(1)
 * **Mathematical Target:** Given arbitrary `δ' : ℕ → Bool`, de-interleave it into `δ k := (δ' (2*k), δ' (2*k+1)) : ℕ → Bool × Bool`, and prove that re-interleaving recovers `δ'` exactly: `combinedδ δ = δ'`
@@ -2172,9 +2172,9 @@ Lecture VIII covers retractions, projections, and the construction of the univer
 
 #### Exercise 8.12(c)(vi)(5)(c)(2)
 * **Mathematical Target:** The even-index case of `hcore`: `genAtom combinedX D₀.master δ' (2*n) = ∅ ↔ genAtom combinedY D₁.master δ' (2*n) = ∅`
-* **Lean File:** `Scott1980/Neighborhood/Exercise812c.lean` (not yet started)
-* **Proof Notes:** rewrite both sides via (b)'s `atomPair_fst_eq_genAtom`/`atomPair_snd_eq_genAtom` (using (1)'s round-trip identity to identify `δ'` with `combinedδ δ`) to `(atomPair δ n).1 = ∅ ↔ (atomPair δ n).2 = ∅`, then close directly with `atomPair_invariant`'s clause (a) (already `Pass`, (iv)) — no new content, a direct instantiation.
-* **Status:** Deferred
+* **Lean File:** `Scott1980/Neighborhood/Exercise812c.lean`
+* **Proof Notes:** `hcore_even (δ' : ℕ → Bool) (n : ℕ)`: `rw [← combinedδ_deinterleaveδ δ', ← atomPair_fst_eq_genAtom …(deinterleaveδ δ') n, ← atomPair_snd_eq_genAtom …(deinterleaveδ δ') n]` reduces the goal to `(atomPair (deinterleaveδ δ') n).1 = ∅ ↔ (atomPair (deinterleaveδ δ') n).2 = ∅`, closed directly by `atomPair_invariant`'s clause `.1` (already `Pass`, (iv)) — exactly the planned direct instantiation, no new content. **One implementation wrinkle**: the naive one-line `rw [← atomPair_fst_eq_genAtom, ← atomPair_snd_eq_genAtom]` (letting Lean infer the lemmas' leading `D₀ D₁ hD₀pos … hD₁mne` arguments from unification) fails — those hypotheses don't occur in the lemmas' conclusion patterns being matched, so `rw` leaves them as unresolved metavariable side-goals (`⊢ D₀.IsPositive`, `⊢ D₀.master.Nonempty`, etc., all provable by `assumption` but not auto-discharged by `rw` itself) rather than instantiating them from context; fixed by supplying every leading argument explicitly in the `rw`, mirroring the file's existing calling convention throughout (e.g. `genAtom_combinedX_succ_eq D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin X Y hXmem hYmem hD₀mne hD₁mne δ n hIH`). Zero `sorry`; whole-project `lake build` (3163 jobs) green; `#print axioms` on `hcore_even` gives `⊆{propext,Classical.choice,Quot.sound}`, matching the section's baseline (choice inherited from `atomPair_invariant`/`splitChoice'`).
+* **Status:** Pass
 
 #### Exercise 8.12(c)(vi)(5)(c)(3)
 * **Mathematical Target:** The odd-index case of `hcore`: `genAtom combinedX D₀.master δ' (2*n+1) = ∅ ↔ genAtom combinedY D₁.master δ' (2*n+1) = ∅`
