@@ -198,3 +198,4 @@ import Scott1980.Neighborhood.Exercise812
 import Scott1980.Neighborhood.LevelSetPrimrec
 import Scott1980.Neighborhood.Exercise812c
 import Scott1980.Neighborhood.Exercise812cYseq
+import Scott1980.Neighborhood.Exercise812d

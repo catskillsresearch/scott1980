@@ -8117,3 +8117,64 @@ call on the design decision above (generic search-based split vs. abstract-hypot
 executing.** **Next up:** either resolve the design decision and execute (d)(1)–(6) sub-part by
 sub-part (mirroring how (c)(v)/(c)(vi)(5)/(c)(vii) were each executed after scoping), or move on to
 a different item if the user prefers to leave 8.12(d)–(g) for a future session.
+
+## 2026-07-04 checkpoint — Exercise 8.12(d)(1): generalized `xStep`/`yStep`/`atomPair` over an abstract split
+
+User asked to proceed sub-part by sub-part through 8.12(d) (the "safer route" from the prior
+checkpoint), starting with (d)(1). New file `Scott1980/Neighborhood/Exercise812d.lean`.
+
+**Scope adjustment, discovered on inspection before writing any code:** the original scoping listed
+`XPseq`/`YPseq`/`combinedX`/`combinedY`/`toD1`/`toD0`/`domainIso812c` as also needing a classical
+abstract-split generalization in this sub-part. Re-reading `Exercise812c.lean` shows this is
+unneeded extra work: those are all downstream consequences of `atomPair`'s invariant/disjointness/
+subset facts alone (never touching the split function directly), so `(d)(3)`–`(d)(6)`'s planned
+*code-level* analogues (`atomPairCode`, `XPseqCode`/`YPseqCode`, computability, final `EffectiveIso`)
+can build directly atop `(d)(1)`'s abstract `atomPairG`, without a redundant classical replica of
+the whole downstream chain first. Kept `(d)(1)` scoped to the genuinely load-bearing recursive core.
+
+**Also discovered on inspection:** `Exercise812c.lean`'s own generic layer (`xyStep`,
+`xyStep_disjoint_of_ne`, `SplitSpec'`, `splitChoice'`, `split_fst_subset'`/`split_snd_subset'`) is
+**already** split-agnostic (parametrized over an abstract `E`/`split` from the start, deliberately
+built that way back when 8.12(c) generalized `Theorem88.lean`'s `exists_split`/`SplitSpec`/
+`splitChoice` from `E := U` to an abstract `E`). The hardcoding to the *classical* `splitChoice'
+D₁ hD₁nomin`/`splitChoice' D₀ hD₀nomin` only happens at `xStep`/`yStep` themselves. So this sub-part's
+actual job is much more localized than "redo the whole file": redo just `xStep`/`yStep` through
+`atomPair`'s subset/disjointness/master-subset facts (`Exercise812c.lean` lines 390–757).
+
+**Implementation:** `xStepG`/`yStepG` (literally `xyStep splitX`/`(xyStep splitY _ _ _ _).swap`,
+taking the split function as a raw argument); their subset/disjointness lemmas (`xStepG_fst_subset`,
+`xStepG_snd_subset`, `yStepG_fst_subset`, `yStepG_snd_subset`, `xStepG_disjoint_of_ne`,
+`yStepG_disjoint_of_ne`), each taking `hxSplit : SplitSpec' D₁ splitX`/`hySplit : SplitSpec' D₀
+splitY` directly instead of deriving them from `NoMinimal` via `splitChoice'_isSplitSpec`;
+`atomPairG` (recursive def, verbatim transcription of `atomPair` with `splitChoice' Dᵢ hDᵢnomin`
+replaced by `splitX`/`splitY`); `atomPairG_succ_eq`/`atomPairG_invariant`/`atomPairG_congr`/
+`xStepG_spec`/`atomPairG_fst_subset`/`atomPairG_snd_subset`/`atomPairG_fst_subset_master`/
+`atomPairG_snd_subset_master`/`atomPairG_disjoint` — each a direct transcription of its
+`Exercise812c.lean` counterpart with `splitChoice'_isSplitSpec Dᵢ hDᵢnomin` (a *term*) replaced by
+the hypothesis `hxSplit`/`hySplit`.
+
+**Bonus finding:** `NoMinimal` itself is no longer needed *anywhere* in this generalized layer —
+only `SplitSpec'` is ever used, so the abstraction actually *drops* a hypothesis relative to (c)'s
+original (only re-appears in the closing sanity-check corollary, where it's needed to construct the
+classical `splitChoice'` instance being recovered).
+
+**Closed with a sanity-check corollary**, `atomPairG_splitChoice_eq`: instantiating
+`splitX := splitChoice' D₁ hD₁nomin`, `splitY := splitChoice' D₀ hD₀nomin` recovers `atomPair`
+exactly (by induction; `atomPairG`/`atomPair`'s recursive equations unfold to the identical
+`let`-chain once the splits agree).
+
+**Lean gotcha hit:** `atomPairG_congr` initially forgot to `omit` the newly-introduced `hySplit`/
+`hxSplit` section variables (unused in its own statement), which silently shifted arguments at call
+sites (a bare `splitX` landing in `hySplit`'s argument slot) rather than failing to elaborate at the
+declaration itself — caught by the linter's "automatically included section variable(s) unused"
+warning plus a downstream "Type mismatch: splitX ... expected SplitSpec' D₀ splitY" error. Fixed by
+adding `hySplit hxSplit` to the `omit ... in` list.
+
+Axiom-audited: `atomPairG_invariant`/`atomPairG_disjoint`/`atomPairG_fst_subset_master`/
+`atomPairG_snd_subset_master`/`atomPairG_splitChoice_eq` all give `⊆{propext, Classical.choice,
+Quot.sound}`, matching the (c) baseline. Wired `Exercise812d.lean` into `Scott1980.lean`. Whole-
+project `lake build` (3164 jobs) green, zero `sorry`.
+
+**Status: Exercise 8.12(d)(1) is `Pass`.** **Next up:** 8.12(d)(2) — define what "`splitX`/`splitY`
+computable relative to presentations `P₀`,`P₁`" means (a new `Prop`/structure mirroring
+`IsComputableMap`'s two-presentation shape).
