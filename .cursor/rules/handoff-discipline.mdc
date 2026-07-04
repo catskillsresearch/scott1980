@@ -16,6 +16,15 @@ state lives in files, not chat memory. Treat `HANDOFF.md` as the source of truth
   That file is **auto-generated** from `arxiv.md` + inlined Lean for the PDF pipeline; it is
   stale between regenerations and duplicates the entire codebase. It is listed in `.cursorignore`.
 
+## Reading exercise/theorem statements from Scott's text
+- **`sources/PRG19.md` is the maintained, human-verified transcription — use it first, always.**
+  `Grep`/`Read` it directly for the exercise/theorem/definition text you need.
+- **Do not run `pdftotext`/`pdftoppm` on `sources/PRG19.pdf` ad hoc.** Raw OCR extraction garbles
+  text (e.g. "8.11" → "8.1'", "⊆" → "5\"") and has caused real mistakes. Only fall back to the PDF
+  (rendering page **images** with `pdftoppm` and reading them, not raw `pdftotext`) if something in
+  `PRG19.md` looks visibly wrong (garbled math, missing text) — and if you find a genuine error,
+  fix it in `PRG19.md` so the next session doesn't hit it again.
+
 ## On finishing a work item (e.g. a Definition/Theorem/Example)
 After the item builds green, do all of the following before ending the turn:
 1. `lake build <module>` is green and zero `sorry`; run an axiom audit

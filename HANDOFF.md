@@ -6922,3 +6922,61 @@ taint as `Definition87.lean`'s `𝒰`, no new choice usage. `arxiv.md`'s Exercis
 
 **Status: Exercise 8.11 is `Pass`.** **Next up:** Exercise 8.12 (generalize `2X+1` notation to
 `2^k X + ℓ`; `V` = non-empty finite unions of `2^k ℕ + ℓ`; show `U ≅ V` effectively).
+
+**2026-07-03 — Exercise 8.12 PARTIAL.** New file **`Scott1980/Neighborhood/Exercise812.lean`**
+(~340 lines), wired into `Scott1980.lean`. `V` itself (the `ℕ`-side neighbourhood system) is fully
+formalized and `Pass`-quality; the exercise's headline claim `U ≅ᴰ V` (effectively) is **explicitly
+deferred**, not attempted — see below for why.
+
+**What's built.** `affine k ℓ := {n \| n%2^k=ℓ}` is Scott's `2^k ℕ + ℓ` (auto-`∅` for `ℓ≥2^k`,
+matching the side condition without a subtype). `levelSet k m := {n \| m.testBit(n%2^k)}` is a
+*bookkeeping-free* encoding of "finite union of residue classes at level `k`": since the `2^k`
+residue classes at a fixed level partition `ℕ`, a single bitmask `m` captures every such union —
+no `List` needed, unlike `Definition87.lean`'s `𝒰`. `upsample k k' m` (`k≤k'`) re-expresses a
+level-`k` mask at finer level `k'` via `Nat.equivBitIndices` (Mathlib's `ℕ≃Finset ℕ` bit-index
+bijection: sum `2^r` over `r<2^k'` whose coarse residue's bit was set), giving
+`levelSet_upsample : levelSet k' (upsample k k' m) = levelSet k m`. `levelSet_inter`: upsample both
+masks to `max k₁ k₂` then bitwise-`&&&` — closure under intersection **unconditionally** (mirrors
+`Example78.lean`'s `PN`, unlike `𝒰` which needs a consistency hypothesis on overlapping intervals).
+`V : NeighborhoodSystem ℕ` assembles from these (`master=Set.univ=levelSet 0 1`). `V_no_minimal`
+(Scott's remark after Def 8.7, transplanted): refine one level finer via `upsample`, which
+duplicates every set bit `ℓ₀` of `m` into a matching pair `(ℓ₀,ℓ₀+2^k)`; split those two apart —
+the twin guarantees the "rest" is non-empty regardless of `m`'s other bits. `V_mem_iff_finiteUnion`
+(faithfulness, mirrors `U_mem_iff_scott`): via `V_union_mem`/`V_iUnion_mem` (mirror
+`U_union_mem`/`U_iUnion_mem` verbatim) reassembling Scott's literal "non-empty finite unions of
+`2^k ℕ + ℓ`" from the `levelSet` encoding.
+
+**Why `U ≅ᴰ V` is deferred (a substantive finding, not laziness).** Order isos preserve compactness
+(`Theorem85.lean`), and compact elements are exactly the `principal` ones (also `Theorem85.lean`,
+proved for *any* neighbourhood system). So `U≅ᴰV` via some `Φ` would force
+`Φ(U.principal h)` for `h : U.mem [1/3,2/3)` to be `V.principal h'` for some *single* `V`-neighbourhood
+`h'`. But `[1/3,2/3)` has non-dyadic endpoints, and no finite union of `2^k ℕ+ℓ` equals it exactly
+(dyadic boundaries never land on thirds). So "restrict a `U`-filter to its dyadic trace" is
+*provably* not the right map at the level of individual neighbourhoods — it loses information, it
+isn't merely hard to compute. The isomorphism is nonetheless very likely true via a genuinely
+different technique: a **computable back-and-forth** matching of the entire (richly-overlapping,
+atomless — `U_no_minimal`/`V_no_minimal`) neighbourhood posets, analogous to the classical fact that
+countable atomless dense structures of the same signature are isomorphic (à la DLOs), made
+*effective*. This needs, at minimum: (1) a new general reusable lemma — "two effectively-presented
+atomless systems satisfying a one-step extension property are effectively isomorphic" — that does
+not exist anywhere in this project yet; (2) proving `U` and `V` each satisfy that extension property
+(real combinatorics on both sides, via density of `ℚ` resp. of dyadic residues); (3) assembling the
+actual computable back-and-forth enumeration. Comparable in size to `Theorem88`'s universality
+proof. `V`'s own `ComputablePresentation` (mirroring `UComputablePresentation.lean`) is *also*
+deferred for the same reason (needs `Nat.Primrec` bit-manipulation infrastructure for `upsample`
+that doesn't exist yet). Full writeup in the file's module docstring.
+
+**Zero `sorry`.** `lake build` (whole project, 3160 jobs) green. `#print axioms` on `V`,
+`V_no_minimal`, `V_mem_iff_finiteUnion`, `levelSet_inter`, `upsample` all give
+`⊆{propext,Classical.choice,Quot.sound}` — inspection shows every proof in the file is pure
+`Nat.testBit`/`Nat.equivBitIndices`/arithmetic reasoning with no `Classical.choice`/`Classical.dec`
+used directly; the footprint is an *upstream* artifact of this Mathlib snapshot's `ℕ`/`Finset`/`Set`
+API (confirmed: even `levelSet_nonempty_iff`, using only `Nat.mod_lt`/`positivity`, already carries
+it) — the same phenomenon `Definition87.lean` documents for `ℚ`'s order instance. `arxiv.md`'s
+Exercise 8.12 row updated to `Partial`. `Scott1980.lean` updated to import `Exercise812`.
+
+**Status: Exercise 8.12 is `Partial`** (`V`'s structure/closure/faithfulness `Pass`-quality;
+`U≅V` isomorphism and `V`'s `ComputablePresentation` explicitly deferred, documented gaps — see
+`Exercise812.lean`'s docstring for what a future session would need to complete this). **Next up:**
+Exercise 8.13 (logicians: `U ≅` filters of the free Boolean algebra on `ℵ₀` generators) or return to
+complete Exercise 8.12's deferred back-and-forth isomorphism.
