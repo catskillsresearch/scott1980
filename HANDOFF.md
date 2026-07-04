@@ -8820,3 +8820,26 @@ exactly); `yStepG_fst_union` gives `⊆{propext}`. Whole-project `lake build` (3
 **Status: `8.12(d)(4)(c)(i)` is `Pass`.** **Resume protocol:** next up is `(c)(ii)` — the classical
 covering induction on `n`, chaining `atomPairG_fst_union_step` at every step (base case `n = 0`
 trivial). Read `arxiv.md`'s `(d)(4)(c)` row for `(c)(ii)`'s exact statement.
+
+## 2026-07-04 checkpoint: `(c)(ii)` done — `atomPairG_master_covered`
+
+Implemented the classical covering induction: `∀ z ∈ D₀.master, ∃ δ' : Fin n → Bool × Bool,
+z ∈ (atomPairG (extendTruePair δ') n).1`. Base case `n = 0` trivial (`⟨Fin.elim0, hz⟩`, since
+`atomPairG _ 0 = (D₀.master, D₁.master)` definitionally). Successor step: given the IH's covering
+history `δ'₀ : Fin n → Bool × Bool` for `z`, `atomPairG_fst_union_step` (from `(c)(i)`) places `z`
+in one of the four `(b1, b2)` branches; extended `δ'₀` by that bit via the project's standard
+`Function.update`-based device (`δ'' := Function.update (extendTruePair δ'₀) n (b1, b2)`, then
+`restrictFinPair δ'' (n+1)`), mirroring `Exercise812c.lean`'s `xStep_spec_bit`/
+`yStep_fst_eq_inter_YPseq` proofs exactly (`atomPairG_congr` + `Function.update_of_ne` +
+`extendTruePair_restrictFinPair_agree`).
+
+One small fix: `Set.mem_union.mp` isn't directly term-usable (`Set.mem_union` needs its `z s t`
+arguments applied first, not a bare `Iff`) — switched to `simp only [Set.mem_union] at hδ'₀` before
+the 4-way `rcases`. Axiom-audited: `⊆{propext, Classical.choice, Quot.sound}` (ambient baseline,
+matching `atomPairG_fst_union_step`). Whole-project `lake build` (3164 jobs) green, zero `sorry`.
+`arxiv.md`'s `(c)(ii)` row updated to `Pass`; `(c)`'s own row now notes `(c)(i)`/`(c)(ii)` `Pass`.
+
+**Status: `8.12(d)(4)(c)(ii)` is `Pass`.** **Resume protocol:** next up is `(c)(iii)` — "encode
+sign-histories as `deltaPair`-matching bit-sources" (bridging the `Fin n → Bool × Bool`-indexed
+covering fact just proved to the code-level `i < 4ⁿ`/`deltaPair i` indexing `XPseqCode`'s fold
+actually uses). Read `arxiv.md`'s `(d)(4)(c)` row for `(c)(iii)`'s exact statement.
