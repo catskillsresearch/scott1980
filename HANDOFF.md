@@ -8633,3 +8633,49 @@ parent `Aₙ`" covering identity, from `SplitSpec'`'s unconditional `I ∪ J = B
 currently `Pass`, via `(d)(3)(d)`'s `atomPairCodeState_correct`) to transport the classical covering
 argument back to code-level indices — substantial enough to warrant its own future sub-part rather
 than blocking `(c)`/`(d)` today.
+
+## 2026-07-04 checkpoint — Exercise 8.12(d)(4)(c): `XPseqCode`
+
+Appended to `Exercise812d.lean`, after `(d)(4)(b)`'s `mem_union_of_mem`.
+
+**Implementation, purely code-level throughout** (no `Exercise812c.lean` `XPseq`/`atomPair`, no
+`(d)(1)` classical `atomPairG` — per `(d)(4)(b)`'s finding): the half-step atom `xPseqAtomState n i`
+re-runs `xSubStep` on the depth-`n` two-sided state at bit-source `i < 4ⁿ` with the `X`-sub-step's
+bit forced `1` (`XPseq`'s classical `"+"`-branch); `xPseqAtomIdx`/`xPseqAtomJunk` harvest
+`stateIdx1`/`stateJunk`. Closed forms (`xPseqAtomJunk_eq`/`xPseqAtomIdx_eq`) come directly from
+`(d)(3)(b)`'s `xSubStep_junk_eq`/`xSubStep_idx1_eq` at `b1 := 1`; `xPseqAtomIdx_mem` (always
+`D₁`-genuine, junk or not) is free from `ComputablePresentation.mem_X`'s totality. `XFoldStep`/
+`XFold` mirror `Theorem88d.lean`'s `yFoldStep`/`yFold` verbatim in shape, folding `i < 4ⁿ` via
+`(d)(4)(a)`'s `unionIdx` — simpler to primrec than `yFoldStep` (no `"+2ⁿ"` index-arithmetic needed,
+our atom already reads `i < 4ⁿ` directly). **Correctness, conditional on "found" throughout**
+(mirrors `yFold_found_iff`/`yFold_mem_iff`'s own phrasing): `found_le_one`/`found_iff` are direct
+unconditional mirrors; `XFold_mem_of_found` is genuinely new (`Theorem88d.lean` never needed it,
+since `unionUX` is unconditionally genuine there) — proved by induction discharging
+`unionIdx_spec`'s hypothesis at each step via `(d)(4)(b)`'s `mem_union_of_mem` + `xPseqAtomIdx_mem`
++ `P₁.surj`; `XFold_mem_iff` reuses it the same way in place of `unionUX`'s unconditional rewrite.
+`XPseqCode n := (XFold n (4ⁿ)).unpair.2`; `XPseqCode_mem`/`mem_XPseqCode_iff` specialize at
+`N = 4ⁿ`, still conditional on `found`.
+
+**Flagged, deferred gap (documented in-file, not faked):** the *unconditional* found-at-`N=4ⁿ`
+form needs an existence argument with no `Theorem88d.lean` analogue (its own proof is specific to
+a one-sided embedding). Found a promising algebraic covering route (children's `SplitSpec'`-split
+pieces always re-union to *exactly* the parent, no case-adaptivity — see `(d)(4)(b)`'s note) but it
+additionally needs the *converse* half of `atomPairCodeState_correct` (only "junk=0 ⟹ matches
+classical" is `Pass`; the reverse isn't) to transport back to code level — enough new work for its
+own future sub-part.
+
+Lean gotchas hit and fixed: (1) `(BIG_EXPR)` then `.unpair.1` on the *next line* inside a `have`'s
+type parsed as function application of `.unpair`/`.1` as fresh arguments, not continued projection
+— fix: keep no line-break between the closing paren and the projection; (2) `include h in` must
+precede the *docstring*, not sit between the docstring and `theorem` (else "unexpected token
+'include'; expected 'lemma'") — same discipline as `(d)(3)(f)`'s precedent, easy to invert when
+writing fresh.
+
+Axiom-audited: `XPseqCode_mem`/`mem_XPseqCode_iff`/`primrec_XPseqCode` all depend on
+`[propext, Classical.choice, Quot.sound]` (ambient baseline). Whole-project `lake build` (3164
+jobs) green, zero `sorry`. Committed/pushed.
+
+**Status: Exercise 8.12(d)(4)(c) is `Pass`** (conditional correctness; unconditional gap flagged
+above). **Next up:** `(d)(4)(d)` — `YPseqCode`, the `Y`-side fold symmetric to `(c)` but with an
+extra free `bx : Bool` layer (an outer `2`-way union of two inner `4ⁿ`-folds, matching
+`Exercise812c.lean`'s `YPseq` definition), plus its own conditional closed form.
