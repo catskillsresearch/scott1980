@@ -6813,17 +6813,72 @@ Lecture VIII "Deferred" rows (Exercises 8.11–8.26).
     lands on `j(i(D.bot))=D.bot` via `v:=D.bot`), hence `=D.bot` by antisymmetry with `bot_le` — no
     disjointness argument needed here, unlike an earlier draft plan.
 
-**Not attempted: Proposition 8.10's second half** (finitary-closure, `D_a*D_b ≅ D_{a*b}`) — needs
-substantially more infrastructure (a general "conjugate fixed-point-sets across a projection pair"
-lemma, plus `prodEquiv`/`funSpaceEquiv`/a coproduct-element characterization for `sum`); left as a
-documented follow-up for whenever finitary projections of `U` become the active target (e.g. via
-Theorem 8.6's `subApprox` composed with these combinators).
-
 **Zero `sorry`.** `lake build` (whole project, 3010 jobs) green, no warnings in `Proposition810.lean`.
 `#print axioms isProjection_sumComb/_prodComb/_arrowComb/_combinators` all give
 `⊆{propext,Classical.choice,Quot.sound}` — confirmed the same inherited `U`-footprint, nothing new.
 `Scott1980.lean` updated to import `Proposition810`.
 
-**Status: Proposition 8.10 (first half) is `Pass`.** **Next up:** Proposition 8.10's second half
-(finitary-closure, deferred above), or continue down `arxiv.md`'s Lecture VIII "Deferred" rows
-(Exercises 8.11–8.26).
+**Status: Proposition 8.10 (first half) is `Pass`.** **Next up (done, see below):** Proposition
+8.10's second half.
+
+---
+
+**2026-07-03 — Proposition 8.10(b) (finitary-closure) PASS.** New file
+**`Scott1980/Neighborhood/Proposition810b.lean`** (555 lines), wired into `Scott1980.lean`.
+
+**Setup.** For a finitary projection `a`, Theorem 8.6's `sub_eq_self_of_isFinitaryProjection`
+gives `a = i_a∘j_a` for the *concrete* subsystem pair `i_a,j_a : D_a ⇄ 𝒰` (`D_a := fixedNbhd a`,
+Theorem 8.5's `fixedNbhd_subsystem`) — replacing the abstract `IsFinitary` witness with something
+to actually compute against.
+
+**Generic tool `elementIsoOfProjectionPair`**: Proposition 8.2's `elementIso`, generalized off the
+literal `D◁E` subset requirement to *any* approximable pair `i:D→E,j:E→D` with `j∘i=I_D` (no
+`i∘j≤I_E` needed, no shared token type) — exactly the shape of Definition 8.9's fixed maps
+`i₊/j₊`,`i_×/j_×`,`i_→/j_→`. Given such a pair and `g:=i∘j`, produces `D.Element ≃o Fix(g)`
+directly (`isFinitary_of_projectionPair` packages this as `IsFinitary g`); proof is verbatim
+`Subsystem.elementIso`'s, generalized. Also: `toElementMap_bot_eq_bot_of_comp_le_idMap` (`i∘j≤I_E
+⟹ i(D.bot)=E.bot`, via `i(D.bot)≤i(j(E.bot))≤E.bot` + `bot_le`).
+
+**Per-combinator pattern.** For `*∈{+,×,→}`, build a *new* pair `I:D_a*D_b→𝒰`, `J:𝒰→D_a*D_b` by
+transporting Definition 8.9's fixed maps through `*`'s functorial action on `i_a,j_a,i_b,j_b`; the
+two composite laws `J∘I=idMap` and `I∘J=a*b` (proved algebraically from the functor laws plus
+`i_a∘j_a=a`/`i_b∘j_b=b`, i.e. `inj_comp_proj_eq_self`) feed `elementIsoOfProjectionPair` for
+`D_{a*b}≅D_a*D_b` **and** `IsFinitary(a*b)` in one shot; `IsProjection(a*b)` is already Prop 8.10(a).
+
+* **`×` (cleanest, no new infra).** `prodComb` is literally `iTimes∘prodMap(·)∘jTimes`, so
+  `IProdComb:=iTimes∘prodMap(i_a,i_b)`/`JProdComb:=prodMap(j_a,j_b)∘jTimes` close directly via
+  Ex. 3.19/3.20's `prodMap_id`/`prodMap_comp`.
+
+* **`+` (new `sumMap` infrastructure, the bulk of the file).** Unlike `×`, `sumComb` is *not*
+  literally `iPlus∘sumMap∘j₊` by `rfl` (Definition 8.9 builds it via `cond`/`whichMap` instead).
+  Fix: prove them *elementwise equal* (`sumComb_eq_iPlus_sumMap_jPlus`), case-splitting on
+  `sum_element_trichotomy` and matching `Proposition810.lean`'s own
+  `toElementMap_sumComb_of_left/right/neither` formulas against new elementwise formulas built here
+  for `sumMap` itself: `sumMap_reaches_left/right`, `toElementMap_sumMap_inMap₀/₁` (via the existing
+  `outMap₀_comp_sumMap_comp_inMap₀` identity + round-trips), `toElementMap_sumMap_of_left/right`,
+  `sumMap_bot`, `reaches_neither_iff_eq_bot`. With that bridge, `sumMap_id`/`sumMap_comp` (proper
+  functor laws for the *raw* sum-functor, proved by the *same* case-split reusing those formulas)
+  give `ISumComb`/`JSumComb` closing exactly like `×`.
+
+* **`→` (new `expMap` bifunctor, generalizing `lamComb`).** `expMap h k : (𝒟₀→𝒟₁)→(𝒟₀'→𝒟₁')` for
+  `h:𝒟₀'→𝒟₀` (contravariant), `k:𝒟₁→𝒟₁'` (covariant), built exactly as `lamComb`
+  (`curry(k∘eval∘(id×ₘh))`) but for arbitrary systems — `lamComb a b = expMap a b` on the nose
+  (`rfl`). `toApproxMap_toElementMap_expMap` (`f↦k∘f∘h` transported through `funSpaceEquiv`) is
+  `Proposition810.lean`'s `toApproxMap_toElementMap_lamComb` proof verbatim, generalized.
+  `expMap_id`/`expMap_comp` (contravariant composition law `expMap(h∘h')(k'∘k) =
+  expMap h' k'∘expMap h k`) follow by transporting through `funSpaceEquiv`'s injectivity plus
+  `simp only [comp_assoc]` bookkeeping. `IArrowComb:=iArrow∘expMap(j_a,i_b)`/
+  `JArrowComb:=expMap(i_a,j_b)∘jArrow` then close identically to `×`/`+`.
+
+**Assembled:** `finitaryProjection_sumComb`/`_prodComb`/`_arrowComb`/`_combinators`, plus the three
+explicit isomorphisms `sumComb_elementIso`/`prodComb_elementIso`/`arrowComb_elementIso`
+(`D_{a*b}.Element ≃o {y // (a*b).toElementMap y = y}`, i.e. `D_{a*b} ≅ D_a*D_b`, for `*∈{+,×,→}`).
+
+**Zero `sorry`.** `lake build` (whole project, 3155 jobs) green, no warnings in `Proposition810b.lean`.
+`#print axioms` on all seven headline results (`finitaryProjection_sumComb/_prodComb/_arrowComb/
+_combinators`, `sumComb_elementIso`/`prodComb_elementIso`/`arrowComb_elementIso`) gives
+`⊆{propext,Classical.choice,Quot.sound}` — same inherited `U`-footprint, nothing new. `arxiv.md`'s
+Proposition 8.10(b) row updated to `Pass`. `Scott1980.lean` updated to import `Proposition810b`.
+
+**Status: Proposition 8.10 (both halves) is `Pass`.** **Next up:** continue down `arxiv.md`'s
+Lecture VIII "Deferred" rows (Exercises 8.11–8.26).
