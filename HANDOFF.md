@@ -7150,3 +7150,48 @@ credited and a future session can pick up exactly where this one stopped:
 **Status: Exercise 8.12(c) is `Partial`** (4 of 7 inner parts `Pass`, zero `sorry`, `lake build`
 green). `Exercise812c.lean` itself is unchanged from the prior checkpoint above. **Next up:**
 Exercise 8.12(c)(v) (pairwise disjointness) is the natural next sub-part.
+
+**2026-07-04 — Exercise 8.12(c)(v) COMPLETE (`atomPair_disjoint`), then further split into 5
+sub-sub-parts (v)(1)–(v)(5), mirroring how Theorem 8.8(b)(vii) was split into (1)–(4).**
+`Exercise812c.lean` (698 lines total now) extended with the full pairwise-disjointness proof:
+
+* **New generic single-sub-step abstraction `xyStep split A B Xn b`** — "intersect/subtract `A` by
+  `Xn` directly per sign `b`, correspondingly split `B` via an abstract `split`" as one ordinary
+  function — plus `if_swap_disjoint`/`inter_diff_self_eq_empty` (elementary set-theory helpers) and
+  `xyStep_disjoint_of_ne` (two applications at different sign bits are pairwise disjoint on both
+  outputs). **(v)(1).**
+* **`xStep`/`yStep`**, the two named instances of `xyStep` used by `atomPair`'s two sub-steps per
+  depth, with subset lemmas (`xStep_fst_subset`/`xStep_snd_subset`/`yStep_fst_subset`/
+  `yStep_snd_subset`) and disjointness corollaries (`xStep_disjoint_of_ne`/`yStep_disjoint_of_ne`).
+  **(v)(2).** **Placement lesson (root cause of a real build failure this session):** these must be
+  declared *outside* `section AtomPair`, fully generically — an earlier draft put them inside the
+  section and Lean's `include` directive silently prepended every section variable (`hD₀pos`, etc.)
+  onto their signatures even though unused, causing `Application type mismatch` at call sites
+  (`xStep_disjoint_of_ne hD₁nomin` bound `hD₁nomin` to the wrong parameter). Also needed explicit
+  `noncomputable` (they're built from `splitChoice'`).
+* **`atomPair_succ_eq`** (`atomPair (n+1) = yStep (xStep …).1 (xStep …).2 …`, proved by `rfl`),
+  **`xStep_spec`** (the `xStep` output satisfies the `SplitSpec'` preconditions `yStep` needs), and
+  **`atomPair_congr`** (agreeing `δ` below `n` ⟹ identical depth-`n` pair). **(v)(3).**
+  **Lesson:** `atomPair_congr`'s statement doesn't mention most `section AtomPair` hypotheses, so it
+  needs `omit hD₀pos hD₀diff hD₁pos hD₁diff hXmem hYmem hD₀mne hD₁mne in` — and that `omit ... in`
+  modifier must precede the docstring, not follow it (`/-- ... -/ omit ... in theorem ...` is a
+  parse error: `omit ... in` attaches to the *declaration*, so it has to come first).
+* **`atomPair_fst_subset`/`atomPair_snd_subset`** (monotonicity: `atomPair` only shrinks each
+  step), chaining (v)(2)/(v)(3)'s lemmas through `atomPair_succ_eq`. **(v)(4).**
+* **`atomPair_disjoint`** (the headline): induction on `n`, "disagree below `n`" shrinks via
+  (v)(4), "agree below `n`, disagree at `n`" splits on which sub-step first disagrees (`X`-sub-step:
+  `xStep_disjoint_of_ne` outright + subset lemmas; `Y`-sub-step: `atomPair_succ_eq` unifies the
+  `xStep` applications, then `yStep_disjoint_of_ne` finishes). **(v)(5).**
+
+**Zero `sorry`.** Whole-project `lake build` (3162 jobs) green. `#print axioms` on
+`atomPair_disjoint`, `atomPair_fst_subset`, `atomPair_snd_subset`, `xStep_disjoint_of_ne`,
+`yStep_disjoint_of_ne`, `atomPair_succ_eq`, `atomPair_congr` all give
+`⊆{propext,Classical.choice,Quot.sound}`, matching the pre-existing baseline (choice inherited from
+`splitChoice'`, 8.12(c)(iii)). `arxiv.md`: 8.12(c)(v) row restructured into an umbrella (`Pass`,
+"all 5 sub-parts Pass") + 5 sub-rows 8.12(c)(v)(1)–(v)(5) (all `Pass`); 8.12(c) and umbrella
+Exercise 8.12 status lines updated to "(i)–(v) `Pass`".
+
+**Status: Exercise 8.12(c) is `Partial`** (5 of 7 inner parts `Pass`, zero `sorry`, `lake build`
+green). **Next up:** Exercise 8.12(c)(vi) (bidirectional `Yseq`-analogue transfer lemmas) — the
+largest remaining chunk, comparable in size to the rest of `Theorem88.lean` (`Yseq` onward) done
+twice — or Exercise 8.12(c)(vii) cannot start before it (needs (vi)'s closed forms).

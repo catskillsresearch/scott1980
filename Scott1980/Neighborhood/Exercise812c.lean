@@ -271,6 +271,133 @@ theorem splitChoice'_isSplitSpec {α γ : Type*} (E : NeighborhoodSystem γ) (hE
   rw [dif_pos ⟨hAB, hBE⟩]
   exact (exists_split' hEnomin hAB hBE Xn).choose_spec.choose_spec
 
+/-- **Generalization of `Theorem88.lean`'s `split_fst_subset`**: a splitting operation's first
+output is a subset of `B` (from `I ∪ J = B`). -/
+theorem split_fst_subset' {α γ : Type*} {E : NeighborhoodSystem γ}
+    {split : Set α → Set γ → Set α → Set γ × Set γ} (hsplit : SplitSpec' E split)
+    {A : Set α} {B : Set γ} (hAB : A = ∅ ↔ B = ∅) (hBE : B = ∅ ∨ E.mem B) (Xn : Set α) :
+    (split A B Xn).1 ⊆ B :=
+  Set.subset_union_left.trans_eq (hsplit hAB hBE Xn).2.2.2.2.1
+
+/-- **Generalization of `Theorem88.lean`'s `split_snd_subset`**: a splitting operation's second
+output is a subset of `B` (from `I ∪ J = B`). -/
+theorem split_snd_subset' {α γ : Type*} {E : NeighborhoodSystem γ}
+    {split : Set α → Set γ → Set α → Set γ × Set γ} (hsplit : SplitSpec' E split)
+    {A : Set α} {B : Set γ} (hAB : A = ∅ ↔ B = ∅) (hBE : B = ∅ ∨ E.mem B) (Xn : Set α) :
+    (split A B Xn).2 ⊆ B :=
+  Set.subset_union_right.trans_eq (hsplit hAB hBE Xn).2.2.2.2.1
+
+/-! ### A single generic sub-step, used for both the `X`-sub-step and the `Y`-sub-step
+
+`xyStep split A B Xn b` packages "intersect/subtract `A` by `Xn` directly (per the sign `b`), and
+correspondingly split `B` via `split`" as a single ordinary (non-recursive) function. `atomPair`'s
+two sub-steps per depth (the `X`-sub-step, splitting `D₁`'s side while directly refining `D₀`'s;
+the `Y`-sub-step, splitting `D₀`'s side while directly refining `D₁`'s) are both literally
+instances of this one function (`xStep`/`yStep` below) — exposing this lets the disjointness proof
+manipulate one sub-step algebraically, rather than re-deriving `atomPair`'s definitional unfolding
+by hand each time. -/
+
+def xyStep {α γ : Type*} (split : Set α → Set γ → Set α → Set γ × Set γ)
+    (A : Set α) (B : Set γ) (Xn : Set α) (b : Bool) : Set α × Set γ :=
+  (if b then A ∩ Xn else A \ Xn, if b then (split A B Xn).1 else (split A B Xn).2)
+
+/-- **Generic "swap-if" disjointness helper**: if `P` and `Q` are disjoint, then choosing `P` for
+one Boolean and `Q` for a *different* Boolean always lands in disjoint sets, regardless of which
+Boolean is `true`. -/
+theorem if_swap_disjoint {γ : Type*} {P Q : Set γ} (hPQ : P ∩ Q = ∅) {b b' : Bool} (hbb' : b ≠ b') :
+    (if b then P else Q) ∩ (if b' then P else Q) = ∅ := by
+  rcases Bool.eq_false_or_eq_true b with hb | hb <;> rcases Bool.eq_false_or_eq_true b' with hb' | hb' <;>
+    simp_all [Set.inter_comm]
+
+theorem inter_diff_self_eq_empty {γ : Type*} (P Q : Set γ) : (P ∩ Q) ∩ (P \ Q) = ∅ := by
+  ext x; simp only [Set.mem_inter_iff, Set.mem_diff, Set.mem_empty_iff_false, iff_false]; tauto
+
+/-- **`xyStep`'s two outputs, at two *different* sign bits, are pairwise disjoint** — the local,
+one-step content behind `atomPair`'s eventual pairwise-disjointness invariant. -/
+theorem xyStep_disjoint_of_ne {α γ : Type*} {E : NeighborhoodSystem γ}
+    {split : Set α → Set γ → Set α → Set γ × Set γ} (hsplit : SplitSpec' E split)
+    {A : Set α} {B : Set γ} (hAB : A = ∅ ↔ B = ∅) (hBE : B = ∅ ∨ E.mem B) (Xn : Set α)
+    {b b' : Bool} (hbb' : b ≠ b') :
+    (xyStep split A B Xn b).1 ∩ (xyStep split A B Xn b').1 = ∅ ∧
+      (xyStep split A B Xn b).2 ∩ (xyStep split A B Xn b').2 = ∅ :=
+  ⟨if_swap_disjoint (inter_diff_self_eq_empty A Xn) hbb',
+    if_swap_disjoint (hsplit hAB hBE Xn).2.2.2.2.2 hbb'⟩
+
+/-! ### The two named sub-steps of `atomPair`, as instances of `xyStep`
+
+These, and their basic subset/disjointness properties, are stated fully generically (independent
+of any particular `D₀`/`D₁`/`X`/`Y`) and placed here, *before* `section AtomPair` below, so that
+they do not pick up that section's `include`d hypotheses (`hD₀pos`, `hXmem`, etc.) as spurious
+extra arguments — `xStep`/`yStep` only ever need a *single* system's data (`D₁`/`hD₁nomin` for
+`xStep`, `D₀`/`hD₀nomin` for `yStep`), never the full two-sided context. -/
+
+/-- **The `X`-sub-step**, as an instance of `xyStep`: split `D₁`'s side while directly refining
+`D₀`'s side. -/
+noncomputable def xStep {α β : Type*} (D₁ : NeighborhoodSystem β) (hD₁nomin : D₁.NoMinimal)
+    (A : Set α) (B : Set β) (Xn : Set α) (b : Bool) : Set α × Set β :=
+  xyStep (splitChoice' D₁ hD₁nomin) A B Xn b
+
+/-- **The `Y`-sub-step**, symmetric to `xStep`: split `D₀`'s side while directly refining `D₁`'s
+side. The `.swap` puts the output back into `(α-side, β-side)` order, matching `atomPair`'s own
+`(A2, B2)` convention (`xyStep`'s first component is always the *direct* side, which for the
+`Y`-sub-step is the `β`-side). -/
+noncomputable def yStep {α β : Type*} (D₀ : NeighborhoodSystem α) (hD₀nomin : D₀.NoMinimal)
+    (A1 : Set α) (B1 : Set β) (Yn : Set β) (b : Bool) : Set α × Set β :=
+  (xyStep (splitChoice' D₀ hD₀nomin) B1 A1 Yn b).swap
+
+/-- **`xStep`'s `α`-side output is always a subset of `A`** (unconditional: `A ∩ Xn` and `A \ Xn`
+are both `⊆ A`). -/
+theorem xStep_fst_subset {α β : Type*} (D₁ : NeighborhoodSystem β) (hD₁nomin : D₁.NoMinimal)
+    (A : Set α) (B : Set β) (Xn : Set α) (b : Bool) : (xStep D₁ hD₁nomin A B Xn b).1 ⊆ A := by
+  by_cases hb : b = true
+  · simp only [xStep, xyStep, hb, if_true]; exact Set.inter_subset_left
+  · simp only [xStep, xyStep, hb]; exact Set.diff_subset
+
+/-- **`xStep`'s `β`-side output is a subset of `B`**, given the `SplitSpec'` preconditions
+(`I ∪ J = B`, so both `I ⊆ B` and `J ⊆ B`). -/
+theorem xStep_snd_subset {α β : Type*} {D₁ : NeighborhoodSystem β} (hD₁nomin : D₁.NoMinimal)
+    {A : Set α} {B : Set β} (hAB : A = ∅ ↔ B = ∅) (hBmem : B = ∅ ∨ D₁.mem B) (Xn : Set α)
+    (b : Bool) : (xStep D₁ hD₁nomin A B Xn b).2 ⊆ B := by
+  have hspec := splitChoice'_isSplitSpec D₁ hD₁nomin hAB hBmem Xn
+  by_cases hb : b = true
+  · simp only [xStep, xyStep, hb, if_true]; exact Set.subset_union_left.trans_eq hspec.2.2.2.2.1
+  · simp only [xStep, xyStep, hb]; exact Set.subset_union_right.trans_eq hspec.2.2.2.2.1
+
+/-- **`yStep`'s `α`-side output is a subset of `A1`**, given the `SplitSpec'` preconditions. -/
+theorem yStep_fst_subset {α β : Type*} {D₀ : NeighborhoodSystem α} (hD₀nomin : D₀.NoMinimal)
+    {A1 : Set α} {B1 : Set β} (hBA : B1 = ∅ ↔ A1 = ∅) (hAmem : A1 = ∅ ∨ D₀.mem A1) (Yn : Set β)
+    (b : Bool) : (yStep D₀ hD₀nomin A1 B1 Yn b).1 ⊆ A1 := by
+  have hspec := splitChoice'_isSplitSpec D₀ hD₀nomin hBA hAmem Yn
+  by_cases hb : b = true
+  · simp only [yStep, xyStep, Prod.swap, hb, if_true]
+    exact Set.subset_union_left.trans_eq hspec.2.2.2.2.1
+  · simp only [yStep, xyStep, Prod.swap, hb]
+    exact Set.subset_union_right.trans_eq hspec.2.2.2.2.1
+
+/-- **`yStep`'s `β`-side output is always a subset of `B1`** (unconditional). -/
+theorem yStep_snd_subset {α β : Type*} (D₀ : NeighborhoodSystem α) (hD₀nomin : D₀.NoMinimal)
+    (A1 : Set α) (B1 : Set β) (Yn : Set β) (b : Bool) : (yStep D₀ hD₀nomin A1 B1 Yn b).2 ⊆ B1 := by
+  by_cases hb : b = true
+  · simp only [yStep, xyStep, Prod.swap, hb, if_true]; exact Set.inter_subset_left
+  · simp only [yStep, xyStep, Prod.swap, hb]; exact Set.diff_subset
+
+/-- **`xStep`'s two outputs, at two different sign bits, are pairwise disjoint.** -/
+theorem xStep_disjoint_of_ne {α β : Type*} {D₁ : NeighborhoodSystem β} (hD₁nomin : D₁.NoMinimal)
+    {A : Set α} {B : Set β} (hAB : A = ∅ ↔ B = ∅) (hBmem : B = ∅ ∨ D₁.mem B) (Xn : Set α)
+    {b b' : Bool} (hbb' : b ≠ b') :
+    (xStep D₁ hD₁nomin A B Xn b).1 ∩ (xStep D₁ hD₁nomin A B Xn b').1 = ∅ ∧
+      (xStep D₁ hD₁nomin A B Xn b).2 ∩ (xStep D₁ hD₁nomin A B Xn b').2 = ∅ :=
+  xyStep_disjoint_of_ne (splitChoice'_isSplitSpec D₁ hD₁nomin) hAB hBmem Xn hbb'
+
+/-- **`yStep`'s two outputs, at two different sign bits, are pairwise disjoint.** -/
+theorem yStep_disjoint_of_ne {α β : Type*} {D₀ : NeighborhoodSystem α} (hD₀nomin : D₀.NoMinimal)
+    {A1 : Set α} {B1 : Set β} (hBA : B1 = ∅ ↔ A1 = ∅) (hAmem : A1 = ∅ ∨ D₀.mem A1) (Yn : Set β)
+    {b b' : Bool} (hbb' : b ≠ b') :
+    (yStep D₀ hD₀nomin A1 B1 Yn b).1 ∩ (yStep D₀ hD₀nomin A1 B1 Yn b').1 = ∅ ∧
+      (yStep D₀ hD₀nomin A1 B1 Yn b).2 ∩ (yStep D₀ hD₀nomin A1 B1 Yn b').2 = ∅ := by
+  have h := xyStep_disjoint_of_ne (splitChoice'_isSplitSpec D₀ hD₀nomin) hBA hAmem Yn hbb'
+  exact ⟨h.2, h.1⟩
+
 /-! ### One-step Boolean-closure helpers
 
 The two facts that let a mem-or-∅ set stay mem-or-∅ after being intersected/subtracted by a
@@ -325,6 +452,19 @@ noncomputable def atomPair (δ : ℕ → Bool × Bool) : ℕ → Set α × Set �
       let B2 := if (δ n).2 then B1 ∩ Y n else B1 \ Y n
       let A2 := if (δ n).2 then IJ2.1 else IJ2.2
       (A2, B2)
+
+/-- **`atomPair`'s recursive step, rephrased as `yStep ∘ xStep`.** Definitionally equal to
+`atomPair`'s own `let`-chain (both sides unfold to the identical `(A2, B2)` pair), but stated in
+terms of the two named sub-steps so later lemmas can manipulate them algebraically instead of
+re-deriving the unfolding by hand. -/
+theorem atomPair_succ_eq (δ : ℕ → Bool × Bool) (n : ℕ) :
+    atomPair D₀ D₁ hD₀nomin hD₁nomin X Y δ (n + 1) =
+      yStep D₀ hD₀nomin
+        (xStep D₁ hD₁nomin (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y δ n).1
+          (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y δ n).2 (X n) (δ n).1).1
+        (xStep D₁ hD₁nomin (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y δ n).1
+          (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y δ n).2 (X n) (δ n).1).2
+        (Y n) (δ n).2 := rfl
 
 variable (hD₀mne : D₀.master.Nonempty) (hD₁mne : D₁.master.Nonempty)
 include hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin hXmem hYmem hD₀mne hD₁mne
@@ -386,6 +526,187 @@ theorem atomPair_invariant (δ : ℕ → Bool × Bool) :
       · simp only [hA2def, hδ2]; exact hspec2.2.1
     show (A2 = ∅ ↔ B2 = ∅) ∧ (A2 = ∅ ∨ D₀.mem A2) ∧ (B2 = ∅ ∨ D₁.mem B2)
     exact ⟨hB2A2.symm, hA2mem, hB2mem⟩
+
+/-! ### Pairwise disjointness of `atomPair` (Exercise 8.12(c)(v))
+
+Mirrors `Theorem88.lean`'s `atomU_invariant`'s third clause, but proved on **both** sides at once.
+Two supporting facts are needed first: `atomPair_congr` (agreeing sign sequences below `n` give the
+identical depth-`n` pair — no invariant needed, purely definitional) and `atomPair_fst_subset`/
+`atomPair_snd_subset` (each side only shrinks from depth `n` to `n+1` — *does* need the invariant,
+since the shrinking is via `split_fst_subset'`/`split_snd_subset'`, which only fire once the
+`SplitSpec'` preconditions are known to hold). -/
+
+omit hD₀pos hD₀diff hD₁pos hD₁diff hXmem hYmem hD₀mne hD₁mne in
+/-- Extending/changing `δ` at or beyond position `n` does not change `atomPair δ n` (mirrors
+`Theorem88.lean`'s `atomU_congr`/`genAtom_congr`; needs no invariant, since every step is an
+ordinary function of its inputs). -/
+theorem atomPair_congr {δ δ' : ℕ → Bool × Bool} {n : ℕ} (h : ∀ i < n, δ i = δ' i) :
+    atomPair D₀ D₁ hD₀nomin hD₁nomin X Y δ n = atomPair D₀ D₁ hD₀nomin hD₁nomin X Y δ' n := by
+  induction n with
+  | zero => rfl
+  | succ n ih =>
+    have hprev : atomPair D₀ D₁ hD₀nomin hD₁nomin X Y δ n =
+        atomPair D₀ D₁ hD₀nomin hD₁nomin X Y δ' n := ih (fun i hi => h i (Nat.lt_succ_of_lt hi))
+    have hn : δ n = δ' n := h n (Nat.lt_succ_self n)
+    show
+      (let A := (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y δ n).1
+       let B := (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y δ n).2
+       let IJ1 := splitChoice' D₁ hD₁nomin A B (X n)
+       let A1 := if (δ n).1 then A ∩ X n else A \ X n
+       let B1 := if (δ n).1 then IJ1.1 else IJ1.2
+       let IJ2 := splitChoice' D₀ hD₀nomin B1 A1 (Y n)
+       let B2 := if (δ n).2 then B1 ∩ Y n else B1 \ Y n
+       let A2 := if (δ n).2 then IJ2.1 else IJ2.2
+       (A2, B2)) =
+        (let A := (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y δ' n).1
+         let B := (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y δ' n).2
+         let IJ1 := splitChoice' D₁ hD₁nomin A B (X n)
+         let A1 := if (δ' n).1 then A ∩ X n else A \ X n
+         let B1 := if (δ' n).1 then IJ1.1 else IJ1.2
+         let IJ2 := splitChoice' D₀ hD₀nomin B1 A1 (Y n)
+         let B2 := if (δ' n).2 then B1 ∩ Y n else B1 \ Y n
+         let A2 := if (δ' n).2 then IJ2.1 else IJ2.2
+         (A2, B2))
+    rw [hprev, hn]
+
+/-- **`xStep`'s output satisfies the preconditions `yStep` needs** (the `SplitSpec'` hypotheses,
+transported across the `X`-sub-step): the `β`-side output is empty iff the `α`-side output is, and
+the `α`-side output is mem-or-∅ for `D₀`. Proved exactly as the corresponding step inside
+`atomPair_invariant`'s induction (Boolean-closure for the *direct* side, `SplitSpec'` for the
+*split* side). -/
+theorem xStep_spec (δ : ℕ → Bool × Bool) (n : ℕ) :
+    ((xStep D₁ hD₁nomin (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y δ n).1
+        (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y δ n).2 (X n) (δ n).1).2 = ∅ ↔
+      (xStep D₁ hD₁nomin (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y δ n).1
+        (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y δ n).2 (X n) (δ n).1).1 = ∅) ∧
+      ((xStep D₁ hD₁nomin (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y δ n).1
+          (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y δ n).2 (X n) (δ n).1).1 = ∅ ∨
+        D₀.mem (xStep D₁ hD₁nomin (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y δ n).1
+          (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y δ n).2 (X n) (δ n).1).1) := by
+  obtain ⟨ihAB, ihA, ihB⟩ := atomPair_invariant D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff
+    hD₁nomin X Y hXmem hYmem hD₀mne hD₁mne δ n
+  set A := (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y δ n).1 with hAdef
+  set B := (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y δ n).2 with hBdef
+  have hspec1 := splitChoice'_isSplitSpec D₁ hD₁nomin ihAB ihB (X n)
+  refine ⟨?_, ?_⟩
+  · by_cases hδ1 : (δ n).1 = true
+    · simp only [xStep, xyStep, hδ1, if_true]; exact hspec1.2.2.1.symm
+    · simp only [xStep, xyStep, hδ1]; exact hspec1.2.2.2.1.symm
+  · by_cases hδ1 : (δ n).1 = true
+    · simp only [xStep, xyStep, hδ1, if_true]; exact inter_mem_or_empty hD₀pos ihA (hXmem n)
+    · simp only [xStep, xyStep, hδ1]; exact diff_mem_or_empty hD₀diff ihA (hXmem n)
+
+/-- **`atomPair`'s `α`-side only shrinks from depth `n` to `n + 1`.** -/
+theorem atomPair_fst_subset (δ : ℕ → Bool × Bool) (n : ℕ) :
+    (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y δ (n + 1)).1 ⊆
+      (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y δ n).1 := by
+  rw [atomPair_succ_eq]
+  obtain ⟨hspecAB, hspecAmem⟩ := xStep_spec D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin
+    X Y hXmem hYmem hD₀mne hD₁mne δ n
+  exact (yStep_fst_subset hD₀nomin hspecAB hspecAmem (Y n) (δ n).2).trans
+    (xStep_fst_subset D₁ hD₁nomin _ _ (X n) (δ n).1)
+
+/-- **`atomPair`'s `β`-side only shrinks from depth `n` to `n + 1`.** -/
+theorem atomPair_snd_subset (δ : ℕ → Bool × Bool) (n : ℕ) :
+    (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y δ (n + 1)).2 ⊆
+      (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y δ n).2 := by
+  rw [atomPair_succ_eq]
+  obtain ⟨ihAB, -, ihB⟩ := atomPair_invariant D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff
+    hD₁nomin X Y hXmem hYmem hD₀mne hD₁mne δ n
+  exact (yStep_snd_subset D₀ hD₀nomin _ _ (Y n) (δ n).2).trans
+    (xStep_snd_subset hD₁nomin ihAB ihB (X n) (δ n).1)
+
+/-- **Pairwise disjointness of `atomPair` on both sides at once** (Exercise 8.12(c)(v)): for sign
+sequences `δ`, `δ'` disagreeing somewhere below depth `n`, the two matched pairs are disjoint on
+*both* the `α`-side and the `β`-side. Proved by induction on `n`, mirroring `Theorem88.lean`'s
+`atomU_invariant`'s disjointness clause: the "disagree below `n`" case shrinks via
+`atomPair_fst_subset`/`atomPair_snd_subset`; the "agree below `n`, disagree at `n`" case splits on
+*which* sub-step first disagrees — the `X`-sub-step (`xStep_disjoint_of_ne` directly, then
+`yStep_fst_subset`/`yStep_snd_subset` carry the disjointness through the following `Y`-sub-step),
+or the `Y`-sub-step (`atomPair_succ_eq` unifies both `xStep` applications via `hpairEq`/`h1`, then
+`yStep_disjoint_of_ne` finishes directly). -/
+theorem atomPair_disjoint (δ δ' : ℕ → Bool × Bool) :
+    ∀ n, (∃ i < n, δ i ≠ δ' i) →
+      (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y δ n).1 ∩
+          (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y δ' n).1 = ∅ ∧
+        (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y δ n).2 ∩
+          (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y δ' n).2 = ∅ := by
+  intro n
+  induction n with
+  | zero => rintro ⟨i, hi, -⟩; exact absurd hi (Nat.not_lt_zero i)
+  | succ n ih =>
+    rintro ⟨i, hi, hine⟩
+    by_cases hagree : ∀ j < n, δ j = δ' j
+    · -- Disagreement is exactly at position `n`: both depth-`n` pairs coincide.
+      have hδn : δ n ≠ δ' n := by
+        intro heq
+        exact hine (by
+          rcases Nat.lt_succ_iff_lt_or_eq.mp hi with hi' | rfl
+          · exact hagree i hi'
+          · exact heq)
+      have hpairEq : atomPair D₀ D₁ hD₀nomin hD₁nomin X Y δ n =
+          atomPair D₀ D₁ hD₀nomin hD₁nomin X Y δ' n :=
+        atomPair_congr D₀ D₁ hD₀nomin hD₁nomin X Y hagree
+      have hAB' : (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y δ' n).1 =
+          (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y δ n).1 ∧
+          (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y δ' n).2 =
+            (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y δ n).2 :=
+        ⟨(congrArg Prod.fst hpairEq).symm, (congrArg Prod.snd hpairEq).symm⟩
+      by_cases h1 : (δ n).1 = (δ' n).1
+      · -- Agree on the `X`-sub-step: the `xStep` application is *literally the same* for `δ`,
+        -- `δ'`, so disjointness comes purely from the `Y`-sub-step (which must then disagree).
+        have h2 : (δ n).2 ≠ (δ' n).2 := fun h2eq => hδn (Prod.ext_iff.mpr ⟨h1, h2eq⟩)
+        rw [atomPair_succ_eq, atomPair_succ_eq, hAB'.1, hAB'.2, h1]
+        obtain ⟨hspecAB, hspecAmem⟩ := xStep_spec D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff
+          hD₁nomin X Y hXmem hYmem hD₀mne hD₁mne δ n
+        rw [h1] at hspecAB hspecAmem
+        exact yStep_disjoint_of_ne hD₀nomin hspecAB hspecAmem (Y n) h2
+      · -- Disagree already at the `X`-sub-step: the two `xStep` applications are disjoint
+        -- outright, and both `yStep` outputs shrink into their respective `xStep` halves.
+        obtain ⟨ihAB, ihA, ihB⟩ := atomPair_invariant D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff
+          hD₁nomin X Y hXmem hYmem hD₀mne hD₁mne δ n
+        have hxdisj := xStep_disjoint_of_ne hD₁nomin ihAB ihB (X n) h1
+        obtain ⟨hspecAB, hspecAmem⟩ := xStep_spec D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff
+          hD₁nomin X Y hXmem hYmem hD₀mne hD₁mne δ n
+        obtain ⟨hspecAB', hspecAmem'⟩ := xStep_spec D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff
+          hD₁nomin X Y hXmem hYmem hD₀mne hD₁mne δ' n
+        have h1sub : (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y δ (n + 1)).1 ⊆
+            (xStep D₁ hD₁nomin (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y δ n).1
+              (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y δ n).2 (X n) (δ n).1).1 := by
+          rw [atomPair_succ_eq]; exact yStep_fst_subset hD₀nomin hspecAB hspecAmem (Y n) (δ n).2
+        have h2sub : (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y δ (n + 1)).2 ⊆
+            (xStep D₁ hD₁nomin (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y δ n).1
+              (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y δ n).2 (X n) (δ n).1).2 := by
+          rw [atomPair_succ_eq]; exact yStep_snd_subset D₀ hD₀nomin _ _ (Y n) (δ n).2
+        have h1sub' : (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y δ' (n + 1)).1 ⊆
+            (xStep D₁ hD₁nomin (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y δ' n).1
+              (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y δ' n).2 (X n) (δ' n).1).1 := by
+          rw [atomPair_succ_eq]; exact yStep_fst_subset hD₀nomin hspecAB' hspecAmem' (Y n) (δ' n).2
+        have h2sub' : (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y δ' (n + 1)).2 ⊆
+            (xStep D₁ hD₁nomin (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y δ' n).1
+              (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y δ' n).2 (X n) (δ' n).1).2 := by
+          rw [atomPair_succ_eq]; exact yStep_snd_subset D₀ hD₀nomin _ _ (Y n) (δ' n).2
+        rw [hAB'.1, hAB'.2] at h1sub' h2sub'
+        exact ⟨Set.subset_eq_empty (Set.inter_subset_inter h1sub h1sub') hxdisj.1,
+          Set.subset_eq_empty (Set.inter_subset_inter h2sub h2sub') hxdisj.2⟩
+    · -- Disagreement is somewhere below `n`: shrink via `atomPair_fst_subset`/`atomPair_snd_subset`.
+      push Not at hagree
+      obtain ⟨j, hj, hjne⟩ := hagree
+      obtain ⟨hd1, hd2⟩ := ih ⟨j, hj, hjne⟩
+      have h1 : (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y δ (n + 1)).1 ⊆
+          (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y δ n).1 := atomPair_fst_subset D₀ D₁ hD₀pos hD₀diff
+        hD₀nomin hD₁pos hD₁diff hD₁nomin X Y hXmem hYmem hD₀mne hD₁mne δ n
+      have h1' : (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y δ' (n + 1)).1 ⊆
+          (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y δ' n).1 := atomPair_fst_subset D₀ D₁ hD₀pos hD₀diff
+        hD₀nomin hD₁pos hD₁diff hD₁nomin X Y hXmem hYmem hD₀mne hD₁mne δ' n
+      have h2 : (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y δ (n + 1)).2 ⊆
+          (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y δ n).2 := atomPair_snd_subset D₀ D₁ hD₀pos hD₀diff
+        hD₀nomin hD₁pos hD₁diff hD₁nomin X Y hXmem hYmem hD₀mne hD₁mne δ n
+      have h2' : (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y δ' (n + 1)).2 ⊆
+          (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y δ' n).2 := atomPair_snd_subset D₀ D₁ hD₀pos hD₀diff
+        hD₀nomin hD₁pos hD₁diff hD₁nomin X Y hXmem hYmem hD₀mne hD₁mne δ' n
+      exact ⟨Set.subset_eq_empty (Set.inter_subset_inter h1 h1') hd1,
+        Set.subset_eq_empty (Set.inter_subset_inter h2 h2') hd2⟩
 
 end AtomPair
 
