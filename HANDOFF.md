@@ -8777,17 +8777,24 @@ executing any of (i)–(vii). **Resume protocol:** read `arxiv.md`'s new
 **8.12(d)(4)(c)/(d)-closure** row for the full goal list, then start at (i)
 (`atomPairG_fst_union_step`/`atomPairG_snd_union_step`) in `Exercise812d.lean`.
 
-**Follow-up, same day:** the single `8.12(d)(4)(c)/(d)-closure` row above read as "a hot mess" —
+**Follow-up #1, same day:** the single `8.12(d)(4)(c)/(d)-closure` row above read as "a hot mess" —
 goals (i)–(vii) were nested prose inside one `Proof Notes` paragraph, not separate blocks, and
 goal (vii) ("repeat for `(d)`") visually conflated `(c)`'s and `(d)`'s closure work into one blob
 despite `(c)`/`(d)` being two distinct, already-`Pass`, already-committed constructions
-(`XPseqCode`/`YPseqCode`). **Restructured/renumbered in `arxiv.md` (not here — this file's entries
-above stay as the dated historical record and still say `(d)(4)(d)` for `YPseqCode`):**
-`(d)(4)(c)` (`XPseqCode`) is unchanged; the X-side closure goals (i)–(vi) above are now their own
-row **`8.12(d)(4)(d)`**, each goal its own `#####` sub-block; the old `(d)(4)(d)` (`YPseqCode`) is
-renumbered to **`8.12(d)(4)(e)`** (content/Lean-identifiers unchanged); the old goal (vii)
-(Y-side closure) is now its own row **`8.12(d)(4)(f)`**, likewise split into six `#####` sub-blocks
-mirroring `(d)(4)(d)`'s. **Resume protocol (superseding the paragraph above):** read `arxiv.md`'s
-**`8.12(d)(4)(d)`** row (sub-goals (i)–(vi), `XPseqCode`'s gap) and **`8.12(d)(4)(f)`** row
-(sub-goals (i)–(vi), `YPseqCode`'s gap) for the full, now-separated goal lists; start at
-`(d)(4)(d)`'s sub-goal (i) (`atomPairG_fst_union_step`) in `Exercise812d.lean`.
+(`XPseqCode`/`YPseqCode`). First fix attempt: split into 4 top-level rows, pushing `YPseqCode` from
+`(d)(4)(d)` to a new `(d)(4)(e)` to make room for `(d)(4)(d)` = the X-side closure, plus a new
+`(d)(4)(f)` for the Y-side closure.
+
+**Follow-up #2, same day (supersedes #1):** user correctly flagged that #1 just *moved* the same
+problem — `(c)` was still marked `Pass` despite being conditional, with its real remaining work
+living in a separate sibling row instead of showing up as `(c)`'s own subgoals. **Final structure,
+nesting instead of re-sequencing letters (so `YPseqCode` stays `(d)(4)(d)`, matching every
+docstring/checkpoint above that already calls it that — no renumbering needed after all):**
+`(d)(4)(c)` and `(d)(4)(d)` (`XPseqCode`/`YPseqCode`) keep their original letters and their Status
+lines now honestly read **`Partial`** (construction `Pass`, conditional correctness only); each
+gets its own **nested** six-goal closure directly underneath it as `#####` sub-blocks numbered
+`(c)(i)`–`(c)(vi)` and `(d)(i)`–`(d)(vi)` respectively (`Exercise 8.12(d)(4)(c)(i)`, etc.) — no new
+sibling letters at all. **Resume protocol (supersedes both paragraphs above):** read `arxiv.md`'s
+`(d)(4)(c)` row for its nested sub-goals `(c)(i)`–`(c)(vi)` (`XPseqCode`'s gap) and `(d)(4)(d)`'s
+row for its nested `(d)(i)`–`(d)(vi)` (`YPseqCode`'s gap, symmetric); start at `(c)(i)`
+(`atomPairG_fst_union_step`) in `Exercise812d.lean`.

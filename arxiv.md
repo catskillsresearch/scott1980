@@ -2335,7 +2335,7 @@ Lecture VIII covers retractions, projections, and the construction of the univer
   2. **(d)(4)(b)** — `XPseqG`/`YPseqG`: the classical `Set`-level generalization of `Exercise812c.lean`'s `XPseq`/`YPseq` over abstract `splitX`/`splitY` (finding 3), transcribing `XPseq_mem`/`XPseq_zero`/`YPseq_mem`/`YPseq_zero` verbatim onto the abstracted definitions — expected genuinely light/mechanical, per `(d)(1)`'s own docstring assessment, so bundled as one sub-part covering both sides.
   3. **(d)(4)(c)** — `XPseqCode`: the `X`-side fold (`XFoldStep`/`XFold`, mirroring `yFoldStep`/`yFold` over `i < 4ⁿ` using `deltaPair`/`(a)`'s `unionIdx` instead of `2ⁿ`/`unionUX`) plus its closed-form membership characterization (mirroring `mem_UX_YseqCode_iff`) and the link back to `(b)`'s `XPseqG` (mirroring `atomUCode_eq_genAtomYseqCode`).
   4. **(d)(4)(d)** — `YPseqCode`: the `Y`-side fold, symmetric to `(c)` but with the extra `bx : Bool` union layer (`2·4ⁿ` total, an outer 2-way union of two inner `4ⁿ`-folds) plus its closed-form characterization and link to `(b)`'s `YPseqG`.
-* **Status:** Partial — re-scoped into 4 sub-parts below; all of `(d)(4)(a)`–`(d)` are `Pass` (conditional correctness for `(c)`/`(d)`, unconditional found-ness deferred — see their own rows)
+* **Status:** Partial — re-scoped into 4 sub-parts below; `(d)(4)(a)`/`(d)(4)(b)` are `Pass`; `(d)(4)(c)`/`(d)(4)(d)` are `Partial` (construction `Pass`, conditional correctness only — each has its own nested closure sub-goals `(i)`–`(vi)` to reach unconditional correctness, see their own rows)
 
 #### Exercise 8.12(d)(4)(a)
 * **Mathematical Target:** `IsComputableUnion`: a computable "union index" hypothesis mirroring `ComputablePresentation`'s `inter`/`cons_computable` pair, but for `∪` (the missing prerequisite Scott's Definition 7.1 doesn't provide, and `Theorem88d.lean`'s `unionUX` doesn't generalize past)
@@ -2353,97 +2353,85 @@ Lecture VIII covers retractions, projections, and the construction of the univer
 * **Mathematical Target:** `XPseqCode`, the code-level `X`-side union fold, with closed-form correctness
 * **Lean File:** `Scott1980/Neighborhood/Exercise812d.lean`
 * **Proof Notes:** builds `XPseqCode` purely at the code level (no reference to `Exercise812c.lean`'s classical `XPseq`/`atomPair`, nor even to `(d)(1)`'s classical `atomPairG` — see `(d)(4)(b)`'s scope note for why that classical detour was unnecessary). **The half-step atom:** `xPseqAtomState n i` re-runs `xSubStep` on the depth-`n` two-sided state at bit-source `i < 4ⁿ` with the `X`-sub-step's bit forced to `1` (the `"+"`/`true` branch `XPseq`'s classical definition always selects); `xPseqAtomIdx`/`xPseqAtomJunk` harvest `stateIdx1`/`stateJunk` of that. Closed forms `xPseqAtomJunk_eq` (`= selectFn (atomPairJunk n i) 1 (emptyInterDec P₀ (idx0, n))`) and `xPseqAtomIdx_eq` (when non-junk, `= hSplitX.posIdx idx0 idx1 n`) come directly from `(d)(3)(b)`'s `xSubStep_junk_eq`/`xSubStep_idx1_eq` specialized at `b1 := 1`. `xPseqAtomIdx_mem` (the atom is always `D₁`-genuine, junk or not) is free from `ComputablePresentation.mem_X`'s totality — no hypotheses needed, exactly like `(d)(3)(e)`'s `atomPairIdx1_mem`. **The fold:** `XFoldStep`/`XFold` mirror `Theorem88d.lean`'s `yFoldStep`/`yFold` verbatim in shape (packed `(found, code)` accumulator, `selectFn`-driven skip-if-junk/union-else), folding over `i < 4ⁿ` using `(d)(4)(a)`'s `hUnion1.unionIdx` in place of `unionUX` — genuinely *simpler* to make primitive-recursive than `yFoldStep` since there's no `"+2ⁿ"`/`"+1"` bit-forcing index arithmetic needed (our half-step atom already reads directly off `i < 4ⁿ`, one level, not `Theorem88d.lean`'s two-tier `n+1`/`i+2ⁿ` encoding). **Correctness, conditional on "found" throughout** (mirroring `yFold_found_iff`/`yFold_mem_iff`'s own phrasing exactly): `XFold_found_le_one`/`XFold_found_iff` are direct, unconditional mirrors (no genuineness tracking needed for the flag itself). `XFold_mem_of_found` is genuinely new content beyond `Theorem88d.lean`'s precedent (there, `unionUX`'s output is unconditionally genuine since `U` is unconditionally union-closed — not so here): proved by induction, discharging `hUnion1.unionIdx_spec`'s existential hypothesis at each step via `(d)(4)(b)`'s `mem_union_of_mem` applied to the running union (genuine, by the induction hypothesis) and the new atom (genuine, unconditionally, via `xPseqAtomIdx_mem`) plus `P₁.surj`. `XFold_mem_iff` (the closed-form membership characterization, mirroring `yFold_mem_iff`) reuses `XFold_mem_of_found` at exactly the same step to legally rewrite through `unionIdx_spec` (replacing `unionUX`'s unconditional `UX_unionUX` rewrite). `XPseqCode n := (XFold n (4ⁿ)).unpair.2`, `XPseqCode_mem`/`mem_XPseqCode_iff` specialize `XFold_mem_of_found`/`XFold_mem_iff` at `N = 4ⁿ`, still conditional on `found`. **A flagged, deferred gap** (documented in-file, not faked): the *unconditional* form at `N = 4ⁿ` (mirroring `Theorem88d.lean`'s `exists_atomUEmpty_zero`) needs a genuine existence argument with no analogue here (`Theorem88d.lean`'s own proof is specific to its one-sided embedding structure) — investigation found a promising purely-algebraic covering route (`SplitSpec'`'s unconditional `I ∪ J = B` plus the trivial `(A∩X)∪(A\X)=A`, needing no case-adaptivity, showing the classical `⋃ i < 4ⁿ, (atomPairG … n i).1` covers `D₀.master`) but transporting it to the code level needs the *converse* half of `(d)(3)(d)`'s `atomPairCodeState_correct` (currently only "junk = 0 ⟹ matches classical" is `Pass`; the reverse "classical non-empty ⟹ junk = 0" is not yet proved) — substantial enough to warrant its own future sub-part. Lean gotchas hit and fixed: (1) a `(BIG_EXPR)\n.unpair.1` line-break inside a `have`'s type annotation parsed as *function application* of `.unpair`/`.1` as separate arguments rather than continued field projection (fix: keep the closing paren and `.unpair.1` glued with no line-break in between); (2) `include h in` must precede the *docstring*, not sit between the docstring and the `theorem` keyword (else "unexpected token 'include'; expected 'lemma'") — same discipline as `(d)(3)(f)`'s `atomPairCodeState_disjoint` precedent, just easy to get backwards when writing fresh. Axiom-audited: `XPseqCode_mem`/`mem_XPseqCode_iff`/`primrec_XPseqCode` all depend on `[propext, Classical.choice, Quot.sound]` (ambient baseline). Whole-project `lake build` (3164 jobs) green, zero `sorry`.
-* **Status:** Pass (conditional correctness only — the unconditional "found at `N=4ⁿ`" gap is flagged and deferred; now sequenced into concrete goals, see **8.12(d)(4)(d)** below)
+* **Status:** Partial — construction `Pass` (conditional correctness only); closure sub-goals `(c)(i)`–`(c)(vi)` below (dropping the "found" hypothesis) are `Scoped`, not started
 
-#### Exercise 8.12(d)(4)(d): closing `XPseqCode`'s deferred unconditional-"found" gap
-* **Mathematical Target:** discharge `(c)`'s deferred hypothesis unconditionally — `∃ i < 4ⁿ, xPseqAtomJunk n i = 0` — upgrading `XPseqCode_mem`/`mem_XPseqCode_iff` from conditional to unconditional correctness
-* **Lean File:** — (not yet started); scoping only, below. **Renumbered from a prior draft labeled "`8.12(d)(4)(c)/(d)-closure`"** (a single row crammed with both `(c)`'s and the old `(d)`'s closure work as one numbered list) — split out here as its own sub-part per user request, with the old `(d)` (`YPseqCode`) pushed to **`(d)(4)(e)`** below and its own closure pushed to **`(d)(4)(f)`**, so each closure gets its own row and each internal goal gets its own block instead of being nested prose.
-* **Proof Notes:** **Re-examination finding, done in response to a "reads as a fail?" concern about `(c)`'s docstring: the gap is more tractable than that docstring suggested.** Chasing the exact hypotheses already `Pass` elsewhere in `Exercise812d.lean` (`xStepG_spec`, `atomPairG_invariant`, `hxSplit : SplitSpec' D₁ splitX`, `split_fst_subset'`/`split_snd_subset'`, and especially `emptyInterDec_eq_one_iff`/`emptyDiffDec_eq_one_iff` — which *already* give the full biconditional linking a decider's reading to genuine classical set-emptiness, not just consistency) shows every sub-goal below (i)–(vi) has a concrete existing lemma to build on; nothing needs new axioms or hypotheses beyond the ambient baseline. **One open question, flagged but not re-litigated:** `IsComputableSplit`'s `posIdx_spec`/`negIdx_spec` are unconditional equalities to `Q.X (posIdx …)` (always `mem`-genuine, by `ComputablePresentation.mem_X`'s totality) for *every* `n, m, k`, which sits in apparent tension with the classical `hxSplit`/`hySplit : SplitSpec' …` hypotheses (which allow genuinely-`∅` outputs) — the two are already used together successfully in `(d)(1)`/`(d)(3)(f)`, so it hasn't blocked prior `Pass` work; goals (i)/(v) below are written to depend only on the classical `SplitSpec'` fields, never on `posIdx_spec`/`negIdx_spec`'s unconditional-genuineness reading, to stay on the side that's already load-bearing elsewhere.
-* **Status:** Scoped into sub-goals (i)–(vi) below; not yet started
-
-##### Sub-goal (i): one-step 4-way classical reunion
+##### Exercise 8.12(d)(4)(c)(i): one-step 4-way classical reunion
 * **Mathematical Target:** ranging over all four `(b1, b2) : Bool × Bool`, the depth-`(n+1)` `D₀`-pieces of `atomPairG` reunion to *exactly* the depth-`n` parent's `D₀`-piece (tentative name `atomPairG_fst_union_step`)
 * **Lean File:** — (not yet started)
-* **Proof Notes:** two small facts chained, no induction: the direct-side split `(A ∩ Xn) ∪ (A \ Xn) = A` (trivial two-set identity) at the `b1`-level, and the split-side reunion `(splitY B1 A1 Yn).1 ∪ (splitY B1 A1 Yn).2 = A1` at the `b2`-level — from `hySplit`'s own `.1 ∪ .2 = B` field of `SplitSpec'`, instantiated using `xStepG_spec`'s already-`Pass` half-step invariant `(A1 = ∅ ↔ B1 = ∅) ∧ (A1 = ∅ ∨ D₀.mem A1)` to supply `SplitSpec'`'s hypotheses.
+* **Proof Notes:** **Context for `(c)(i)`–`(c)(vi)`, done in response to a "reads as a fail?" concern about `(c)`'s flagged gap above: re-examination found it's more tractable than the docstring suggested.** Chasing the exact hypotheses already `Pass` elsewhere in `Exercise812d.lean` (`xStepG_spec`, `atomPairG_invariant`, `hxSplit : SplitSpec' D₁ splitX`, `split_fst_subset'`/`split_snd_subset'`, and especially `emptyInterDec_eq_one_iff`/`emptyDiffDec_eq_one_iff` — which *already* give the full biconditional linking a decider's reading to genuine classical set-emptiness, not just consistency) shows every one of `(c)(i)`–`(c)(vi)` has a concrete existing lemma to build on; nothing needs new axioms or hypotheses beyond the ambient baseline. **This sub-goal specifically:** two small facts chained, no induction: the direct-side split `(A ∩ Xn) ∪ (A \ Xn) = A` (trivial two-set identity) at the `b1`-level, and the split-side reunion `(splitY B1 A1 Yn).1 ∪ (splitY B1 A1 Yn).2 = A1` at the `b2`-level — from `hySplit`'s own `.1 ∪ .2 = B` field of `SplitSpec'`, instantiated using `xStepG_spec`'s already-`Pass` half-step invariant `(A1 = ∅ ↔ B1 = ∅) ∧ (A1 = ∅ ∨ D₀.mem A1)` to supply `SplitSpec'`'s hypotheses. **One open question, flagged but not re-litigated here:** `IsComputableSplit`'s `posIdx_spec`/`negIdx_spec` are unconditional equalities to `Q.X (posIdx …)` (always `mem`-genuine, by `ComputablePresentation.mem_X`'s totality) for *every* `n, m, k`, which sits in apparent tension with the classical `hxSplit`/`hySplit : SplitSpec' …` hypotheses (which allow genuinely-`∅` outputs) — the two are already used together successfully in `(d)(1)`/`(d)(3)(f)`, so it hasn't blocked prior `Pass` work; this sub-goal and `(c)(v)` should depend only on the classical `SplitSpec'` fields, never on `posIdx_spec`/`negIdx_spec`'s unconditional-genuineness reading, to stay on the side that's already load-bearing elsewhere.
 * **Status:** Scoped, not started
 
-##### Sub-goal (ii): classical covering induction
+##### Exercise 8.12(d)(4)(c)(ii): classical covering induction
 * **Mathematical Target:** `∀ z ∈ D₀.master, ∃ δ' : Fin n → Bool × Bool, z ∈ (atomPairG (extendTruePair δ') n).1` — the classical pieces at depth `n`, ranged over all sign-histories, cover `D₀.master`
 * **Lean File:** — (not yet started)
-* **Proof Notes:** induction on `n` chaining (i) at every step; base case `n = 0` is trivial (`atomPairG δ 0 = (D₀.master, D₁.master)`, one piece covering itself). Stated as an existential rather than `Set.iUnion` — that's all sub-goal (iv) needs.
-* **Status:** Scoped, not started; depends on (i)
+* **Proof Notes:** induction on `n` chaining `(c)(i)` at every step; base case `n = 0` is trivial (`atomPairG δ 0 = (D₀.master, D₁.master)`, one piece covering itself). Stated as an existential rather than `Set.iUnion` — that's all `(c)(iv)` needs.
+* **Status:** Scoped, not started; depends on `(c)(i)`
 
-##### Sub-goal (iii): encode sign-histories as `deltaPair`-matching bit-sources
+##### Exercise 8.12(d)(4)(c)(iii): encode sign-histories as `deltaPair`-matching bit-sources
 * **Mathematical Target:** a new definition `encodeDeltaPair : (Fin n → Bool × Bool) → ℕ` with `∀ i < n, deltaPair (encodeDeltaPair δ') i = δ' i` — the base-4-digit inverse of `(d)(3)(d)`'s `deltaPair`
 * **Lean File:** — (not yet started)
-* **Proof Notes:** combined with `(d)(1)`'s already-`Pass` `atomPairG_congr` (depth-`n` value depends only on `δ`'s first `n` entries), transports (ii)'s `Fin n → Bool × Bool`-indexed covering fact into a `deltaPair`/bit-source-indexed one: `∀ z ∈ D₀.master, ∃ i < 4ⁿ, z ∈ (atomPairG (deltaPair i) n).1`.
-* **Status:** Scoped, not started; depends on (ii)
+* **Proof Notes:** combined with `(d)(1)`'s already-`Pass` `atomPairG_congr` (depth-`n` value depends only on `δ`'s first `n` entries), transports `(c)(ii)`'s `Fin n → Bool × Bool`-indexed covering fact into a `deltaPair`/bit-source-indexed one: `∀ z ∈ D₀.master, ∃ i < 4ⁿ, z ∈ (atomPairG (deltaPair i) n).1`.
+* **Status:** Scoped, not started; depends on `(c)(ii)`
 
-##### Sub-goal (iv): non-trivial intersection with `P₀.X n`, still classical
+##### Exercise 8.12(d)(4)(c)(iv): non-trivial intersection with `P₀.X n`, still classical
 * **Mathematical Target:** `∃ i < 4ⁿ, (atomPairG (deltaPair i) n).1 ∩ P₀.X n ≠ ∅`
 * **Lean File:** — (not yet started)
-* **Proof Notes:** combine (iii) with `P₀.X n ⊆ D₀.master` and `P₀.X n ≠ ∅` (`NoMinimal` + `P₀.mem_X n`): any `z ∈ P₀.X n` lands in some covering piece from (iii), giving the non-trivial intersection at that piece's `i`.
-* **Status:** Scoped, not started; depends on (iii)
+* **Proof Notes:** combine `(c)(iii)` with `P₀.X n ⊆ D₀.master` and `P₀.X n ≠ ∅` (`NoMinimal` + `P₀.mem_X n`): any `z ∈ P₀.X n` lands in some covering piece from `(c)(iii)`, giving the non-trivial intersection at that piece's `i`.
+* **Status:** Scoped, not started; depends on `(c)(iii)`
 
-##### Sub-goal (v): the converse-biconditional — `(c)`'s originally-named gap, now itself a concrete induction
+##### Exercise 8.12(d)(4)(c)(v): the converse-biconditional — `(c)`'s originally-named gap, now itself a concrete induction
 * **Mathematical Target:** `(atomPairG (deltaPair i) n).1 ≠ ∅ → atomPairJunk n i = 0` (tentative names `atomPairG_fst_eq_empty_of_junk_eq_one` for the induction, then its contrapositive `atomPairJunk_eq_zero_of_ne_empty`)
 * **Lean File:** — (not yet started)
 * **Proof Notes:** proved as the contrapositive "junk newly `1` at some step ⟹ the classical component is already `∅` from that step on forever", by induction on `n`. Two ingredients, both already `Pass`, do the real work: (a) whichever half-step's *direct* check trips (`emptyInterDec_eq_one_iff`/`emptyDiffDec_eq_one_iff`'s biconditionals — decider-reads-`1` ⟺ genuine classical emptiness, under `IsPositive`/`DiffClosed`+`NoMinimal`) makes that step's direct-refined component literally `∅`; (b) if instead the *other* side's direct check trips, `atomPairG_invariant`'s `A = ∅ ↔ B = ∅` dichotomy (holds at every depth) transfers the emptiness across; and once a component is `∅`, `split_fst_subset'`/`split_snd_subset'` (split outputs `⊆` their context) plus the trivial `∅ ∩ X = ∅`/`∅ \ X = ∅` propagate it forward through every later step automatically.
-* **Status:** Scoped, not started; the substantive new content in this whole closure — no dependency on (i)–(iv) to *state*, but needed by (vi) to *apply*
+* **Status:** Scoped, not started; the substantive new content in this whole closure — no dependency on `(c)(i)`–`(c)(iv)` to *state*, but needed by `(c)(vi)` to *apply*
 
-##### Sub-goal (vi): assemble into the unconditional "found" fact
+##### Exercise 8.12(d)(4)(c)(vi): assemble into the unconditional "found" fact
 * **Mathematical Target:** `∃ i < 4ⁿ, xPseqAtomJunk n i = 0`, unconditionally — then specialize into unconditional `XPseqCode_mem`/`mem_XPseqCode_iff` (dropping their `hfound` hypothesis)
 * **Lean File:** — (not yet started)
-* **Proof Notes:** chain (iv) + (v) + `(d)(3)(d)`'s already-`Pass` *forward* half of `atomPairCodeState_correct` (rewriting the now-known-non-junk classical piece as the code-indexed one) + `emptyInterDec_eq_one_iff`'s converse reading, landing exactly on `xPseqAtomJunk_eq`'s defining condition `emptyInterDec P₀ (idx0, n) = 0`. This discharges `XFold_found_iff`'s hypothesis at `N = 4ⁿ`.
-* **Status:** Scoped, not started; depends on (iv) and (v)
+* **Proof Notes:** chain `(c)(iv)` + `(c)(v)` + `(d)(3)(d)`'s already-`Pass` *forward* half of `atomPairCodeState_correct` (rewriting the now-known-non-junk classical piece as the code-indexed one) + `emptyInterDec_eq_one_iff`'s converse reading, landing exactly on `xPseqAtomJunk_eq`'s defining condition `emptyInterDec P₀ (idx0, n) = 0`. This discharges `XFold_found_iff`'s hypothesis at `N = 4ⁿ`. **Once done, `(c)`'s overall Status above upgrades from `Partial` to `Pass` (unconditional).**
+* **Status:** Scoped, not started; depends on `(c)(iv)` and `(c)(v)`
 
-#### Exercise 8.12(d)(4)(e): `YPseqCode`, the code-level `Y`-side union fold
-* **Mathematical Target:** `YPseqCode`, the code-level `Y`-side union fold (double union), with closed-form correctness — **renumbered from `(d)(4)(d)` to `(d)(4)(e)`** (2026-07-04) to make room for `(d)(4)(d)`'s closure sub-goals above; content and Lean identifiers are unchanged, and the underlying `Exercise812d.lean` docstrings / `HANDOFF.md`'s dated checkpoints still refer to this by its original label `(d)(4)(d)` (historical record, not rewritten) — this row's number is `arxiv.md`'s own reorganized bookkeeping only
+#### Exercise 8.12(d)(4)(d)
+* **Mathematical Target:** `YPseqCode`, the code-level `Y`-side union fold (double union), with closed-form correctness
 * **Lean File:** `Scott1980/Neighborhood/Exercise812d.lean`
 * **Proof Notes:** symmetric to `(c)`'s `XPseqCode`, but `ySubStep`'s inputs already depend on position `n`'s own `X`-sub-step bit (per `Exercise812c.lean`'s own `YPseq` docstring), so the half-step atom needs an *extra* free bit `bx`: `yPseqAtomState n i bx` runs `xSubStep` at bit `bx` (arbitrary) then `ySubStep` at bit `1` (forced); `yPseqAtomIdx`/`yPseqAtomJunk` harvest `stateIdx0`/`stateJunk` (`D₀`-side, since `ySubStep`'s `"+"` branch is the *split* side). Built as an **outer `2`-way union of two inner `4ⁿ`-folds** (`YFoldInner n 0 _`/`YFoldInner n 1 _`, one per literal `bx`) rather than a single `2·4ⁿ`-element fold — simpler than threading `bx` through the recursion state, since `Nat.Primrec.prec` already needs a fixed outer parameter and pairing `bx` alongside `n` costs nothing (`YFoldInnerPair`, a `z`-repackaged auxiliary, keeps `primrec_YFoldInner`'s own proof cheap: the `Nat.pair`/`unpair` round-trip needed to re-derive `n`/`bx` from a packed `z` is *not* `rfl` — it needs `pair_unpair`'s `Nat.sqrt` case split — so pushing it through `unpair_pair_fst`/`_snd`-driven `simp` instead of the kernel's `whnf` avoids a heartbeat timeout hit on the first attempt). The two inner folds are then combined via a new, reusable `combineFound2` helper (generic in any `IsComputableUnion`): unions both codes when both found something, else propagates whichever single side found something. `YFoldInner`'s own correctness (`found_le_one`/`found_iff`/`mem_of_found`/`mem_iff`) exactly mirrors `XFold`'s four theorems verbatim (with `hD₀pos`/`hD₀diff`/`hD₀nomin`/`hUnion0`/`D₀`/`P₀` in place of the `D₁` versions, plus a held-fixed `bx` with `hbx : bx ≤ 1`); `combineFound2`'s own four correctness theorems are new (one level up: `found_le_one`/`found_iff` by direct case split on both sides' found flags, `mem_of_found`/`mem_iff` reusing `(d)(4)(b)`'s `mem_union_of_mem` exactly as `XFold_mem_of_found` did). `YPseqCode n := (combineFound2 (YFoldInner n 0 (4ⁿ)) (YFoldInner n 1 (4ⁿ))).unpair.2`; `YPseqCode_mem`/`mem_YPseqCode_iff` specialize both layers together, conditional on the *combined* found flag (a genuine `4ⁿ`-atom on *either* `bx`-branch suffices). Same deferred gap as `(c)`: unconditional found-ness is not proved (would need the same converse-`atomPairCodeState_correct` biconditional, doubled over `bx`).
-* **Status:** Pass (conditional correctness only, exactly as `(c)`; same deferred unconditional gap — now sequenced into concrete sub-goals, see **8.12(d)(4)(f)** below)
+* **Status:** Partial — construction `Pass` (conditional correctness only, exactly as `(c)`); closure sub-goals `(d)(i)`–`(d)(vi)` below are `Scoped`, not started
 
-#### Exercise 8.12(d)(4)(f): closing `YPseqCode`'s deferred unconditional-"found" gap
-* **Mathematical Target:** discharge `(d)(4)(e)`'s deferred hypothesis unconditionally — `∃ i < 4ⁿ, ∃ bx ≤ 1, yPseqAtomJunk n i bx = 0` — upgrading `YPseqCode_mem`/`mem_YPseqCode_iff` from conditional to unconditional correctness
-* **Lean File:** — (not yet started)
-* **Proof Notes:** exact mirror of `(d)(4)(d)`'s six sub-goals, with `D₀`/`D₁`, `X`/`Y`, `splitX`/`splitY` swapped throughout (`hySplit : SplitSpec' D₀ splitY` primary, `hxSplit` secondary). Given separate sub-goal blocks for the same reason `(d)(4)(d)` got them (not crammed into one "repeat for `(d)`" line):
-* **Status:** Scoped into sub-goals (i)–(vi) below; not yet started
-
-##### Sub-goal (i): one-step 4-way classical reunion, `D₁`-side
+##### Exercise 8.12(d)(4)(d)(i): one-step 4-way classical reunion, `D₁`-side
 * **Mathematical Target:** the depth-`(n+1)` `D₁`-pieces of `atomPairG` reunion to the depth-`n` parent's `D₁`-piece (tentative name `atomPairG_snd_union_step`)
 * **Lean File:** — (not yet started)
-* **Proof Notes:** same two-fact chain as `(d)(4)(d)`'s (i), transposed to the `D₁`/`B`-side: `(B ∩ Yn) ∪ (B \ Yn) = B` at the direct-refine level, plus `hxSplit`'s `.1 ∪ .2 = B`-style reunion at the split level (using the `x`-half-step's own invariant, symmetric to `xStepG_spec`).
+* **Proof Notes:** exact mirror of `(c)(i)`–`(c)(vi)`'s six sub-goals, with `D₀`/`D₁`, `X`/`Y`, `splitX`/`splitY` swapped throughout (`hySplit : SplitSpec' D₀ splitY` primary, `hxSplit` secondary) — given separate sub-goal blocks for the same reason `(c)` got them, not crammed into one "repeat for `(d)`" line. **This sub-goal:** same two-fact chain as `(c)(i)`, transposed to the `D₁`/`B`-side: `(B ∩ Yn) ∪ (B \ Yn) = B` at the direct-refine level, plus `hxSplit`'s `.1 ∪ .2 = B`-style reunion at the split level (using the `x`-half-step's own invariant, symmetric to `xStepG_spec`).
 * **Status:** Scoped, not started
 
-##### Sub-goal (ii): classical covering induction, `D₁`-side
+##### Exercise 8.12(d)(4)(d)(ii): classical covering induction, `D₁`-side
 * **Mathematical Target:** `∀ z ∈ D₁.master, ∃ δ' : Fin n → Bool × Bool, z ∈ (atomPairG (extendTruePair δ') n).2`
 * **Lean File:** — (not yet started)
-* **Proof Notes:** induction on `n` chaining (i), symmetric to `(d)(4)(d)`'s (ii).
-* **Status:** Scoped, not started; depends on (i)
+* **Proof Notes:** induction on `n` chaining `(d)(i)`, symmetric to `(c)(ii)`.
+* **Status:** Scoped, not started; depends on `(d)(i)`
 
-##### Sub-goal (iii): encode sign-histories as `deltaPair`-matching bit-sources, `D₁`-side
-* **Mathematical Target:** transport (ii) into `∀ z ∈ D₁.master, ∃ i < 4ⁿ, z ∈ (atomPairG (deltaPair i) n).2`
+##### Exercise 8.12(d)(4)(d)(iii): encode sign-histories as `deltaPair`-matching bit-sources, `D₁`-side
+* **Mathematical Target:** transport `(d)(ii)` into `∀ z ∈ D₁.master, ∃ i < 4ⁿ, z ∈ (atomPairG (deltaPair i) n).2`
 * **Lean File:** — (not yet started)
-* **Proof Notes:** reuses `(d)(4)(d)`'s `encodeDeltaPair`/`atomPairG_congr` verbatim — no new encoding needed, just applied to the `.2` component.
-* **Status:** Scoped, not started; depends on (ii); reuses `(d)(4)(d)`(iii)'s `encodeDeltaPair`
+* **Proof Notes:** reuses `(c)(iii)`'s `encodeDeltaPair`/`atomPairG_congr` verbatim — no new encoding needed, just applied to the `.2` component.
+* **Status:** Scoped, not started; depends on `(d)(ii)`; reuses `(c)(iii)`'s `encodeDeltaPair`
 
-##### Sub-goal (iv): non-trivial intersection with `P₁.X n`, still classical
+##### Exercise 8.12(d)(4)(d)(iv): non-trivial intersection with `P₁.X n`, still classical
 * **Mathematical Target:** `∃ i < 4ⁿ, (atomPairG (deltaPair i) n).2 ∩ P₁.X n ≠ ∅`
 * **Lean File:** — (not yet started)
-* **Proof Notes:** combine (iii) with `P₁.X n ⊆ D₁.master` and `P₁.X n ≠ ∅` (`NoMinimal` + `P₁.mem_X n`), symmetric to `(d)(4)(d)`'s (iv). Note this alone doesn't yet fix `bx` — that's resolved in (vi).
-* **Status:** Scoped, not started; depends on (iii)
+* **Proof Notes:** combine `(d)(iii)` with `P₁.X n ⊆ D₁.master` and `P₁.X n ≠ ∅` (`NoMinimal` + `P₁.mem_X n`), symmetric to `(c)(iv)`. Note this alone doesn't yet fix `bx` — that's resolved in `(d)(vi)`.
+* **Status:** Scoped, not started; depends on `(d)(iii)`
 
-##### Sub-goal (v): the converse-biconditional, `D₁`-side
+##### Exercise 8.12(d)(4)(d)(v): the converse-biconditional, `D₁`-side
 * **Mathematical Target:** `(atomPairG (deltaPair i) n).2 ≠ ∅ → atomPairJunk n i = 0`
 * **Lean File:** — (not yet started)
-* **Proof Notes:** symmetric contrapositive induction to `(d)(4)(d)`'s (v), swapping which half-step's direct check is "the trigger" vs. "the transferred-via-invariant" one.
+* **Proof Notes:** symmetric contrapositive induction to `(c)(v)`, swapping which half-step's direct check is "the trigger" vs. "the transferred-via-invariant" one.
 * **Status:** Scoped, not started
 
-##### Sub-goal (vi): assemble into the unconditional "found" fact, doubled over `bx`
+##### Exercise 8.12(d)(4)(d)(vi): assemble into the unconditional "found" fact, doubled over `bx`
 * **Mathematical Target:** `∃ i < 4ⁿ, ∃ bx ≤ 1, yPseqAtomJunk n i bx = 0`, unconditionally — then specialize into unconditional `YPseqCode_mem`/`mem_YPseqCode_iff`
 * **Lean File:** — (not yet started)
-* **Proof Notes:** chain (iv) + (v) as in `(d)(4)(d)`'s (vi); the only new wrinkle is `bx` — (iv)'s covering only needs `P₁.X n ≠ ∅`, independent of `bx`, so expect *either* `YFoldInner n 0 _` or `YFoldInner n 1 _` (or plausibly both) to pick up the unconditional "found" fact through `combineFound2`'s "propagate whichever side found something" branch, with no need to actually determine which `bx` in advance.
-* **Status:** Scoped, not started; depends on (iv) and (v)
+* **Proof Notes:** chain `(d)(iv)` + `(d)(v)` as in `(c)(vi)`; the only new wrinkle is `bx` — `(d)(iv)`'s covering only needs `P₁.X n ≠ ∅`, independent of `bx`, so expect *either* `YFoldInner n 0 _` or `YFoldInner n 1 _` (or plausibly both) to pick up the unconditional "found" fact through `combineFound2`'s "propagate whichever side found something" branch, with no need to actually determine which `bx` in advance. **Once done, `(d)`'s overall Status above upgrades from `Partial` to `Pass` (unconditional).**
+* **Status:** Scoped, not started; depends on `(d)(iv)` and `(d)(v)`
 
 #### Exercise 8.12(d)(5)
 * **Mathematical Target:** `toD1`/`toD0`'s underlying maps are `IsComputableMap P₀ P₁`/`IsComputableMap P₁ P₀`
