@@ -1996,7 +1996,7 @@ Lecture VIII covers retractions, projections, and the construction of the univer
 * **Mathematical Target:** Generalize `2X+1` to `2^k X + ℓ` (`ℓ<2^k`); `V` = non-empty finite unions of `2^k ℕ + ℓ`; show `U ≅ V` effectively, another presentation of `U`
 * **Lean File:** `Scott1980/Neighborhood/Exercise812.lean`; umbrella — see sub-rows **8.12(a)–8.12(g)** below for the full breakdown (both what's done and what's deferred)
 * **Proof Notes:** Broken into a **7-part plan** (mirroring how Theorem 8.8 was split into 15 files/~4,470 lines across (a)/(b)/(c)), tracked as sub-rows **8.12(a)–8.12(g)**: **(a) and (b) are `Pass`** — `V`'s construction/closure/faithfulness (a) and its `ComputablePresentation` (b), zero `sorry`; **(c)–(g) are `Deferred`** (none yet started) — the exercise's headline claim `U≅V` (effectively), split into a new general two-sided back-and-forth lemma (c), its effective refinement (d), `U` and `V` each satisfying the extension property (e)/(f), and final assembly (g). **Why `U≅V` is hard (not just tedious):** order isos preserve compactness, and compact = `principal` (general facts, `Theorem85.lean`), so `U≅V` would force `principal_U([1/3,2/3))` (a genuine compact `U`-element, non-dyadic endpoints) to correspond to a *single* `V`-neighbourhood — impossible, since no finite union of `2^kℕ+ℓ` equals `[1/3,2/3)` exactly. So "restrict a `U`-filter to its dyadic trace" is provably the wrong map, not just hard to compute. The isomorphism is nonetheless very likely true via a genuinely different technique: a **computable back-and-forth** matching of the full (richly-overlapping, atomless — `U_no_minimal`/`V_no_minimal`) neighbourhood posets, analogous to the classical fact that countable atomless dense structures of the same signature are isomorphic. See sub-rows for full detail, and the file's module docstring / `HANDOFF.md` for the original single-pass writeup this plan refines.
-* **Status:** Partial (8.12(a),(b) — `V` itself and its computable presentation — are `Pass`; 8.12(c)–(g) — the `U≅V` isomorphism — are all `Deferred`, none yet started — see sub-rows)
+* **Status:** Partial (8.12(a),(b) — `V` itself and its computable presentation — are `Pass`; 8.12(c) is itself split into 7 sub-parts (c)(i)–(c)(vii), with (i)–(iv) `Pass` and (v)–(vii) `Deferred`; 8.12(d)–(g) remain `Deferred`, none yet started — see sub-rows)
 
 #### Exercise 8.12(a)
 * **Mathematical Target:** Part 1 of 7 — define `V`: the neighbourhood system over `ℕ` of non-empty finite unions of `2^k ℕ + ℓ` (`ℓ<2^k`), with its basic structural properties
@@ -2012,8 +2012,50 @@ Lecture VIII covers retractions, projections, and the construction of the univer
 
 #### Exercise 8.12(c)
 * **Mathematical Target:** Part 3 of 7 — new general (non-effective) lemma: two countable, atomless neighbourhood systems `D₀`,`D₁`, each satisfying a mutual one-step "extension"/splitting property relative to the other, are order-isomorphic (`D₀.Element ≃o D₁.Element`)
+* **Lean File:** `Scott1980/Neighborhood/Exercise812c.lean` (in progress); umbrella — see sub-rows **8.12(c)(i)–8.12(c)(vii)** below for the full breakdown (both what's done and what's deferred), mirroring how Theorem 8.8(b)/(c) were split
+* **Proof Notes:** the genuinely new piece of abstract theory this exercise needs, broken into a 7-part plan tracked as sub-rows **8.12(c)(i)–8.12(c)(vii)**. **(i)–(iv) are `Pass`**: Boolean-closure prerequisites (i), generic hypotheses + free Boolean-atom infrastructure (ii), `Theorem88.lean`'s splitting lemma generalized to an abstract atomless target (iii), and the interleaved two-sided atom construction + its core invariant (iv). **(v)–(vii) are `Deferred`** (none yet started): pairwise disjointness, bidirectional transfer lemmas, and final `DomainIso` assembly. **Key structural discovery driving (i)–(iv)**: unlike Theorem 8.8(a)'s one-sided `exists_split`/`atomU` (where only the `U`-side is ever kept a genuine neighbourhood-or-∅, via `U_no_minimal`'s choice-driven splitting, while the `D`-side atom is an uninterpreted Boolean combination that need never lie in `D`), a genuine *two-sided* isomorphism needs **both** sides to remain neighbourhood-or-∅ at every step, including immediately after being intersected/subtracted by the *other* side's enumerated term. This is resolved by discovering `U` and `V` are both **Boolean-closed** (closed under set-difference, not just consistent intersection), which makes Boolean atoms automatically mem-or-∅ by direct computation, with no choice-driven invariant-tracking needed for that half of the work. See sub-rows for full detail.
+* **Status:** Partial (8.12(c)(i)–(iv) — Boolean-closure infra, generic definitions, generalized splitting lemma, and the core two-sided atom invariant — are `Pass`; 8.12(c)(v)–(vii) — disjointness, transfer lemmas, final assembly — are `Deferred`, none yet started — see sub-rows)
+
+#### Exercise 8.12(c)(i)
+* **Mathematical Target:** Part 1 of 7 — `U` and `V` are Boolean-closed (closed under set-*difference*, not just consistent intersection) and Positive (Exercise 1.19)
+* **Lean File:** `Scott1980/Neighborhood/Exercise812c.lean`
+* **Proof Notes:** `U_diff_mem` is a two-line corollary of the *already-existing* `IntervalPrimrec.lean`'s `diffLists`/`presentedIntervals_diffLists` (built long ago for the computable-presentation work, never previously used for this purpose): only non-emptiness of the raw difference can obstruct `U.mem`, since presentability and `⊆[0,1)` transfer automatically. `V_diff_mem` needs one new bitmask identity: `testBit_xor_and_self` shows `a ^^^ (a &&& b)` is bitwise "`a` and not `b`" (since `a &&& b` is always a submask of `a`, XOR-ing it out just clears exactly those shared bits), giving `levelSet_diff` (mirroring `levelSet_inter`'s own `upsample`-then-`&&&` formula) and hence `V_diff_mem`. Also proved: `U_isPositive`/`V_isPositive` (both systems' raw intersections are unconditionally presentable, so `mem(X∩Y) ↔ (X∩Y).Nonempty` — free from `combineIntervals`/`levelSet_inter`), and `U_noMinimal`/`V_noMinimal` repackaging the existing `U_no_minimal`/`V_no_minimal` into the generic `NoMinimal` shape (below).
+* **Status:** Pass
+
+#### Exercise 8.12(c)(ii)
+* **Mathematical Target:** Part 2 of 7 — generic `NoMinimal`/`DiffClosed` hypotheses, and the payoff: finite Boolean combinations (`Theorem88.lean`'s `genAtom`) are automatically mem-or-∅, no choice needed
+* **Lean File:** `Scott1980/Neighborhood/Exercise812c.lean`
+* **Proof Notes:** `NeighborhoodSystem.NoMinimal`/`.DiffClosed` generalize `U_no_minimal`/`V_no_minimal`/(i)'s difference-closure as abstract hypotheses — `NoMinimal` phrased with explicit `Y.Nonempty`/`Z.Nonempty` clauses rather than `U_no_minimal`'s `Y≠X`/`Z≠X`, since an abstract `D.mem` need not itself carry nonemptiness the way `U.mem`/`V.mem` do (logically equivalent given `Y∩Z=∅`/`Y∪Z=X`, but directly what `exists_split'` needs). The headline payoff `genAtom_mem_or_empty`: for a Positive, difference-closed `D` with an enumeration `Z` of `D`-neighbourhoods, `genAtom Z D.master δ n` (a finite Boolean combination of `Z`'s terms *and their complements*) is mem-or-∅ for *every* `n`,`δ` — a direct 2-case induction (intersect-with-a-neighbourhood via Positivity, subtract-a-neighbourhood via difference-closure), needing no choice-driven splitting to keep the atom "in the family" (unlike Theorem 8.8(a)'s `atomU_invariant`, which needed exactly such splitting since `D` there is *not* assumed Boolean-closed). One-step building blocks `inter_mem_or_empty`/`diff_mem_or_empty` extracted for reuse in (iv)'s two-sided construction.
+* **Status:** Pass
+
+#### Exercise 8.12(c)(iii)
+* **Mathematical Target:** Part 3 of 7 — generalize `Theorem88.lean`'s `exists_split`/`SplitSpec`/`splitChoice` from the hardcoded target `U` to an abstract atomless system `E`
+* **Lean File:** `Scott1980/Neighborhood/Exercise812c.lean`
+* **Proof Notes:** `exists_split'`/`SplitSpec'`/`splitChoice'` are verbatim proof transcriptions of `Theorem88.lean`'s originals with `U`/`U.mem`/`U_no_minimal` replaced by an abstract `E`/`E.mem`/`hEnomin : E.NoMinimal`, so the same lemma can later be instantiated with `E:=D₁` (splitting `D₁`'s side against a `D₀`-enumerated target) or `E:=D₀` (symmetrically) — the one place genuine `Classical.choice` enters, exactly as in Theorem 8.8(a).
+* **Status:** Pass
+
+#### Exercise 8.12(c)(iv)
+* **Mathematical Target:** Part 4 of 7 — the interleaved two-sided atom construction `atomPair` and its core invariant (matched emptiness, mem-or-∅ on both sides at every depth)
+* **Lean File:** `Scott1980/Neighborhood/Exercise812c.lean`
+* **Proof Notes:** Fix `D₀`,`D₁` (Positive, difference-closed, atomless) with enumerations `X`,`Y` covering their neighbourhoods. `atomPair` tracks a matched pair `(A,B):Set α×Set β`, refined by *two* sub-steps per depth `n`: an **`X`-sub-step** (test `A` against `X n` directly — free by (ii)'s Boolean-closure — and correspondingly split `B` via `exists_split'` with `E:=D₁`, exactly Theorem 8.8(a)'s `exists_split`), then a **`Y`-sub-step** (symmetrically: test the *new* `B` against `Y n` directly, split the *new* `A` via `exists_split'` with `E:=D₀`). A sign sequence `δ:ℕ→Bool×Bool` selects the `+`/`-` branch at each sub-step. `atomPair_invariant` proves, by one induction alternating the two kinds of step, that at every depth and for every `δ`: (a) the pair has matching emptiness, (b)/(c) each side is mem-or-∅ — using (ii)'s `inter_mem_or_empty`/`diff_mem_or_empty` for the "tested" side (free) and (iii)'s `splitChoice'_isSplitSpec` for the "split" side (choice), alternating roles between the two sub-steps.
+* **Status:** Pass
+
+#### Exercise 8.12(c)(v)
+* **Mathematical Target:** Part 5 of 7 — pairwise disjointness of `atomPair` across sign sequences disagreeing before depth `n`, on *both* sides simultaneously (the two-sided analogue of `Theorem88.lean`'s `atomU_invariant`'s third clause)
 * **Lean File:** — (not yet started)
-* **Proof Notes:** the genuinely new piece of abstract theory this exercise needs. Theorem 8.8(a)'s `exists_split`/`Theorem88.lean` back-and-forth is one-sided (embeds an arbitrary `D` into `U`, only ever splitting `U`'s side via `U_no_minimal`); this lemma needs a *symmetric* two-sided version, alternately enumerating `D₀`'s and `D₁`'s neighbourhoods and extending a finite matching by splitting whichever side is "behind", needing *both* systems' no-minimal-neighbourhood property. Expected to reuse the `List`-of-matched-pairs recursive idiom from `Theorem88.lean` but symmetrized. `Classical.choice` expected and acceptable (non-constructive `Prop`-level existence, analogous to Theorem 8.8(a)).
+* **Proof Notes:** needed so that a `Yseq`-style union over depth-`n` atoms recovers a well-defined, non-overlapping decomposition on *both* the `D₀`- and `D₁`-sides at once (unlike Theorem 8.8(a), where only the `U`-side ever needed this).
+* **Status:** Deferred
+
+#### Exercise 8.12(c)(vi)
+* **Mathematical Target:** Part 6 of 7 — bidirectional `Yseq`-analogue closed forms and transfer lemmas: `X n`/`Y n` are each recoverable as a finite union of matched `atomPair` atoms, with subset/inter-empty/inter-eq transfer in both directions (mirroring `Theorem88.lean`'s `transfer_subset_iff`/`transfer_inter_eq_iff`, but two-way)
+* **Lean File:** — (not yet started)
+* **Proof Notes:** the bulk of the remaining size estimate — comparable to the rest of `Theorem88.lean` (`Yseq` onward, ~350 lines), done twice (once per direction) plus interleaving glue.
+* **Status:** Deferred
+
+#### Exercise 8.12(c)(vii)
+* **Mathematical Target:** Part 7 of 7 — final assembly of (iv)/(v)/(vi)'s ingredients into the headline `DomainIso D₀ D₁` (`D₀.Element ≃o D₁.Element`), completing Exercise 8.12(c)
+* **Lean File:** — (not yet started)
+* **Proof Notes:** expected to mirror `Theorem88a.lean`'s `domainIso` assembly pattern (pushforward/pullback filter construction from the matched-atom correspondence), but symmetric in both directions rather than a one-sided embedding.
 * **Status:** Deferred
 
 #### Exercise 8.12(d)
