@@ -6882,3 +6882,43 @@ Proposition 8.10(b) row updated to `Pass`. `Scott1980.lean` updated to import `P
 
 **Status: Proposition 8.10 (both halves) is `Pass`.** **Next up:** continue down `arxiv.md`'s
 Lecture VIII "Deferred" rows (Exercises 8.11–8.26).
+
+**2026-07-03 — Exercise 8.11 PASS.** New file **`Scott1980/Neighborhood/Exercise811.lean`**
+(~525 lines), wired into `Scott1980.lean`.
+
+**Setup.** `R := {[0,r) ∣ r∈ℚ, 0<r≤1}`, a chain neighbourhood system over `ℚ` (nested by `r`, no
+disjoint case ever needed). `aRel X Y := ∃r s, X=[0,r)∧Y=[0,s)∧(r<s∨r=s=1)`, packaged as
+`a : ApproximableMap R R`; endpoint-level helper lemmas (`Ico0_inj`, `Ico0_le_of_subset`,
+`Ico0_inter`, `aRel_combine`) carry `inter_right`/`mono`. `isRetraction_a`/`isProjection_a` close
+by direct endpoint unwinding (`exists_between` supplies the retraction witness).
+
+**Fixed-point correspondence (the exercise's core content).** `R.Element`s reduce to "up-set"
+predicates `U : ℚ → Prop` on `(0,1]` (`Element.ext_U`/`mkElement`, Definition 1.6's filter
+conditions transported along `r↦[0,r)`). Scott's Dedekind cut for `t∈[0,1]` is
+`cutU t r := r≤1 ∧ (1-t<r ∨ r=1)` (`cutElt t`); `toElementMap_cutElt` shows it's `a`-fixed
+(density `exists_rat_btwn` supplies the "openness" witness); `cutElt_le_iff` is Scott's hint made
+precise (`⊆` matches `≤`, both directions). Surjectivity: any fixed `x` has canonical cut point
+`cutPoint x := 1 - sInf {(r:ℝ) ∣ x.mem[0,r)}` (`cutElt_cutPoint`, via `exists_lt_of_csInf_lt`);
+antisymmetry of `cutElt_le_iff` gives injectivity (`cutElt_injective`). Packaged as
+**`fixOrderIso : Fix(a) ≃o Set.Icc (0:ℝ) 1`** (`noncomputable`, uses `sInf`).
+
+**Non-finitarity.** `not_isCompactElt_pos`: for *any* neighbourhood system `F` and order iso
+`g : Set.Icc(0:ℝ)1 ≃o F.Element`, no `g⟨t,_,_⟩` with `t>0` is `IsCompactElt` — the directed family
+`{g⟨s,_,_⟩ ∣ 0≤s<t}` has sup exactly `g⟨t,_,_⟩` (`isLUB_Ico` transported via
+`OrderIso.isLUB_image'`, matched against `iSupDirected`'s `le_iSupDirected`/`iSupDirected_le`
+LUB-characterization by `IsLUB.unique`), yet `g⟨t,_,_⟩` sits strictly above every member. This is
+Scott's second hint verbatim: aside from `⊥`, no finite elements. `not_isFinitary_a`: assuming
+`IsFinitary a` gives `e : Fix(a)≃o F.Element`; set `g := fixOrderIso.symm.trans e`,
+`x := g⟨1,_,_⟩`. Every principal approximant of `x` is compact (`principal_isCompactElt`), hence
+(contrapositive of `not_isCompactElt_pos`) equals `g⟨0,_,_⟩`; algebraicity
+(`eq_iSupDirected_principal x`, Theorem 8.5's machinery) then forces `x = g⟨0,_,_⟩`, contradicting
+injectivity of `g` at `1≠0`.
+
+**Zero `sorry`.** `lake build` (whole project, 3156 jobs) green. `#print axioms` on `a`,
+`isRetraction_a`, `isProjection_a`, `fixOrderIso`, `not_isFinitary_a` all give
+`⊆{propext,Classical.choice,Quot.sound}` — `Classical.choice` is the same inherited `ℚ`/`ℝ`-order
+taint as `Definition87.lean`'s `𝒰`, no new choice usage. `arxiv.md`'s Exercise 8.11 row updated to
+`Pass`. `Scott1980.lean` updated to import `Exercise811`.
+
+**Status: Exercise 8.11 is `Pass`.** **Next up:** Exercise 8.12 (generalize `2X+1` notation to
+`2^k X + ℓ`; `V` = non-empty finite unions of `2^k ℕ + ℓ`; show `U ≅ V` effectively).
