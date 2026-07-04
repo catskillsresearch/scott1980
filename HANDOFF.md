@@ -8798,3 +8798,25 @@ sibling letters at all. **Resume protocol (supersedes both paragraphs above):** 
 `(d)(4)(c)` row for its nested sub-goals `(c)(i)`–`(c)(vi)` (`XPseqCode`'s gap) and `(d)(4)(d)`'s
 row for its nested `(d)(i)`–`(d)(vi)` (`YPseqCode`'s gap, symmetric); start at `(c)(i)`
 (`atomPairG_fst_union_step`) in `Exercise812d.lean`.
+
+## 2026-07-04 checkpoint: `(c)(i)` done — `atomPairG_fst_union_step`
+
+Implemented the first nested closure sub-goal. Two new generic lemmas in `section StepGen`
+(alongside `xStepG_fst_subset`/`yStepG_fst_subset`, same style): **`xStepG_fst_union`**
+(`(xStepG splitX A B Xn true).1 ∪ (xStepG splitX A B Xn false).1 = A`, the trivial
+`Set.inter_union_diff A Xn` restated through `xStepG`'s `.1`, no `SplitSpec'` hypotheses needed) and
+**`yStepG_fst_union`** (`(yStepG splitY A1 B1 Yn true).1 ∪ (yStepG splitY A1 B1 Yn false).1 = A1`,
+directly `hySplit`'s `.2.2.2.2.1` field of `SplitSpec'` given `hBA`/`hAmem`). **`atomPairG_fst_union_step`**
+(in `section AtomPairGen`, just before `atomPairG_disjoint`) chains both at depth `n`: derives the
+half-step invariant facts inline via the same case-split `xStepG_spec` uses (needed fresh since
+`xStepG_spec` is hardcoded to `(δ n).1`, not a free `b1`), then two `rw`s with `yStepG_fst_union`
+reduce the goal to `xStepG_fst_union`.
+
+No Lean gotchas — went through on the first attempt. Axiom-audited: `atomPairG_fst_union_step`/
+`xStepG_fst_union` give `⊆{propext, Classical.choice, Quot.sound}` (matching sibling lemmas
+exactly); `yStepG_fst_union` gives `⊆{propext}`. Whole-project `lake build` (3164 jobs) green, zero
+`sorry`. `arxiv.md`'s `(c)(i)` row updated to `Pass`.
+
+**Status: `8.12(d)(4)(c)(i)` is `Pass`.** **Resume protocol:** next up is `(c)(ii)` — the classical
+covering induction on `n`, chaining `atomPairG_fst_union_step` at every step (base case `n = 0`
+trivial). Read `arxiv.md`'s `(d)(4)(c)` row for `(c)(ii)`'s exact statement.
