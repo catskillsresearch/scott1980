@@ -8312,3 +8312,55 @@ code-level state transition (per-depth state packing both sides' presentation-in
 junk/non-junk flag per side, `Theorem88d.lean`'s `packState` style; intersect/diff the `D₀`-side
 index directly by `n` via `P₀.inter`/(a)'s `diffIdx`, split the `D₁`-side index via (d)(2)'s
 `IsComputableSplit`), as a single `Nat.Primrec` function.
+
+## 2026-07-04 checkpoint — Exercise 8.12(d)(3)(b): direct-refinement deciders + `xSubStep`
+
+Appended to `Exercise812d.lean`.
+
+**Scope simplification, discovered before writing any code:** the tentative plan's "junk/non-junk
+flag *per side*" is unnecessary — `(d)(1)`'s `atomPairG_invariant` (`ihAB` clause) already proves
+`A_n = ∅ ↔ B_n = ∅` at *every* depth, so the two sides always go junk **together**. Packed the
+two-sided state as `packState2 idx0 idx1 junk` with a **single shared** `junk` flag instead
+(`stateIdx0`/`stateIdx1`/`stateJunk` projections, `@[simp]` unpacking lemmas, `Nat.Primrec`-ness
+for each projection) — simpler than originally scoped, and the shared flag directly *is* the
+code-level embodiment of `ihAB`.
+
+**Direct-refinement decidability** (`section DirectDec`, generic over any `{V} (P :
+ComputablePresentation V)`, reused for both `P₀`/`P₁`): `existsInterDec`/`existsDiffDec` extract
+`Classical.choice`-named `{0,1}`-valued deciders from `P.cons_computable`/(a)'s
+`hDiff.diff_computable` (via `.choose`/`.choose_spec`, `isOne`-wrapped — the exact `datomDec`
+extraction pattern from `Theorem88d.lean`); `existsInterDec_eq_zero_iff`/`existsDiffDec_eq_zero_iff`
+connect these "consistency/exists" deciders to genuine emptiness (`IsPositive`+`NoMinimal` for `∩`
+— a non-empty intersection is a neighbourhood by `IsPositive`, hence indexed by `surj`, and any
+consistency witness is itself non-empty by `NoMinimal.mem_ne_empty`; (a)'s
+`diff_exists_iff_ne_empty` directly for `\`); `emptyInterDec`/`emptyDiffDec` are the complementary
+`1 - ⬝` emptiness flags, with their own `_eq_one_iff` correctness lemmas.
+
+**`xSubStep`**: a single `Nat.Primrec` function of a packed `w = pair n (pair b1 s)` argument
+(mirroring `atomStep`'s `w = pair k (pair y state)` convention exactly) — refines `D₀`'s index
+directly against `P₀.X n` (`P₀.inter`/`hDiff0.diffIdx`, selected by bit `b1`) and `D₁`'s index via
+the matching branch of `hSplitX.posIdx`/`negIdx` (`(d)(2)`'s `IsComputableSplit`), freezing both at
+sentinel `0` the instant either the incoming state was already junk or the direct refinement is
+found empty. `primrec_xSubStep`'s proof is a `have`-chain building up `Nat.Primrec`-ness for every
+sub-expression compositionally, exactly mirroring `primrec_atomStep`'s structure, closed by
+`.of_eq` unfolding the `let`-chain.
+
+**Lean gotchas hit:** (1) `rwa […] at h` failed via `assumption` on a flipped-orientation goal in
+`existsInterDec_spec`/`existsDiffDec_spec` — fixed with an explicit `exact h.symm` after the `rw`.
+(2) `hDiff.diff_exists_iff_ne_empty` doesn't dot-resolve (`diff_exists_iff_ne_empty`, from `(a)`,
+takes *no* `IsComputableDiff P` argument at all — it's namespaced under `IsComputableDiff` purely
+for grouping) — fixed by calling it qualified, `IsComputableDiff.diff_exists_iff_ne_empty (P := P)
+hdiff hnomin n m`. (3) An `intro h0 hne` over-introduced on a non-implication goal in
+`existsDiffDec_eq_zero_iff`'s first `constructor` branch — fixed by restructuring that branch
+through `by_contra` instead (mirroring the second branch's own shape).
+
+Axiom-audited: `existsInterDec_eq_zero_iff`/`existsDiffDec_eq_zero_iff`/`emptyInterDec_eq_one_iff`/
+`emptyDiffDec_eq_one_iff`/`primrec_xSubStep` all give `⊆{propext, Classical.choice, Quot.sound}`
+(`Classical.choice` only in *naming* the extracted deciders, exactly like `datomDec`'s own
+precedent — not a new choice-dependency). Whole-project `lake build` (3164 jobs) green, zero
+`sorry`.
+
+**Status: Exercise 8.12(d)(3)(b) is `Pass`.** **Next up:** 8.12(d)(3)(c) — the `Y`-sub-step's
+symmetric state transition (intersect/diff the `D₁`-side index directly by `n`, split the
+`D₀`-side index via `hSplitY`), composed with `xSubStep` into the full `n → n + 1` transition
+`atomPairCodeState` (via `Nat.Primrec.prec`, mirroring `atomUCodeState`/`atomStep`).

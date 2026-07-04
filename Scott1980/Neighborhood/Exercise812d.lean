@@ -552,4 +552,264 @@ theorem diff_exists_iff_ne_empty (hdiff : V.DiffClosed) (hnomin : V.NoMinimal) (
 
 end IsComputableDiff
 
-end Scott1980.Neighborhood
+/-! ## 8.12(d)(3)(b): the `X`-sub-step's code-level state transition
+
+`atomPairG`'s recursion state at depth `n` is a pair `(A_n, B_n) : Set α × Set β`. At the code
+level we track it as a triple `(idx0, idx1, junk)`: `idx0`/`idx1` index `A_n`/`B_n` in `P₀`/`P₁`
+(meaningful only when `junk = 0`), and `junk` is a **single shared** flag for "`A_n = B_n = ∅`
+already". A single flag (rather than "one per side", as originally tentatively scoped) suffices
+because `atomPairG_invariant`'s own `ihAB` clause (`(d)(1)`) already proves the two sides go empty
+**together** at every depth — so a per-side flag would always just duplicate the other.
+
+The `X`-sub-step (`xStepG`) refines `D₀`'s side **directly** (intersect/diff against `X n = P₀.X n`
+— the presentation's own `n`-th neighbourhood; the eventual application enumerates *all* of `P₀`'s
+neighbourhoods this way, mirroring `Theorem88d.lean`'s `idxSet (e P) n`) and `D₁`'s side via the
+**split** (`(d)(2)`'s `IsComputableSplit`). This sub-part builds that half-step as a single
+`Nat.Primrec` function of a packed `(n, bit, state)` argument; `(d)(3)(c)` composes it with the
+symmetric `Y`-sub-step into the full `n → n + 1` transition. -/
+
+/-! ### Direct-refinement decidability, extracted from `cons_computable`/`IsComputableDiff`
+
+Two deciders, mirroring `Theorem88d.lean`'s `datomDec` extraction pattern (`Classical.choice` via
+`RecDecidable`'s bare existential, then `isOne`-wrapped so the result is *literally* `{0,1}`-valued,
+not just "`= 1` iff …"): whether `X n ∩ X m` (resp. `X n \ X m`) is empty. -/
+
+section DirectDec
+
+variable {α : Type*} {V : NeighborhoodSystem α} (P : ComputablePresentation V)
+
+/-- **Extracted existence decider for `∩`**: `1` iff `∃ k, X k ⊆ X n ∩ X m` (`cons_computable`'s
+own predicate). -/
+noncomputable def existsInterDec : ℕ → ℕ := fun t => isOne (P.cons_computable.choose t)
+
+theorem primrec_existsInterDec : Nat.Primrec (existsInterDec P) :=
+  (primrec_isOne.comp P.cons_computable.choose_spec.1).of_eq fun _ => rfl
+
+theorem existsInterDec_le_one (t : ℕ) : existsInterDec P t ≤ 1 := isOne_le_one _
+
+theorem existsInterDec_spec (n m : ℕ) :
+    existsInterDec P (Nat.pair n m) = 1 ↔ ∃ k, P.X k ⊆ P.X n ∩ P.X m := by
+  unfold existsInterDec
+  rw [isOne_eq_one_iff]
+  have h := P.cons_computable.choose_spec.2 (Nat.pair n m)
+  dsimp only at h
+  rw [unpair_pair_fst, unpair_pair_snd] at h
+  exact h.symm
+
+/-- **The `∩`-existence decider matches non-emptiness**, given `IsPositive` + `NoMinimal`: any
+consistency witness is itself a non-empty neighbourhood (`NoMinimal.mem_ne_empty`), and conversely
+a non-empty intersection is a neighbourhood by `IsPositive`, hence indexed by `surj`. -/
+theorem existsInterDec_eq_zero_iff (hpos : V.IsPositive) (hnomin : V.NoMinimal) (n m : ℕ) :
+    existsInterDec P (Nat.pair n m) = 0 ↔ P.X n ∩ P.X m = ∅ := by
+  have hle := existsInterDec_le_one P (Nat.pair n m)
+  constructor
+  · intro h0
+    by_contra hne
+    have hmem : V.mem (P.X n ∩ P.X m) :=
+      (hpos (P.mem_X n) (P.mem_X m)).mpr (Set.nonempty_iff_ne_empty.mpr hne)
+    obtain ⟨k, hk⟩ := P.surj hmem
+    have h1 : existsInterDec P (Nat.pair n m) = 1 :=
+      (existsInterDec_spec P n m).mpr ⟨k, by rw [hk]⟩
+    omega
+  · intro hempty
+    by_contra hne1
+    have h1 : existsInterDec P (Nat.pair n m) = 1 := by omega
+    obtain ⟨k, hk⟩ := (existsInterDec_spec P n m).mp h1
+    exact absurd (Set.subset_eq_empty hk hempty) (hnomin.mem_ne_empty (P.mem_X k))
+
+/-- **The `∩`-emptiness decider** (`1` iff `X n ∩ X m = ∅`): the complementary flag to
+`existsInterDec`. -/
+noncomputable def emptyInterDec : ℕ → ℕ := fun t => 1 - existsInterDec P t
+
+theorem primrec_emptyInterDec : Nat.Primrec (emptyInterDec P) :=
+  primrec_sub₂ (Nat.Primrec.const 1) (primrec_existsInterDec P)
+
+theorem emptyInterDec_le_one (t : ℕ) : emptyInterDec P t ≤ 1 := by
+  unfold emptyInterDec; have := existsInterDec_le_one P t; omega
+
+theorem emptyInterDec_eq_one_iff (hpos : V.IsPositive) (hnomin : V.NoMinimal) (n m : ℕ) :
+    emptyInterDec P (Nat.pair n m) = 1 ↔ P.X n ∩ P.X m = ∅ := by
+  unfold emptyInterDec
+  have hle := existsInterDec_le_one P (Nat.pair n m)
+  have h0 := existsInterDec_eq_zero_iff P hpos hnomin n m
+  constructor
+  · intro h1; apply h0.mp; omega
+  · intro hempty; have := h0.mpr hempty; omega
+
+variable (hDiff : IsComputableDiff P)
+
+/-- **Extracted existence decider for `\`**: `1` iff `∃ k, X k = X n \ X m`
+(`IsComputableDiff.diff_computable`'s own predicate). -/
+noncomputable def existsDiffDec : ℕ → ℕ := fun t => isOne (hDiff.diff_computable.choose t)
+
+theorem primrec_existsDiffDec : Nat.Primrec (existsDiffDec P hDiff) :=
+  (primrec_isOne.comp hDiff.diff_computable.choose_spec.1).of_eq fun _ => rfl
+
+theorem existsDiffDec_le_one (t : ℕ) : existsDiffDec P hDiff t ≤ 1 := isOne_le_one _
+
+theorem existsDiffDec_spec (n m : ℕ) :
+    existsDiffDec P hDiff (Nat.pair n m) = 1 ↔ ∃ k, P.X k = P.X n \ P.X m := by
+  unfold existsDiffDec
+  rw [isOne_eq_one_iff]
+  have h := hDiff.diff_computable.choose_spec.2 (Nat.pair n m)
+  dsimp only at h
+  rw [unpair_pair_fst, unpair_pair_snd] at h
+  exact h.symm
+
+/-- **The `\`-existence decider matches non-emptiness**, via `IsComputableDiff.diff_exists_iff_ne_empty`. -/
+theorem existsDiffDec_eq_zero_iff (hdiff : V.DiffClosed) (hnomin : V.NoMinimal) (n m : ℕ) :
+    existsDiffDec P hDiff (Nat.pair n m) = 0 ↔ P.X n \ P.X m = ∅ := by
+  have hle := existsDiffDec_le_one P hDiff (Nat.pair n m)
+  have h1 := existsDiffDec_spec P hDiff n m
+  have h2 := IsComputableDiff.diff_exists_iff_ne_empty (P := P) hdiff hnomin n m
+  constructor
+  · intro h0
+    by_contra hne
+    have h1' : existsDiffDec P hDiff (Nat.pair n m) = 1 := h1.mpr (h2.mpr hne)
+    omega
+  · intro hempty
+    by_contra hne0
+    have h1' : existsDiffDec P hDiff (Nat.pair n m) = 1 := by omega
+    exact (h2.mp (h1.mp h1')) hempty
+
+/-- **The `\`-emptiness decider** (`1` iff `X n \ X m = ∅`). -/
+noncomputable def emptyDiffDec : ℕ → ℕ := fun t => 1 - existsDiffDec P hDiff t
+
+theorem primrec_emptyDiffDec : Nat.Primrec (emptyDiffDec P hDiff) :=
+  primrec_sub₂ (Nat.Primrec.const 1) (primrec_existsDiffDec P hDiff)
+
+theorem emptyDiffDec_le_one (t : ℕ) : emptyDiffDec P hDiff t ≤ 1 := by
+  unfold emptyDiffDec; have := existsDiffDec_le_one P hDiff t; omega
+
+theorem emptyDiffDec_eq_one_iff (hdiff : V.DiffClosed) (hnomin : V.NoMinimal) (n m : ℕ) :
+    emptyDiffDec P hDiff (Nat.pair n m) = 1 ↔ P.X n \ P.X m = ∅ := by
+  unfold emptyDiffDec
+  have hle := existsDiffDec_le_one P hDiff (Nat.pair n m)
+  have h0 := existsDiffDec_eq_zero_iff P hDiff hdiff hnomin n m
+  constructor
+  · intro h1; apply h0.mp; omega
+  · intro hempty; have := h0.mpr hempty; omega
+
+end DirectDec
+
+/-! ### The two-sided packed state `(idx0, idx1, junk)` -/
+
+/-- Pack a two-sided code state: `idx0` (`P₀`-index of `A_n`), `idx1` (`P₁`-index of `B_n`),
+`junk` (`1` iff `A_n = B_n = ∅` already). -/
+def packState2 (idx0 idx1 junk : ℕ) : ℕ := Nat.pair idx0 (Nat.pair idx1 junk)
+
+def stateIdx0 (s : ℕ) : ℕ := s.unpair.1
+def stateIdx1 (s : ℕ) : ℕ := s.unpair.2.unpair.1
+def stateJunk (s : ℕ) : ℕ := s.unpair.2.unpair.2
+
+@[simp] theorem stateIdx0_packState2 (a b c : ℕ) : stateIdx0 (packState2 a b c) = a := by
+  unfold stateIdx0 packState2; simp only [unpair_pair_fst]
+@[simp] theorem stateIdx1_packState2 (a b c : ℕ) : stateIdx1 (packState2 a b c) = b := by
+  unfold stateIdx1 packState2; simp only [unpair_pair_fst, unpair_pair_snd]
+@[simp] theorem stateJunk_packState2 (a b c : ℕ) : stateJunk (packState2 a b c) = c := by
+  unfold stateJunk packState2; simp only [unpair_pair_snd]
+
+theorem primrec_stateIdx0 : Nat.Primrec stateIdx0 := Nat.Primrec.left
+theorem primrec_stateIdx1 : Nat.Primrec stateIdx1 := Nat.Primrec.left.comp Nat.Primrec.right
+theorem primrec_stateJunk : Nat.Primrec stateJunk := Nat.Primrec.right.comp Nat.Primrec.right
+
+/-- The base (depth-`0`) state: `A₀ = D₀.master`, `B₀ = D₁.master`, never junk. -/
+def stateBase2 (masterIdx0 masterIdx1 : ℕ) : ℕ := packState2 masterIdx0 masterIdx1 0
+
+/-! ### The `X`-sub-step
+
+Packed-argument convention `w = pair n (pair b1 s)` (mirroring `Theorem88d.lean`'s `atomStep`
+convention `w = pair k (pair y state)`): `n` is the current depth, `b1` is `(δ n).1` coded as
+`0`/`1`, `s` is the incoming two-sided state. -/
+
+section XSubStep
+
+variable {α β : Type*} {D₀ : NeighborhoodSystem α} {D₁ : NeighborhoodSystem β}
+  (P₀ : ComputablePresentation D₀) (P₁ : ComputablePresentation D₁)
+  (hDiff0 : IsComputableDiff P₀)
+  (splitX : Set α → Set β → Set α → Set β × Set β) (hSplitX : IsComputableSplit P₀ P₁ splitX)
+
+def xwN (w : ℕ) : ℕ := w.unpair.1
+def xwB1 (w : ℕ) : ℕ := w.unpair.2.unpair.1
+def xwS (w : ℕ) : ℕ := w.unpair.2.unpair.2
+
+theorem primrec_xwN : Nat.Primrec xwN := Nat.Primrec.left
+theorem primrec_xwB1 : Nat.Primrec xwB1 := Nat.Primrec.left.comp Nat.Primrec.right
+theorem primrec_xwS : Nat.Primrec xwS := Nat.Primrec.right.comp Nat.Primrec.right
+
+/-- **The `X`-sub-step.** Refines `D₀`'s side (`idx0`) directly against `P₀.X n` (intersect if
+`b1 = 1`, diff if `b1 = 0`, via `P₀.inter`/`hDiff0.diffIdx`), and `D₁`'s side (`idx1`) via the
+matching branch of the split `hSplitX` — freezing both at the junk sentinel `0` the moment either
+the incoming state was already junk, or this step's direct refinement is found empty. -/
+noncomputable def xSubStep (w : ℕ) : ℕ :=
+  let n := xwN w
+  let b1 := xwB1 w
+  let s := xwS w
+  let idx0 := stateIdx0 s
+  let idx1 := stateIdx1 s
+  let junk := stateJunk s
+  let directIdx := selectFn b1 (P₀.inter idx0 n) (hDiff0.diffIdx idx0 n)
+  let directEmpty := selectFn b1 (emptyInterDec P₀ (Nat.pair idx0 n))
+    (emptyDiffDec P₀ hDiff0 (Nat.pair idx0 n))
+  let splitIdx := selectFn b1 (hSplitX.posIdx idx0 idx1 n) (hSplitX.negIdx idx0 idx1 n)
+  let newJunk := selectFn junk 1 directEmpty
+  packState2 (selectFn newJunk 0 directIdx) (selectFn newJunk 0 splitIdx) newJunk
+
+theorem primrec_xSubStep : Nat.Primrec (xSubStep P₀ P₁ hDiff0 splitX hSplitX) := by
+  have hn : Nat.Primrec xwN := primrec_xwN
+  have hb1 : Nat.Primrec xwB1 := primrec_xwB1
+  have hs : Nat.Primrec xwS := primrec_xwS
+  have hidx0 : Nat.Primrec (fun w => stateIdx0 (xwS w)) := primrec_stateIdx0.comp hs
+  have hidx1 : Nat.Primrec (fun w => stateIdx1 (xwS w)) := primrec_stateIdx1.comp hs
+  have hjunk : Nat.Primrec (fun w => stateJunk (xwS w)) := primrec_stateJunk.comp hs
+  have hinter : Nat.Primrec (fun w => P₀.inter (stateIdx0 (xwS w)) (xwN w)) :=
+    (P₀.inter_primrec.comp (hidx0.pair hn)).of_eq
+      fun w => by simp only [unpair_pair_fst, unpair_pair_snd]
+  have hdiffidx : Nat.Primrec (fun w => hDiff0.diffIdx (stateIdx0 (xwS w)) (xwN w)) :=
+    (hDiff0.diffIdx_primrec.comp (hidx0.pair hn)).of_eq
+      fun w => by simp only [unpair_pair_fst, unpair_pair_snd]
+  have hemptyInter : Nat.Primrec (fun w => emptyInterDec P₀ (Nat.pair (stateIdx0 (xwS w)) (xwN w))) :=
+    (primrec_emptyInterDec P₀).comp (hidx0.pair hn)
+  have hemptyDiff : Nat.Primrec
+      (fun w => emptyDiffDec P₀ hDiff0 (Nat.pair (stateIdx0 (xwS w)) (xwN w))) :=
+    (primrec_emptyDiffDec P₀ hDiff0).comp (hidx0.pair hn)
+  have hposIdx : Nat.Primrec
+      (fun w => hSplitX.posIdx (stateIdx0 (xwS w)) (stateIdx1 (xwS w)) (xwN w)) :=
+    (hSplitX.posIdx_primrec.comp (hidx0.pair (hidx1.pair hn))).of_eq
+      fun w => by simp only [unpair_pair_fst, unpair_pair_snd]
+  have hnegIdx : Nat.Primrec
+      (fun w => hSplitX.negIdx (stateIdx0 (xwS w)) (stateIdx1 (xwS w)) (xwN w)) :=
+    (hSplitX.negIdx_primrec.comp (hidx0.pair (hidx1.pair hn))).of_eq
+      fun w => by simp only [unpair_pair_fst, unpair_pair_snd]
+  have hdirectIdx : Nat.Primrec (fun w => selectFn (xwB1 w)
+      (P₀.inter (stateIdx0 (xwS w)) (xwN w)) (hDiff0.diffIdx (stateIdx0 (xwS w)) (xwN w))) :=
+    primrec_selectFn hb1 hinter hdiffidx
+  have hdirectEmpty : Nat.Primrec (fun w => selectFn (xwB1 w)
+      (emptyInterDec P₀ (Nat.pair (stateIdx0 (xwS w)) (xwN w)))
+      (emptyDiffDec P₀ hDiff0 (Nat.pair (stateIdx0 (xwS w)) (xwN w)))) :=
+    primrec_selectFn hb1 hemptyInter hemptyDiff
+  have hsplitIdx : Nat.Primrec (fun w => selectFn (xwB1 w)
+      (hSplitX.posIdx (stateIdx0 (xwS w)) (stateIdx1 (xwS w)) (xwN w))
+      (hSplitX.negIdx (stateIdx0 (xwS w)) (stateIdx1 (xwS w)) (xwN w))) :=
+    primrec_selectFn hb1 hposIdx hnegIdx
+  have hnewJunk : Nat.Primrec (fun w => selectFn (stateJunk (xwS w)) 1 (selectFn (xwB1 w)
+      (emptyInterDec P₀ (Nat.pair (stateIdx0 (xwS w)) (xwN w)))
+      (emptyDiffDec P₀ hDiff0 (Nat.pair (stateIdx0 (xwS w)) (xwN w))))) :=
+    primrec_selectFn hjunk (Nat.Primrec.const 1) hdirectEmpty
+  have hidx0' : Nat.Primrec (fun w => selectFn (selectFn (stateJunk (xwS w)) 1 (selectFn (xwB1 w)
+      (emptyInterDec P₀ (Nat.pair (stateIdx0 (xwS w)) (xwN w)))
+      (emptyDiffDec P₀ hDiff0 (Nat.pair (stateIdx0 (xwS w)) (xwN w))))) 0
+      (selectFn (xwB1 w) (P₀.inter (stateIdx0 (xwS w)) (xwN w))
+        (hDiff0.diffIdx (stateIdx0 (xwS w)) (xwN w)))) :=
+    primrec_selectFn hnewJunk (Nat.Primrec.const 0) hdirectIdx
+  have hidx1' : Nat.Primrec (fun w => selectFn (selectFn (stateJunk (xwS w)) 1 (selectFn (xwB1 w)
+      (emptyInterDec P₀ (Nat.pair (stateIdx0 (xwS w)) (xwN w)))
+      (emptyDiffDec P₀ hDiff0 (Nat.pair (stateIdx0 (xwS w)) (xwN w))))) 0
+      (selectFn (xwB1 w) (hSplitX.posIdx (stateIdx0 (xwS w)) (stateIdx1 (xwS w)) (xwN w))
+        (hSplitX.negIdx (stateIdx0 (xwS w)) (stateIdx1 (xwS w)) (xwN w)))) :=
+    primrec_selectFn hnewJunk (Nat.Primrec.const 0) hsplitIdx
+  exact (hidx0'.pair (hidx1'.pair hnewJunk)).of_eq fun w => by
+    unfold xSubStep packState2
+    simp only []
+
+end XSubStep
