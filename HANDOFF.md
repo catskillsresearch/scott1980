@@ -7479,3 +7479,56 @@ implementing: likely needs its own transfer-lemma layer built on `XPseq`/`YPseq`
 (possibly reusing (vi)(2)'s *purely combinatorial* `transfer_dir` core, which never depended on
 `genAtom`/`atomE` specifically), rather than a literal `E:=D₀`/`E:=D₁` instantiation of
 `Exercise812cYseq.lean`.
+
+---
+
+**2026-07-04 — Exercise 8.12(c)(vi)(5): re-planned (its pre-plan is also superseded, like
+(vi)(4)'s), and its first, achievable piece completed.** Re-examined (vi)(5)/(vi)(6)'s pre-plan
+("apply (vi)(1)–(vi)(4) with `E:=D₀`/`E:=D₁`") against what (vi)(4)'s correction actually leaves
+available (`XPseq`/`YPseq`, `atomPair`-native half-step closed forms — not `YseqE` instances). Its
+literal content ("subset/inter-empty/inter-eq transfer facts", mirroring `Theorem88a.lean`'s
+`embed_subset_iff`/`exists_inter_index_of_dmem`) turns out to need something genuinely **not yet
+built**: a **joint two-family atom system** testing points against *several* `X`/`Y` indices at
+once (the way `Theorem88.lean`'s own `genAtom`/`transfer_empty_iff` takes finite *lists* of
+constraints, not single indices) — needed because, unlike `Theorem88a.lean`'s `idxSet` (always
+non-empty by pure index bookkeeping), `atomPair`'s atoms can genuinely vanish, so relating even
+*two* indices' inclusion (`X i ⊆ X j ↔ XPseq i ⊆ XPseq j`) requires evaluating a joint atom, not
+just two separate single-index `XPseq` values. **This is real, substantial new work** (likely
+comparable in size to (vi)(1)–(vi)(4) combined) that needs its own design pass before
+implementing — deferred rather than attempted half-designed.
+
+**What *is* immediately available**, with no new theory (just reusing (vi)(3)'s fully generic
+`iUnion_mem_or_empty`): `XPseq n`/`YPseq n` are themselves always `D₁`/`D₀`-mem-or-∅ and `⊆` the
+relevant master, since each is a `Fintype`-indexed union of pieces that `SplitSpec'` already
+guarantees are mem-or-∅. Added to `Exercise812c.lean`:
+* **`atomPair_fst_subset_master`/`atomPair_snd_subset_master`**: `atomPair`'s sides are always
+  `⊆ D₀.master`/`D₁.master` — straightforward induction from the base case (`atomPair δ 0 =
+  (D₀.master, D₁.master)`) and `atomPair_fst_subset`/`atomPair_snd_subset` ((v)(3)); a small gap
+  in the existing apparatus, needed here for the first time.
+* **`XPseq_subset_master`**: chains `xStep_snd_subset` (needs `atomPair_invariant`'s
+  matching/mem facts) with the new `atomPair_snd_subset_master`.
+* **`XPseq_empty_or_mem`**: `iUnion_mem_or_empty hD₁pos hD₁diff`, fed each `xStep` "+"-branch's
+  own `SplitSpec'`-guaranteed mem-or-∅ fact (`splitChoice'_isSplitSpec … |>.1`).
+* **`YPseq_subset_master`**/**`YPseq_empty_or_mem`**: symmetric, but `YPseq`'s union is
+  *doubly*-indexed (`δ'` and `bx`, from (vi)(4)(b)), so `Set.iUnion_subset`/`iUnion_mem_or_empty`
+  are each applied *twice* (once per index), using `xStep_spec_bit` ((vi)(4)(c)) in place of
+  `atomPair_invariant` to get the `SplitSpec'` preconditions at the free bit `bx`.
+
+Folded the separate (vi)(6) row into (vi)(5) in `arxiv.md` (both sides' facts were proved together
+in one pass, so a separate row added no information — kept as a placeholder pointing back to
+(vi)(5) for traceability with earlier checkpoints).
+
+**Zero `sorry`.** Whole-project `lake build` (3163 jobs) green. `#print axioms` on all six new
+theorems (`atomPair_fst_subset_master`/`atomPair_snd_subset_master`/`XPseq_subset_master`/
+`XPseq_empty_or_mem`/`YPseq_subset_master`/`YPseq_empty_or_mem`) give
+`⊆{propext,Classical.choice,Quot.sound}`, matching the baseline. `arxiv.md`: (vi)(5) row rewritten
+with the corrected target and `Partial` status; (vi)(6) row folded/marked `Pass`-by-merge;
+8.12(c)(vi) umbrella and 8.12(c) top-level status lines updated.
+
+**Status: Exercise 8.12(c)(vi)(5) is `Partial`** (mem-or-∅/subset-of-master facts done; the
+order/intersection transfer layer, needing a new joint two-family atom system, remains
+`Deferred` and not yet scoped). **Next up:** design the joint atom system (a `genAtom`-style
+construction over finite lists of constraints spanning *both* `X` and `Y` indices simultaneously,
+built directly against `atomPair` the way `XPseq`/`YPseq` were) before attempting
+Exercise 8.12(c)(vi)(7)/(vii)'s final assembly — this is the single largest remaining piece of
+Exercise 8.12(c) and deserves its own planning pass rather than an in-place attempt.

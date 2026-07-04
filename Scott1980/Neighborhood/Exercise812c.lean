@@ -1010,6 +1010,85 @@ theorem yStep_fst_eq_inter_YPseq (δ : ℕ → Bool × Bool) (n : ℕ) :
         xStep_fst_subset D₁ hD₁nomin _ _ (X n) (δ n).1 hzA1
       exact absurd (Set.mem_inter hzA1' hzAfull) (by rw [hdisjAA]; simp)
 
+/-- **`atomPair`'s `α`-side is always `⊆ D₀.master`** (by induction from the base case
+`atomPair δ 0 = D₀.master`, shrinking at each step via `atomPair_fst_subset`). -/
+theorem atomPair_fst_subset_master (δ : ℕ → Bool × Bool) (n : ℕ) :
+    (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y δ n).1 ⊆ D₀.master := by
+  induction n with
+  | zero => exact subset_rfl
+  | succ n ih => exact (atomPair_fst_subset D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin
+      X Y hXmem hYmem hD₀mne hD₁mne δ n).trans ih
+
+/-- **`atomPair`'s `β`-side is always `⊆ D₁.master`**, symmetric to `atomPair_fst_subset_master`. -/
+theorem atomPair_snd_subset_master (δ : ℕ → Bool × Bool) (n : ℕ) :
+    (atomPair D₀ D₁ hD₀nomin hD₁nomin X Y δ n).2 ⊆ D₁.master := by
+  induction n with
+  | zero => exact subset_rfl
+  | succ n ih => exact (atomPair_snd_subset D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin
+      X Y hXmem hYmem hD₀mne hD₁mne δ n).trans ih
+
+/-! ### Exercise 8.12(c)(vi)(5): `XPseq`/`YPseq` are always `D₁`/`D₀`-mem-or-∅
+
+**First, achievable piece.** The full pre-planned content of (vi)(5)/(vi)(6) — an order/intersection
+"transfer" layer recovering facts like `X i ⊆ X j ↔ XPseq i ⊆ XPseq j` (mirroring `Theorem88a.lean`'s
+`embed_subset_iff`, needed for the eventual `DomainIso` assembly) — turns out to need a genuinely
+new **joint two-family** atom/`genAtom`-style apparatus (testing points against *several* `X`
+indices at once), not just the single-index `XPseq`/`YPseq` built in (vi)(4): unlike
+`Theorem88a.lean`'s `idxSet` (always non-empty by pure index bookkeeping, independent of `D`'s own
+`mem` structure), `atomPair`'s atoms can genuinely vanish, so relating *two* indices' inclusion
+needs evaluating a *joint* atom, exactly why `Theorem88.lean`'s own `genAtom`/`transfer_empty_iff`
+apparatus takes finite *lists* of constraints rather than single indices. That joint apparatus is
+real, substantial new work, not yet scoped — deferred to a later sub-step once (vi)(5)/(vi)(6) chart
+its precise shape. **What *is* immediately available**, reusing (vi)(3)'s fully generic
+`iUnion_mem_or_empty` (no new theory needed): `XPseq n`/`YPseq n` are themselves always `D₁`/`D₀`
+mem-or-∅, since each is a `Fintype`-indexed union of mem-or-∅ pieces (`SplitSpec'`'s own guarantee
+on each `xStep`/`yStep` output). -/
+
+/-- **`XPseq n` is always `⊆ D₁.master`.** -/
+theorem XPseq_subset_master (n : ℕ) : XPseq D₀ D₁ hD₀nomin hD₁nomin X Y n ⊆ D₁.master := by
+  apply Set.iUnion_subset
+  intro δ'
+  exact (xStep_snd_subset hD₁nomin
+    (atomPair_invariant D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin X Y hXmem hYmem
+      hD₀mne hD₁mne (extendTruePair δ') n).1
+    (atomPair_invariant D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin X Y hXmem hYmem
+      hD₀mne hD₁mne (extendTruePair δ') n).2.2 (X n) true).trans
+    (atomPair_snd_subset_master D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin X Y hXmem
+      hYmem hD₀mne hD₁mne (extendTruePair δ') n)
+
+/-- **`XPseq n` is always `∅` or a genuine `D₁`-neighbourhood.** -/
+theorem XPseq_empty_or_mem (n : ℕ) :
+    XPseq D₀ D₁ hD₀nomin hD₁nomin X Y n = ∅ ∨ D₁.mem (XPseq D₀ D₁ hD₀nomin hD₁nomin X Y n) := by
+  apply iUnion_mem_or_empty hD₁pos hD₁diff
+  intro δ'
+  obtain ⟨hAB, -, hBmem⟩ := atomPair_invariant D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff
+    hD₁nomin X Y hXmem hYmem hD₀mne hD₁mne (extendTruePair δ') n
+  exact (splitChoice'_isSplitSpec D₁ hD₁nomin hAB hBmem (X n)).1
+
+/-- **`YPseq n` is always `⊆ D₀.master`.** -/
+theorem YPseq_subset_master (n : ℕ) : YPseq D₀ D₁ hD₀nomin hD₁nomin X Y n ⊆ D₀.master := by
+  apply Set.iUnion_subset
+  intro δ'
+  apply Set.iUnion_subset
+  intro bx
+  obtain ⟨hBA, hAmem⟩ := xStep_spec_bit D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin X Y
+    hXmem hYmem hD₀mne hD₁mne (extendTruePair δ') n bx
+  exact (yStep_fst_subset hD₀nomin hBA hAmem (Y n) true).trans
+    ((xStep_fst_subset D₁ hD₁nomin _ _ (X n) bx).trans
+      (atomPair_fst_subset_master D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin X Y hXmem
+        hYmem hD₀mne hD₁mne (extendTruePair δ') n))
+
+/-- **`YPseq n` is always `∅` or a genuine `D₀`-neighbourhood.** -/
+theorem YPseq_empty_or_mem (n : ℕ) :
+    YPseq D₀ D₁ hD₀nomin hD₁nomin X Y n = ∅ ∨ D₀.mem (YPseq D₀ D₁ hD₀nomin hD₁nomin X Y n) := by
+  apply iUnion_mem_or_empty hD₀pos hD₀diff
+  intro δ'
+  apply iUnion_mem_or_empty hD₀pos hD₀diff
+  intro bx
+  obtain ⟨hBA, hAmem⟩ := xStep_spec_bit D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin X Y
+    hXmem hYmem hD₀mne hD₁mne (extendTruePair δ') n bx
+  exact splitChoice'_isSplitSpec D₀ hD₀nomin hBA hAmem (Y n) |>.1
+
 end AtomPair
 
 end Scott1980.Neighborhood
