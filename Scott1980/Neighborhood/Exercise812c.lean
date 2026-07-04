@@ -1918,6 +1918,105 @@ theorem exists_inter_index_Y {i j : ℕ} (hDij : D₁.mem (Y i ∩ Y j)) :
   exact ⟨m, hm, (YPseq_inter_eq_iff_Y_inter_eq D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff
     hD₁nomin X Y hXmem hYmem hD₀mne hD₁mne i j m).mpr hm⟩
 
+include hD₀pos hD₀diff hD₁pos hD₁diff hXmem hYmem hD₀mne hD₁mne in
+/-- **Exercise 8.12(c)(vii)(4), the cross-parity `embed_eq_iff` analogue.** `XPseq j = Y k ↔
+X j = YPseq k`: unlike `Theorem88a.lean`'s single-enumeration `embed_eq_iff` (a direct corollary of
+one `embed_subset_iff` applied twice), this two-family version packages **both** cross-parity order
+facts from (vii)(3) (`X_subset_YPseq_iff_XPseq_subset_Y` at `(j, k)` and
+`YPseq_subset_X_iff_Y_subset_XPseq` at `(k, j)`) via antisymmetry on each side. Needed because
+`toD1`/`toD0`'s `up_mem` case must rename a `D₁`-mem (resp. `D₀`-mem) witness produced by
+`hYcover`/`hXcover` as some `Y k`/`X k` back into the `XPseq`/`YPseq` "coordinates" that the filter
+`x`/`y` actually testifies about. -/
+theorem XPseq_eq_Y_iff_X_eq_YPseq (j k : ℕ) :
+    XPseq D₀ D₁ hD₀nomin hD₁nomin X Y j = Y k ↔ X j = YPseq D₀ D₁ hD₀nomin hD₁nomin X Y k := by
+  constructor
+  · intro h
+    exact Set.Subset.antisymm
+      ((X_subset_YPseq_iff_XPseq_subset_Y D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin X Y
+        hXmem hYmem hD₀mne hD₁mne j k).mpr h.subset)
+      ((YPseq_subset_X_iff_Y_subset_XPseq D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin X Y
+        hXmem hYmem hD₀mne hD₁mne k j).mpr h.symm.subset)
+  · intro h
+    exact Set.Subset.antisymm
+      ((X_subset_YPseq_iff_XPseq_subset_Y D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin X Y
+        hXmem hYmem hD₀mne hD₁mne j k).mp h.subset)
+      ((YPseq_subset_X_iff_Y_subset_XPseq D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin X Y
+        hXmem hYmem hD₀mne hD₁mne k j).mp h.symm.subset)
+
+include hD₀pos hD₀diff hD₁pos hD₁diff hXmem hYmem hD₀mne hD₁mne hXcover hYcover hX0 in
+/-- **Exercise 8.12(c)(vii)(4).** `toD1 : D₀.Element → D₁.Element`, the pushforward filter
+`{T | ∃ n, T = XPseq n ∧ x.mem (X n)}` — direct transcription of `Theorem88a.lean`'s `toDprimeU`.
+`sub`/`master_mem`/`inter_mem` are immediate from `XPseq_mem`/`XPseq_zero`/`exists_inter_index_X`
+exactly as there; `up_mem` is the one genuinely two-sided step: given `x.mem (X i)` and a `D₁.mem`
+target `T₂ ⊇ XPseq i`, `hYcover` names `T₂` as some `Y k`, the cross-parity order fact
+`X_subset_YPseq_iff_XPseq_subset_Y` turns `XPseq i ⊆ Y k` into `X i ⊆ YPseq k`, `x.up_mem` (on the
+`D₀`-side, using `YPseq_mem`) then gives `x.mem (YPseq k)`, `hXcover` renames `YPseq k` as some
+`X j`, and `XPseq_eq_Y_iff_X_eq_YPseq` finally certifies `Y k = XPseq j`. -/
+def toD1 (x : D₀.Element) : D₁.Element where
+  mem T := ∃ n, T = XPseq D₀ D₁ hD₀nomin hD₁nomin X Y n ∧ x.mem (X n)
+  sub := fun ⟨n, hn, _⟩ =>
+    hn ▸ XPseq_mem D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin X Y hXmem hYmem hD₀mne
+      hD₁mne n
+  master_mem := ⟨0, (XPseq_zero D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin X Y hXmem
+    hYmem hD₀mne hD₁mne hX0).symm, by rw [hX0]; exact x.master_mem⟩
+  inter_mem := by
+    rintro T1 T2 ⟨i, rfl, hxi⟩ ⟨j, rfl, hxj⟩
+    obtain ⟨m, hXeq, hXPeq⟩ := exists_inter_index_X D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff
+      hD₁nomin X Y hXmem hYmem hD₀mne hD₁mne hXcover (x.sub (x.inter_mem hxi hxj))
+    exact ⟨m, hXPeq, hXeq ▸ x.inter_mem hxi hxj⟩
+  up_mem := by
+    rintro T1 T2 ⟨i, rfl, hxi⟩ hD1T2 hT1T2
+    obtain ⟨k, hk⟩ := (hYcover T2).mp hD1T2
+    subst hk
+    have hXi_sub : X i ⊆ YPseq D₀ D₁ hD₀nomin hD₁nomin X Y k :=
+      (X_subset_YPseq_iff_XPseq_subset_Y D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin X Y
+        hXmem hYmem hD₀mne hD₁mne i k).mpr hT1T2
+    have hxYPk : x.mem (YPseq D₀ D₁ hD₀nomin hD₁nomin X Y k) :=
+      x.up_mem hxi
+        (YPseq_mem D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin X Y hXmem hYmem hD₀mne
+          hD₁mne k)
+        hXi_sub
+    obtain ⟨j, hj⟩ := (hXcover (YPseq D₀ D₁ hD₀nomin hD₁nomin X Y k)).mp (x.sub hxYPk)
+    have hXPj_eq_Yk : XPseq D₀ D₁ hD₀nomin hD₁nomin X Y j = Y k :=
+      (XPseq_eq_Y_iff_X_eq_YPseq D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin X Y hXmem
+        hYmem hD₀mne hD₁mne j k).mpr hj.symm
+    exact ⟨j, hXPj_eq_Yk.symm, hj ▸ hxYPk⟩
+
+include hD₀pos hD₀diff hD₁pos hD₁diff hXmem hYmem hD₀mne hD₁mne hXcover hYcover hY0 in
+/-- **Exercise 8.12(c)(vii)(5).** `toD0 : D₁.Element → D₀.Element`, the pullback filter
+`{S | ∃ n, S = YPseq n ∧ y.mem (Y n)}` — exact mirror of `toD1` with the two sides' roles swapped
+(`YPseq_mem`/`YPseq_zero`/`exists_inter_index_Y` for `sub`/`master_mem`/`inter_mem`;
+`YPseq_subset_X_iff_Y_subset_XPseq`/`hXcover`/`hYcover`/`XPseq_eq_Y_iff_X_eq_YPseq` for `up_mem`). -/
+def toD0 (y : D₁.Element) : D₀.Element where
+  mem S := ∃ n, S = YPseq D₀ D₁ hD₀nomin hD₁nomin X Y n ∧ y.mem (Y n)
+  sub := fun ⟨n, hn, _⟩ =>
+    hn ▸ YPseq_mem D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin X Y hXmem hYmem hD₀mne
+      hD₁mne n
+  master_mem := ⟨0, (YPseq_zero D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin X Y hXmem
+    hYmem hD₀mne hD₁mne hX0 hY0).symm, by rw [hY0]; exact y.master_mem⟩
+  inter_mem := by
+    rintro S1 S2 ⟨i, rfl, hyi⟩ ⟨j, rfl, hyj⟩
+    obtain ⟨m, hYeq, hYPeq⟩ := exists_inter_index_Y D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff
+      hD₁nomin X Y hXmem hYmem hD₀mne hD₁mne hYcover (y.sub (y.inter_mem hyi hyj))
+    exact ⟨m, hYPeq, hYeq ▸ y.inter_mem hyi hyj⟩
+  up_mem := by
+    rintro S1 S2 ⟨i, rfl, hyi⟩ hD0S2 hS1S2
+    obtain ⟨k, hk⟩ := (hXcover S2).mp hD0S2
+    subst hk
+    have hYi_sub : Y i ⊆ XPseq D₀ D₁ hD₀nomin hD₁nomin X Y k :=
+      (YPseq_subset_X_iff_Y_subset_XPseq D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin X Y
+        hXmem hYmem hD₀mne hD₁mne i k).mp hS1S2
+    have hyXPk : y.mem (XPseq D₀ D₁ hD₀nomin hD₁nomin X Y k) :=
+      y.up_mem hyi
+        (XPseq_mem D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin X Y hXmem hYmem hD₀mne
+          hD₁mne k)
+        hYi_sub
+    obtain ⟨j, hj⟩ := (hYcover (XPseq D₀ D₁ hD₀nomin hD₁nomin X Y k)).mp (y.sub hyXPk)
+    have hYPj_eq_Xk : X k = YPseq D₀ D₁ hD₀nomin hD₁nomin X Y j :=
+      (XPseq_eq_Y_iff_X_eq_YPseq D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin X Y hXmem
+        hYmem hD₀mne hD₁mne k j).mp hj
+    exact ⟨j, hYPj_eq_Xk, hj ▸ hyXPk⟩
+
 end Iso
 
 end Scott1980.Neighborhood

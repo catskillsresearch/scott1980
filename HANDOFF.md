@@ -7990,3 +7990,32 @@ Zero `sorry`; `lake build Scott1980.Neighborhood.Exercise812c` green; all four a
 **Status: Exercise 8.12(c)(vii)(1)–(3) are `Pass`.** **Next up:** Exercise 8.12(c)(vii)(4) — build
 `toD1 : D₀.Element → D₁.Element` (the pushforward filter), using (vi)(7)'s `XPseq_mem`, (2)'s
 `XPseq_zero`, and (3)'s `exists_inter_index_X`/`X_subset_YPseq_iff_XPseq_subset_Y`.
+
+## 2026-07-04 checkpoint — Exercise 8.12(c)(vii)(4)+(5): `toD1`/`toD0` filter constructions
+
+Both pushforward (`toD1 : D₀.Element → D₁.Element`) and pullback (`toD0 : D₁.Element →
+D₀.Element`) filters built, mirroring `Theorem88a.lean`'s `toDprimeU`/`toD`. `sub`/`master_mem`/
+`inter_mem` transcribe directly from `XPseq_mem`/`XPseq_zero`/`exists_inter_index_X` (resp. the
+`YPseq`/`Y` mirrors). **`up_mem` needed one genuinely new lemma not anticipated in (3)'s scoping:**
+`XPseq_eq_Y_iff_X_eq_YPseq (j k) : XPseq j = Y k ↔ X j = YPseq k`, the two-*family* analogue of
+`Theorem88a.lean`'s `embed_eq_iff`. There, `e`/`Yidx` share one index space, so `embed_eq_iff` is a
+single `embed_subset_iff` applied twice; here `X`/`XPseq` and `Y`/`YPseq` are genuinely different
+families, so proving `XPseq j = Y k ↔ X j = YPseq k` needs *both* (3)'s cross-parity order facts
+(`X_subset_YPseq_iff_XPseq_subset_Y` and `YPseq_subset_X_iff_Y_subset_XPseq`, at swapped index
+pairs) combined via `Set.Subset.antisymm` on each side. With that lemma, each `up_mem` proof is:
+`hYcover`/`hXcover` renames the target membership witness as some `Y k`/`X k`; the relevant
+cross-parity order fact converts the inclusion into the *other* family's coordinates; the filter's
+own `up_mem` (on its *original* side, using `YPseq_mem`/`XPseq_mem`) produces membership there;
+`hXcover`/`hYcover` renames *that* witness back into the target family's coordinates; and
+`XPseq_eq_Y_iff_X_eq_YPseq` certifies the needed cross-family equality to close the goal.
+
+Zero `sorry`; `lake build Scott1980.Neighborhood.Exercise812c` green; `XPseq_eq_Y_iff_X_eq_YPseq`/
+`toD1`/`toD0` all axiom-audited to `⊆{propext, Classical.choice, Quot.sound}`, matching baseline.
+`arxiv.md`: 8.12(c)(vii)(4)/(vii)(5) rows updated to `Pass`.
+
+**Status: Exercise 8.12(c)(vii)(1)–(5) are `Pass`.** **Next up (final piece of Exercise 8.12(c)):**
+Exercise 8.12(c)(vii)(6) — prove `toD1`/`toD0` mutually inverse (via `XPseq_eq_Y_iff_X_eq_YPseq`
+and `hXcover`/`hYcover` to resolve index ambiguity, mirroring `domainIso`'s `left_inv`/`right_inv`)
+and order-preserving/-reflecting (`map_rel_iff'`), assembling `domainIso : DomainIso D₀ D₁` and the
+headline `isomorphic : D₀ ≅ᴰ D₁` — this closes out **Exercise 8.12(c) in full**. After that, only
+**Exercise 8.12(d)** (effective refinement) remains for the whole of Exercise 8.12.

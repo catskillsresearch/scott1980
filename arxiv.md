@@ -2233,14 +2233,14 @@ Lecture VIII covers retractions, projections, and the construction of the univer
 #### Exercise 8.12(c)(vii)(4)
 * **Mathematical Target:** `toD1 : D₀.Element → D₁.Element`, the pushforward filter `{T | ∃ n, T = XPseq n ∧ x.mem (X n)}`, proved to satisfy all of `Element`'s axioms (`sub`, `master_mem`, `inter_mem`, `up_mem`)
 * **Lean File:** `Scott1980/Neighborhood/Exercise812c.lean`
-* **Proof Notes:** `sub` from (vi)(7)'s `XPseq_mem`; `master_mem` from (2)'s `XPseq 0 = D₁.master`; `inter_mem` from (3)'s `exists_inter_index_of_dmem`-style lemma; `up_mem` needs (1)'s `hYcover` to name the target `D₁.mem` set as some `Y j`, then (3)'s cross-parity order fact — direct transcription of `Theorem88a.lean`'s `toDprimeU`.
-* **Status:** Deferred
+* **Proof Notes:** `sub`/`master_mem`/`inter_mem` are immediate from `XPseq_mem`/`XPseq_zero`/`exists_inter_index_X`, direct transcription of `Theorem88a.lean`'s `toDprimeU`. `up_mem` needed **one genuinely new lemma beyond (3)'s scoping**: `XPseq_eq_Y_iff_X_eq_YPseq (j k) : XPseq j = Y k ↔ X j = YPseq k`, the two-family analogue of `Theorem88a.lean`'s `embed_eq_iff` — since `Theorem88a.lean`'s single enumeration `e` shares the *same* index across `e`/`Yidx`, its `embed_eq_iff` is one `embed_subset_iff` applied twice, but our two-*family* setup (`X`/`XPseq` vs. `Y`/`YPseq`) needs *both* cross-parity order facts from (3) (`X_subset_YPseq_iff_XPseq_subset_Y` and `YPseq_subset_X_iff_Y_subset_XPseq`, applied at swapped index pairs) combined via `Set.Subset.antisymm` on each side. With that in hand, `up_mem`'s argument is: `hYcover` names the target `D₁.mem` set as some `Y k`; the cross-parity order fact turns `XPseq i ⊆ Y k` into `X i ⊆ YPseq k`; `x.up_mem` (on the `D₀` side, via `YPseq_mem`) gives `x.mem (YPseq k)`; `hXcover` renames `YPseq k` as some `X j`; `XPseq_eq_Y_iff_X_eq_YPseq` certifies `Y k = XPseq j`, closing the goal. Axiom-audited: `XPseq_eq_Y_iff_X_eq_YPseq`/`toD1` both give `⊆{propext, Classical.choice, Quot.sound}`, matching baseline.
+* **Status:** Pass
 
 #### Exercise 8.12(c)(vii)(5)
 * **Mathematical Target:** `toD0 : D₁.Element → D₀.Element`, the symmetric pullback filter `{S | ∃ n, S = YPseq n ∧ y.mem (Y n)}`, proved to satisfy all of `Element`'s axioms
 * **Lean File:** `Scott1980/Neighborhood/Exercise812c.lean`
-* **Proof Notes:** exact mirror of (4) with the two sides' roles swapped (`YPseq_mem`, `YPseq 0 = D₀.master`, the `D₁→D₀` `exists_inter_index` lemma, `hXcover` for `up_mem`).
-* **Status:** Deferred
+* **Proof Notes:** exact mirror of (4) with the two sides' roles swapped (`YPseq_mem`/`YPseq_zero`/`exists_inter_index_Y` for `sub`/`master_mem`/`inter_mem`; `YPseq_subset_X_iff_Y_subset_XPseq`/`hXcover`/`hYcover`/(4)'s `XPseq_eq_Y_iff_X_eq_YPseq` for `up_mem`, now used in its `.mp` direction rather than `.mpr`/`.symm` since the roles are swapped). Axiom-audited: `⊆{propext, Classical.choice, Quot.sound}`, matching baseline.
+* **Status:** Pass
 
 #### Exercise 8.12(c)(vii)(6)
 * **Mathematical Target:** `toD1`/`toD0` are mutually inverse and order-preserving/-reflecting, assembling `domainIso : DomainIso D₀ D₁` and the headline `isomorphic : D₀ ≅ᴰ D₁`, completing Exercise 8.12(c) in full
