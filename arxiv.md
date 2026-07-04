@@ -2197,8 +2197,8 @@ Lecture VIII covers retractions, projections, and the construction of the univer
 #### Exercise 8.12(c)(vi)(6)
 * **Mathematical Target:** ~~literal mirror of (vi)(5) with the two sides' roles swapped~~ **(superseded)**: folded into (vi)(5) above once it became clear `XPseq`/`YPseq` (not a fresh `E:=D₁` instantiation) are the right pair of objects, and both sides' mem-or-∅/subset-of-master facts were proved together in one pass
 * **Lean File:** `Scott1980/Neighborhood/Exercise812c.lean`
-* **Proof Notes:** kept as a placeholder row (rather than deleted) for traceability with earlier `HANDOFF.md` checkpoints that still referred to a separate (vi)(6); see (vi)(5)'s row for the actual content and status.
-* **Status:** Pass (content merged into (vi)(5))
+* **Proof Notes:** kept as a placeholder row (rather than deleted) for traceability with earlier `HANDOFF.md` checkpoints that still referred to a separate (vi)(6); see (vi)(5)'s row for the actual content and status. **Reconfirmed (2026-07-04)**, now that (vi)(5) is fully `Pass` end-to-end (sub-parts (a)–(d), with (c) itself complete across (1)–(4)): no work remains under this row — `YPseq_subset_iff_Y_subset`/`YPseq_inter_empty_iff_Y_inter_empty`/`YPseq_inter_eq_iff_Y_inter_eq` (the odd-index specializations proved in (5)(d)) are exactly the "`D₁`-side"/"swapped-roles" headline facts this row's original mathematical target was asking for, so there genuinely is nothing left to prove here beyond what (5) already delivered.
+* **Status:** Pass (content merged into (vi)(5), now fully `Pass`)
 
 #### Exercise 8.12(c)(vi)(7)
 * **Mathematical Target:** Bidirectional glue: whatever additional bridging (vii)'s final assembly needs to combine (vi)(5)'s and (vi)(6)'s two one-sided closed forms into a single, mutually-consistent correspondence between `D₀`- and `D₁`-neighbourhoods (exact content TBD — a placeholder pending (vi)(1)–(vi)(6), added now rather than silently overloading (vii))
