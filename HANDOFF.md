@@ -7532,3 +7532,89 @@ construction over finite lists of constraints spanning *both* `X` and `Y` indice
 built directly against `atomPair` the way `XPseq`/`YPseq` were) before attempting
 Exercise 8.12(c)(vi)(7)/(vii)'s final assembly — this is the single largest remaining piece of
 Exercise 8.12(c) and deserves its own planning pass rather than an in-place attempt.
+
+---
+
+**2026-07-04 — Exercise 8.12(c)(vi)(5): scoping-only pass (no code), per user request.** Charted
+the "joint two-family atom system" the previous checkpoint flagged as unscoped, **without writing
+any Lean**. Result: the needed apparatus is smaller than the previous checkpoint's "likely
+comparable to (vi)(1)–(vi)(4) combined" estimate, because `atomPair` itself, examined at
+**half-step** (not full-step) resolution, already *is* the joint atom system — no new recursive
+definition is needed, only a repackaging.
+
+**The key observation**: `atomPair`'s `X`-sub-step direct α-output (`A ∩ Xₙ`/`A \ Xₙ`) is already
+a literal `genAtom`-style formula against the family `X`; by (vi)(4)(d)'s `yStep_fst_eq_inter_YPseq`,
+the `Y`-sub-step's choice-driven α-output is, on its "+" branch, *also* a literal `genAtom`-style
+formula, against the family `YPseq`. So `(atomPair δ n).1`, unrolled one half-step at a time, is
+exactly `genAtom` over the **interleaved** family `combinedX (2k) := X k`, `combinedX (2k+1) :=
+YPseq k`, tested against the interleaved sign sequence `combinedδ δ (2k) := (δ k).1`,
+`combinedδ δ (2k+1) := (δ k).2`. Symmetrically, `(atomPair δ n).2` is `genAtom` over `combinedY
+(2k) := XPseq k`, `combinedY (2k+1) := Y k`, against the *same* `combinedδ δ`. Once both sides are
+literal `genAtom`s over a shared sign sequence, `Theorem88.lean`'s fully generic `transfer_dir`/
+`transfer_empty_iff`/`transfer_subset_iff`/`transfer_inter_empty_iff`/`transfer_double_subset_iff`/
+`transfer_inter_eq_iff` become directly reusable (none are `private`, confirmed), exactly as
+(vi)(2) already reused `transfer_dir` for the abstract-`E` case — specializing the reused lemmas to
+even/even or odd/odd index pairs (`2i,2j` or `2i+1,2j+1`) unwinds `combinedX`/`combinedY` back to
+literal `X i ⊆ X j`/`XPseq i ⊆ XPseq j`-style statements. No new disjointness or invariant proof
+is needed: `transfer_dir`'s `hcore` hypothesis (matching-emptiness) is assembled directly from
+`atomPair_invariant` (even depths, already `Pass`) and `xStep_spec_bit` (odd depths, already
+`Pass`, (vi)(4)(c)) — pairwise disjointness was already fully consumed, internally, by (vi)(4)'s
+existing `XPseq`/`YPseq` I-formula proofs, and is not needed again here.
+
+**Broken into 4 sub-sub-sub-parts** (mirroring (vi)(4)'s own post-hoc `(a)`–`(d)` split),
+written into `arxiv.md` as `Deferred` rows **8.12(c)(vi)(5)(a)–(d)**, none yet started:
+* **(a)** complete (vi)(4)(a)/(d)'s one-branch (`true`-only) I-formulas into full two-branch
+  closed forms (`xStep_snd_succ_eq`/`yStep_fst_succ_eq`-style), mirroring `Theorem88.lean`'s
+  `atomU_succ_eq` (derives its `false` branch from the `true` branch plus `SplitSpec'`'s
+  `I ∪ J = B`/`I ∩ J = ∅`) — the one genuinely new piece of mathematical content.
+* **(b)** define `combinedX`/`combinedY`/`combinedδ` and prove the closed-form identification
+  `(atomPair δ n).1 = genAtom combinedX D₀.master (combinedδ δ) (2*n)` (+ the odd-depth half-step
+  statement) and its `combinedY`/`.2` mirror, by induction using (a) — the two-sided analogue of
+  `atomU_eq_genAtom`.
+* **(c)** assemble the `hcore` fact for *arbitrary* `δ' : ℕ → Bool` (via de-interleaving into a
+  `ℕ → Bool × Bool` history) from `atomPair_invariant` (even) + `xStep_spec_bit` (odd) — pure
+  assembly, no new math.
+* **(d)** instantiate `Theorem88.lean`'s six `transfer_*` lemmas with `Z1:=combinedX`,
+  `Z2:=combinedY`, `hcore` from (c), then specialize to even/even and odd/odd index pairs to state
+  the headline `X i ⊆ X j ↔ XPseq i ⊆ XPseq j` / `Y i ⊆ Y j ↔ YPseq i ⊆ YPseq j` (+ inter-empty/
+  inter-eq analogues) — the actual deliverable.
+
+`arxiv.md`: 8.12(c)(vi)(5)'s row rewritten with this scoping (mem-or-∅ facts kept `Pass`, order/
+intersection layer now `Deferred` across sub-parts (a)–(d) rather than "not yet scoped"); the 4 new
+sub-rows added; 8.12(c)(vi) umbrella row updated to reflect the new sub-breakdown. **No Lean code
+written or changed this pass** (scoping-only, per explicit user request); `lake build` untouched.
+
+**Status: Exercise 8.12(c)(vi)(5) is `Partial`, now scoped into (a)–(d), all `Deferred`.**
+**Next up:** implement (a) (the `atomU_succ_eq`-style two-branch closed forms) — the one step
+in this plan with genuinely new proof content; (b)–(d) are expected to be comparatively
+mechanical assembly once (a) is in hand.
+
+---
+
+**2026-07-04 — Exercise 8.12(c)(vi)(5)(a) COMPLETE: the two-branch closed forms.** Implemented
+exactly as scoped, with no plan corrections needed. **`xStep_snd_succ_eq`** (`Exercise812c.lean`):
+`(xStep D₁ hD₁nomin (atomPair δ n).1 (atomPair δ n).2 (X n) b).2 = (atomPair δ n).2 ∩ (if b then
+XPseq n else D₁.master \ XPseq n)`, and **`yStep_fst_succ_eq`**: the symmetric `YPseq`/α-side
+statement (`Y`-sub-step's own bit `b` free, `X`-sub-step's bit kept fixed at `(δ n).1` — confirmed
+no `xStep_spec_bit`-style further generalization is needed, exactly as the scoping pass predicted).
+Both follow `Theorem88.lean`'s `atomU_succ_eq` recipe verbatim: `true` branch = the existing
+I-formula (`xStep_snd_eq_inter_XPseq`/`yStep_fst_eq_inter_YPseq`); `false` branch derived
+algebraically from it plus `SplitSpec'`'s `I ∪ J = B`/`I ∩ J = ∅` (`splitChoice'_isSplitSpec`,
+fed the matching-emptiness/mem-or-∅ facts from `atomPair_invariant`/`xStep_spec`). One small
+reordering: `atomPair_fst_subset_master`/`atomPair_snd_subset_master` (previously proved later,
+alongside `XPseq_subset_master`) were moved earlier (right after `atomPair_snd_subset`), since both
+new theorems need them (to turn `B \ XPseq n` into `B ∩ (D₁.master \ XPseq n)`, resp. for `YPseq`)
+and they only ever depended on `atomPair_fst_subset`/`atomPair_snd_subset` (v)(3) — pure relocation,
+statements/proofs unchanged.
+
+**Zero `sorry`.** Whole-project `lake build` (3163 jobs) green. `#print axioms` on
+`xStep_snd_succ_eq`/`yStep_fst_succ_eq`/`atomPair_fst_subset_master`/`atomPair_snd_subset_master`
+all give `⊆{propext,Classical.choice,Quot.sound}`, matching the baseline (choice inherited from
+`splitChoice'`, 8.12(c)(iii)). `arxiv.md`: 8.12(c)(vi)(5)(a) row updated to `Pass`; 8.12(c)(vi)(5)
+and 8.12(c)(vi) umbrella rows updated to reflect (a) `Pass`, (b)–(d) `Deferred`.
+
+**Status: Exercise 8.12(c)(vi)(5)(a) is `Pass`.** **Next up:** Exercise 8.12(c)(vi)(5)(b) — define
+the interleaved families `combinedX`/`combinedY`/`combinedδ` and prove the closed-form
+identification of `atomPair`'s own values with `genAtom` over these interleaved families
+(`(atomPair δ n).1 = genAtom combinedX D₀.master (combinedδ δ) (2*n)`, plus the odd-depth half-step
+statement, and the `combinedY`/`.2` mirror), by a single induction using (a)'s two closed forms.
