@@ -7934,3 +7934,39 @@ continuing incrementally sub-part by sub-part (as with (vi)(5)(c)) in a future s
 after (vii) is `Pass`, only **Exercise 8.12(d)** (effective refinement of (c), expected comparable
 in scope to Theorem 8.8(b)'s 8-sub-part, multi-file effort) remains to close out Exercise 8.12
 entirely.
+
+## 2026-07-04 checkpoint — Exercise 8.12(c)(vii)(1)+(2): `Iso` section + `XPseq_zero`/`YPseq_zero`
+
+Executed the first two of the six scoped sub-parts. (1): opened a new `section Iso` re-declaring
+the full `section AtomPair` variable list plus the four new hypotheses `hXcover`/`hYcover`/`hX0`/
+`hY0`. (2): proved `XPseq_zero : XPseq D₀ D₁ hD₀nomin hD₁nomin X Y 0 = D₁.master` and its mirror
+`YPseq_zero`, via `splitChoice'_isSplitSpec`: at `n = 0`, `atomPair`'s pairing is always
+`(D₀.master, D₁.master)`, so `hX0` forces the `X`-sub-step's `D₀.master \ X 0 = ∅`, hence (by
+`SplitSpec'`'s empty-difference-iff clause) the split's "`-`"-branch is `∅` and the "`+`"-branch is
+all of `D₁.master`; antisymmetry against the already-proved `XPseq_subset_master` (using
+`subset_XPseq` at the empty history `Fin.elim0`) closes it. `YPseq_zero` repeats one level deeper,
+reusing the `X`-sub-step's computation and applying the same `SplitSpec'` argument to the `Y`-side
+against `hY0`, closing via `subset_YPseq`.
+
+**Lean gotcha, found and fixed (worth remembering for future `section`-heavy work):** a `theorem`
+whose *proof body* references a `variable`-bound hypothesis that does **not** appear in the
+theorem's own *stated type* does not get that hypothesis auto-included by Lean 4 — result is
+"unknown identifier" errors deep in the tactic block, even though the identifier is a section
+variable in plain scope textually. Fix: an explicit `include h₁ ... hₙ in` line immediately before
+the theorem (docstring goes *after* the `include ... in`, not before — putting the docstring
+between `include`/`omit` and the `theorem` line causes a **parser** error, "unexpected token
+'omit/include'; expected 'lemma'", confirmed empirically both ways). Both `XPseq_zero`/`YPseq_zero`
+needed this for `hD₀pos hD₀diff hD₁pos hD₁diff hXmem hYmem hD₀mne hD₁mne hX0 (hY0)`. Separately,
+also had two stale/wrong argument lists for the pre-existing `subset_XPseq`/`subset_YPseq` (which
+had `omit`ted several of those same hypotheses at their own definition site, so take a shorter
+argument list than the rest of the file's convention) — fixed by matching their actual signatures.
+
+Zero `sorry`; `lake build Scott1980.Neighborhood.Exercise812c` green (2987 jobs, whole project);
+`#print axioms` on `XPseq_zero`/`YPseq_zero` both give `⊆{propext, Classical.choice, Quot.sound}`,
+matching `XPseq_subset_master`'s pre-existing baseline (choice already unavoidable via
+`splitChoice'`). `arxiv.md`: 8.12(c)(vii)(1)/(vii)(2) rows updated to `Pass`.
+
+**Status: Exercise 8.12(c)(vii)(1)–(2) are `Pass`.** **Next up:** Exercise 8.12(c)(vii)(3) — the
+cross-parity specializations of `transfer_subset_combined`/`transfer_inter_eq_combined` needed for
+`up_mem`/`inter_mem`'s mixed-parity cases, plus `exists_inter_index`-style lemmas from `hXcover`/
+`hYcover`.

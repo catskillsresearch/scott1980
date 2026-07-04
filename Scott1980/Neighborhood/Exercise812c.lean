@@ -1784,4 +1784,83 @@ theorem YPseq_mem (n : ℕ) : D₀.mem (YPseq D₀ D₁ hD₀nomin hD₁nomin X 
 
 end AtomPair
 
+/-! ### Exercise 8.12(c)(vii): assembling `DomainIso D₀ D₁`
+
+Adds the hypotheses `section AtomPair`'s own docstring already assumed but never formally
+declared: `X`/`Y` **cover** `D₀.mem`/`D₁.mem` (`hXcover`/`hYcover`, mirroring `Theorem88a.lean`'s
+`hcover`), and Scott's zero-convention `X 0 = D₀.master`/`Y 0 = D₁.master` (mirroring `he0`). -/
+
+section Iso
+
+variable {α β : Type*} (D₀ : NeighborhoodSystem α) (D₁ : NeighborhoodSystem β)
+  (hD₀pos : D₀.IsPositive) (hD₀diff : D₀.DiffClosed) (hD₀nomin : D₀.NoMinimal)
+  (hD₁pos : D₁.IsPositive) (hD₁diff : D₁.DiffClosed) (hD₁nomin : D₁.NoMinimal)
+  (X : ℕ → Set α) (Y : ℕ → Set β) (hXmem : ∀ n, D₀.mem (X n)) (hYmem : ∀ n, D₁.mem (Y n))
+  (hD₀mne : D₀.master.Nonempty) (hD₁mne : D₁.master.Nonempty)
+  (hXcover : ∀ S, D₀.mem S ↔ ∃ n, S = X n) (hYcover : ∀ S, D₁.mem S ↔ ∃ n, S = Y n)
+  (hX0 : X 0 = D₀.master) (hY0 : Y 0 = D₁.master)
+
+include hD₀pos hD₀diff hD₁pos hD₁diff hXmem hYmem hD₀mne hD₁mne hX0 in
+/-- **Exercise 8.12(c)(vii)(2).** `XPseq 0 = D₁.master` (Scott's `X 0 = D₀.master`/`Y 0 = D₁.master`
+convention transfers to `atomPair`'s `D₁`-side image), mirroring `Theorem88.lean`'s
+`Yseq_zero_eq_master`: unfolding one step of the two-sided recursion at `n = 0`, `atomPair`'s own
+`0`-clause is `(D₀.master, D₁.master)` regardless of the sign sequence, so the `X`-sub-step's split
+against `X 0 = D₀.master` puts everything into the "+"-branch on both outputs (the "−"-branch
+`D₀.master \ D₀.master = ∅` is forced empty by `SplitSpec'`), and `I ∪ J = D₁.master` with `J = ∅`
+forces `I = D₁.master`. -/
+theorem XPseq_zero : XPseq D₀ D₁ hD₀nomin hD₁nomin X Y 0 = D₁.master := by
+  apply Set.Subset.antisymm
+    (XPseq_subset_master D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin X Y hXmem hYmem
+      hD₀mne hD₁mne 0)
+  have hAB1 : D₀.master = ∅ ↔ D₁.master = ∅ :=
+    ⟨fun h => absurd h hD₀mne.ne_empty, fun h => absurd h hD₁mne.ne_empty⟩
+  have hBE1 : D₁.master = ∅ ∨ D₁.mem D₁.master := Or.inr D₁.master_mem
+  have hspec1 := splitChoice'_isSplitSpec D₁ hD₁nomin hAB1 hBE1 (X 0)
+  have hdiff1 : D₀.master \ X 0 = ∅ := by rw [hX0]; exact Set.diff_self
+  have h2empty1 : (splitChoice' D₁ hD₁nomin D₀.master D₁.master (X 0)).2 = ∅ :=
+    hspec1.2.2.2.1.mp hdiff1
+  have hunion1 := hspec1.2.2.2.2.1
+  rw [h2empty1, Set.union_empty] at hunion1
+  have hkey : D₁.master ⊆ (xStep D₁ hD₁nomin D₀.master D₁.master (X 0) true).2 := by
+    show D₁.master ⊆ (splitChoice' D₁ hD₁nomin D₀.master D₁.master (X 0)).1
+    rw [hunion1]
+  exact hkey.trans (subset_XPseq D₀ D₁ hD₀nomin hD₁nomin X Y (Fin.elim0 : Fin 0 → Bool × Bool))
+
+include hD₀pos hD₀diff hD₁pos hD₁diff hXmem hYmem hD₀mne hD₁mne hX0 hY0 in
+/-- **Exercise 8.12(c)(vii)(2), symmetric half.** `YPseq 0 = D₀.master`, by the same `SplitSpec'`
+argument applied to the *second* (`Y`-)sub-step, now feeding off `XPseq_zero`'s already-computed
+`D₁`-side value at the first sub-step. -/
+theorem YPseq_zero : YPseq D₀ D₁ hD₀nomin hD₁nomin X Y 0 = D₀.master := by
+  apply Set.Subset.antisymm
+    (YPseq_subset_master D₀ D₁ hD₀pos hD₀diff hD₀nomin hD₁pos hD₁diff hD₁nomin X Y hXmem hYmem
+      hD₀mne hD₁mne 0)
+  have hAB1 : D₀.master = ∅ ↔ D₁.master = ∅ :=
+    ⟨fun h => absurd h hD₀mne.ne_empty, fun h => absurd h hD₁mne.ne_empty⟩
+  have hBE1 : D₁.master = ∅ ∨ D₁.mem D₁.master := Or.inr D₁.master_mem
+  have hspec1 := splitChoice'_isSplitSpec D₁ hD₁nomin hAB1 hBE1 (X 0)
+  have hdiff1 : D₀.master \ X 0 = ∅ := by rw [hX0]; exact Set.diff_self
+  have h2empty1 : (splitChoice' D₁ hD₁nomin D₀.master D₁.master (X 0)).2 = ∅ :=
+    hspec1.2.2.2.1.mp hdiff1
+  have hunion1 := hspec1.2.2.2.2.1
+  rw [h2empty1, Set.union_empty] at hunion1
+  have hAB2 : D₁.master = ∅ ↔ D₀.master = ∅ := hAB1.symm
+  have hBE2 : D₀.master = ∅ ∨ D₀.mem D₀.master := Or.inr D₀.master_mem
+  have hspec2 := splitChoice'_isSplitSpec D₀ hD₀nomin hAB2 hBE2 (Y 0)
+  have hdiff2 : D₁.master \ Y 0 = ∅ := by rw [hY0]; exact Set.diff_self
+  have h2empty2 : (splitChoice' D₀ hD₀nomin D₁.master D₀.master (Y 0)).2 = ∅ :=
+    hspec2.2.2.2.1.mp hdiff2
+  have hunion2 := hspec2.2.2.2.2.1
+  rw [h2empty2, Set.union_empty] at hunion2
+  have hgoal : (yStep D₀ hD₀nomin (D₀.master ∩ X 0)
+      (splitChoice' D₁ hD₁nomin D₀.master D₁.master (X 0)).1 (Y 0) true).1 ⊆
+      YPseq D₀ D₁ hD₀nomin hD₁nomin X Y 0 :=
+    subset_YPseq D₀ D₁ hD₀nomin hD₁nomin X Y (Fin.elim0 : Fin 0 → Bool × Bool) true
+  rw [hunion1, hX0, Set.inter_self] at hgoal
+  have hkey2 : D₀.master ⊆ (yStep D₀ hD₀nomin D₀.master D₁.master (Y 0) true).1 := by
+    show D₀.master ⊆ (splitChoice' D₀ hD₀nomin D₁.master D₀.master (Y 0)).1
+    rw [hunion2]
+  exact hkey2.trans hgoal
+
+end Iso
+
 end Scott1980.Neighborhood
