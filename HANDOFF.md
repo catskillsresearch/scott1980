@@ -8459,5 +8459,41 @@ this file, e.g. `xStepG_snd_subset`), not introduced fresh; no data/computabilit
 sub-part uses it beyond that ambient baseline. Whole-project `lake build` (3164 jobs) green, zero
 `sorry`.
 
-**Status: Exercise 8.12(d)(3)(d) is `Pass`.** **Next up:** 8.12(d)(3)(e) — the junk invariant +
-validity, mirroring `atomUEmpty_mono`/`atomUCode_mem`.
+**Status: Exercise 8.12(d)(3)(d) is `Pass`.**
+
+## 2026-07-04 checkpoint — Exercise 8.12(d)(3)(e): the junk invariant and validity
+
+Appended to `Exercise812d.lean`.
+
+**Implementation:** mirrors `Theorem88d.lean`'s `atomUEmpty_mono`/`atomUCode_mem`, and turned out
+much smaller than (d)(3)(d) — the hard direction ("junk propagates *backward*", i.e. non-junk at
+`n+1` forces non-junk at `n`) was already proved as `atomPairJunk_eq_zero_of_succ` back in (d)(3)(d).
+`atomPairJunk_mono` (junk propagates *forward*) is literally that lemma's contrapositive, needing
+only a fresh boundedness fact `atomPairJunk_le_one` (`atomPairJunk` is always `0` or `1`, proved by
+induction through the nested `selectFn`s, itself built from a small general-purpose helper
+`selectFn_le_one : c ≤ 1 → a ≤ 1 → b ≤ 1 → selectFn c a b ≤ 1`) to convert "`≠ 0`" into "`= 1`" on
+both sides of the contrapositive via `omega`. "Validity" (`atomPairIdx0_mem`/`atomPairIdx1_mem`) is
+*fully unconditional* here (no junk hypothesis needed at all, unlike `Theorem88d.lean`'s own
+`atomUCode_mem` which is stated the same way for the same reason) — `ComputablePresentation.mem_X`
+guarantees *every* index of `P₀`/`P₁` is a genuine `D₀`/`D₁`-neighbourhood regardless of whether the
+recursion's junk flag is set, so these are one-line `P₀.mem_X`/`P₁.mem_X` applications.
+
+**Lean gotcha hit:** the first attempt at `atomPairJunk_le_one`'s successor case, done via ad hoc
+`rcases`/`simp only`/`omega` soup directly on the doubly-nested `selectFn` expression, hit a
+`whnf` deterministic timeout (the nested `selectFn`s' arguments blow up combinatorially under
+`omega` once several `rcases` branches are open simultaneously) — replaced by first proving the
+tiny general `selectFn_le_one` lemma once, then simply *chaining* three applications of it
+(`selectFn_le_one (selectFn_le_one ih (le_refl 1) (selectFn_le_one hb1 ...)) (le_refl 1)
+(selectFn_le_one hb2 ...)`), avoiding needing `omega`/`rcases` to ever see the actual selector
+values at all — a **general lesson for this file's remaining sub-parts**: prove small compositional
+helper lemmas about `selectFn`'s algebra once, rather than unfolding nested `selectFn` chains
+directly under `omega`/`simp`.
+
+Axiom-audited: `atomPairJunk_le_one`/`atomPairJunk_mono` give `⊆{propext, Classical.choice,
+Quot.sound}`; `atomPairIdx0_mem`/`atomPairIdx1_mem` give the strictly smaller `⊆{Classical.choice}`
+(no `propext`/`Quot.sound` needed — pure application of `mem_X`); `selectFn_le_one` gives
+`⊆{propext, Quot.sound}`. All within the established baseline. Whole-project `lake build` (3164
+jobs) green, zero `sorry`.
+
+**Status: Exercise 8.12(d)(3)(e) is `Pass`.** **Next up:** 8.12(d)(3)(f) — disjointness across
+disagreeing, non-junk sign-sequences, mirroring `atomUCode_disjoint`; completes 8.12(d)(3).

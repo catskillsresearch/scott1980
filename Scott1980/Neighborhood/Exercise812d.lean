@@ -1341,4 +1341,65 @@ theorem atomPairCodeState_correct (k n : ℕ)
     rw [atomPairG_succ_eq]
     exact ySubStep_correct P₀ P₁ hDiff1 splitY hSplitY hx0 hx1 (deltaPair k n).2 hjunk
 
+/-! ## 8.12(d)(3)(e): the junk invariant and validity
+
+Mirrors `Theorem88d.lean`'s `atomUEmpty_mono`/`atomUCode_mem`. -/
+
+/-- **`selectFn` of two `{0,1}`-bounded values, gated by a `{0,1}`-bounded flag, is itself
+`{0,1}`-bounded** — `selectFn c a b` is literally `a` or `b` once `c ≤ 1`, so this is immediate by
+splitting on `c`. -/
+theorem selectFn_le_one {c a b : ℕ} (hc : c ≤ 1) (ha : a ≤ 1) (hb : b ≤ 1) :
+    selectFn c a b ≤ 1 := by
+  rcases (show c = 0 ∨ c = 1 from by omega) with h | h <;> rw [h]
+  · rw [selectFn_zero]; exact hb
+  · rw [selectFn_one]; exact ha
+
+/-- **`atomPairJunk` is always `0` or `1`** (never any other natural number), by induction through
+the nested `selectFn`s: the base case is the literal `0` of `stateBase2`, and each step is a chain
+of `selectFn_le_one` applications — the outer flag bounded by the outer induction hypothesis, the
+inner emptiness deciders bounded by `emptyInterDec_le_one`/`emptyDiffDec_le_one`. -/
+theorem atomPairJunk_le_one (k n : ℕ) :
+    atomPairJunk P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY n k ≤ 1 := by
+  induction n with
+  | zero => simp [atomPairJunk, atomPairCodeState, atomPairBase, stateBase2]
+  | succ n ih =>
+    unfold atomPairJunk at ih ⊢
+    rw [atomPairCodeState_succ]
+    unfold atomPairStep pcN pcT xwB1 xwS
+    simp only [unpair_pair_fst, unpair_pair_snd, stateInnerC_packStateC]
+    set T := atomPairCodeState P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY (Nat.pair k n)
+    rw [ySubStep_junk_eq, xSubStep_junk_eq]
+    have hb1 : stateRemC T % 2 ≤ 1 := Nat.le_of_lt_succ (by omega)
+    have hb2 : stateRemC T / 2 % 2 ≤ 1 := Nat.le_of_lt_succ (by omega)
+    exact selectFn_le_one
+      (selectFn_le_one ih (le_refl 1)
+        (selectFn_le_one hb1 (emptyInterDec_le_one P₀ _) (emptyDiffDec_le_one P₀ hDiff0 _)))
+      (le_refl 1)
+      (selectFn_le_one hb2 (emptyInterDec_le_one P₁ _) (emptyDiffDec_le_one P₁ hDiff1 _))
+
+/-- **Junk propagates forward** (once a bit-source's state is junk at depth `n`, it stays junk at
+every later depth): the contrapositive of `atomPairJunk_eq_zero_of_succ`, using
+`atomPairJunk_le_one` to convert "`≠ 0`" into "`= 1`" on both sides. -/
+theorem atomPairJunk_mono {n k : ℕ}
+    (h : atomPairJunk P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY n k = 1) :
+    atomPairJunk P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY (n + 1) k = 1 := by
+  have hle := atomPairJunk_le_one P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY k (n + 1)
+  by_contra hne
+  have h0 : atomPairJunk P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY (n + 1) k = 0 := by
+    omega
+  have := atomPairJunk_eq_zero_of_succ (h := h0)
+  omega
+
+/-- **Validity**: `atomPairIdx0`/`atomPairIdx1`'s recorded indices are always genuine `D₀`-side/
+`D₁`-side neighbourhoods — junk or not — since `ComputablePresentation.mem_X` holds unconditionally
+for every index (mirroring `Theorem88d.lean`'s `atomUCode_mem`/`U_mem_UX`, itself unconditional for
+the same reason). -/
+theorem atomPairIdx0_mem (n k : ℕ) :
+    D₀.mem (P₀.X (atomPairIdx0 P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY n k)) :=
+  P₀.mem_X _
+
+theorem atomPairIdx1_mem (n k : ℕ) :
+    D₁.mem (P₁.X (atomPairIdx1 P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY n k)) :=
+  P₁.mem_X _
+
 end AtomPairCorrect2
