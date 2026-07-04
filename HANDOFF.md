@@ -8178,3 +8178,36 @@ project `lake build` (3164 jobs) green, zero `sorry`.
 **Status: Exercise 8.12(d)(1) is `Pass`.** **Next up:** 8.12(d)(2) — define what "`splitX`/`splitY`
 computable relative to presentations `P₀`,`P₁`" means (a new `Prop`/structure mirroring
 `IsComputableMap`'s two-presentation shape).
+
+## 2026-07-04 checkpoint — Exercise 8.12(d)(2): `IsComputableSplit`
+
+Appended to `Exercise812d.lean`. `IsComputableSplit {V W} (P : ComputablePresentation V)
+(Q : ComputablePresentation W) (split : Set α → Set γ → Set α → Set γ × Set γ)`: two index functions
+`posIdx`/`negIdx : ℕ → ℕ → ℕ → ℕ` (indices of `A`, `B`, `Xn` in, index of the corresponding output
+in `Q` out), each required `Nat.Primrec` (`RecDecidable₃`'s `Nat.pair n (Nat.pair m k)` coding
+convention) with an *exact* correctness spec (`(split (P.X n) (Q.X m) (P.X k)).1 = Q.X (posIdx n m
+k)`, resp. `.2`/`negIdx`). Modelled this closer to `ComputablePresentation.inter`'s shape (a
+primitive-recursive index *function* with exact equality) than to `Definition72.lean`'s
+`IsComputableMap` (an r.e. *relation*), since a split is a genuine total function, not a semi-
+decidable membership test.
+
+**Design win:** one fully generic `{α γ}` structure serves *both* sides — `IsComputableSplit P₀ P₁
+splitX` and `IsComputableSplit P₁ P₀ splitY` (roles swapped) are both instances of the same
+structure, no separate `X`/`Y`-flavoured version needed.
+
+Included two trivial consequences (`posIdx_mem`/`negIdx_mem`: both outputs are always genuine
+`W`-neighbourhoods, immediate from `Q.mem_X` + the spec fields) for (d)(3)/(d)(5) to reuse directly.
+
+**Fix needed:** `ComputablePresentation` isn't transitively visible through `Exercise812c.lean`'s
+own import chain (`Exercise812`/`IntervalPrimrec`/`Theorem88`) — added an explicit
+`import Scott1980.Neighborhood.Definition71` to `Exercise812d.lean`.
+
+Axiom-audited: `posIdx_mem`/`negIdx_mem` depend on **no axioms at all** (fully constructive — pure
+rewriting, no `Classical`/`propext`/`Quot.sound`). Whole-project `lake build` (3164 jobs) green,
+zero `sorry`.
+
+**Status: Exercise 8.12(d)(2) is `Pass`.** **Next up:** 8.12(d)(3) — the code-level two-sided atom
+recursion `atomPairCode` (state: a pair of `P₀`/`P₁` indices, updated alternately via `(d)(2)`'s
+`IsComputableSplit`-witnessed `posIdx`/`negIdx`), mirroring `Theorem88d.lean`'s
+`atomUCodeState`/`atomStep`, plus the per-step correctness theorem connecting it back to `(d)(1)`'s
+abstract `atomPairG`.

@@ -1,4 +1,5 @@
 import Scott1980.Neighborhood.Exercise812c
+import Scott1980.Neighborhood.Definition71
 
 /-!
 # Exercise 8.12(d) (Scott 1981, PRG-19, Lecture VIII) — effective refinement of 8.12(c)
@@ -433,5 +434,62 @@ theorem atomPairG_splitChoice_eq (δ : ℕ → Bool × Bool) :
     rfl
 
 end Recover
+
+/-! ## 8.12(d)(2): computable splits relative to two presentations
+
+A split function `split : Set α → Set γ → Set α → Set γ × Set γ` is *computable relative to*
+presentations `P` (of the `α`-side) and `Q` (of the `γ`-side) when both of its outputs are given by
+a **primitive-recursive** function of the three input indices — mirroring `IsComputableMap`'s
+"transport the semantic relation to the integer indices" idea (Definition 7.2), but for a genuine
+*function* rather than a relation, so we ask for `Nat.Primrec` index functions with an exact
+(rather than merely r.e.) correctness spec, matching `ComputablePresentation.inter`'s own shape
+(a primitive-recursive intersection-index function, `inter_spec`).
+
+This one structure serves **both** `splitX : Set α → Set β → Set α → Set β × Set β` (as
+`IsComputableSplit P₀ P₁ splitX`) and `splitY : Set β → Set α → Set β → Set α × Set α` (as
+`IsComputableSplit P₁ P₀ splitY`, roles swapped) — no separate `X`/`Y`-flavoured structure needed. -/
+
+/-- **A split function is computable relative to two presentations** `P` (`α`-side), `Q` (`γ`-side)
+when its two outputs are indexed by primitive-recursive functions of the three input indices
+(indices of `A` in `P`, `B` in `Q`, `Xn` in `P`). Only the two index functions are data; primitive-
+recursiveness and correctness (`posIdx_spec`/`negIdx_spec`) are `Prop`s, so this is choice-free. -/
+structure IsComputableSplit {α γ : Type*} {V : NeighborhoodSystem α} {W : NeighborhoodSystem γ}
+    (P : ComputablePresentation V) (Q : ComputablePresentation W)
+    (split : Set α → Set γ → Set α → Set γ × Set γ) where
+  /-- Index (in `Q`) of `(split (P.X n) (Q.X m) (P.X k)).1`, as a function of the three input
+  indices `n, m, k`. -/
+  posIdx : ℕ → ℕ → ℕ → ℕ
+  /-- Index (in `Q`) of `(split (P.X n) (Q.X m) (P.X k)).2`. -/
+  negIdx : ℕ → ℕ → ℕ → ℕ
+  /-- `posIdx` is primitive recursive (on the `Nat.pair n (Nat.pair m k)` coding, matching
+  `RecDecidable₃`'s convention). -/
+  posIdx_primrec : Nat.Primrec (fun t => posIdx t.unpair.1 t.unpair.2.unpair.1 t.unpair.2.unpair.2)
+  /-- `negIdx` is primitive recursive. -/
+  negIdx_primrec : Nat.Primrec (fun t => negIdx t.unpair.1 t.unpair.2.unpair.1 t.unpair.2.unpair.2)
+  /-- `posIdx n m k` genuinely indexes the split's first output. -/
+  posIdx_spec : ∀ n m k, (split (P.X n) (Q.X m) (P.X k)).1 = Q.X (posIdx n m k)
+  /-- `negIdx n m k` genuinely indexes the split's second output. -/
+  negIdx_spec : ∀ n m k, (split (P.X n) (Q.X m) (P.X k)).2 = Q.X (negIdx n m k)
+
+namespace IsComputableSplit
+
+variable {α γ : Type*} {V : NeighborhoodSystem α} {W : NeighborhoodSystem γ}
+  {P : ComputablePresentation V} {Q : ComputablePresentation W}
+  {split : Set α → Set γ → Set α → Set γ × Set γ}
+
+/-- The split's first output is always a genuine `W`-neighbourhood (immediate from `posIdx_spec`
+and `Q.mem_X`; the "= ∅ ∨ mem" disjunction from `SplitSpec'` is not needed here, since every `Q.X k`
+is *already* a genuine neighbourhood — `SplitSpec'`'s "or ∅" only matters when relating back to the
+literal set `(split A B Xn).1`, which by `posIdx_spec` is literally *equal to* some `Q.X k`). -/
+theorem posIdx_mem (h : IsComputableSplit P Q split) (n m k : ℕ) :
+    W.mem (split (P.X n) (Q.X m) (P.X k)).1 := by
+  rw [h.posIdx_spec]; exact Q.mem_X _
+
+/-- The split's second output is always a genuine `W`-neighbourhood. -/
+theorem negIdx_mem (h : IsComputableSplit P Q split) (n m k : ℕ) :
+    W.mem (split (P.X n) (Q.X m) (P.X k)).2 := by
+  rw [h.negIdx_spec]; exact Q.mem_X _
+
+end IsComputableSplit
 
 end Scott1980.Neighborhood
