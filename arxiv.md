@@ -2013,7 +2013,7 @@ Lecture VIII covers retractions, projections, and the construction of the univer
 #### Exercise 8.12(c)
 * **Mathematical Target:** Part 3 of 7 — new general (non-effective) lemma: two countable, atomless neighbourhood systems `D₀`,`D₁`, each satisfying a mutual one-step "extension"/splitting property relative to the other, are order-isomorphic (`D₀.Element ≃o D₁.Element`)
 * **Lean File:** `Scott1980/Neighborhood/Exercise812c.lean` (in progress); umbrella — see sub-rows **8.12(c)(i)–8.12(c)(vii)** below for the full breakdown (both what's done and what's deferred), mirroring how Theorem 8.8(b)/(c) were split
-* **Proof Notes:** the genuinely new piece of abstract theory this exercise needs, broken into a 7-part plan tracked as sub-rows **8.12(c)(i)–8.12(c)(vii)**. **(i)–(v) are `Pass`**: Boolean-closure prerequisites (i), generic hypotheses + free Boolean-atom infrastructure (ii), `Theorem88.lean`'s splitting lemma generalized to an abstract atomless target (iii), the interleaved two-sided atom construction + its core invariant (iv), and pairwise disjointness of that construction across sign sequences (v, itself split into 5 sub-sub-parts — see 8.12(c)(v)'s own sub-rows). **(vi)–(vii) are `Deferred`** (none yet started): bidirectional transfer lemmas and final `DomainIso` assembly. **Key structural discovery driving (i)–(v)**: unlike Theorem 8.8(a)'s one-sided `exists_split`/`atomU` (where only the `U`-side is ever kept a genuine neighbourhood-or-∅, via `U_no_minimal`'s choice-driven splitting, while the `D`-side atom is an uninterpreted Boolean combination that need never lie in `D`), a genuine *two-sided* isomorphism needs **both** sides to remain neighbourhood-or-∅ at every step, including immediately after being intersected/subtracted by the *other* side's enumerated term. This is resolved by discovering `U` and `V` are both **Boolean-closed** (closed under set-difference, not just consistent intersection), which makes Boolean atoms automatically mem-or-∅ by direct computation, with no choice-driven invariant-tracking needed for that half of the work. See sub-rows for full detail.
+* **Proof Notes:** the genuinely new piece of abstract theory this exercise needs, broken into a 7-part plan tracked as sub-rows **8.12(c)(i)–8.12(c)(vii)**. **(i)–(v) are `Pass`**: Boolean-closure prerequisites (i), generic hypotheses + free Boolean-atom infrastructure (ii), `Theorem88.lean`'s splitting lemma generalized to an abstract atomless target (iii), the interleaved two-sided atom construction + its core invariant (iv), and pairwise disjointness of that construction across sign sequences (v, itself split into 5 sub-sub-parts — see 8.12(c)(v)'s own sub-rows). **(vi)–(vii) are `Deferred`** (none yet started): bidirectional transfer lemmas (vi, itself pre-planned into 7 sub-sub-parts — see 8.12(c)(vi)'s own sub-rows) and final `DomainIso` assembly. **Key structural discovery driving (i)–(v)**: unlike Theorem 8.8(a)'s one-sided `exists_split`/`atomU` (where only the `U`-side is ever kept a genuine neighbourhood-or-∅, via `U_no_minimal`'s choice-driven splitting, while the `D`-side atom is an uninterpreted Boolean combination that need never lie in `D`), a genuine *two-sided* isomorphism needs **both** sides to remain neighbourhood-or-∅ at every step, including immediately after being intersected/subtracted by the *other* side's enumerated term. This is resolved by discovering `U` and `V` are both **Boolean-closed** (closed under set-difference, not just consistent intersection), which makes Boolean atoms automatically mem-or-∅ by direct computation, with no choice-driven invariant-tracking needed for that half of the work. See sub-rows for full detail.
 * **Status:** Partial (8.12(c)(i)–(v) — Boolean-closure infra, generic definitions, generalized splitting lemma, the core two-sided atom invariant, and pairwise disjointness — are `Pass`; 8.12(c)(vi)–(vii) — transfer lemmas, final assembly — are `Deferred`, none yet started — see sub-rows)
 
 #### Exercise 8.12(c)(i)
@@ -2078,8 +2078,50 @@ Lecture VIII covers retractions, projections, and the construction of the univer
 
 #### Exercise 8.12(c)(vi)
 * **Mathematical Target:** Part 6 of 7 — bidirectional `Yseq`-analogue closed forms and transfer lemmas: `X n`/`Y n` are each recoverable as a finite union of matched `atomPair` atoms, with subset/inter-empty/inter-eq transfer in both directions (mirroring `Theorem88.lean`'s `transfer_subset_iff`/`transfer_inter_eq_iff`, but two-way)
+* **Lean File:** — (not yet started; umbrella, see sub-items 8.12(c)(vi)(1)–8.12(c)(vi)(7) below for the planned breakdown)
+* **Proof Notes:** the bulk of the remaining size estimate — comparable to the rest of `Theorem88.lean` (`Yseq` onward, ~350 lines: `extendTrue`/`restrictFin` bookkeeping, `Yseq`/`split_fst_eq_inter_Yseq`/`atomU_succ_eq`/`atomU_eq_genAtom` closed form, `transfer_dir`/`transfer_empty_iff`/`transfer_subset_iff`/`transfer_inter_empty_iff`/`transfer_double_subset_iff`/`transfer_inter_eq_iff`, `Yseq_empty_or_mem`/`Yseq_nonempty_of_mem`), done twice (once per direction) plus interleaving glue. **Pre-planned into 7 sub-sub-parts** (before any code is written, mirroring how (c) itself and (c)(v) were pre-/post-planned) based on close reading of `Theorem88.lean`'s reference structure — see sub-rows for the full breakdown and rationale. **Key extra difficulty not present in Theorem 8.8's one-sided case:** `Theorem88.lean`'s `Yseq`/transfer apparatus is generic over an abstract `split` function but *hardcoded to the target `U`* (`U.master`, `U.mem` appear directly); it must first be re-generalized to an abstract atomless `E` (mirroring (iii)'s `exists_split → exists_split'` generalization, but for the much larger `Yseq`-onward apparatus) so it can be instantiated with `E:=D₀` and `E:=D₁` symmetrically. Genuinely new relative to Theorem 8.8: `atomPair`'s recursion interleaves *two* sub-steps per depth `n` (unlike `atomU`'s single `split` per depth), so a bridging lemma is needed identifying each side's trajectory, in isolation, with an ordinary single-family `atomU`-style recursion before the generalized apparatus can even apply to it.
+* **Status:** Deferred (0 of 7 sub-parts started)
+
+#### Exercise 8.12(c)(vi)(1)
+* **Mathematical Target:** Generalize `Theorem88.lean`'s core `Yseq` closed-form apparatus (`Yseq`, `subset_Yseq`, `split_fst_eq_inter_Yseq`, `atomU_subset_master`, `atomU_succ_eq`, `atomU_eq_genAtom`) from the hardcoded target `U` to an abstract atomless `E` (`SplitSpec' E split`, `E.master`, `E.mem`) — the `Yseq`-analogue of (iii)'s `exists_split → exists_split'` generalization, but for the closed-form layer built on top
 * **Lean File:** — (not yet started)
-* **Proof Notes:** the bulk of the remaining size estimate — comparable to the rest of `Theorem88.lean` (`Yseq` onward, ~350 lines), done twice (once per direction) plus interleaving glue.
+* **Proof Notes:** `extendTrue`/`restrictFin` and the generic `genAtom` lemmas (`genAtom_subset`/`genAtom_congr`/`genAtom_forward`/`genAtom_self`) are **already fully type-generic in `Theorem88.lean`** (no `U`-specific content) and can be reused *verbatim*, unchanged — only the `Yseq`-onward layer (which references `U.master`/`U.mem` directly) needs re-proving against an abstract `E`. Expect this to be close to a mechanical transcription, as (iii) was for `exists_split`.
+* **Status:** Deferred
+
+#### Exercise 8.12(c)(vi)(2)
+* **Mathematical Target:** Generalize the finite-constraint transfer lemma and its corollaries (`transfer_dir`, `transfer_empty_iff`, `transfer_subset_iff`, `transfer_inter_empty_iff`, `transfer_double_subset_iff`, `transfer_inter_eq_iff`) to the same abstract atomless `E` from (vi)(1)
+* **Lean File:** — (not yet started)
+* **Proof Notes:** `transfer_dir` is already stated fully generically over two independent carrier types (`Theorem88.lean` lines 493–518) connected only by a `genAtom`-emptiness correspondence, so it should transfer unchanged; the corollaries built on `transfer_empty_iff` (lines 536–681) need only their `U.master`/`Yseq` occurrences replaced by `E.master`/(vi)(1)'s abstract `Yseq'`.
+* **Status:** Deferred
+
+#### Exercise 8.12(c)(vi)(3)
+* **Mathematical Target:** Generalize the nonemptiness/membership facts (`Yseq_subset_master`, `Yseq_zero_eq_master`, `Yseq_empty_or_mem`, `Yseq_nonempty_of_mem`) to the abstract atomless `E` from (vi)(1)
+* **Lean File:** — (not yet started)
+* **Proof Notes:** completes "(vi)(1)–(vi)(3): the abstract, single-family, one-sided `Yseq`-apparatus over any atomless `E`" — the piece that, once done, can be instantiated twice (§(vi)(5)/(vi)(6)) without re-deriving any of this general theory a second time.
+* **Status:** Deferred
+
+#### Exercise 8.12(c)(vi)(4)
+* **Mathematical Target:** The genuinely new "interleaving" bridge, absent from Theorem 8.8's one-sided case: identify `atomPair`'s β-side trajectory, when only the `X`-sub-step's splits are tracked, with an ordinary single-family `atomU`-style recursion over `E:=D₁`/`split:=splitChoice' D₁ hD₁nomin`/enumeration `X` (from (vi)(1)–(vi)(3)'s abstract apparatus) — and symmetrically identify the α-side trajectory with an instance over `E:=D₀`/enumeration `Y`
+* **Lean File:** — (not yet started)
+* **Proof Notes:** the crux of why (vi) can't just be "apply (vi)(1)–(vi)(3) twice" outright: `atomPair`'s own recursion (via `atomPair_succ_eq`, 8.12(c)(v)(3)) advances *both* sides every depth `n` through the *interleaved* `xStep`-then-`yStep` composition, whereas the abstract `atomU`-style apparatus advances a *single* family through one `split` per depth. Expect the bridge to go through `xStep`/`yStep`'s definitional unfolding (8.12(c)(v)(2)) directly, likely needing its own depth-indexed correspondence lemma (e.g. relating `atomPair`'s depth-`n` pair to the abstract `atomU`'s depth-`n` value under a suitable reindexing/pairing of the two `Bool` sign-streams) rather than a literal defeq.
+* **Status:** Deferred
+
+#### Exercise 8.12(c)(vi)(5)
+* **Mathematical Target:** α-side closed form and transfer instantiation: applying (vi)(1)–(vi)(4) with `E:=D₀` to conclude `Y n` (`D₁`'s enumerated neighbourhood) is recoverable as a union of matched α-side (`D₀`) atoms, with its own subset/inter-empty/inter-eq transfer facts relative to `D₀`'s carrier
+* **Lean File:** — (not yet started)
+* **Proof Notes:** direct instantiation of the generalized apparatus, mirroring `Theorem88.lean`'s own `Yseq`/`transfer_*` usage pattern one-for-one once (vi)(4)'s bridge is in hand.
+* **Status:** Deferred
+
+#### Exercise 8.12(c)(vi)(6)
+* **Mathematical Target:** β-side closed form and transfer instantiation: symmetric mirror of (vi)(5) with `E:=D₁`, concluding `X n` (`D₀`'s enumerated neighbourhood) is recoverable as a union of matched β-side (`D₁`) atoms, with its own transfer facts relative to `D₁`'s carrier
+* **Lean File:** — (not yet started)
+* **Proof Notes:** literal mirror of (vi)(5) with the two sides' roles swapped (`D₀`↔`D₁`, `X`↔`Y`, `xStep`↔`yStep`).
+* **Status:** Deferred
+
+#### Exercise 8.12(c)(vi)(7)
+* **Mathematical Target:** Bidirectional glue: whatever additional bridging (vii)'s final assembly needs to combine (vi)(5)'s and (vi)(6)'s two one-sided closed forms into a single, mutually-consistent correspondence between `D₀`- and `D₁`-neighbourhoods (exact content TBD — a placeholder pending (vi)(1)–(vi)(6), added now rather than silently overloading (vii))
+* **Lean File:** — (not yet started)
+* **Proof Notes:** kept deliberately vague pending (vi)(1)–(vi)(6): once both one-sided closed forms exist, it should become clear whether any *extra* two-sided fact is needed beyond just having both, or whether this sub-part collapses into "nothing left to do" and (vii) can proceed directly.
 * **Status:** Deferred
 
 #### Exercise 8.12(c)(vii)

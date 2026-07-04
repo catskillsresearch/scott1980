@@ -7195,3 +7195,39 @@ Exercise 8.12 status lines updated to "(i)–(v) `Pass`".
 green). **Next up:** Exercise 8.12(c)(vi) (bidirectional `Yseq`-analogue transfer lemmas) — the
 largest remaining chunk, comparable in size to the rest of `Theorem88.lean` (`Yseq` onward) done
 twice — or Exercise 8.12(c)(vii) cannot start before it (needs (vi)'s closed forms).
+
+**2026-07-04 — Exercise 8.12(c)(vi) pre-planned into 7 sub-sub-parts, before any code written**
+(user asked to anticipate the breakdown up front, as (v) needed one only after starting). No Lean
+code changed this checkpoint — `arxiv.md`'s 8.12(c)(vi) row restructured into an umbrella +
+7 sub-rows, based on close reading of `Theorem88.lean`'s actual `Yseq`-onward structure (lines
+352–706: `extendTrue`/`restrictFin` bookkeeping, the `Yseq`/`split_fst_eq_inter_Yseq`/
+`atomU_succ_eq`/`atomU_eq_genAtom` closed-form layer, the `transfer_dir`/`transfer_empty_iff` +
+4 corollaries, and `Yseq_empty_or_mem`/`Yseq_nonempty_of_mem` nonemptiness):
+
+* **(1) — Deferred.** Generalize the core `Yseq` closed-form apparatus (`Yseq`, `subset_Yseq`,
+  `split_fst_eq_inter_Yseq`, `atomU_subset_master`, `atomU_succ_eq`, `atomU_eq_genAtom`) from
+  hardcoded `U` to an abstract atomless `E`. **Noted:** `extendTrue`/`restrictFin` and the generic
+  `genAtom_*` lemmas are *already* fully type-generic in `Theorem88.lean` — reusable verbatim,
+  no re-proving needed.
+* **(2) — Deferred.** Generalize the transfer lemma family (`transfer_dir`/`transfer_empty_iff`/
+  `transfer_subset_iff`/`transfer_inter_empty_iff`/`transfer_double_subset_iff`/
+  `transfer_inter_eq_iff`) to the same abstract `E`. **Noted:** `transfer_dir` is *already* stated
+  generically over two independent carriers — should transfer unchanged.
+* **(3) — Deferred.** Generalize the nonemptiness facts (`Yseq_subset_master`/
+  `Yseq_zero_eq_master`/`Yseq_empty_or_mem`/`Yseq_nonempty_of_mem`) to abstract `E`. Completes the
+  reusable one-sided apparatus (1)–(3), to be instantiated twice without re-proving general theory.
+* **(4) — Deferred.** **The genuinely new piece, absent from Theorem 8.8's one-sided case:** a
+  bridge identifying `atomPair`'s β-side trajectory (tracking only the `X`-sub-step's splits) with
+  an ordinary single-family `atomU`-style recursion over `E:=D₁` from (1)–(3) (and symmetrically
+  the α-side over `E:=D₀`) — needed because `atomPair_succ_eq` advances *both* sides every depth
+  via an *interleaved* `xStep`-then-`yStep` composition, unlike `atomU`'s single `split` per depth.
+* **(5) — Deferred.** α-side instantiation: apply (1)–(4) with `E:=D₀` to show `Y n` is
+  recoverable as a union of matched α-side atoms, with transfer facts relative to `D₀`.
+* **(6) — Deferred.** β-side instantiation: symmetric mirror of (5) with `E:=D₁`, `X n`
+  recoverable via matched β-side atoms.
+* **(7) — Deferred.** Placeholder for whatever bidirectional glue (vii)'s assembly needs beyond
+  just having both (5) and (6) — content deliberately left TBD pending (1)–(6).
+
+**Status: Exercise 8.12(c)(vi) is `Deferred`, 0 of 7 sub-parts started** — this is a *plan* only,
+not yet attempted; boundaries may shift once (1) is actually underway (as happened with (v)'s own
+post-hoc 5-way split). **Next up:** Exercise 8.12(c)(vi)(1).
