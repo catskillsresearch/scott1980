@@ -8900,3 +8900,55 @@ converse-biconditional — `(c)`'s originally-named gap, now itself a concrete i
 `atomPairG_fst_eq_empty_of_junk_eq_one` for the induction, then its contrapositive
 `atomPairJunk_eq_zero_of_ne_empty`). Read `arxiv.md`'s `(d)(4)(c)` row for `(c)(v)`'s exact
 statement — this is the largest remaining piece of `(d)(4)(c)`'s closure.
+
+## 2026-07-04 checkpoint — Exercise 8.12(d)(4)(c)(v) `Pass`: the converse-biconditional induction
+
+Implemented `atomPairG_fst_eq_empty_of_junk_eq_one`/`atomPairJunk_eq_zero_of_ne_empty` in a new
+**`section AtomPairCorrect5`** (`Exercise812d.lean`, between `AtomPairCorrect4` and the "flagged,
+deferred gap" docstring — that docstring was updated in place to reflect the narrowed remaining
+gap). Proved by induction on `n` (base case vacuous: `atomPairJunk` is unconditionally `0` at
+`n = 0`). Successor step case-splits on whether `atomPairJunk n i` is already `1` (propagate via
+`atomPairG_fst_subset` + `Set.subset_eq_empty` + IH) or freshly becomes `1` at `n + 1`: in the
+latter case, unfold `atomPairJunk (n+1) i` one step down to `selectFn xcheck 1 ycheck = 1` (the
+same unfolding chain `atomPairCodeState_correct`'s own proof uses), then split on `xcheck`'s
+(bounded) value — `xcheck = 1` gives `(atomPairG n).1 ∩/\ P₀.X n = ∅` directly via
+`emptyInterDec_eq_one_iff`/`emptyDiffDec_eq_one_iff`, i.e. `(xStepG ...).1 = ∅` by unfolding, then
+`xStepG_spec` + `yStepG_fst_subset` propagate this to `(atomPairG (n+1)).1 = ∅` regardless of the
+`Y`-sub-step's bit; `xcheck = 0` makes the `X`-sub-step genuinely non-junk (`xSubStep_correct`
+identifies its output indices with `xStepG`'s components), collapsing `hjunk1` to `ycheck = 1`,
+which (via the same decider-iff machinery, now for `P₁`/`D₁`) gives `(atomPairG (n+1)).2 = ∅`
+directly (the `Y`-sub-step's direct refine literally *is* the `D₁`-side), transferred to the
+targeted `D₀`-side via `atomPairG_invariant`'s `.1 = ∅ ↔ .2 = ∅` dichotomy at depth `n + 1`.
+`atomPairJunk_eq_zero_of_ne_empty` (the exercise's originally-named gap statement) is the routine
+contrapositive.
+
+**Two type-check errors on the first attempt, both fixed quickly** (via `lake env lean
+Exercise812d.lean` directly, ~4s turnaround, rather than a full `lake build`): (1) `rw [hidxEq]`
+targeting a hypothesis of shape `emptyInterDec P (pair idx n) = 1` silently fails ("pattern not
+found") since `P.X idx` isn't syntactically present until *after* converting through
+`emptyInterDec_eq_one_iff`/`emptyDiffDec_eq_one_iff` first — hit this in both the `xcheck = 1` and
+`xcheck = 0` branches, fixed by reordering (`_eq_one_iff` first, *then* `rw [hidxEq]` on the
+resulting `Set`-level equation); (2) mixed up `Set.subset_eq_empty` (`s ⊆ t → t = ∅ → s = ∅`) with
+`.trans` when combining `atomPairG_fst_subset`'s subset fact with the induction hypothesis's
+equality in the "already junk" branch. No other Lean gotchas — the proof went in cleanly once these
+two were fixed, following the exact case-split plan `(c)(iv)`'s docstring update had already
+charted out.
+
+Axiom-audited (`#print axioms`): both `atomPairG_fst_eq_empty_of_junk_eq_one` and
+`atomPairJunk_eq_zero_of_ne_empty` give `⊆ {propext, Classical.choice, Quot.sound}`, matching this
+closure's established baseline (inherited via `emptyInterDec_eq_zero_iff`'s `IsPositive`/
+`NoMinimal` case-splitting elsewhere — not new here). Whole-project `lake build` (3164 jobs) green,
+zero `sorry`. `arxiv.md`: `(c)(v)` row updated to `Pass` with a dense proof note; `(c)`'s own
+umbrella row now notes `(c)(i)`–`(c)(v)` `Pass`, only `(c)(vi)` remaining; `(c)(vi)`'s own row
+proof note updated to reflect `(c)(v)` being done rather than scoped.
+
+**Status: `8.12(d)(4)(c)(v)` is `Pass`.** **Resume protocol:** next up is `(c)(vi)` — the final
+assembly of `(d)(4)(c)`'s closure: chain `(c)(iv)`'s `exists_atomPairG_deltaPair_inter_Xn_ne_empty`
+with `(c)(v)`'s `atomPairJunk_eq_zero_of_ne_empty` (since a non-trivial intersection with `P₀.X n`
+forces non-emptiness, which forces non-junk) plus `(d)(3)(d)`'s forward `atomPairCodeState_correct`
+and `emptyInterDec_eq_one_iff`'s converse reading, landing on `xPseqAtomJunk_eq`'s defining
+condition `emptyInterDec P₀ (idx0, n) = 0` — discharging `XFold_found_iff`'s hypothesis
+unconditionally at `N = 4ⁿ`. Once `(c)(vi)` lands, `(d)(4)(c)`'s overall status upgrades from
+`Partial` to `Pass` (unconditional `XPseqCode_mem`/`mem_XPseqCode_iff`), and the identical
+`(d)(4)(d)(i)`–`(vi)` closure (`YPseqCode`, symmetric but doubled over `bx`) remains as the next
+major piece after that. Read `arxiv.md`'s `(d)(4)(c)(vi)` row for the exact statement.
