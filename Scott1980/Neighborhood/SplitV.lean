@@ -193,4 +193,68 @@ theorem myClearBit_eq_xor {m ℓ : ℕ} (h : m.testBit ℓ = true) : myClearBit 
       show j - (ℓ + 1) + (ℓ + 1) = j by omega, decide_eq_false_iff_not.mpr (show ℓ ≠ j by omega)]
     simp
 
+/-! ## 8.12(e)(b)(iii): `splitVLeft`/`splitVRight` — the actual computable split
+
+Follows `V_no_minimal`'s construction (`Exercise812.lean`, Scott's remark after Definition 8.7)
+verbatim, at the code level: canonicalize `n` (`canonIdx`, `LevelSetPrimrec.lean`) to get a
+level/mask pair `(k, m)`, upsample `m` one level finer (`M := myUpsample k (k+1) m`), pick the
+splitting bit `ℓ₀` as `M`'s least set bit (`myFirstBit`, `(e)(b)(i)` — the classical proof instead
+draws `ℓ₀` from a bare existential `levelSet_nonempty_iff.mp hne`, bounded by `2 ^ k`; here it is
+found directly on the *upsampled* mask `M`, bounded by `2 ^ (k+1)`, which is fine since `upsample`
+duplicates every set bit of `m` into a matching pair at level `k+1`, so *any* set bit of `M` has a
+genuine "twin" — `(e)(b)(iv)`'s job to make precise). `splitVLeft`/`splitVRight` then package `Y :=
+levelSet (k+1) (2^ℓ₀)` / `Z := levelSet (k+1) (M ^^^ 2^ℓ₀)` (`V_no_minimal`'s own `Y`/`Z`) as codes,
+using `myClearBit` (`(e)(b)(ii)`) as the computable stand-in for `^^^`. -/
+
+/-- The upsampled mask `M := myUpsample k (k+1) m` for `(k, m) := canonIdx n` — Scott's `M` from
+`V_no_minimal`, at the code level. -/
+def splitVUpsampled (n : ℕ) : ℕ :=
+  myUpsample (canonIdx n).unpair.1 ((canonIdx n).unpair.1 + 1) (canonIdx n).unpair.2
+
+theorem primrec_splitVUpsampled : Nat.Primrec splitVUpsampled := by
+  have hk : Nat.Primrec (fun n : ℕ => (canonIdx n).unpair.1) :=
+    Nat.Primrec.left.comp primrec_canonIdx
+  have hk1 : Nat.Primrec (fun n : ℕ => (canonIdx n).unpair.1 + 1) := Nat.Primrec.succ.comp hk
+  have hm : Nat.Primrec (fun n : ℕ => (canonIdx n).unpair.2) :=
+    Nat.Primrec.right.comp primrec_canonIdx
+  exact (primrec_myUpsample.comp (hk.pair (hk1.pair hm))).of_eq fun n => by
+    simp only [unpair_pair_fst, unpair_pair_snd]; rfl
+
+/-- The splitting bit `ℓ₀` — the least set bit of the upsampled mask `M`, bounded by `2 ^ (k+1)`. -/
+def splitVBit (n : ℕ) : ℕ :=
+  myFirstBit (splitVUpsampled n) (2 ^ ((canonIdx n).unpair.1 + 1))
+
+theorem primrec_splitVBit : Nat.Primrec splitVBit := by
+  have hk : Nat.Primrec (fun n : ℕ => (canonIdx n).unpair.1) :=
+    Nat.Primrec.left.comp primrec_canonIdx
+  have hk1 : Nat.Primrec (fun n : ℕ => (canonIdx n).unpair.1 + 1) := Nat.Primrec.succ.comp hk
+  have hbound : Nat.Primrec (fun n : ℕ => (2 : ℕ) ^ ((canonIdx n).unpair.1 + 1)) :=
+    primrec_two_pow hk1
+  exact (primrec_myFirstBit.comp (primrec_splitVUpsampled.pair hbound)).of_eq fun n => by
+    simp only [unpair_pair_fst, unpair_pair_snd]; rfl
+
+/-- **`splitVLeft`**: the code for `Y := levelSet (k+1) (2 ^ ℓ₀)`, `V_no_minimal`'s "left" half. -/
+def splitVLeft (n : ℕ) : ℕ := Nat.pair ((canonIdx n).unpair.1 + 1) (2 ^ splitVBit n)
+
+/-- **`splitVRight`**: the code for `Z := levelSet (k+1) (M ^^^ 2 ^ ℓ₀)`, `V_no_minimal`'s "right"
+half — `myClearBit` stands in for `^^^` (justified since `ℓ₀` is, by construction, a genuinely set
+bit of `M`; `myClearBit_eq_xor`, `(e)(b)(ii)`). -/
+def splitVRight (n : ℕ) : ℕ := Nat.pair ((canonIdx n).unpair.1 + 1) (myClearBit (splitVUpsampled n) (splitVBit n))
+
+theorem primrec_splitVLeft : Nat.Primrec splitVLeft := by
+  have hk : Nat.Primrec (fun n : ℕ => (canonIdx n).unpair.1) :=
+    Nat.Primrec.left.comp primrec_canonIdx
+  have hk1 : Nat.Primrec (fun n : ℕ => (canonIdx n).unpair.1 + 1) := Nat.Primrec.succ.comp hk
+  have hpow : Nat.Primrec (fun n : ℕ => (2 : ℕ) ^ splitVBit n) := primrec_two_pow primrec_splitVBit
+  exact (Nat.Primrec.pair hk1 hpow).of_eq fun n => rfl
+
+theorem primrec_splitVRight : Nat.Primrec splitVRight := by
+  have hk : Nat.Primrec (fun n : ℕ => (canonIdx n).unpair.1) :=
+    Nat.Primrec.left.comp primrec_canonIdx
+  have hk1 : Nat.Primrec (fun n : ℕ => (canonIdx n).unpair.1 + 1) := Nat.Primrec.succ.comp hk
+  have hclear : Nat.Primrec (fun n : ℕ => myClearBit (splitVUpsampled n) (splitVBit n)) :=
+    (primrec_myClearBit.comp (primrec_splitVUpsampled.pair primrec_splitVBit)).of_eq fun n => by
+      simp only [unpair_pair_fst, unpair_pair_snd]
+  exact (Nat.Primrec.pair hk1 hclear).of_eq fun n => rfl
+
 end Scott1980.Neighborhood

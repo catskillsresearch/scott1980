@@ -10368,3 +10368,47 @@ re-run `#print axioms` on every new declaration once written, treating any bare 
 inside a would-be-choice-free proof with suspicion if `Classical.choice` shows up unexpectedly.
 Then `(e)(b)(iv)` (correctness — `VX_splitVLeft`/`VX_splitVRight`/`splitV_disjoint`/`splitV_union`,
 completing `(e)(b)`).
+
+**2026-07-05 — Exercise 8.12(e)(b)(iii) `Pass`: `splitVLeft`/`splitVRight` definitions and
+`Nat.Primrec` proofs.** Appended to `Scott1980/Neighborhood/SplitV.lean`. Matched the plan exactly,
+no new gotchas — a clean, mechanical composition once `(e)(b)(i)`–`(ii)` existed. Two intermediate
+`def`s factor the shared sub-computation (mirroring `SplitU.lean`'s own `splitMidCode`):
+`splitVUpsampled n := myUpsample k (k+1) m` (Scott's `M`, `(k,m) := canonIdx n`) and `splitVBit n
+:= myFirstBit (splitVUpsampled n) (2^(k+1))` (Scott's `ℓ₀` — found directly on the *upsampled* mask
+`M`'s bits rather than drawn from `V_no_minimal`'s classical existential on the pre-upsample `m`;
+noted in the new section's docstring as fine since `myUpsample`/`upsample` duplicate every set bit
+of `m` into a matching pair at level `k+1`, so *any* set bit of `M` — not just the specific one the
+classical proof happens to pick — has a genuine twin; making the exact twin-position formula
+precise is left to `(e)(b)(iv)`). `splitVLeft n := Nat.pair (k+1) (2^ℓ₀)`, `splitVRight n :=
+Nat.pair (k+1) (myClearBit (splitVUpsampled n) ℓ₀)`. All four `Nat.Primrec` proofs
+(`primrec_splitVUpsampled`/`primrec_splitVBit`/`primrec_splitVLeft`/`primrec_splitVRight`) are
+routine compositions of already-`Nat.Primrec` pieces (`primrec_canonIdx`/`primrec_myUpsample`/
+`primrec_myFirstBit`/`primrec_myClearBit`/`primrec_two_pow`/`Nat.Primrec.pair`), each closed by
+`.of_eq` + `simp only [unpair_pair_fst, unpair_pair_snd]` (or plain `rfl` where no `Nat.pair`/
+`.unpair` round-trip appears) — **no `whnf` timeouts this time**, unlike `(e)(b)(i)`, since every
+composition here pairs already-built `Nat.Primrec` functions directly (`f.pair g`) rather than
+re-threading a value through an intermediate `Nat.pair` that then needs peeling back off via
+`.unpair` before the *next* function can consume it. Ran the choice-discipline check from the
+`(e)(b)(ii)` lesson proactively this time: `#print axioms` on all four gives `⊆ {propext,
+Classical.choice, Quot.sound}`; double-checked via `#print axioms primrec_canonIdx` directly that
+this `Classical.choice` is *inherited* from `canonIdx` itself (needs classical decidability of
+`levelSet`-nonemptiness to define at all) — the same project-wide baseline already flagged by
+`(e)(a)`'s and `(e)(b)(i)`'s own proof notes, not a fresh leak like `(e)(b)(ii)`'s false alarm.
+Zero `sorry`; `lake build Scott1980` (3166 jobs) clean, zero new warnings. `arxiv.md`:
+`8.12(e)(b)(iii)` row → `Pass`; `8.12(e)(b)` umbrella updated to note `(i)`–`(iii)` `Pass`, `(iv)`
+not started.
+
+**Status: `8.12(e)(b)(iii)` is `Pass`.** **Resume protocol:** next up is `8.12(e)(b)(iv)` —
+correctness, completing `8.12(e)(b)`: `VX_splitVLeft (n) : VX (splitVLeft n) = levelSet (k+1)
+(2^ℓ₀)`, `VX_splitVRight (n) : VX (splitVRight n) = levelSet (k+1) (myClearBit (splitVUpsampled n)
+ℓ₀)` (direct unfoldings of `(e)(b)(iii)`'s definitions against `VX`'s own definition), then
+`splitV_disjoint`/`splitV_union` transcribing `V_no_minimal`'s `hInter`/`hUnion` `ext`-and-`testBit`
+case-split arguments (`Exercise812.lean` lines 242–261) — **but note the one genuine adaptation
+flagged above, not present in the classical proof**: since `splitVBit`'s `ℓ₀` ranges over the
+*whole* `[0, 2^(k+1))` (found on the upsampled `M` directly) rather than being handed a priori as
+`< 2^k` with a fixed twin `ℓ₀ + 2^k`, `(e)(b)(iv)` will need its own small lemma establishing `M`'s
+twin-bit position for a general `ℓ₀ < 2^(k+1)` is `ℓ₀ ^^^ 2^k` (equivalently, `if ℓ₀ < 2^k then ℓ₀
++ 2^k else ℓ₀ - 2^k`) and that `M.testBit (ℓ₀ ^^^ 2^k) = true` whenever `M.testBit ℓ₀ = true` —
+likely provable directly from `myUpsample`'s own defining property (`levelSet_myUpsample`/
+`testBit_upsample`, `LevelSetPrimrec.lean`/`Exercise812.lean`) plus a case split on `ℓ₀ < 2^k` vs
+`≥ 2^k`, before the `hInter`/`hUnion` transcription can go through almost verbatim as planned.
