@@ -123,4 +123,74 @@ theorem myFirstBit_testBit {m N : ℕ} (h : ∃ ℓ < N, m.testBit ℓ = true) :
   · obtain ⟨ℓ, hℓN, hℓtrue⟩ := h
     exact absurd hℓtrue (by simpa using hall ℓ hℓN)
 
+/-! ## 8.12(e)(b)(ii): `myClearBit`, a computable "clear one bit" primitive
+
+`V_no_minimal`'s classical proof needs `M ^^^ 2 ^ ℓ₀` (Mathlib's `Nat.xor`, not exposed as
+`Nat.Primrec` — the reason `myLor`/`myUpsample` etc. had to be hand-built already, per
+`LevelSetPrimrec.lean`'s own header). Since `ℓ₀` is always already known set in `M` at the point
+of use (`myFirstBit_testBit`, `(e)(b)(i)`), a plain truncated subtraction suffices as the
+computable stand-in: clearing a *known-set* bit is the same as subtracting its power of two.
+`myClearBit_eq_xor` bridges the two, so every downstream argument can keep using Mathlib's own
+`Nat.testBit_xor`/`Nat.testBit_two_pow` unchanged, exactly as `V_no_minimal`'s original proof
+does. -/
+
+/-- **The "clear one bit" primitive.** `myClearBit m ℓ := m - 2 ^ ℓ` — primitive recursive for
+free (plain subtraction and a power of two), and, whenever bit `ℓ` of `m` is genuinely set,
+literally equal to `m ^^^ 2 ^ ℓ` (`myClearBit_eq_xor`). -/
+def myClearBit (m ℓ : ℕ) : ℕ := m - 2 ^ ℓ
+
+theorem primrec_myClearBit : Nat.Primrec (fun t => myClearBit t.unpair.1 t.unpair.2) := by
+  have hpow : Nat.Primrec (fun t : ℕ => (2 : ℕ) ^ t.unpair.2) := primrec_two_pow Nat.Primrec.right
+  exact (primrec_sub₂ Nat.Primrec.left hpow).of_eq fun _ => rfl
+
+/-- **`myClearBit` realizes `^^^ 2 ^ ℓ` whenever bit `ℓ` is genuinely set.** Proof: decompose `m`
+around the boundary `2 ^ (ℓ + 1)` (`hqr`, via `Nat.div_add_mod`/`Nat.mod_mod_of_dvd` and a
+single-wraparound `omega` argument, mirroring `LevelSetPrimrec.lean`'s own
+`mod_eq_sub_of_le_of_lt_two_mul`), giving `myClearBit m ℓ = 2 ^ (ℓ+1) * (m / 2 ^ (ℓ+1)) + m % 2 ^
+ℓ` (`hclear`); then `Nat.testBit_two_pow_mul_add` on both this and (implicitly, via `h`) on `m`
+itself matches bit-for-bit against `Nat.testBit_xor`/`Nat.testBit_two_pow`'s case split on
+`j`{`<`,`=`,`>`}`ℓ`. -/
+theorem myClearBit_eq_xor {m ℓ : ℕ} (h : m.testBit ℓ = true) : myClearBit m ℓ = m ^^^ 2 ^ ℓ := by
+  have hrlt : m % 2 ^ ℓ < 2 ^ ℓ := Nat.mod_lt m (Nat.two_pow_pos ℓ)
+  have h2 : (2 : ℕ) ^ (ℓ + 1) = 2 * 2 ^ ℓ := by rw [pow_succ]; ring
+  have hrlt2 : m % 2 ^ ℓ < 2 ^ (ℓ + 1) := by omega
+  have hqr : m % 2 ^ (ℓ + 1) = 2 ^ ℓ + m % 2 ^ ℓ := by
+    have hb : (m % 2 ^ (ℓ + 1)).testBit ℓ = true := by
+      rw [Nat.testBit_mod_two_pow, h, decide_eq_true_iff.mpr (Nat.lt_succ_self ℓ), Bool.true_and]
+    have hblt : m % 2 ^ (ℓ + 1) < 2 ^ (ℓ + 1) := Nat.mod_lt m (Nat.two_pow_pos (ℓ + 1))
+    have hbge : 2 ^ ℓ ≤ m % 2 ^ (ℓ + 1) := by
+      rcases Nat.lt_or_ge (m % 2 ^ (ℓ + 1)) (2 ^ ℓ) with hcon | hcon
+      · exfalso
+        rw [Nat.testBit_lt_two_pow hcon] at hb
+        simp at hb
+      · exact hcon
+    have hmm : m % 2 ^ (ℓ + 1) % 2 ^ ℓ = m % 2 ^ ℓ :=
+      Nat.mod_mod_of_dvd m (pow_dvd_pow 2 (Nat.le_succ ℓ))
+    have hsub : m % 2 ^ (ℓ + 1) % 2 ^ ℓ = m % 2 ^ (ℓ + 1) - 2 ^ ℓ := by
+      have heq2 : m % 2 ^ (ℓ + 1) = (m % 2 ^ (ℓ + 1) - 2 ^ ℓ) + 2 ^ ℓ := by omega
+      calc m % 2 ^ (ℓ + 1) % 2 ^ ℓ
+          = ((m % 2 ^ (ℓ + 1) - 2 ^ ℓ) + 2 ^ ℓ) % 2 ^ ℓ := by rw [← heq2]
+        _ = (m % 2 ^ (ℓ + 1) - 2 ^ ℓ) % 2 ^ ℓ := Nat.add_mod_right _ _
+        _ = m % 2 ^ (ℓ + 1) - 2 ^ ℓ := Nat.mod_eq_of_lt (by omega)
+    omega
+  have hclear : myClearBit m ℓ = 2 ^ (ℓ + 1) * (m / 2 ^ (ℓ + 1)) + m % 2 ^ ℓ := by
+    have hdm := Nat.div_add_mod m (2 ^ (ℓ + 1))
+    unfold myClearBit
+    omega
+  apply Nat.eq_of_testBit_eq
+  intro j
+  rw [hclear, Nat.testBit_two_pow_mul_add _ hrlt2 j, Nat.testBit_xor, Nat.testBit_two_pow]
+  rcases lt_trichotomy j ℓ with hjl | hjl | hjl
+  · rw [if_pos (show j < ℓ + 1 by omega), Nat.testBit_mod_two_pow,
+      decide_eq_true_iff.mpr hjl, decide_eq_false_iff_not.mpr (show ℓ ≠ j by omega)]
+    simp
+  · have hjt : m.testBit j = true := by rw [hjl]; exact h
+    rw [if_pos (show j < ℓ + 1 by omega), Nat.testBit_mod_two_pow,
+      decide_eq_false_iff_not.mpr (show ¬ j < ℓ by omega), hjt,
+      decide_eq_true_iff.mpr hjl.symm]
+    rfl
+  · rw [if_neg (show ¬ j < ℓ + 1 by omega), Nat.testBit_div_two_pow,
+      show j - (ℓ + 1) + (ℓ + 1) = j by omega, decide_eq_false_iff_not.mpr (show ℓ ≠ j by omega)]
+    simp
+
 end Scott1980.Neighborhood

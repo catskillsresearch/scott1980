@@ -10321,3 +10321,50 @@ leaves every other bit untouched — check first whether Mathlib already has a u
 route any `Nat.Primrec` composition through an explicit `Nat.pair` via `.of_eq` + `simp only
 [unpair_pair_fst, unpair_pair_snd]`, never a bare `:=`. Then `(e)(b)(iii)` (`splitVLeft`/
 `splitVRight` + primrec) and `(e)(b)(iv)` (correctness, completing `(e)(b)`).
+
+**2026-07-05 — Exercise 8.12(e)(b)(ii) `Pass`: `myClearBit`, a computable "clear one bit"
+primitive.** Appended to `Scott1980/Neighborhood/SplitV.lean`. `myClearBit m ℓ := m - 2 ^ ℓ`
+(plain truncated subtraction); `primrec_myClearBit` immediate via `.of_eq fun _ => rfl` off
+`primrec_sub₂`/`primrec_two_pow` — no `Nat.pair`/`.unpair` round-trip here, so no repeat of
+`(e)(b)(i)`'s defeq trap. Confirmed by search that Mathlib has *no* `Nat.testBit_sub`-style
+lemma, so `myClearBit_eq_xor {m ℓ} (h : m.testBit ℓ = true) : myClearBit m ℓ = m ^^^ 2 ^ ℓ` was
+hand-built from Mathlib's `Nat.testBit_two_pow_mul_add` (`(2^i*a+b).testBit j = if j < i then
+b.testBit j else a.testBit (j-i)`, given `b < 2^i`): decompose `m` around the `2^(ℓ+1)` boundary
+(`hqr : m % 2^(ℓ+1) = 2^ℓ + m % 2^ℓ`, from `m.testBit ℓ = true` forcing `m % 2^(ℓ+1) ∈ [2^ℓ,
+2^(ℓ+1))`, via `Nat.mod_mod_of_dvd` + a single-wraparound `omega` argument mirroring
+`LevelSetPrimrec.lean`'s private `mod_eq_sub_of_le_of_lt_two_mul`) to get `myClearBit m ℓ =
+2^(ℓ+1)*(m/2^(ℓ+1)) + m%2^ℓ` (`hclear`, via `Nat.div_add_mod` + `omega`), then one
+`Nat.testBit_two_pow_mul_add` application plus a 3-way `lt_trichotomy j ℓ` split closes
+`Nat.eq_of_testBit_eq`'s bit-for-bit goal against `Nat.testBit_xor`/`Nat.testBit_two_pow`.
+**Real gotcha, choice-discipline-flavored (not `whnf`-timeout this time):** the sub-step `hb :
+(m % 2^(ℓ+1)).testBit ℓ = true`, first written as `rw [Nat.testBit_mod_two_pow, h]; simp`,
+typechecked fine but silently made the *whole theorem* depend on `Classical.choice` — caught by
+this project's habitual axiom-audit, then bisected via `#print axioms` on each `have` cut out into
+its own standalone lemma (every sibling sub-lemma came back `⊆ {propext, Quot.sound}`; only `hb`'s
+own isolated version showed `Classical.choice`) down to that one bare `simp` closing a residual
+`decide (ℓ < ℓ+1) && true = true` goal through what appears to be a classical `Decidable`
+fallback rather than the concrete `Nat.decLt` instance. Fixed by replacing `simp` with an explicit
+`decide_eq_true_iff.mpr (Nat.lt_succ_self ℓ)` + `Bool.true_and` rewrite chain (no behavior change,
+same goal, just avoiding whatever simp-normal-form path pulled in choice). **Lesson for `(e)(b)(iii)`–
+`(iv)` and beyond: a bare `simp` that closes a `decide (_ : Prop) && _ = _`-shaped `Bool` goal is
+worth treating with suspicion — prefer `decide_eq_true_iff.mpr`/`decide_eq_false_iff_not.mpr` with
+an explicit `Prop`-level proof, then a targeted `Bool.true_and`/`Bool.false_and`/etc. rewrite,
+and always re-run `#print axioms` after any bare `simp`/`omega` call in a theorem that's supposed
+to stay choice-free.** After the fix, `#print axioms primrec_myClearBit`/`myClearBit_eq_xor` both
+give `⊆ {propext, Quot.sound}`. Zero `sorry`; `lake build Scott1980` (3166 jobs) clean.
+`arxiv.md`: `8.12(e)(b)(ii)` row → `Pass`; `8.12(e)(b)` umbrella updated to note `(i)`–`(ii)`
+`Pass`, `(iii)`–`(iv)` not started.
+
+**Status: `8.12(e)(b)(ii)` is `Pass`.** **Resume protocol:** next up is `8.12(e)(b)(iii)` —
+`splitVLeft`/`splitVRight` definitions and their `Nat.Primrec` proofs, per `arxiv.md`'s row: with
+`(k, m) := canonIdx n` (unpaired), `ℓ₀ := myFirstBit (myUpsample k (k+1) m) (2^(k+1))`,
+`splitVLeft n := Nat.pair (k+1) (2^ℓ₀)`, `splitVRight n := Nat.pair (k+1) (myClearBit (myUpsample
+k (k+1) m) ℓ₀)` — a mechanical composition of `canonIdx`/`myUpsample` (`LevelSetPrimrec.lean`,
+both `Pass`) with `(e)(b)(i)`'s `myFirstBit` and `(e)(b)(ii)`'s `myClearBit`, following the same
+composition-proof idiom used throughout `LevelSetPrimrec.lean`. **Apply both lessons above**: any
+`Nat.Primrec` composition routing through an explicit `Nat.pair`/`.unpair` round-trip needs
+`.of_eq (fun w => by simp only [unpair_pair_fst, unpair_pair_snd])` rather than a bare `:=`; and
+re-run `#print axioms` on every new declaration once written, treating any bare `simp`/`omega`
+inside a would-be-choice-free proof with suspicion if `Classical.choice` shows up unexpectedly.
+Then `(e)(b)(iv)` (correctness — `VX_splitVLeft`/`VX_splitVRight`/`splitV_disjoint`/`splitV_union`,
+completing `(e)(b)`).
