@@ -9501,3 +9501,50 @@ instantiations), mirroring `Exercise812c.lean`'s `transfer_empty_combined`/`tran
 specializing via `combinedXCode_even`/`_odd`/`combinedYCode_even`/`_odd`. Read `arxiv.md`'s
 `8.12(d)(5)(b)(iv)` row before starting. The `(e)(b)`–`(f)(a)` `SplitV.lean` thread (three checkpoints
 back) remains open in parallel; no dependency between the two has been identified.
+
+## 2026-07-05 checkpoint — `8.12(d)(5)(b)(iv)` (`Pass`) — `8.12(d)(5)(b)` complete
+
+Completed `(d)(5)(b)(iv)`, the headline transfer theorems, appended to `Exercise812d.lean`'s new
+`section CombinedCodeTransfer`. Direct transcription of `Exercise812c.lean`'s
+`transfer_empty_combined`/`transfer_subset_combined`/`transfer_double_subset_combined`/
+`transfer_inter_eq_combined` (lines 1494–1649) plus the even/odd specializations
+`X_subset_iff_XPseq_subset`/`YPseq_subset_iff_Y_subset`/`X_inter_eq_iff_XPseq_inter_eq`/
+`YPseq_inter_eq_iff_Y_inter_eq` (lines 1656–1730), substituting `combinedX ↦ combinedXCode`,
+`combinedY ↦ combinedYCode`, `hcore ↦ hcoreCode` throughout — every proof step carried over
+unchanged (the `cs`-list `Set.ext`/`tauto` bookkeeping, the `Set.not_nonempty_iff_eq_empty`/
+`not_iff_not` closing moves, `transfer_inter_eq_combinedCode`'s three-lemma `h1`/`h2`/`h3`
+assembly).
+
+One genuine simplification found, not available to `Exercise812c.lean`'s classical setting: no
+`combinedX_subset_master`-style case split on parity is needed for the code-level analogue.
+`Exercise812c.lean`'s own `combinedX_subset_master`/`combinedY_subset_master` needed `hXmem`/
+`hYmem` plus a separate `YPseq_subset_master`/`XPseq_subset_master` theorem for the odd branch,
+since `X`/`Y` there are bare enumeration functions only assumed (not proved) `D₀.mem`/`D₁.mem`-
+valued, and `YPseq`/`XPseq`'s images are not literally values of `X`/`Y`. Here every value of
+`combinedXCode`/`combinedYCode`, at *either* parity, is literally `P₀.X _`/`P₁.X _` for some index
+(`YPseqCode`/`XPseqCode` are themselves `ℕ`-valued, fed back through `P₀.X`/`P₁.X`), so
+`ComputablePresentation.mem_X` (`∀ n, V.mem (X n)`, unconditional on `n`) plus `D₀.sub_master`/
+`D₁.sub_master` closes `combinedXCode_subset_master`/`combinedYCode_subset_master` uniformly via a
+single `unfold combinedXCode; split <;> exact D₀.sub_master (P₀.mem_X _)`, with no `hXmem`/
+`hYmem`-style hypothesis and no separate `XPseqCode_subset_master`/`YPseqCode_subset_master`
+theorem needed at all.
+
+Built (`lake build` — 3165 jobs — and `lake env lean Exercise812d.lean` directly, both clean; only
+the pre-existing `(b)(ii)`-era `linter.unusedSectionVars` warning on `yPseqAtomIdx_eq_of_dichotomy`
+remains, unchanged). Zero `sorry`. Axiom-audited: all four headline theorems
+(`X_subset_iff_XPseqCode_subset`, `YPseqCode_subset_iff_Y_subset`,
+`X_inter_eq_iff_XPseqCode_inter_eq`, `YPseqCode_inter_eq_iff_Y_inter_eq`) give
+`⊆ {propext, Classical.choice, Quot.sound}`, matching this section's established baseline.
+`arxiv.md`'s `8.12(d)(5)(b)(iv)` row updated to `Pass`; the parent `8.12(d)(5)(b)` row's status
+updated to `Pass` (all four sub-parts `(b)(i)`–`(b)(iv)` complete).
+
+**Status: `8.12(d)(5)(b)`, hence `8.12(d)(5)(b)(iv)`, is `Pass`.** **Resume protocol:** next up is
+`8.12(d)(5)(c)`, the cross-family order/equality facts (`X_subset_YPseqCode_iff_XPseqCode_subset_Y`/
+`YPseqCode_subset_X_iff_Y_subset_XPseqCode`/`XPseqCode_eq_Y_iff_X_eq_YPseqCode`) — per `arxiv.md`'s
+own proof-notes plan, these need **no new proof machinery** beyond `(d)(5)(b)`'s transfer facts
+just completed: direct specializations of `X_subset_iff_XPseqCode_subset`/
+`YPseqCode_subset_iff_Y_subset` (mixed even/odd resp. odd/even index pairs), mirroring
+`Exercise812c.lean`'s `X_subset_YPseq_iff_XPseq_subset_Y`/`YPseq_subset_X_iff_Y_subset_XPseq`/
+`XPseq_eq_Y_iff_X_eq_YPseq` ((c)(vii)(3)/(4)). Read `arxiv.md`'s `8.12(d)(5)(c)` row before
+starting. The `(e)(b)`–`(f)(a)` `SplitV.lean` thread (four checkpoints back) remains open in
+parallel; no dependency between the two has been identified.

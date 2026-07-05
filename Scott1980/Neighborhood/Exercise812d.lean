@@ -4880,3 +4880,290 @@ theorem hcoreCode (δ' : ℕ → Bool) (n : ℕ) :
       hxSplit hD₁pos hD₁diff hD₁nomin hySplit hD₀mne hD₁mne hUnion0 hUnion1 δ' (n / 2)
 
 end CombinedCode
+
+/-! ### Exercise 8.12(d)(5)(b)(iv): the headline transfer theorems
+
+Instantiates `Theorem88.lean`'s fully generic `transfer_dir` with `Z1 := combinedXCode`,
+`M1 := D₀.master`, `Z2 := combinedYCode`, `M2 := D₁.master`, and `(b)(iii)`'s `hcoreCode`,
+transcribing `Exercise812c.lean`'s own `transfer_empty_combined`/`transfer_subset_combined`/
+`transfer_double_subset_combined`/`transfer_inter_eq_combined` wrappers one-for-one with
+`combinedX ↦ combinedXCode`, `combinedY ↦ combinedYCode`, `hcore ↦ hcoreCode`. The headline
+deliverable then specializes each even/even and odd/odd index pair back down to plain statements
+about `P₀.X`/`XPseqCode` and `YPseqCode`/`P₁.X`, discharging the `∩ master` bookkeeping with
+`D₀.sub_master`/`D₁.sub_master` applied to `P₀.mem_X`/`P₁.mem_X` directly — a genuine
+simplification over `Exercise812c.lean`'s own proof: since every value of `combinedXCode`/
+`combinedYCode` is literally `P₀.X _`/`P₁.X _` for some index, no separate `XPseq_subset_master`/
+`YPseq_subset_master`-style theorem is needed, `ComputablePresentation.mem_X` already covers every
+case (even or odd) uniformly. -/
+
+section CombinedCodeTransfer
+
+variable {α β : Type*} {D₀ : NeighborhoodSystem α} {D₁ : NeighborhoodSystem β}
+  (P₀ : ComputablePresentation D₀) (P₁ : ComputablePresentation D₁)
+  (hDiff0 : IsComputableDiff P₀) (hDiff1 : IsComputableDiff P₁)
+  (splitX : Set α → Set β → Set α → Set β × Set β) (hSplitX : IsComputableSplit P₀ P₁ splitX)
+  (splitY : Set β → Set α → Set β → Set α × Set α) (hSplitY : IsComputableSplit P₁ P₀ splitY)
+  (hD₀pos : D₀.IsPositive) (hD₀diff : D₀.DiffClosed) (hD₀nomin : D₀.NoMinimal)
+  (hxSplit : SplitSpec' D₁ splitX)
+  (hD₁pos : D₁.IsPositive) (hD₁diff : D₁.DiffClosed) (hD₁nomin : D₁.NoMinimal)
+  (hySplit : SplitSpec' D₀ splitY)
+  (hD₀mne : D₀.master.Nonempty) (hD₁mne : D₁.master.Nonempty)
+  (hUnion0 : IsComputableUnion P₀) (hUnion1 : IsComputableUnion P₁)
+
+/-- `combinedXCode i` is always `⊆ D₀.master`: every value, at either parity, is literally
+`P₀.X _` for some index, so `D₀.sub_master`/`P₀.mem_X` closes both branches uniformly (unlike
+`Exercise812c.lean`'s `combinedX_subset_master`, no case split on parity or `hXmem`/`YPseq_subset_
+master`-style helper theorem is needed). -/
+theorem combinedXCode_subset_master (i : ℕ) :
+    combinedXCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0 i ⊆ D₀.master := by
+  unfold combinedXCode
+  split <;> exact D₀.sub_master (P₀.mem_X _)
+
+/-- `combinedYCode i` is always `⊆ D₁.master`, symmetric to `combinedXCode_subset_master`. -/
+theorem combinedYCode_subset_master (i : ℕ) :
+    combinedYCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion1 i ⊆ D₁.master := by
+  unfold combinedYCode
+  split <;> exact D₁.sub_master (P₁.mem_X _)
+
+include hD₀pos hD₀diff hD₀nomin hxSplit hD₁pos hD₁diff hD₁nomin hySplit hD₀mne hD₁mne hUnion0
+  hUnion1 in
+theorem transfer_empty_combinedCode {cs : List (ℕ × Bool)} {n : ℕ} (hn : ∀ p ∈ cs, p.1 < n) :
+    {x ∈ D₀.master | ∀ p ∈ cs,
+        (p.2 = true ↔ x ∈ combinedXCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0
+          p.1)}.Nonempty ↔
+      {y ∈ D₁.master | ∀ p ∈ cs,
+        (p.2 = true ↔ y ∈ combinedYCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion1
+          p.1)}.Nonempty := by
+  have hc := hcoreCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hD₀pos hD₀diff hD₀nomin
+    hxSplit hD₁pos hD₁diff hD₁nomin hySplit hD₀mne hD₁mne hUnion0 hUnion1
+  have hc' : ∀ δ n,
+      genAtom (combinedYCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion1) D₁.master
+          δ n = ∅ ↔
+        genAtom (combinedXCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0) D₀.master
+          δ n = ∅ :=
+    fun δ n => (hc δ n).symm
+  exact ⟨transfer_dir (combinedXCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0)
+      D₀.master (combinedYCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion1) D₁.master
+      hc hn,
+    transfer_dir (combinedYCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion1)
+      D₁.master (combinedXCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0) D₀.master
+      hc' hn⟩
+
+include hD₀pos hD₀diff hD₀nomin hxSplit hD₁pos hD₁diff hD₁nomin hySplit hD₀mne hD₁mne hUnion0
+  hUnion1 in
+theorem transfer_subset_combinedCode (i j : ℕ) :
+    D₀.master ∩ combinedXCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0 i ⊆
+        combinedXCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0 j ↔
+      D₁.master ∩ combinedYCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion1 i ⊆
+        combinedYCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion1 j := by
+  have key := transfer_empty_combinedCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hD₀pos
+    hD₀diff hD₀nomin hxSplit hD₁pos hD₁diff hD₁nomin hySplit hD₀mne hD₁mne hUnion0 hUnion1
+    (cs := [(i, true), (j, false)]) (n := max i j + 1)
+    (by simp only [List.mem_cons, List.not_mem_nil, or_false]
+        rintro p (rfl | rfl) <;> simp)
+  have hLHS : {x ∈ D₀.master | ∀ p ∈ [(i, true), (j, false)],
+      (p.2 = true ↔ x ∈ combinedXCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0
+        p.1)}
+      = (D₀.master ∩ combinedXCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0 i) \
+        combinedXCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0 j := by
+    ext x
+    simp only [Set.mem_setOf_eq, List.mem_cons, List.not_mem_nil, or_false,
+      forall_eq_or_imp, forall_eq, Set.mem_diff, Set.mem_inter_iff]
+    tauto
+  have hRHS : {y ∈ D₁.master | ∀ p ∈ [(i, true), (j, false)],
+      (p.2 = true ↔ y ∈ combinedYCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion1
+        p.1)}
+      = (D₁.master ∩ combinedYCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion1 i) \
+        combinedYCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion1 j := by
+    ext y
+    simp only [Set.mem_setOf_eq, List.mem_cons, List.not_mem_nil, or_false,
+      forall_eq_or_imp, forall_eq, Set.mem_diff, Set.mem_inter_iff]
+    tauto
+  rw [hLHS, hRHS] at key
+  rw [← Set.diff_eq_empty, ← Set.diff_eq_empty, ← Set.not_nonempty_iff_eq_empty,
+    ← Set.not_nonempty_iff_eq_empty, not_iff_not]
+  exact key
+
+include hD₀pos hD₀diff hD₀nomin hxSplit hD₁pos hD₁diff hD₁nomin hySplit hD₀mne hD₁mne hUnion0
+  hUnion1 in
+theorem transfer_double_subset_combinedCode (i j k : ℕ) :
+    D₀.master ∩ combinedXCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0 i ∩
+        combinedXCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0 j ⊆
+        combinedXCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0 k ↔
+      D₁.master ∩ combinedYCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion1 i ∩
+          combinedYCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion1 j ⊆
+        combinedYCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion1 k := by
+  have key := transfer_empty_combinedCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hD₀pos
+    hD₀diff hD₀nomin hxSplit hD₁pos hD₁diff hD₁nomin hySplit hD₀mne hD₁mne hUnion0 hUnion1
+    (cs := [(i, true), (j, true), (k, false)]) (n := max i (max j k) + 1)
+    (by simp only [List.mem_cons, List.not_mem_nil, or_false]
+        rintro p (rfl | rfl | rfl) <;>
+          simp [(Nat.le_max_left j k).trans (Nat.le_max_right i (max j k)),
+            (Nat.le_max_right j k).trans (Nat.le_max_right i (max j k))])
+  have hLHS : {x ∈ D₀.master | ∀ p ∈ [(i, true), (j, true), (k, false)],
+      (p.2 = true ↔ x ∈ combinedXCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0
+        p.1)}
+      = (D₀.master ∩ combinedXCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0 i ∩
+          combinedXCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0 j) \
+        combinedXCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0 k := by
+    ext x
+    simp only [Set.mem_setOf_eq, List.mem_cons, List.not_mem_nil, or_false,
+      forall_eq_or_imp, forall_eq, Set.mem_diff, Set.mem_inter_iff]
+    tauto
+  have hRHS : {y ∈ D₁.master | ∀ p ∈ [(i, true), (j, true), (k, false)],
+      (p.2 = true ↔ y ∈ combinedYCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion1
+        p.1)}
+      = (D₁.master ∩ combinedYCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion1 i ∩
+          combinedYCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion1 j) \
+        combinedYCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion1 k := by
+    ext y
+    simp only [Set.mem_setOf_eq, List.mem_cons, List.not_mem_nil, or_false,
+      forall_eq_or_imp, forall_eq, Set.mem_diff, Set.mem_inter_iff]
+    tauto
+  rw [hLHS, hRHS] at key
+  rw [← Set.diff_eq_empty, ← Set.diff_eq_empty, ← Set.not_nonempty_iff_eq_empty,
+    ← Set.not_nonempty_iff_eq_empty, not_iff_not]
+  exact key
+
+include hD₀pos hD₀diff hD₀nomin hxSplit hD₁pos hD₁diff hD₁nomin hySplit hD₀mne hD₁mne hUnion0
+  hUnion1 in
+theorem transfer_inter_eq_combinedCode (i j k : ℕ)
+    (hi : combinedXCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0 i ⊆ D₀.master)
+    (hk : combinedXCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0 k ⊆ D₀.master) :
+    combinedXCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0 i ∩
+        combinedXCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0 j =
+        combinedXCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0 k ↔
+      combinedYCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion1 i ∩
+          combinedYCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion1 j =
+        combinedYCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion1 k := by
+  have h1 : combinedXCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0 k ⊆
+        combinedXCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0 i ↔
+      combinedYCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion1 k ⊆
+        combinedYCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion1 i := by
+    have := transfer_subset_combinedCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hD₀pos
+      hD₀diff hD₀nomin hxSplit hD₁pos hD₁diff hD₁nomin hySplit hD₀mne hD₁mne hUnion0 hUnion1 k i
+    rwa [Set.inter_eq_self_of_subset_right hk,
+      Set.inter_eq_self_of_subset_right
+        (combinedYCode_subset_master P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion1
+          k)] at this
+  have h2 : combinedXCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0 k ⊆
+        combinedXCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0 j ↔
+      combinedYCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion1 k ⊆
+        combinedYCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion1 j := by
+    have := transfer_subset_combinedCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hD₀pos
+      hD₀diff hD₀nomin hxSplit hD₁pos hD₁diff hD₁nomin hySplit hD₀mne hD₁mne hUnion0 hUnion1 k j
+    rwa [Set.inter_eq_self_of_subset_right hk,
+      Set.inter_eq_self_of_subset_right
+        (combinedYCode_subset_master P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion1
+          k)] at this
+  have h3 : combinedXCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0 i ∩
+        combinedXCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0 j ⊆
+        combinedXCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0 k ↔
+      combinedYCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion1 i ∩
+          combinedYCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion1 j ⊆
+        combinedYCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion1 k := by
+    have := transfer_double_subset_combinedCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY
+      hD₀pos hD₀diff hD₀nomin hxSplit hD₁pos hD₁diff hD₁nomin hySplit hD₀mne hD₁mne hUnion0 hUnion1
+      i j k
+    rwa [Set.inter_eq_self_of_subset_right hi,
+      Set.inter_eq_self_of_subset_right
+        (combinedYCode_subset_master P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion1
+          i)] at this
+  constructor
+  · intro heq
+    have hki : combinedXCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0 k ⊆
+        combinedXCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0 i :=
+      heq ▸ Set.inter_subset_left
+    have hkj : combinedXCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0 k ⊆
+        combinedXCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0 j :=
+      heq ▸ Set.inter_subset_right
+    have hijk : combinedXCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0 i ∩
+        combinedXCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0 j ⊆
+        combinedXCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0 k := heq ▸ subset_rfl
+    exact Set.Subset.antisymm (h3.mp hijk) (Set.subset_inter (h1.mp hki) (h2.mp hkj))
+  · intro heq
+    have hki : combinedYCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion1 k ⊆
+        combinedYCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion1 i :=
+      heq ▸ Set.inter_subset_left
+    have hkj : combinedYCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion1 k ⊆
+        combinedYCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion1 j :=
+      heq ▸ Set.inter_subset_right
+    have hijk : combinedYCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion1 i ∩
+        combinedYCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion1 j ⊆
+        combinedYCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion1 k := heq ▸ subset_rfl
+    exact Set.Subset.antisymm (h3.mpr hijk) (Set.subset_inter (h1.mpr hki) (h2.mpr hkj))
+
+/-! ### The headline facts: specializing `transfer_*_combinedCode` to even/even and odd/odd
+indices
+
+The actual deliverable of Exercise 8.12(d)(5)(b): plain statements about `P₀.X`/`XPseqCode` (from
+the even-index specialization) and `YPseqCode`/`P₁.X` (from the odd-index specialization), needed
+for `(d)(5)(c)`–`(e)`'s `DomainIsoCode` assembly. -/
+
+include hD₀pos hD₀diff hD₀nomin hxSplit hD₁pos hD₁diff hD₁nomin hySplit hD₀mne hD₁mne hUnion0
+  hUnion1 in
+theorem X_subset_iff_XPseqCode_subset (i j : ℕ) :
+    P₀.X i ⊆ P₀.X j ↔
+      P₁.X (XPseqCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion1 i) ⊆
+        P₁.X (XPseqCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion1 j) := by
+  have key := transfer_subset_combinedCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hD₀pos
+    hD₀diff hD₀nomin hxSplit hD₁pos hD₁diff hD₁nomin hySplit hD₀mne hD₁mne hUnion0 hUnion1 (2 * i)
+    (2 * j)
+  rw [combinedXCode_even, combinedXCode_even, combinedYCode_even, combinedYCode_even,
+    Set.inter_eq_self_of_subset_right (D₀.sub_master (P₀.mem_X i)),
+    Set.inter_eq_self_of_subset_right
+      (D₁.sub_master (P₁.mem_X
+        (XPseqCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion1 i)))] at key
+  exact key
+
+include hD₀pos hD₀diff hD₀nomin hxSplit hD₁pos hD₁diff hD₁nomin hySplit hD₀mne hD₁mne hUnion0
+  hUnion1 in
+theorem YPseqCode_subset_iff_Y_subset (i j : ℕ) :
+    P₀.X (YPseqCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0 i) ⊆
+        P₀.X (YPseqCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0 j) ↔
+      P₁.X i ⊆ P₁.X j := by
+  have key := transfer_subset_combinedCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hD₀pos
+    hD₀diff hD₀nomin hxSplit hD₁pos hD₁diff hD₁nomin hySplit hD₀mne hD₁mne hUnion0 hUnion1
+    (2 * i + 1) (2 * j + 1)
+  rw [combinedXCode_odd, combinedXCode_odd, combinedYCode_odd, combinedYCode_odd,
+    Set.inter_eq_self_of_subset_right
+      (D₀.sub_master (P₀.mem_X
+        (YPseqCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0 i))),
+    Set.inter_eq_self_of_subset_right (D₁.sub_master (P₁.mem_X i))] at key
+  exact key
+
+include hD₀pos hD₀diff hD₀nomin hxSplit hD₁pos hD₁diff hD₁nomin hySplit hD₀mne hD₁mne hUnion0
+  hUnion1 in
+theorem X_inter_eq_iff_XPseqCode_inter_eq (i j k : ℕ) :
+    P₀.X i ∩ P₀.X j = P₀.X k ↔
+      P₁.X (XPseqCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion1 i) ∩
+          P₁.X (XPseqCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion1 j) =
+        P₁.X (XPseqCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion1 k) := by
+  have key := transfer_inter_eq_combinedCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY
+    hD₀pos hD₀diff hD₀nomin hxSplit hD₁pos hD₁diff hD₁nomin hySplit hD₀mne hD₁mne hUnion0 hUnion1
+    (2 * i) (2 * j) (2 * k)
+    (combinedXCode_subset_master P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0 (2 * i))
+    (combinedXCode_subset_master P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0 (2 * k))
+  rw [combinedXCode_even, combinedXCode_even, combinedXCode_even, combinedYCode_even,
+    combinedYCode_even, combinedYCode_even] at key
+  exact key
+
+include hD₀pos hD₀diff hD₀nomin hxSplit hD₁pos hD₁diff hD₁nomin hySplit hD₀mne hD₁mne hUnion0
+  hUnion1 in
+theorem YPseqCode_inter_eq_iff_Y_inter_eq (i j k : ℕ) :
+    P₀.X (YPseqCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0 i) ∩
+        P₀.X (YPseqCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0 j) =
+        P₀.X (YPseqCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0 k) ↔
+      P₁.X i ∩ P₁.X j = P₁.X k := by
+  have key := transfer_inter_eq_combinedCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY
+    hD₀pos hD₀diff hD₀nomin hxSplit hD₁pos hD₁diff hD₁nomin hySplit hD₀mne hD₁mne hUnion0 hUnion1
+    (2 * i + 1) (2 * j + 1) (2 * k + 1)
+    (combinedXCode_subset_master P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0
+      (2 * i + 1))
+    (combinedXCode_subset_master P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0
+      (2 * k + 1))
+  rw [combinedXCode_odd, combinedXCode_odd, combinedXCode_odd, combinedYCode_odd,
+    combinedYCode_odd, combinedYCode_odd] at key
+  exact key
+
+end CombinedCodeTransfer
