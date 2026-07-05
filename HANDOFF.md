@@ -9402,3 +9402,47 @@ independent sources of disjointness to rule out in the `⊇` direction — diffe
 but different `bx`). Read `arxiv.md`'s `8.12(d)(5)(b)(ii)` row before starting. `(d)(5)(b)(i)`'s
 `exists_deltaPair_ne_of_lt_of_ne` is reusable verbatim. The `(e)(b)`–`(f)(a)` `SplitV.lean` thread
 (previous checkpoint) remains open in parallel; no dependency between the two has been identified.
+
+## 2026-07-05 checkpoint — `8.12(d)(5)(b)(ii)` (`Pass`)
+
+Completed `(d)(5)(b)(ii)`, the `Y`-side I-formula for `YPseqCode`, appended to `Exercise812d.lean`'s
+new `section YPseqCodeIFormula`. The anticipated `bx = 0`/`bx = 1` code-level closed-form split
+turned out to be unnecessary: comparing against the *classical* `xStepG`-level set
+`(xStepG splitX A B (P₀.X n) b).1` (rather than a fully code-level `xPseqAtomIdx0`-style closed
+form) as the intermediate target let the argument go through uniformly for both bits of `b`, so no
+new `bx = 0` analogue of `(d)(5)(a)`'s `xPseqAtomIdx0_eq` was needed.
+
+Five lemmas, in dependency order: `atomPairJunk_eq_zero_of_yPseqAtomJunk` (peels both junk-propagation
+layers of the nested `ySubStep ∘ xSubStep` state back to `atomPairJunk = 0`); `yPseqAtomIdx_subset_xStepGFst`
+(chases `xSubStep_correct`/`ySubStep_correct` through the packed state, then `yStepG_fst_subset`);
+`yPseqAtomIdx_subset_atomPairIdx0` (coarsens finding 2 via `xStepG_fst_subset` to the `atomPairIdx0`
+level, for reuse in `atomPairCodeState_disjoint`); `yPseqAtomIdx_eq_of_dichotomy` (the two-source
+disjointness case split: different `i` uses `(b)(i)`'s `exists_deltaPair_ne_of_lt_of_ne` +
+`atomPairCodeState_disjoint`; same `i` but different `b` uses `xStepG_disjoint_of_ne` directly — both
+genuinely needed, confirming `(d)(5)(b)(ii)`'s original scoping note); and the headline
+`yPseqAtomIdx_eq_inter_YPseqCode`.
+
+Several small Lean mechanics bugs surfaced and were fixed during execution (all in the pattern of
+"direction/shape of an intermediate hypothesis doesn't quite match what the next lemma expects"):
+a `D₀.mem X` proof needed wrapping in `Or.inr` to match a `X = ∅ ∨ D₀.mem X` argument shape; an
+`↔`-equation used in a `rw` was flipped (`rw [← h]` vs `rw [h]`) in two places; and `subst` inside a
+`by_cases i' = i` branch ate the shared variable `i` out of scope for the rest of that branch (fixed
+by `rw [hii'] at ...` instead of `subst`, keeping `i` alive), which also broke a `.symm` dot-notation
+call on a `≠`-shaped hypothesis (fixed via explicit `Ne.symm`).
+
+Built (`lake build` — 2990 jobs — and `lake env lean Exercise812d.lean` directly, both clean; one
+harmless `linter.unusedSectionVars` warning on `yPseqAtomIdx_eq_of_dichotomy` left in place, since
+trimming the shared section `include`/positional-argument list to silence it would silently reorder
+arguments at other call sites in the file — not worth the risk for a lint warning). Zero `sorry`.
+Axiom-audited: `yPseqAtomIdx_eq_inter_YPseqCode` gives `⊆ {propext, Classical.choice, Quot.sound}`,
+identical to `(b)(i)`'s headline footprint (confirmed by diffing against a fresh `#print axioms` on
+`xPseqAtomIdx_eq_inter_XPseqCode`) — no new choice introduced beyond this section's established
+baseline. `arxiv.md`'s `8.12(d)(5)(b)(ii)` row updated to `Pass` with the dense proof note above; the
+parent `8.12(d)(5)(b)` row's status line updated to reflect both `(b)(i)` and `(b)(ii)` as `Pass`.
+
+**Status: `8.12(d)(5)(b)(ii)` is `Pass`.** **Resume protocol:** next up is `(d)(5)(b)(iii)`
+(`combinedXCode`/`combinedYCode`/`combinedδCode`, and `hcore` — see `arxiv.md`'s row for the full
+plan, including the still-outstanding `succ`-shaped closed-form wrappers over `(b)(i)`/`(b)(ii)`'s
+headline facts that `(b)(iii)` will need for its odd-depth half-steps). The `(e)(b)`–`(f)(a)`
+`SplitV.lean` thread (two checkpoints back) remains open in parallel; no dependency between the two
+has been identified.
