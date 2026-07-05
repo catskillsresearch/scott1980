@@ -9922,3 +9922,77 @@ complete and `8.12(d)(6)` (final `EffectiveIso` assembly) becomes the next targe
 own re-scoping investigation already found this is very likely overstated, only `IsComputableSplit`
 is actually consumed — see `8.12(e)`'s row, findings 1–2). The `(e)(b)`–`(f)(a)` `SplitV.lean`
 thread remains open in parallel; no dependency identified.
+
+**2026-07-05 — Exercise 8.12(d)(5)(f): scoping-only pass (no code), per user request.** Re-scoped
+`8.12(d)(5)(f)` into 4 sub-parts, `arxiv.md` rows **`8.12(d)(5)(f)(i)`–`(iv)`**, before writing any
+Lean, by hand-tracing the exact unfolding against `Approximable.lean`'s `ofIso`, `Basic.lean`'s
+`mem_principal`, and — correcting this row's own prior proof-note — `Definition72.lean`'s
+`comp_isComputable`/`apply_isComputableElement` (not `Theorem88n.lean`'s `isoInj_isComputableMap`,
+which was the wrong precedent; see below). Split mirrors `(d)(5)(d)`'s per-direction pairing (one
+`rel_iff` lemma feeding one `IsComputableMap` theorem, done twice) rather than `(d)(5)(e)`'s single
+dependent chain, since the two directions are independent here: **`(f)(i)`** `toD1Code_rel_iff`
+(confirmed by hand: `ofIso`'s `rel` field unfolds through `toD1Code`'s `mem`/`mem_principal`
+directly to the stated `∃ k, P₁.X m = P₁.X (XPseqCode … k) ∧ P₀.X n ⊆ P₀.X k` shape, no search, no
+case split, short); **`(f)(ii)`** `domainIsoCode812d_isComputableMap` (depends on `(f)(i)`);
+**`(f)(iii)`** `toD0Code_rel_iff` (exact mirror of `(f)(i)`, independent of `(f)(ii)`);
+**`(f)(iv)`** `domainIsoCode812d_symm_isComputableMap` (depends on `(f)(iii)`, mirror of `(f)(ii)`).
+**Correction found during scoping**: the *previous* checkpoint's resume note claimed the
+computability half "mirrors `isoInj_isComputableMap`'s proof shape line-for-line" — this is wrong.
+`isoInj_isComputableMap`'s target relation (`isoInj_rel_iff_incl`) has **no unbounded existential**
+(`eIdx` is a deterministic involution supplying a unique witness directly), so its proof is a single
+`RecDecidable.of_iff`/`.re` step. Our `toD1Code_rel_iff`'s RHS retains a **genuine unbounded `∃ k`**
+(`XPseqCode` isn't known invertible), so the real precedent is `comp_isComputable`'s
+`REPred.and`/`REPred.proj` existential-closure machinery (already used project-wide for "does there
+exist a witness index" computability arguments) — `(f)(ii)`'s row now states this correctly. No
+Lean code changed this checkpoint — `arxiv.md`'s `8.12(d)(5)(f)` row rewritten with the corrected
+finding and a 4-way sub-part breakdown; new rows `8.12(d)(5)(f)(i)`–`(iv)` added, all `Scoped, not
+started`.
+
+**Status: Exercise 8.12(d)(5)(f) is `Partial`, now scoped into `(i)`–`(iv)`, none started.**
+**Resume protocol:** start with `8.12(d)(5)(f)(i)` (`toD1Code_rel_iff`) — per `arxiv.md`'s row,
+unfold `ofIso`'s `rel` field at `e := domainIsoCode812d`, `X := P₀.X n`, identify
+`e (D₀.principal hXn)` with `toD1Code … (D₀.principal hXn)` (since `domainIsoCode812d.toFun =
+toD1Code …`), unfold `toD1Code`'s `mem` field, `simp [mem_principal]`, drop the redundant
+`D₀.mem (P₀.X k)` conjunct via `P₀.mem_X k`; direct transcription of `Theorem88n.lean`'s
+`isoInj_rel_iff_incl` proof shape. Then `(f)(ii)` (`domainIsoCode812d_isComputableMap`, the
+`REPred.and`/`.proj` existential closure over `P₁.eq_computable` reindexed by `primrec_XPseqCode`
+and `P₀.incl_computable`), then `(f)(iii)`/`(f)(iv)` (exact mirrors via `YPseqCode`/
+`primrec_YPseqCode`/`P₀.eq_computable`/`P₁.incl_computable`). Once all four land, `8.12(d)(5)` is
+complete and `8.12(d)(6)` (final `EffectiveIso` assembly) becomes the next target. The
+`(e)(b)`–`(f)(a)` `SplitV.lean` thread remains open in parallel; no dependency identified.
+
+**2026-07-05 — Exercise 8.12(d)(5)(f)(i) `Pass`: `toD1Code_rel_iff`.** New `section
+ToD1CodeRelIff` appended to `Exercise812d.lean` (after `DomainIsoCode812d`). Matched the plan
+exactly, first try: `theorem toD1Code_rel_iff (n m : ℕ) : (ofIso (domainIsoCode812d …)).rel (P₀.X
+n) (P₁.X m) ↔ ∃ k, P₁.X m = P₁.X (XPseqCode … k) ∧ P₀.X n ⊆ P₀.X k`, proved by `show (∃ _ : D₀.mem
+(P₀.X n), (toD1Code … (D₀.principal (P₀.mem_X n))).mem (P₁.X m)) ↔ _`, `simp only [toD1Code,
+mem_principal]`, then a two-line `constructor`/`rintro`/`exact` — direct transcription of
+`Theorem88n.lean`'s `isoInj_rel_iff_incl` shape, no search, no case split. **One wrinkle**:
+`Exercise812d.lean`'s top-level `open NeighborhoodSystem Domain.Recursive` lacked
+`ApproximableMap`, so the bare identifier `ofIso` (`ApproximableMap.ofIso`) was "unknown
+identifier / function expected" until `ApproximableMap` was added to that `open` line (a one-line,
+file-wide fix, harmless to every other declaration in the file). Zero `sorry`; `lake build
+Scott1980` (3165 jobs) and `lake env lean Exercise812d.lean` both clean (only the pre-existing
+`(b)(ii)`-era `linter.unusedSectionVars` warning on `yPseqAtomIdx_eq_of_dichotomy` remains,
+unchanged — not introduced by this checkpoint). `#print axioms toD1Code_rel_iff` gives `⊆
+{propext, Classical.choice, Quot.sound}`, matching this section's established baseline.
+`arxiv.md`: `8.12(d)(5)(f)(i)` row updated to `Pass`; `8.12(d)(5)(f)` umbrella row updated to
+note `(f)(i)` `Pass`, `(f)(ii)`–`(iv)` not started.
+
+**Status: `8.12(d)(5)(f)(i)` is `Pass`.** **Resume protocol:** next up is `8.12(d)(5)(f)(ii)`
+(`domainIsoCode812d_isComputableMap`) — per `arxiv.md`'s row, `IsComputableMap P₀ P₁ (ofIso
+(domainIsoCode812d …))` unfolds (Definition 7.2) to `REPred₂ (fun n m => (ofIso …).rel (P₀.X n)
+(P₁.X m))`; via `(f)(i)`'s `toD1Code_rel_iff` this becomes `REPred₂ (fun n m => ∃ k, P₁.X m =
+P₁.X (XPseqCode … k) ∧ P₀.X n ⊆ P₀.X k)`. Build via `Definition72.lean`'s `comp_isComputable`
+pattern (**not** `isoInj_isComputableMap`'s simpler single-step shape, since the `∃ k` here is
+genuine, unlike `eIdx`'s deterministic witness — see the parent row's finding 2 for the full
+argument): `RecDecidable` for `P₁.X s.unpair.1 = P₁.X (XPseqCode … s.unpair.2)` via
+`RecDecidable.comp`/`P₁.eq_computable`/`primrec_XPseqCode` (`(d)(4)(c)`), `.re` to lift both this
+and `P₀.incl_computable` to `REPred`, reindex each along primitive-recursive projections out of a
+shared 3-tuple `(n, m, k)` encoding, `.and` to conjoin, `.proj` to close the outer `∃ k`,
+`REPred.of_iff` to match the exact target shape. Then `(f)(iii)` (`toD0Code_rel_iff`, exact mirror
+of `(f)(i)` via `toD0Code`/`YPseqCode`) and `(f)(iv)` (`domainIsoCode812d_symm_isComputableMap`,
+exact mirror of `(f)(ii)` via `(f)(iii)`/`primrec_YPseqCode`/`P₀.eq_computable`/
+`P₁.incl_computable`). Once all four land, `8.12(d)(5)` is complete and `8.12(d)(6)` (final
+`EffectiveIso` assembly) becomes the next target. The `(e)(b)`–`(f)(a)` `SplitV.lean` thread
+remains open in parallel; no dependency identified.
