@@ -9879,3 +9879,46 @@ one-line `⟨domainIsoCode812d …⟩` packaging, mirroring `isomorphic_812c` (l
 lands, `8.12(d)(5)` moves to `(f)` (the exercise's literal computability target) per that row's own
 proof-notes plan. The `(e)(b)`–`(f)(a)` `SplitV.lean` thread remains open in parallel; no
 dependency identified.
+
+**2026-07-05 — Exercise 8.12(d)(5)(e)(iv) `Pass`: `domainIsoCode812d`/`isomorphic_812d`, final
+assembly — `8.12(d)(5)(e)` is now COMPLETE (all four sub-parts).** New `section
+DomainIsoCode812d` appended to `Exercise812d.lean` (after `ToD1CodeToD0Code`).
+`noncomputable def domainIsoCode812d : DomainIso D₀ D₁` with `toFun`/`invFun`/`left_inv`/
+`right_inv` direct citations of `toD1Code`/`toD0Code`/`toD0Code_toD1Code`/`toD1Code_toD0Code`;
+`map_rel_iff'` a direct transcription of `Exercise812c.lean`'s `domainIso812c.map_rel_iff'`
+(lines 2094–2108): easy `mpr` (`x ≤ x2 → toD1Code x ≤ toD1Code x2`) pure unfolding; harder `mp`
+(`toD1Code x ≤ toD1Code x2 → x ≤ x2`) one `P₀.surj` call (`subst`-ing the target as some `P₀.X n`
+directly) plus `X_eq_iff_XPseqCode_eq` to transport the index equality back. `theorem
+isomorphic_812d : D₀ ≅ᴰ D₁ := ⟨domainIsoCode812d …⟩`, one-line packaging. **One wrinkle not
+anticipated by the plan**: the `include … in` lines for both declarations needed `hDiff0`/
+`hDiff1`/`hSplitX`/`hSplitY` added explicitly — unlike `P₀`/`P₁`/`splitX`/`splitY` (pulled in
+transitively since they appear in the *types* of already-included hypotheses like `hUnion0`/
+`hxSplit`), nothing forces these four into scope, yet the proof terms cite them directly as
+arguments to `toD1Code`/`toD0Code`/`X_eq_iff_XPseqCode_eq`, causing "unknown identifier" errors
+until added — fixed by prepending `hDiff0 hDiff1 hSplitX hSplitY` to both `include` lists. Zero
+`sorry`; `lake build Scott1980` (3165 jobs) and `lake env lean Exercise812d.lean` both clean
+(only the pre-existing `(b)(ii)`-era `linter.unusedSectionVars` warning on
+`yPseqAtomIdx_eq_of_dichotomy` remains, unchanged — not introduced by this checkpoint).
+`#print axioms domainIsoCode812d`/`isomorphic_812d` both give `⊆ {propext, Classical.choice,
+Quot.sound}`, matching this section's established baseline. `arxiv.md`: `8.12(d)(5)(e)(iv)` row
+updated to `Pass`; `8.12(d)(5)(e)` umbrella row rolled up to `Pass` (all of `(i)`–`(iv)` done);
+the grandparent `8.12(d)(5)` row updated to reflect `(a)`–`(e)` all `Pass`, only `(f)` remaining.
+
+**Status: `8.12(d)(5)(e)`, hence `8.12(d)(5)(e)(iv)`, is `Pass`.** **Resume protocol:** next up is
+`8.12(d)(5)(f)` — the exercise's literal computability target, completing `8.12(d)(5)` in full.
+Per `arxiv.md`'s own proof-notes plan (row `8.12(d)(5)(f)`): unfold `ofIso`/`toD1Code`/
+`V.principal` exactly as `Theorem88n.lean`'s `isoInj_rel_iff_incl` does, landing `(ofIso
+domainIsoCode812d).rel (P₀.X n) (P₁.X m)`'s unfolding on `∃ k, P₁.X m = P₁.X (XPseqCode … k) ∧
+P₀.X n ⊆ P₀.X k` (`toD1Code_rel_iff`); the outer `∃ k` is r.e. over a decidable body:
+`P₁.X m = P₁.X (XPseqCode … k)` is `P₁.eq_computable` (Definition 7.1, generic, needs no new
+proof) reindexed along the already-`Nat.Primrec` `XPseqCode` (`primrec_XPseqCode`, `(d)(4)(c)`)
+via `RecDecidable.of_iff`, conjoined (`RecDecidable.and`) with `P₀.incl_computable`;
+`REPred.of_iff` closes it, mirroring `isoInj_isComputableMap`'s proof shape line-for-line
+(`theorem domainIsoCode812d_isComputableMap : IsComputableMap P₀ P₁ (ofIso domainIsoCode812d)`).
+Symmetric for `toD0Code`/`YPseqCode`/`P₀.eq_computable`/`P₁.incl_computable`
+(`toD0Code_rel_iff`/`domainIsoCode812d_symm_isComputableMap`). Once `(f)` lands, `8.12(d)(5)` is
+complete and `8.12(d)(6)` (final `EffectiveIso` assembly) becomes the next target — re-verify
+`(d)(6)`'s own hypothesis-list note there (it currently guesses `SplitSpec'` is needed; `(e)`'s
+own re-scoping investigation already found this is very likely overstated, only `IsComputableSplit`
+is actually consumed — see `8.12(e)`'s row, findings 1–2). The `(e)(b)`–`(f)(a)` `SplitV.lean`
+thread remains open in parallel; no dependency identified.
