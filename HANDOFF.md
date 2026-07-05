@@ -9634,3 +9634,37 @@ assumed `hXcover`/`hYcover`), transcribing `Exercise812c.lean`'s `toD1`/`toD0` `
 directly. Read `arxiv.md`'s `8.12(d)(5)(d)` row before starting. The `(e)(b)`–`(f)(a)` `SplitV.lean`
 thread (seven checkpoints back) remains open in parallel; no dependency between the two has been
 identified.
+
+## 2026-07-05 checkpoint — `8.12(d)(5)(d)` re-scoped into 4 sub-parts; `8.12(d)(5)(d)(i)` (`Pass`)
+
+Before executing, `(d)(5)(d)`'s row was re-scoped into 4 sub-parts, `(d)(5)(d)(i)`–`(iv)`: mirroring
+`Exercise812c.lean`'s `Element`-field structure, `sub`/`master_mem`/`inter_mem` are all one-liners
+not worth their own row, so each half (`toD1Code`, `toD0Code`) splits into a standalone `up_mem`
+helper lemma (the only field needing genuinely chained reasoning) plus the full assembly `def`. A
+genuine simplification was found while hand-tracing the proof before writing any Lean: unlike
+`Exercise812c.lean`'s `toD1.up_mem` (needing *two* `hXcover`/`hYcover` covering-searches), the
+code-level version needs only **one** `surj` call — the second classical search (renaming a
+recovered set like `YPseq k` as "some `X j`") collapses entirely since `YPseqCode`/`XPseqCode` are
+already `ℕ`-valued, so the witness is handed over for free and the remaining index equation drops
+out of `(c)(iii)`'s `XPseqCode_eq_Y_iff_X_eq_YPseqCode` applied at a self-referential pair whose
+"other side" is `rfl`.
+
+Executed `(d)(5)(d)(i)` this session, appended to `Exercise812d.lean`'s new `section
+ToD1CodeUpMem`: `toD1Code_up_mem`, matching the hand-traced plan exactly on the first try (no
+surprises) — `P₁.surj hD1T2` names the target, `(d)(5)(c)(i)`'s cross-parity order fact transports
+membership, and `(d)(5)(c)(iii)`'s self-referential `XPseqCode_eq_Y_iff_X_eq_YPseqCode … |>.mpr rfl`
+closes the index equation.
+
+Built (`lake build` — 3165 jobs — and `lake env lean Exercise812d.lean` directly, both clean; only
+the pre-existing `(b)(ii)`-era `linter.unusedSectionVars` warning remains, unchanged). Zero
+`sorry`. Axiom-audited: `toD1Code_up_mem` gives `⊆ {propext, Classical.choice, Quot.sound}`,
+matching this section's established baseline. `arxiv.md`'s `(d)(5)(d)` row updated with the 4-way
+sub-part breakdown and simplification finding; `(d)(5)(d)(i)`'s own row updated to `Pass`.
+
+**Status: `8.12(d)(5)(d)(i)` is `Pass`.** **Resume protocol:** next up is `(d)(5)(d)(ii)`
+(`toD1Code`, full assembly): `sub := fun ⟨n, hn, _⟩ => hn ▸ XPseqCode_mem_unconditional n`;
+`master_mem := ⟨0, (XPseqCode_zero …).symm, by rw [hX0]; exact x.master_mem⟩`; `inter_mem :=` a
+direct `P₁.inter i j`/`P₁.inter_spec` citation, no helper lemma needed; `up_mem := toD1Code_up_mem
+x`. Then `(d)(5)(d)(iii)`/`(iv)` mirror `(i)`/`(ii)` for `toD0Code`. Read `arxiv.md`'s
+`8.12(d)(5)(d)(ii)`–`(iv)` rows before starting. The `(e)(b)`–`(f)(a)` `SplitV.lean` thread (eight
+checkpoints back) remains open in parallel; no dependency between the two has been identified.
