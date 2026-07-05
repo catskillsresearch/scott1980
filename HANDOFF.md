@@ -10064,3 +10064,44 @@ via `P₁.incl_computable.comp hh`; `(hA.and hB).re.proj` closes the outer `∃ 
 shuffle. Once this lands, `8.12(d)(5)` is complete in full and `8.12(d)(6)` (final `EffectiveIso`
 assembly) becomes the next target. The `(e)(b)`–`(f)(a)` `SplitV.lean` thread remains open in
 parallel; no dependency identified.
+
+**2026-07-05 — Exercise 8.12(d)(5)(f)(iv) `Pass`: `domainIsoCode812d_symm_isComputableMap` —
+`8.12(d)(5)(f)` is now COMPLETE, hence `8.12(d)(5)` is now COMPLETE in full (all of
+`(a)`–`(f)`).** New `section DomainIsoCode812dSymmIsComputableMap` appended to
+`Exercise812d.lean` (after `ToD0CodeRelIff`). Matched the plan exactly, first try, no
+surprises — exact mirror of `(f)(ii)`'s `domainIsoCode812d_isComputableMap` via `(f)(iii)`'s
+`toD0Code_rel_iff`, swapping `P₀`↔`P₁` and `XPseqCode`↔`YPseqCode`/`primrec_YPseqCode`
+throughout: `hA : RecDecidable (fun w => P₀.X w.unpair.2.unpair.2 = P₀.X (YPseqCode …
+w.unpair.1))` via `P₀.eq_computable.comp hg` (`hg` from `primrec_YPseqCode`); `hB : RecDecidable
+(fun w => P₁.X w.unpair.2.unpair.1 ⊆ P₁.X w.unpair.1)` via `P₁.incl_computable.comp hh`;
+`(hA.and hB).re.proj` closes the outer `∃ k`; final `REPred.of_iff` (after a `show` unfolding
+`IsComputableMap P₁ P₀ (ofIso (domainIsoCode812d …).symm)`) closed via `rw [toD0Code_rel_iff]`
+plus the same `constructor`/`rintro`/`exact` shuffle as `(f)(ii)`. Zero `sorry`; `lake build
+Scott1980` (3165 jobs) and `lake env lean Exercise812d.lean` both clean (only the pre-existing
+`(b)(ii)`-era `linter.unusedSectionVars` warning on `yPseqAtomIdx_eq_of_dichotomy` remains,
+unchanged — not introduced by this checkpoint). `#print axioms
+domainIsoCode812d_symm_isComputableMap` gives `⊆ {propext, Classical.choice, Quot.sound}`,
+matching this section's established baseline. `arxiv.md`: `8.12(d)(5)(f)(iv)` row → `Pass`;
+`8.12(d)(5)(f)` umbrella → `Pass` (all four sub-parts complete); grandparent `8.12(d)(5)` row →
+`Pass` (all of `(a)`–`(f)` complete); `8.12(d)(6)`'s row annotated "unblocked, `(d)(5)`
+prerequisite now complete" (its own re-verification of the `SplitSpec'` question is still the
+first step of the next session, per its own note).
+
+**Status: `8.12(d)(5)`, hence `8.12(d)(5)(f)(iv)`, is `Pass`.** **Resume protocol:** next up is
+`8.12(d)(6)` — the final `EffectiveIso P₀ P₁` assembly, completing the effective refinement of
+Exercise 8.12(c) and Exercise 8.12(d) as a whole. Per `8.12(d)(6)`'s own row (already twice
+corrected): substitute `domainIsoCode812d`/`toD1Code`/`toD0Code`/`domainIsoCode812d_
+isComputableMap`/`domainIsoCode812d_symm_isComputableMap` (all now `Pass`, this `(d)(5)` block)
+for the stale `domainIso812c` throughout; `toMap := ofIso domainIsoCode812d`, `invMap := ofIso
+domainIsoCode812d.symm` (Theorem 2.7), `left_inv`/`right_inv` via `toElementMap_ofIso` +
+`domainIsoCode812d`'s own `left_inv`/`right_inv` (mirroring `Theorem88n.lean`'s
+`isoProj_comp_isoInj`/`isoInj_comp_isoProj`), `toMap_computable`/`invMap_computable` are literally
+`domainIsoCode812d_isComputableMap`/`_symm_isComputableMap` (this checkpoint's work) — **the first
+concrete task of the next session should be re-verifying `(d)(6)`'s "computable `splitX`/`splitY`
+satisfying `SplitSpec'`" opening hypothesis-list clause**, which `(d)(5)(e)`'s own scoping already
+flagged as very likely overstated (only `IsComputableSplit` is actually consumed anywhere in the
+`XPseqCode`/`YPseqCode`/`domainIsoCode812d` chain, not `SplitSpec'`/`hxSplit`/`hySplit` directly —
+see `(d)(5)(e)`'s row, findings 1–2). Once `EffectiveIso`'s exact structure/hypothesis-list is
+pinned down by that re-verification, the assembly itself should be close to immediate (every
+field is a direct citation of an already-`Pass` lemma). The `(e)(b)`–`(f)(a)` `SplitV.lean` thread
+remains open in parallel; no dependency identified.
