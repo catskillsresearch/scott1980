@@ -9073,3 +9073,38 @@ still `Scoped`.
 `hD₀nomin`→`hD₁nomin`). This alone doesn't yet fix `bx` — that's resolved only in `(d)(vi)`. Read
 `arxiv.md`'s `8.12(d)(4)(d)(iv)` row for the exact statement and `(c)(iv)`'s row/proof (`section
 AtomPairCorrect4`) for the template to mirror.
+
+---
+
+**2026-07-04 checkpoint — `8.12(d)(4)(d)(iv)` is `Pass`.** Proved `exists_atomPairG_deltaPair_inter_Yn_ne_empty`
+in a new `section AtomPairCorrect4Snd` (`Exercise812d.lean`, immediately after `AtomPairCorrect4`):
+`∃ i < 4ⁿ, (atomPairG (deltaPair i) n).2 ∩ P₁.X n ≠ ∅`, the `D₁`-side mirror of `(c)(iv)`'s
+`exists_atomPairG_deltaPair_inter_Xn_ne_empty`. Exactly as scoped: a verbatim `.1`→`.2`, `D₀`→`D₁`,
+`P₀`→`P₁` transcription — picks `z ∈ P₁.X n` (nonempty via a fresh `hD₁nomin : D₁.NoMinimal`, the
+one genuinely new hypothesis, same role as `(c)(iv)`'s `hD₀nomin`), transports to `D₁.master` via
+`D₁.sub_master`, lands it in a covering piece via `(d)(iii)`'s `atomPairG_master_covered_deltaPair_snd`.
+New section's variable list is `AtomPairCorrect4`'s exactly, with `hD₀nomin` swapped for `hD₁nomin`
+(a fresh section was needed since `AtomPairCorrect4` itself doesn't carry `hD₁nomin`). No Lean
+gotchas — went in clean on the first attempt (direct `lake env lean` type-check, then the usual
+`lake build Scott1980.Neighborhood.Exercise812d` + scratch `#print axioms` file, since the scratch
+file needs the compiled `.olean`, not source re-elaboration). Axiom-audited: `⊆{propext,
+Classical.choice, Quot.sound}` (ambient baseline, matching `(c)(iv)`'s own footprint exactly).
+Whole-project `lake build` (3164 jobs) green, zero `sorry`. `arxiv.md`: `(d)(iv)`'s own row updated
+to `Pass`; `(d)(4)(d)`'s umbrella row updated to note `(d)(i)`–`(d)(iv)` `Pass`, `(d)(v)`–`(d)(vi)`
+still `Scoped`.
+
+**Status: `8.12(d)(4)(d)(iv)` is `Pass`.** **Resume protocol:** next up is `(d)(v)` — the converse-
+biconditional `D₁`-side mirror of `(c)(v)`'s `atomPairG_fst_eq_empty_of_junk_eq_one`/
+`atomPairJunk_eq_zero_of_ne_empty`: `(atomPairG (deltaPair i) n).2 ≠ ∅ → atomPairJunk n i = 0`. Per
+`arxiv.md`'s scoping note, this is a "symmetric contrapositive induction to `(c)(v)`, swapping which
+half-step's direct check is 'the trigger' vs. 'the transferred-via-invariant' one" — i.e. **not** a
+naive `.1`↔`.2` swap of `(c)(v)`'s proof text, since `(c)(v)`'s successor step's two sub-cases
+(`xcheck = 1` triggers directly via `xStepG`'s own direct-refine side; `xcheck = 0` transfers via
+`atomPairG_invariant`'s dichotomy to reach the `D₀`-side) are asymmetric between `X`/`Y`. Before
+writing `(d)(v)`, re-read `(c)(v)`'s full proof (`section AtomPairCorrect5`,
+`atomPairG_fst_eq_empty_of_junk_eq_one`) line-by-line alongside `(d)(i)`'s docstring note about the
+"swapped roles" between `D₀`/`D₁`'s trivial-vs-`SplitSpec'`-needing sides (`xStepG_snd_union`/
+`yStepG_snd_union` swapped relative to `xStepG_fst_union`/`yStepG_fst_union`) to work out exactly
+which sub-case (`xcheck`/`ycheck`) is now the "direct" trigger for the `D₁`-side and which needs the
+invariant-dichotomy transfer — the two sub-steps' roles are expected to swap analogously. Read
+`arxiv.md`'s `8.12(d)(4)(d)(v)` row for the exact statement.
