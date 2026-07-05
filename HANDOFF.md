@@ -8989,3 +8989,33 @@ nested closure (`(d)(i)`–`(d)(vi)`, currently `Scoped`, not started) — the s
 `YFoldInner n 1 _`), needing the doubled-over-`bx` analogue of `(c)(i)`–`(c)(vi)`'s whole chain.
 Read `arxiv.md`'s `8.12(d)(4)(d)` row and its own `(d)(i)`–`(d)(vi)` sub-rows for the exact planned
 breakdown before executing.
+
+---
+
+**2026-07-04 checkpoint — `8.12(d)(4)(d)(i)` is `Pass`.** Proved the `D₁`-side mirror of `(c)(i)`'s
+`atomPairG_fst_union_step`, closing the first of `(d)(4)(d)`'s six planned closure sub-goals
+(`(d)(i)`–`(d)(vi)`, the `YPseqCode` analogue of `(c)`'s now-complete `XPseqCode` closure). Two new
+generic helper lemmas in `section StepGen`: **`yStepG_snd_union`** (`(yStepG splitY A1 B1 Yn
+true).2 ∪ (yStepG splitY A1 B1 Yn false).2 = B1`, the trivial `Set.inter_union_diff` identity
+through `yStepG`'s `.2`/direct-refine side, no `SplitSpec'` hypotheses) and **`xStepG_snd_union`**
+(`(xStepG splitX A B Xn true).2 ∪ (xStepG splitX A B Xn false).2 = B`, `SplitSpec'`'s unconditional
+`I ∪ J = B` field read off directly, needs `hxSplit`). Then **`atomPairG_snd_union_step`** in
+`section AtomPairGen` (placed right after `atomPairG_fst_union_step`): ranging over the four
+`(b1,b2)` sign choices at depth `n`, the depth-`(n+1)` `D₁`-pieces reunion to the depth-`n` parent's
+`D₁`-piece. **Key structural observation**: the roles of "trivial, hypothesis-free" vs.
+"`SplitSpec'`-needing" are *swapped* between the inner (`b2`) and outer (`b1`) collapse relative to
+the `D₀`-side proof — here the inner collapse (`yStepG_snd_union`) is free, so the whole proof needs
+no per-branch `have`s at all (just two direct `rw`s then one `exact xStepG_snd_union hxSplit ihAB
+ihB (X n)`), genuinely shorter than `atomPairG_fst_union_step`. No Lean gotchas. Axiom-audited:
+`yStepG_snd_union`/`atomPairG_snd_union_step` give `⊆{propext, Classical.choice, Quot.sound}`
+(ambient baseline); `xStepG_snd_union` gives the smaller `⊆{propext}` — mirroring
+`xStepG_fst_union`/`yStepG_fst_union`'s own footprints exactly, with roles swapped. Whole-project
+`lake build` (3164 jobs) green, zero `sorry`. `arxiv.md`: `(d)(i)`'s own row updated to `Pass` with
+a dense proof note; `(d)(4)(d)`'s umbrella row updated to note `(d)(i)` `Pass`, `(d)(ii)`–`(d)(vi)`
+still `Scoped`.
+
+**Status: `8.12(d)(4)(d)(i)` is `Pass`.** **Resume protocol:** next up is `(d)(ii)` — the classical
+covering induction `∀ z ∈ D₁.master, ∃ δ' : Fin n → Bool × Bool, z ∈ (atomPairG (extendTruePair
+δ') n).2`, chaining `(d)(i)`'s `atomPairG_snd_union_step` at every step, mirroring `(c)(ii)`'s
+`atomPairG_master_covered` proof verbatim (swap `.1`→`.2`, `D₀`→`D₁`, `atomPairG_fst_union_step`→
+`atomPairG_snd_union_step`). Read `arxiv.md`'s `8.12(d)(4)(d)(ii)` row for the exact statement.

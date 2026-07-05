@@ -119,6 +119,29 @@ theorem yStepG_fst_union {D₀ : NeighborhoodSystem α}
   simp only [yStepG, xyStep, Prod.swap]
   exact hspec.2.2.2.2.1
 
+/-- **`yStepG`'s two direct-refine outputs reunion to exactly its own input `B1`**: the trivial
+two-set identity `(B1 ∩ Yn) ∪ (B1 \ Yn) = B1`, restated through `yStepG`'s `.2` (the `.swap`-ed
+direct-refine side, on `D₁`'s side). Needed for **8.12(d)(4)(d)(i)**'s one-step 4-way reunion (the
+`D₁`-side mirror of `xStepG_fst_union`'s `b1`-level half); no `SplitSpec'` hypotheses needed, exactly
+like `xStepG_fst_union`. -/
+theorem yStepG_snd_union (splitY : Set β → Set α → Set β → Set α × Set α)
+    (A1 : Set α) (B1 : Set β) (Yn : Set β) :
+    (yStepG splitY A1 B1 Yn true).2 ∪ (yStepG splitY A1 B1 Yn false).2 = B1 := by
+  simp only [yStepG, xyStep, Prod.swap]
+  exact Set.inter_union_diff B1 Yn
+
+/-- **`xStepG`'s two split-side outputs reunion to exactly its own input `B`**: from `SplitSpec'`'s
+unconditional `(split A B Xn).1 ∪ (split A B Xn).2 = B` field, applied directly (no `.swap`, unlike
+`yStepG_fst_union`'s use of the same field). Needed for **8.12(d)(4)(d)(i)**'s one-step 4-way
+reunion (the `D₁`-side mirror of `yStepG_fst_union`'s `b2`-level half). -/
+theorem xStepG_snd_union {D₁ : NeighborhoodSystem β}
+    {splitX : Set α → Set β → Set α → Set β × Set β} (hxSplit : SplitSpec' D₁ splitX)
+    {A : Set α} {B : Set β} (hAB : A = ∅ ↔ B = ∅) (hBmem : B = ∅ ∨ D₁.mem B) (Xn : Set α) :
+    (xStepG splitX A B Xn true).2 ∪ (xStepG splitX A B Xn false).2 = B := by
+  have hspec := hxSplit hAB hBmem Xn
+  simp only [xStepG, xyStep]
+  exact hspec.2.2.2.2.1
+
 theorem xStepG_disjoint_of_ne {D₁ : NeighborhoodSystem β}
     {splitX : Set α → Set β → Set α → Set β × Set β} (hxSplit : SplitSpec' D₁ splitX)
     {A : Set α} {B : Set β} (hAB : A = ∅ ↔ B = ∅) (hBmem : B = ∅ ∨ D₁.mem B) (Xn : Set α)
@@ -368,6 +391,44 @@ theorem atomPairG_fst_union_step (δ : ℕ → Bool × Bool) (n : ℕ) :
   rw [yStepG_fst_union hySplit hBAtrue hAmemtrue (Y n),
     yStepG_fst_union hySplit hBAfalse hAmemfalse (Y n)]
   exact xStepG_fst_union splitX A B (X n)
+
+/-- **8.12(d)(4)(d)(i): the one-step 4-way classical reunion, `D₁`-side.** The `D₁`-side mirror of
+`atomPairG_fst_union_step`: ranging over all four `(b1, b2) : Bool × Bool` sign choices at depth
+`n`, the resulting depth-`(n+1)` `D₁`-pieces reunion to *exactly* the depth-`n` parent's `D₁`-piece.
+Genuinely *simpler* to prove than the `D₀`-side version: here the *inner* (`b2`-level) collapse is
+the hypothesis-free one (`yStepG_snd_union`, `D₁`'s side is `yStep`'s own direct-refine side) and
+the *outer* (`b1`-level) collapse is the one needing `hxSplit` (`xStepG_snd_union`, `D₁`'s side is
+`xStep`'s split side) — exactly the reverse pairing from the `D₀`-side proof, so no per-branch
+`have`s (`hBAtrue`/`hAmemtrue`/etc.) are needed at all: `yStepG_snd_union` takes no `SplitSpec'`
+hypotheses, so both inner collapses are immediate rewrites, leaving only the outer `xStepG_snd_union`
+call. -/
+theorem atomPairG_snd_union_step (δ : ℕ → Bool × Bool) (n : ℕ) :
+    ((yStepG splitY (xStepG splitX (atomPairG D₀ D₁ splitY splitX X Y δ n).1
+          (atomPairG D₀ D₁ splitY splitX X Y δ n).2 (X n) true).1
+        (xStepG splitX (atomPairG D₀ D₁ splitY splitX X Y δ n).1
+          (atomPairG D₀ D₁ splitY splitX X Y δ n).2 (X n) true).2 (Y n) true).2 ∪
+      (yStepG splitY (xStepG splitX (atomPairG D₀ D₁ splitY splitX X Y δ n).1
+          (atomPairG D₀ D₁ splitY splitX X Y δ n).2 (X n) true).1
+        (xStepG splitX (atomPairG D₀ D₁ splitY splitX X Y δ n).1
+          (atomPairG D₀ D₁ splitY splitX X Y δ n).2 (X n) true).2 (Y n) false).2) ∪
+    ((yStepG splitY (xStepG splitX (atomPairG D₀ D₁ splitY splitX X Y δ n).1
+          (atomPairG D₀ D₁ splitY splitX X Y δ n).2 (X n) false).1
+        (xStepG splitX (atomPairG D₀ D₁ splitY splitX X Y δ n).1
+          (atomPairG D₀ D₁ splitY splitX X Y δ n).2 (X n) false).2 (Y n) true).2 ∪
+      (yStepG splitY (xStepG splitX (atomPairG D₀ D₁ splitY splitX X Y δ n).1
+          (atomPairG D₀ D₁ splitY splitX X Y δ n).2 (X n) false).1
+        (xStepG splitX (atomPairG D₀ D₁ splitY splitX X Y δ n).1
+          (atomPairG D₀ D₁ splitY splitX X Y δ n).2 (X n) false).2 (Y n) false).2) =
+      (atomPairG D₀ D₁ splitY splitX X Y δ n).2 := by
+  obtain ⟨ihAB, ihA, ihB⟩ := atomPairG_invariant D₀ D₁ hD₀pos hD₀diff splitY hySplit hD₁pos hD₁diff
+    splitX hxSplit X Y hXmem hYmem hD₀mne hD₁mne δ n
+  set A := (atomPairG D₀ D₁ splitY splitX X Y δ n).1 with hAdef
+  set B := (atomPairG D₀ D₁ splitY splitX X Y δ n).2 with hBdef
+  rw [yStepG_snd_union splitY (xStepG splitX A B (X n) true).1 (xStepG splitX A B (X n) true).2
+      (Y n),
+    yStepG_snd_union splitY (xStepG splitX A B (X n) false).1 (xStepG splitX A B (X n) false).2
+      (Y n)]
+  exact xStepG_snd_union hxSplit ihAB ihB (X n)
 
 /-- **8.12(d)(4)(c)(ii): classical covering induction.** The classical `atomPairG` pieces at depth
 `n`, ranged over all sign-histories `δ' : Fin n → Bool × Bool` (padded to `ℕ → Bool × Bool` via
