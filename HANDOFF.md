@@ -10244,3 +10244,80 @@ thread mentioned in earlier checkpoints is part of that. Read `arxiv.md`'s `8.12
 before starting (`Grep`/`Read` with `offset`/`limit`, per this file's own discipline) — it already
 contains a detailed re-scoping investigation with findings 1–2 on what `SplitSpec'`/
 `IsComputableSplit` actually require for `U`/`V` specifically.
+
+**2026-07-05 — `8.12(e)(a)` confirmed `Pass`, no breakdown needed (already a single-shot
+declarations-only file, zero `theorem`s to get stuck on); `8.12(e)(b)` re-scoped into 4 sub-parts,
+none started.** No Lean code changed this checkpoint — pure scoping. `arxiv.md`'s `8.12(e)(b)` row
+rewritten with a re-scoping investigation and 4 new sub-rows `8.12(e)(b)(i)`–`(iv)` added, all
+`Scoped, not started`. **Key finding, unlike most of `(d)(6)`'s sub-parts (pure mirrors of
+existing `Theorem88n.lean` machinery): `(e)(b)` needs genuinely new infrastructure not present
+anywhere in the codebase yet** — `V_no_minimal`'s classical proof (`Exercise812.lean` lines
+223–274) picks its splitting bit `ℓ₀` via a bare classical existential
+(`levelSet_nonempty_iff.mp hne`), and `LevelSetPrimrec.lean`'s existing `bExistsFn` only *decides*
+witness-existence ({0,1}-valued), never *produces* one — no "smallest set bit" finder exists.
+Likewise `V_no_minimal`'s `M ^^^ 2^ℓ₀` step needs a primitive-recursive stand-in for Mathlib's
+`Nat.xor`, explicitly *not* `Nat.Primrec`-exposed per `LevelSetPrimrec.lean`'s own header comment
+(the reason `myUpsample` etc. had to be hand-built already) — no such primitive exists either.
+Sub-part breakdown (sequential): **`(e)(b)(i)`** `myFirstBit` (new generic least-set-bit search
+combinator, mirroring `bExistsFn`'s bounded-`Nat.rec`-fold idiom but threading the found index
+through instead of a flag); **`(e)(b)(ii)`** a "clear one bit"/xor-with-power-of-2 primitive
+(candidate: plain truncated subtraction `m - 2^ℓ`, primitive recursive for free, needing a new
+`testBit`-level correctness bridge to `Nat.xor`); **`(e)(b)(iii)`** `splitVLeft`/`splitVRight`
+definitions + `Nat.Primrec` (mechanical composition once `(i)`–`(ii)` exist); **`(e)(b)(iv)`**
+correctness (`VX_splitVLeft`/`VX_splitVRight`/`splitV_disjoint`/`splitV_union`, transcribing
+`V_no_minimal`'s `hInter`/`hUnion` `ext`/`testBit`-casework almost verbatim, comparable in shape
+to `SplitU.lean`'s own `UX_splitULeft`/`splitU_disjoint`/`splitU_union`).
+
+**Status: `8.12(e)(a)` `Pass` (no further action needed); `8.12(e)(b)` `Deferred`, re-scoped into
+`(i)`–`(iv)`, none started.** **Resume protocol:** start with `8.12(e)(b)(i)` (`myFirstBit`) —
+per `arxiv.md`'s row, mirror `bExistsFn`'s three-lemma pattern (`Recursive.lean`: bound lemma,
+`_congr` lemma, spec lemma) and its `Nat.Primrec.prec`-based `primrec_bExistsFn` proof, adapting
+the fold body to carry a found-index/sentinel state instead of a `{0,1}` flag. Then `(e)(b)(ii)`
+(the clear-bit primitive — check first whether Mathlib already has a usable
+`Nat.testBit_sub`/similar lemma before hand-rolling one). Then `(e)(b)(iii)`
+(`splitVLeft`/`splitVRight` + primrec) and `(e)(b)(iv)` (correctness, completing `(e)(b)`). Once
+`(e)(b)` lands, `(e)(c)`/`(e)(d)` (already scoped, real Lean-declaration targets in `arxiv.md`) are
+next, completing `8.12(e)`.
+
+**2026-07-05 — Exercise 8.12(e)(b)(i) `Pass`: `myFirstBit`, the least-set-bit search combinator.**
+New file `Scott1980/Neighborhood/SplitV.lean` (wired into `Scott1980.lean`, after
+`Exercise812e`). `myFirstBit m N := Nat.rec 0 (fun i ih => selectFn (isZero (i - ih)) (selectFn
+(myTestBit m i) i (i+1)) ih) N` — folds `i = 0, …, N-1`, invariant `ih ≤ i` with `ih < i` meaning
+"found, carry forward" and `ih = i` meaning "not found yet, test bit `i`". Rather than
+`bExistsFn`'s three-lemma pattern (bound/`_congr`/spec), proved one combined invariant
+`myFirstBit_spec` by induction (disjunction: genuine witness `< N` with minimality below it, or
+sentinel `= N` with everything `< N` false), then derived `myFirstBit_le`/`myFirstBit_lt`/
+`myFirstBit_testBit` directly — simpler than three inductions. **Two real gotchas, both
+`whnf`-timeout shaped, both fixed the same way:** (1) a `show`-based unfold of `myFirstBit m
+(i+1)` in the induction step (mirroring `bExistsFn`'s own succ-case proofs) hit a `(deterministic)
+timeout at whnf` — fixed by adding an explicit `rfl`-proved unfolding equation `myFirstBit_succ`
+(mirroring `LevelSetPrimrec.lean`'s `myUpsampleJointStep_eq`) and `rw`-ing with it instead. (2)
+`primrec_myFirstBit`'s `have htb := primrec_myTestBit.comp (hm.pair hi)`, ascribed directly via
+`:=`, *also* hit a `whnf` timeout — composing through an explicit `hm.pair hi` before
+`primrec_myTestBit` re-`.unpair`s it forces the elaborator to try proving `(Nat.pair a b).unpair.1
+= a` by raw defeq/`whnf` (which loops), when that identity only holds via the *lemmas*
+`unpair_pair_fst`/`unpair_pair_snd`, not `rfl` — fixed by giving `htb` via `.of_eq (fun w => by
+simp only [unpair_pair_fst, unpair_pair_snd])` instead of a bare `:=`. **Lesson for `(e)(b)(ii)`–
+`(iv)` and beyond: any `have hX := f.comp (g.pair h)`-shaped step that routes through an explicit
+`Nat.pair` needing `.unpair` to peel back off should default to `.of_eq (fun w => by simp only
+[unpair_pair_fst, unpair_pair_snd])` rather than a bare `:=`, to avoid this exact timeout trap.**
+Once both were fixed, everything compiles in ~2s with the *default* heartbeat budget (no
+`set_option maxHeartbeats` bump needed once the real defeq trap was removed — briefly tried
+bumping to `800000` first as a diagnostic, but that alone didn't help, confirming it was a genuine
+elaboration trap rather than a merely-slow-but-finite computation). Zero `sorry`; `lake build
+Scott1980` (3166 jobs) and `lake env lean SplitV.lean` both clean, zero new warnings. `#print
+axioms` on `myFirstBit_spec`/`myFirstBit_le`/`myFirstBit_lt`/`myFirstBit_testBit`/
+`primrec_myFirstBit` all give `⊆ {propext, Classical.choice, Quot.sound}`, matching the
+project-wide baseline. `arxiv.md`: `8.12(e)(b)(i)` row → `Pass`; `8.12(e)(b)` umbrella updated to
+note `(i)` `Pass`, `(ii)`–`(iv)` not started.
+
+**Status: `8.12(e)(b)(i)` is `Pass`.** **Resume protocol:** next up is `8.12(e)(b)(ii)` — a
+computable "clear one bit" / xor-with-power-of-2 primitive (candidate realization: plain
+truncated subtraction `myClearBit m ℓ := m - 2^ℓ`, primitive recursive for free via
+`primrec_sub₂`/`primrec_two_pow`; the real work is the `testBit`-level correctness bridge to
+`Nat.xor`/`^^^`, showing subtracting a *known-set* bit's power of two clears exactly that bit and
+leaves every other bit untouched — check first whether Mathlib already has a usable
+`Nat.testBit_sub`-style lemma before hand-rolling one). **Apply the `(e)(b)(i)` lesson above**:
+route any `Nat.Primrec` composition through an explicit `Nat.pair` via `.of_eq` + `simp only
+[unpair_pair_fst, unpair_pair_snd]`, never a bare `:=`. Then `(e)(b)(iii)` (`splitVLeft`/
+`splitVRight` + primrec) and `(e)(b)(iv)` (correctness, completing `(e)(b)`).
