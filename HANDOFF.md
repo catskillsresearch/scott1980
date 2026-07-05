@@ -9708,3 +9708,39 @@ subtlety just found**: the shared index there must be a **`P₁`-side** index (`
 `X_inter_eq_iff_XPseqCode_inter_eq` played here. Read `arxiv.md`'s `8.12(d)(5)(d)(iii)`–`(iv)` rows
 before starting. The `(e)(b)`–`(f)(a)` `SplitV.lean` thread (nine checkpoints back) remains open in
 parallel; no dependency between the two has been identified.
+
+## 2026-07-05 checkpoint — `8.12(d)(5)(d)(iii)` (`Pass`) — `toD0Code`'s `up_mem` helper
+
+Executed `(d)(5)(d)(iii)` this session, appended to `Exercise812d.lean`'s new `section
+ToD0CodeUpMem` (following `ToD1Code`): `toD0Code_up_mem`, the exact mirror of `(d)(5)(d)(i)`'s
+`toD1Code_up_mem` for the `D₁ → D₀` direction. Matched the plan exactly on the first try, no
+surprises: destructure `h1` as `⟨i, rfl, hyi⟩`; `P₀.surj hD0S2` names `S2` as some `P₀.X k`
+(`subst hk`); `(d)(5)(c)(ii)`'s `YPseqCode_subset_X_iff_Y_subset_XPseqCode i k` turns `hS1S2` into
+`P₁.X i ⊆ P₁.X (XPseqCode … k)`; `y.up_mem hyi (XPseqCode_mem_unconditional … k) this` gives
+`y.mem (P₁.X (XPseqCode … k))` — already `y.mem (P₁.X j)` for `j := XPseqCode … k`, no covering
+search needed; `(d)(5)(c)(iii)`'s `XPseqCode_eq_Y_iff_X_eq_YPseqCode k (XPseqCode … k) |>.mp rfl`
+closes the index equation directly, **with no `.symm` needed** (unlike `toD1Code_up_mem`'s
+mirror-image goal, which did need one — the only asymmetry between the two proofs).
+
+Built (`lake build` — 3165 jobs — and `lake env lean Exercise812d.lean` directly, both clean; only
+the pre-existing `(b)(ii)`-era `linter.unusedSectionVars` warning remains, unchanged). Zero `sorry`.
+Axiom-audited: `toD0Code_up_mem` gives `⊆ {propext, Classical.choice, Quot.sound}`, matching this
+section's established baseline. `arxiv.md`'s `(d)(5)(d)(iii)` row updated to `Pass`; the parent
+`8.12(d)(5)(d)` row's status updated to reflect `(i)`–`(iii)` done, `(iv)` remaining.
+
+**Status: `8.12(d)(5)(d)(iii)` is `Pass`.** **Resume protocol:** next up is `(d)(5)(d)(iv)`
+(`toD0Code`, full assembly), the exact mirror of `(d)(5)(d)(ii)`'s `toD1Code` for the `D₁ → D₀`
+direction: `sub := fun ⟨n, hn, _⟩ => hn ▸ YPseqCode_mem_unconditional … n`; `master_mem := ⟨0,
+(YPseqCode_zero … hX0 hY0).symm, by rw [hY0]; exact y.master_mem⟩` (needs both `hX0`/`hY0`, per
+`YPseqCode_zero`'s own signature — recheck the exact include list before writing); `up_mem :=
+toD0Code_up_mem … y`. **Watch for the `inter_mem`-witness subtlety found in `(d)(5)(d)(ii)`**: the
+shared index here must be a **`P₁`-side** index (`P₁.inter i j`, since `toD0Code`'s predicate is
+`∃ n, S = P₀.X (YPseqCode … n) ∧ y.mem (P₁.X n)`, so the witness feeds `y.mem (P₁.X n)`), with
+`P₁.surj hDmem`/`P₁.inter_spec`/`(d)(5)(b)(iv)`'s `YPseqCode_inter_eq_iff_Y_inter_eq` playing the
+roles `P₀.surj`/`P₀.inter_spec`/`X_inter_eq_iff_XPseqCode_inter_eq` played in `toD1Code` — check
+the `.mp`/`.mpr`/`.symm` orientation carefully against `YPseqCode_inter_eq_iff_Y_inter_eq`'s actual
+stated direction (it may differ from `X_inter_eq_iff_XPseqCode_inter_eq`'s, as `(c)(i)`/`(c)(ii)`'s
+`.mp`/`.mpr` asymmetry already showed for this same even/odd-mix pair). Once `(d)(5)(d)(iv)` lands,
+`8.12(d)(5)(d)` is complete and `(d)(5)(e)` (`domainIsoCode812d`) becomes unblocked. Read
+`arxiv.md`'s `8.12(d)(5)(d)(iv)` row before starting. The `(e)(b)`–`(f)(a)` `SplitV.lean` thread
+(ten checkpoints back) remains open in parallel; no dependency between the two has been identified.
