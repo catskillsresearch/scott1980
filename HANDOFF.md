@@ -9844,3 +9844,38 @@ throughout: `y.sub`/`P₁.surj` names the target as some `P₁.X n` (`subst`); w
 pair `(YPseqCode … n, n)`. Then `8.12(d)(5)(e)(iv)` (final `domainIsoCode812d`/`isomorphic_812d`
 assembly, citing `(e)(i)`–`(iii)` plus a short inline `map_rel_iff'`). The `(e)(b)`–`(f)(a)`
 `SplitV.lean` thread remains open in parallel; no dependency identified.
+
+**2026-07-05 — Exercise 8.12(d)(5)(e)(iii) `Pass`: `toD1Code_toD0Code`, the `right_inv` content.**
+New `section ToD1CodeToD0Code` appended to `Exercise812d.lean` (after `ToD0CodeToD1Code`).
+`theorem toD1Code_toD0Code (y : D₁.Element) : toD1Code … (toD0Code … y) = y` — exact mirror of
+`(e)(ii)`'s `toD0Code_toD1Code`, matched on the first try, with **one genuine orientation
+asymmetry confirmed (anticipated by `(e)(ii)`'s own resume note)**: forward direction
+(`rintro ⟨m, hT, n, hmn, hyn⟩`) applies `XPseqCode_eq_Y_iff_X_eq_YPseqCode m n` *directly* to `hmn`
+(**no `.symm`**, unlike `toD0Code_toD1Code`'s forward direction, which needed `hmn.symm`) to get
+`hYeq : P₁.X (XPseqCode … m) = P₁.X n`, then `rw [hT, hYeq]; exact hyn`. Backward direction
+(`intro hyT`): `y.sub`/`P₁.surj` names `T` as some `P₁.X n` (`subst hn`); witness `m := YPseqCode
+… n` handed over for free; the closing equation needs `XPseqCode_eq_Y_iff_X_eq_YPseqCode
+(YPseqCode … n) n |>.mpr rfl` **then `.symm`** (unlike `toD0Code_toD1Code`'s backward direction,
+which needed no `.symm`) — the asymmetry mirrors `toD1Code_up_mem`/`toD0Code_up_mem`'s own
+`.symm`/no-`.symm` split from `(d)(5)(d)`. Zero `sorry`; `lake build Scott1980` (3165 jobs) and
+`lake env lean Exercise812d.lean` both clean (only the pre-existing `(b)(ii)`-era
+`linter.unusedSectionVars` warning on `yPseqAtomIdx_eq_of_dichotomy` remains, unchanged — not
+introduced by this checkpoint). `#print axioms toD1Code_toD0Code` gives `⊆ {propext,
+Classical.choice, Quot.sound}`, matching this section's established baseline. `arxiv.md`:
+`8.12(d)(5)(e)(iii)` row updated to `Pass` with a dense proof note; `8.12(d)(5)(e)` umbrella row
+updated to "`(e)(i)`–`(iii)` `Pass`; `(e)(iv)` not started".
+
+**Status: `8.12(d)(5)(e)(iii)` is `Pass`.** **Resume protocol:** next up is `8.12(d)(5)(e)(iv)` —
+the final `domainIsoCode812d`/`isomorphic_812d` assembly, completing `8.12(d)(5)(e)` in full. Per
+`arxiv.md`'s own proof-notes plan: `noncomputable def domainIsoCode812d : DomainIso D₀ D₁ where
+toFun := toD1Code …; invFun := toD0Code …; left_inv := toD0Code_toD1Code …; right_inv :=
+toD1Code_toD0Code …; map_rel_iff' := …` — `toFun`/`invFun`/`left_inv`/`right_inv` are direct
+citations of already-`Pass` lemmas; `map_rel_iff'` is discharged inline (not worth its own row):
+`mpr` direction pure unfolding (`x ≤ x2 → toD1Code x ≤ toD1Code x2`), `mp` direction one `P₀.surj`
+call (replacing `domainIso812c.map_rel_iff'`'s `hXcover`) plus `(e)(i)`'s `X_eq_iff_XPseqCode_eq`,
+direct transcription of `Exercise812c.lean`'s `domainIso812c.map_rel_iff'` (lines 2094–2108, see
+`domainIso812c`'s definition at lines 2049–2116 for the full precedent). `isomorphic_812d` is a
+one-line `⟨domainIsoCode812d …⟩` packaging, mirroring `isomorphic_812c` (line 2113). Once this
+lands, `8.12(d)(5)` moves to `(f)` (the exercise's literal computability target) per that row's own
+proof-notes plan. The `(e)(b)`–`(f)(a)` `SplitV.lean` thread remains open in parallel; no
+dependency identified.
