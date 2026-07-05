@@ -1286,6 +1286,62 @@ theorem deltaPair_fst_eq_true_iff (k i : ℕ) : (deltaPair k i).1 = true ↔ (k 
 theorem deltaPair_snd_eq_true_iff (k i : ℕ) : (deltaPair k i).2 = true ↔ (k / 4 ^ i / 2) % 2 = 1 := by
   unfold deltaPair; simp
 
+/-! ### `deltaPair` is `Nat.testBit` in disguise, two bits per depth
+
+Mirrors `Theorem88d.lean`'s `deltaOf_eq_testBit` (`deltaOf k i = k.testBit i`), but reading *two*
+`testBit`s per depth (`2 * i` for the `.1` component, `2 * i + 1` for `.2`) — the base-`4`/two-bit
+analogue, needed below to reuse `Nat.eq_of_testBit_eq`/`Nat.testBit_lt_two_pow` verbatim for the
+"distinct bounded bit-sources disagree somewhere" fact (`(d)(5)(b)`'s key combinatorial input,
+avoiding a bespoke induction on `4 ^ n`). -/
+
+theorem deltaPair_fst_eq_testBit (k i : ℕ) : (deltaPair k i).1 = k.testBit (2 * i) := by
+  show decide ((k / 4 ^ i) % 2 = 1) = k.testBit (2 * i)
+  rw [Nat.testBit_eq_decide_div_mod_eq, show (4 : ℕ) ^ i = 2 ^ (2 * i) by
+    rw [show (4 : ℕ) = 2 ^ 2 from rfl, ← pow_mul]]
+
+theorem deltaPair_snd_eq_testBit (k i : ℕ) : (deltaPair k i).2 = k.testBit (2 * i + 1) := by
+  show decide ((k / 4 ^ i / 2) % 2 = 1) = k.testBit (2 * i + 1)
+  rw [Nat.div_div_eq_div_mul, Nat.testBit_eq_decide_div_mod_eq, show (4 : ℕ) ^ i * 2 = 2 ^ (2 * i + 1)
+    by rw [show (4 : ℕ) = 2 ^ 2 from rfl, ← pow_mul, pow_succ]]
+
+/-- **Distinctness of bounded bit-sources**: two bit-sources both `< 4 ^ n` and unequal must
+disagree (via `deltaPair`) at some position strictly below `n`. Unlike `Theorem88d.lean`'s
+`eq_of_deltaOf_agree_of_lt_two_pow` (which this directly mirrors), agreement of `deltaPair k`/
+`deltaPair k'` on `[0, n)` means agreement of `k.testBit`/`k'.testBit` on *every* bit `< 2 * n` (both
+the `2 * i` and `2 * i + 1` readings) — covering all of `testBit`'s bits below the bound `4 ^ n =
+2 ^ (2 * n)`, so `Nat.eq_of_testBit_eq` still finishes in one step once every bit position is routed
+through `deltaPair_fst_eq_testBit`/`deltaPair_snd_eq_testBit`. -/
+theorem eq_of_deltaPair_agree_of_lt_four_pow {n k k' : ℕ} (hk : k < 4 ^ n) (hk' : k' < 4 ^ n)
+    (hagree : ∀ i < n, deltaPair k i = deltaPair k' i) : k = k' := by
+  apply Nat.eq_of_testBit_eq
+  intro l
+  rcases Nat.lt_or_ge l (2 * n) with hl | hl
+  · rcases Nat.mod_two_eq_zero_or_one l with hmod | hmod
+    · have hl2 : l = 2 * (l / 2) := by omega
+      have hi : l / 2 < n := by omega
+      have heq := congrArg Prod.fst (hagree (l / 2) hi)
+      rw [deltaPair_fst_eq_testBit, deltaPair_fst_eq_testBit] at heq
+      rwa [hl2]
+    · have hl2 : l = 2 * (l / 2) + 1 := by omega
+      have hi : l / 2 < n := by omega
+      have heq := congrArg Prod.snd (hagree (l / 2) hi)
+      rw [deltaPair_snd_eq_testBit, deltaPair_snd_eq_testBit] at heq
+      rwa [hl2]
+  · have h4n : (4 : ℕ) ^ n = 2 ^ (2 * n) := by
+      rw [show (4 : ℕ) = 2 ^ 2 from rfl, ← pow_mul]
+    have hile : (2 : ℕ) ^ (2 * n) ≤ 2 ^ l := Nat.pow_le_pow_right (by norm_num) hl
+    rw [Nat.testBit_lt_two_pow ((h4n ▸ hk).trans_le hile),
+      Nat.testBit_lt_two_pow ((h4n ▸ hk').trans_le hile)]
+
+/-- **Contrapositive form**: two distinct bit-sources both `< 4 ^ n` must disagree somewhere below
+`n` — the form actually consumed by `(d)(5)(b)`'s I-formula lemmas (ruling out cross-terms from a
+*different* bit-source witnessing the same point). -/
+theorem exists_deltaPair_ne_of_lt_of_ne {n k k' : ℕ} (hk : k < 4 ^ n) (hk' : k' < 4 ^ n)
+    (hne : k ≠ k') : ∃ i < n, deltaPair k i ≠ deltaPair k' i := by
+  by_contra hcon
+  push Not at hcon
+  exact hne (eq_of_deltaPair_agree_of_lt_four_pow hk hk' hcon)
+
 /-! ### `encodeDeltaPair`: realizing a prescribed finite `Bool × Bool` sign-prefix as a bit-source
 
 **8.12(d)(4)(c)(iii).** The two-sided, base-`4` analogue of `Theorem88d.lean`'s `encodeBits`
@@ -3806,3 +3862,117 @@ theorem YPseqCode_zero :
     rwa [hyzeroeq]
 
 end XYPseqCodeZero
+
+/-! ## 8.12(d)(5)(b)(i): the `X`-side I-formula for `XPseqCode`
+
+**Design decision (resolved, after a bounded search per `(d)(5)`'s own flagged decision):** `(d)(5)(b)`'s
+order/intersection transfer facts (`X_subset_iff_XPseqCode_subset` etc.) compare `P₀.X i`/`P₀.X j` —
+*raw*, mutually unrelated enumeration indices, not outputs of any `atomPairG` recursion — so no
+shortcut bypassing `Exercise812c.lean`'s `combinedX`/`combinedY`/`genAtom`-interleaving apparatus
+(**Route 1**) was found: relating two *arbitrary* indices intrinsically needs the "embed both families
+into one recursive tree" trick that apparatus provides, exactly as `(d)(5)`'s finding 2 anticipated.
+**However, a genuine, non-trivial simplification survives** in the one piece of that apparatus that
+*is* code-native: the "I-formula" identities (`xStep_snd_eq_inter_XPseq`/`yStep_fst_eq_inter_YPseq`,
+`Exercise812c.lean` lines 899–1172, ~270 lines total) needed to seed the interleaved family's odd-depth
+half-steps. Classically these need heavy case analysis because `XPseq`/`YPseq` are unions over the
+*uncountable* `δ' : ℕ → Bool × Bool`. At the code level, `XPseqCode`/`YPseqCode` are already unions
+over *at most `4 ⁿ` literally distinct* bit-sources (`mem_XPseqCode_iff_unconditional`/
+`mem_YPseqCode_iff_unconditional`, `(d)(4)`, already `Pass`), and any two distinct bit-sources both
+`< 4 ⁿ` are *automatically* distinguished by some `deltaPair`-digit `< n`
+(`exists_deltaPair_ne_of_lt_of_ne` above) — no "history agrees through `n`" case ever arises, so the
+`⊇` direction collapses to a single disjointness appeal (`atomPairCodeState_disjoint`) instead of a
+δ'-indexed case split. This sub-part builds the `X`-side instance of that shortened I-formula;
+`(d)(5)(b)(ii)` will build the (structurally harder, extra-`bx`) `Y`-side instance, then `(d)(5)(b)(iii)`
+assembles the generalized `combinedXCode`/`combinedYCode`/`hcore` machinery these feed, reusing
+`Theorem88.lean`'s `transfer_dir`/`genAtom` apparatus (already fully generic, no changes needed) for
+the final headline theorems. -/
+
+section XPseqCodeIFormula
+
+variable {α β : Type*} {D₀ : NeighborhoodSystem α} {D₁ : NeighborhoodSystem β}
+  (P₀ : ComputablePresentation D₀) (P₁ : ComputablePresentation D₁)
+  (hDiff0 : IsComputableDiff P₀) (hDiff1 : IsComputableDiff P₁)
+  (splitX : Set α → Set β → Set α → Set β × Set β) (hSplitX : IsComputableSplit P₀ P₁ splitX)
+  (splitY : Set β → Set α → Set β → Set α × Set α) (hSplitY : IsComputableSplit P₁ P₀ splitY)
+  (hD₀pos : D₀.IsPositive) (hD₀diff : D₀.DiffClosed) (hD₀nomin : D₀.NoMinimal)
+  (hxSplit : SplitSpec' D₁ splitX)
+  (hD₁pos : D₁.IsPositive) (hD₁diff : D₁.DiffClosed) (hD₁nomin : D₁.NoMinimal)
+  (hySplit : SplitSpec' D₀ splitY)
+  (hD₀mne : D₀.master.Nonempty) (hD₁mne : D₁.master.Nonempty)
+  (hUnion1 : IsComputableUnion P₁)
+
+include hD₀pos hD₀diff hxSplit hD₁pos hD₁diff hySplit hD₀mne hD₁mne in
+set_option maxHeartbeats 800000 in
+/-- **The `X`-side I-formula, generic in the bit-source**: a genuine (non-junk) half-step atom's
+`hSplitX.posIdx` value is always `⊆` its own `D₁`-side companion `atomPairIdx1`. Factored out of
+`xPseqAtomIdx_eq_inter_XPseqCode`'s proof so it can be reused verbatim at the *other* bit-source `k'`
+arising from `mem_XPseqCode_iff_unconditional`'s existential witness. -/
+theorem xPseqAtomIdx_subset_atomPairIdx1 {n m : ℕ}
+    (hjunk : xPseqAtomJunk P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY n m = 0) :
+    P₁.X (xPseqAtomIdx P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY n m) ⊆
+      P₁.X (atomPairIdx1 P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY n m) := by
+  have hAjunk : atomPairJunk P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY n m = 0 := by
+    have h := hjunk
+    rw [xPseqAtomJunk_eq] at h
+    exact junk_eq_zero_of_selectFn_eq_zero h
+  have hidxeq := xPseqAtomIdx_eq P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hjunk
+  have hcs := atomPairCodeState_correct P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY m n hAjunk
+  have hinv := atomPairG_invariant D₀ D₁ hD₀pos hD₀diff splitY hySplit hD₁pos hD₁diff splitX hxSplit
+    P₀.X P₁.X P₀.mem_X P₁.mem_X hD₀mne hD₁mne (deltaPair m) n
+  have hposspec := hSplitX.posIdx_spec
+    (atomPairIdx0 P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY n m)
+    (atomPairIdx1 P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY n m) n
+  rw [hcs.1, hcs.2] at hposspec
+  have hspec := hxSplit hinv.1 hinv.2.2 (P₀.X n)
+  rw [hidxeq, ← hposspec, hcs.2]
+  calc (splitX (atomPairG D₀ D₁ splitY splitX P₀.X P₁.X (deltaPair m) n).1
+        (atomPairG D₀ D₁ splitY splitX P₀.X P₁.X (deltaPair m) n).2 (P₀.X n)).1
+      ⊆ (splitX (atomPairG D₀ D₁ splitY splitX P₀.X P₁.X (deltaPair m) n).1
+          (atomPairG D₀ D₁ splitY splitX P₀.X P₁.X (deltaPair m) n).2 (P₀.X n)).1 ∪
+        (splitX (atomPairG D₀ D₁ splitY splitX P₀.X P₁.X (deltaPair m) n).1
+          (atomPairG D₀ D₁ splitY splitX P₀.X P₁.X (deltaPair m) n).2 (P₀.X n)).2 :=
+        Set.subset_union_left
+    _ = (atomPairG D₀ D₁ splitY splitX P₀.X P₁.X (deltaPair m) n).2 := hspec.2.2.2.2.1
+
+include hD₀pos hD₀diff hD₀nomin hxSplit hD₁pos hD₁diff hD₁nomin hySplit hD₀mne hD₁mne in
+set_option maxHeartbeats 800000 in
+/-- **8.12(d)(5)(b)(i): the `X`-side I-formula for `XPseqCode`**, the code-level, bounded-existential
+analogue of `Exercise812c.lean`'s `xStep_snd_eq_inter_XPseq`. See the section docstring above for why
+the `⊇` direction needs no δ'-agreement case split, unlike the classical proof. -/
+theorem xPseqAtomIdx_eq_inter_XPseqCode {n k : ℕ} (hk : k < 4 ^ n)
+    (hjunk : xPseqAtomJunk P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY n k = 0) :
+    P₁.X (xPseqAtomIdx P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY n k) =
+      P₁.X (atomPairIdx1 P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY n k) ∩
+        P₁.X (XPseqCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion1 n) := by
+  apply Set.Subset.antisymm
+  · intro z hz
+    refine ⟨xPseqAtomIdx_subset_atomPairIdx1 P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY
+      hD₀pos hD₀diff hxSplit hD₁pos hD₁diff hySplit hD₀mne hD₁mne hjunk hz, ?_⟩
+    exact (mem_XPseqCode_iff_unconditional P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hD₀pos
+      hD₀diff hD₀nomin hxSplit hD₁pos hD₁diff hD₁nomin hySplit hD₀mne hD₁mne hUnion1 n z).mpr
+      ⟨k, hk, hjunk, hz⟩
+  · rintro z ⟨hzB, hzXP⟩
+    obtain ⟨k', hk', hjunk', hz'⟩ := (mem_XPseqCode_iff_unconditional P₀ P₁ hDiff0 hDiff1 splitX
+      hSplitX splitY hSplitY hD₀pos hD₀diff hD₀nomin hxSplit hD₁pos hD₁diff hD₁nomin hySplit hD₀mne
+      hD₁mne hUnion1 n z).mp hzXP
+    by_cases hkk' : k' = k
+    · rwa [hkk'] at hz'
+    · exfalso
+      have hAjunk : atomPairJunk P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY n k = 0 := by
+        have h := hjunk
+        rw [xPseqAtomJunk_eq] at h
+        exact junk_eq_zero_of_selectFn_eq_zero h
+      have hAjunk' : atomPairJunk P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY n k' = 0 := by
+        have h := hjunk'
+        rw [xPseqAtomJunk_eq] at h
+        exact junk_eq_zero_of_selectFn_eq_zero h
+      obtain ⟨i, hi, hne⟩ := exists_deltaPair_ne_of_lt_of_ne hk' hk hkk'
+      have hdisj := (atomPairCodeState_disjoint P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY
+        hD₀pos hD₀diff hxSplit hD₁pos hD₁diff hySplit hD₀mne hD₁mne
+        (n := n) (k := k') (k' := k) hAjunk' hAjunk ⟨i, hi, hne⟩).2
+      have hz'' : z ∈ P₁.X (atomPairIdx1 P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY n k') :=
+        xPseqAtomIdx_subset_atomPairIdx1 P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hD₀pos
+          hD₀diff hxSplit hD₁pos hD₁diff hySplit hD₀mne hD₁mne hjunk' hz'
+      exact absurd (Set.mem_inter hz'' hzB) (by rw [hdisj]; simp)
+
+end XPseqCodeIFormula

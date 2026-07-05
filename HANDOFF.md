@@ -9341,3 +9341,64 @@ choice introduced. `arxiv.md`'s `8.12(d)(5)(a)` row updated to `Pass` with the d
 interleaving) if no clean argument surfaces quickly); (ii) `8.12(e)(b)`–`(f)(a)` (the `SplitV.lean`/
 generic-bisection branch, see previous checkpoint). Either is a valid next step; no dependency between
 them has been identified.
+
+## 2026-07-05 checkpoint — `8.12(d)(5)(b)` design decision resolved; `(b)(i)` (`Pass`)
+
+Resumed the `(d)(5)(b)` thread flagged in the previous checkpoint. Did the "bounded search" the
+`(d)(5)` row's design decision asked for **before** writing any interleaving code, per this project's
+discipline: traced exactly how `Exercise812c.lean`'s classical `combinedX`/`combinedY`/`genAtom`/
+`transfer_dir` apparatus is used (`transfer_dir` is `Theorem88.lean`'s, **already fully generic**
+over two independent families + a `hcore` correspondence — confirmed zero new general theory is
+needed there, only new instantiations). Conclusion: **Route 2 (a direct argument bypassing
+interleaving) does not exist for `(d)(5)(b)`'s headline theorems** — `X_subset_iff_XPseqCode_subset`
+etc. compare `P₀.X i`/`P₀.X j`, raw enumeration indices that are never themselves `atomPairG` outputs
+(only ever fed into it as the `Xn`/`Yn` step argument), so `atomPairG_disjoint`/`atomPairG_invariant`/
+`xStepG_snd_union` — all single-depth invariants of *one* recursion run — cannot relate two arbitrary
+such indices to each other. **Route 1 (generalized interleaving) is necessary**, exactly as `(d)(5)`'s
+finding 2 predicted.
+
+**But a genuine, non-trivial simplification survives**, found during the same investigation:
+`Exercise812c.lean`'s `xStep_snd_eq_inter_XPseq`/`yStep_fst_eq_inter_YPseq` "I-formula" lemmas
+(~270 lines total, needed to seed the interleaved family's odd-depth half-steps) are expensive
+classically only because `XPseq`/`YPseq` union over the *uncountable* `δ' : ℕ → Bool × Bool` — the
+`⊇` direction's proof must case-split on whether `δ'` agrees with the given `δ` through depth `n`.
+At the code level, `XPseqCode`/`YPseqCode` union over *at most `4ⁿ` literally distinct* bit-sources
+(`(d)(4)`'s `mem_XPseqCode_iff_unconditional`/`mem_YPseqCode_iff_unconditional`), and any two
+*distinct* bit-sources both `< 4ⁿ` are **automatically** distinguished somewhere below `n` — so the
+"agrees through `n`" case never arises, collapsing the `⊇` direction to one disjointness appeal.
+Re-scoped `(d)(5)(b)` into 4 further sub-parts, `(b)(i)`–`(b)(iv)` (see `arxiv.md`'s `8.12(d)(5)(b)`
+row and its four new sub-rows for the exact statements/plans).
+
+Executed `(b)(i)` (the `X`-side I-formula) this session, appended to `Exercise812d.lean`:
+- `deltaPair_fst_eq_testBit`/`deltaPair_snd_eq_testBit` — `deltaPair` is `Nat.testBit` in disguise,
+  two bits per depth (base-`4` analogue of `Theorem88d.lean`'s `deltaOf_eq_testBit`).
+- `eq_of_deltaPair_agree_of_lt_four_pow`/`exists_deltaPair_ne_of_lt_of_ne` — the key combinatorial
+  fact making the simplification above work, via `Nat.eq_of_testBit_eq`/`Nat.testBit_lt_two_pow`,
+  directly mirroring `Theorem88d.lean`'s `eq_of_deltaOf_agree_of_lt_two_pow`'s proof strategy.
+- `xPseqAtomIdx_subset_atomPairIdx1` — the `⊆`-half of the I-formula, factored out for reuse at both
+  bit-sources the headline theorem's `⊇` direction needs.
+- `xPseqAtomIdx_eq_inter_XPseqCode` — the headline: `P₁.X (xPseqAtomIdx … n k) = P₁.X (atomPairIdx1
+  … n k) ∩ P₁.X (XPseqCode … n)` for non-junk `k < 4 ^ n`.
+
+One real bug caught during execution, worth flagging for `(b)(ii)`: `atomPairCodeState_correct`'s
+explicit arguments are `(k n : ℕ)` (bit-source *first*, depth second) — passing `(n k)` instead
+type-checks (both are `ℕ`) but produces a *silent* argument-order swap that manifests as a
+`whnf`-timeout deep in an unrelated `rw`, not a type error, because the resulting mismatched
+equation only fails by *unfolding* (both sides being closed but unequal `Nat.rec`-shaped terms)
+rather than by outright syntactic disagreement. Cost real debugging time; double-check explicit
+argument order (not just types) whenever a hypothesis and a lemma call disagree only in variable
+names, especially for `atomPairCodeState_correct`/`atomPairCodeState_disjoint`-shaped lemmas mixing
+a bit-source and a depth of the same type.
+
+Built (`lake build` — 3165 jobs — and `lake env lean Exercise812d.lean` directly, both clean, zero
+warnings). Axiom-audited: all four new declarations `⊆ {propext, Classical.choice, Quot.sound}`,
+matching this section's established baseline. `arxiv.md`'s `8.12(d)(5)(b)` row and its new `(b)(i)`–
+`(b)(iv)` sub-rows updated (`(b)(i)` `Pass`, rest `Scoped, not started`).
+
+**Status: `8.12(d)(5)(b)(i)` is `Pass`.** **Resume protocol:** next up is `(d)(5)(b)(ii)`, the `Y`-side
+I-formula — structurally harder than `(b)(i)` (extra free bit `bx`, needs a *new* `xSubStep_idx0`
+closed form for `bx = 0` since `(d)(5)(a)`'s `xPseqAtomIdx0_eq` only covers `bx = 1`, and *two*
+independent sources of disjointness to rule out in the `⊇` direction — different `i`, or same `i`
+but different `bx`). Read `arxiv.md`'s `8.12(d)(5)(b)(ii)` row before starting. `(d)(5)(b)(i)`'s
+`exists_deltaPair_ne_of_lt_of_ne` is reusable verbatim. The `(e)(b)`–`(f)(a)` `SplitV.lean` thread
+(previous checkpoint) remains open in parallel; no dependency between the two has been identified.
