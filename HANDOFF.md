@@ -10208,3 +10208,39 @@ invMap_computable := …; left_inv := invMap_comp_toMap …; right_inv := toMap_
 followed by `theorem effectivelyIsomorphic_812d : EffectivelyIsomorphic P₀ P₁ := ⟨effectiveIso812d
 …⟩`. Once this lands, `8.12(d)(6)` — hence `8.12(d)` in full — is complete. The `(e)(b)`–`(f)(a)`
 `SplitV.lean` thread remains open in parallel; no dependency identified.
+
+**2026-07-05 — Exercise 8.12(d)(6)(c) `Pass`: `effectiveIso812d`/`effectivelyIsomorphic_812d`
+final assembly. `8.12(d)(6)` — hence `8.12(d)` as a whole — is now COMPLETE.** New `section
+EffectiveIso812d` appended to `Exercise812d.lean` (after `ToMapComp812d`). Pure citation
+assembly, zero new mathematical content, exactly as scoped: `toMap`/`invMap` from `(d)(5)(e)(iv)`'s
+`domainIsoCode812d` (via `ofIso`/`.symm`), `toMap_computable`/`invMap_computable` from
+`(d)(5)(f)`'s `domainIsoCode812d_isComputableMap`/`domainIsoCode812d_symm_isComputableMap`,
+`left_inv`/`right_inv` from `(a)`/`(b)`'s `invMap_comp_toMap`/`toMap_comp_invMap`; then
+`effectivelyIsomorphic_812d := ⟨effectiveIso812d …⟩`. Three infrastructure items needed (not proof
+content, all anticipated): (1) new `import Scott1980.Neighborhood.Exercise718` (previously
+unimported — `EffectiveIso`/`EffectivelyIsomorphic` weren't in scope); (2) `open … Exercise718`
+added to the file's existing `open` line (`EffectiveIso`/`EffectivelyIsomorphic` live in namespace
+`Scott1980.Neighborhood.Exercise718`, not the top-level `Scott1980.Neighborhood`); (3)
+`noncomputable def` (since `domainIsoCode812d` itself is noncomputable). One genuine (small) gotcha
+not previously flagged: `effectivelyIsomorphic_812d`'s `include` line needed `hDiff0 hDiff1 hSplitX
+hSplitY` added explicitly alongside the usual 14 — Lean's automatic `include`-inference only
+picks up variables appearing in the *stated type* (`EffectivelyIsomorphic P₀ P₁` mentions neither),
+not ones used solely inside a proof term (`effectiveIso812d P₀ P₁ hDiff0 hDiff1 splitX hSplitX …`)
+that itself needs them; first attempt hit four `unknown identifier` errors, fixed by widening the
+`include` list to the full 18. Zero `sorry`; `lake build Scott1980` (3165 jobs) and `lake env lean
+Exercise812d.lean` both clean (only the pre-existing unrelated `linter.unusedSectionVars` warning
+on `yPseqAtomIdx_eq_of_dichotomy` remains). `#print axioms effectiveIso812d` and `#print axioms
+effectivelyIsomorphic_812d` both give `⊆ {propext, Classical.choice, Quot.sound}`, matching this
+section's — and `8.12(c)`'s — established baseline. `arxiv.md`: `8.12(d)(6)(c)` row → `Pass`;
+`8.12(d)(6)` umbrella → COMPLETE; `8.12(d)` umbrella → COMPLETE in full.
+
+**Status: Exercise 8.12(d) is COMPLETE in full** (`(d)(1)`–`(d)(6)`, all nested sub-parts, zero
+`sorry`, axiom-clean against the established `{propext, Classical.choice, Quot.sound}` baseline).
+**Resume protocol:** `8.12(d)` needs no further work. The next open thread in `arxiv.md` is
+`8.12(e)` (re-scoped into `(a)`–`(d)`, per its own scoping investigation logged above under
+`8.12(e)`'s row) — building concrete computable `splitX`/`splitY` for `U`/`V` so that `(d)`'s
+machinery instantiates to the literal Exercise 8.12 statement. The `(e)(b)`–`(f)(a)` `SplitV.lean`
+thread mentioned in earlier checkpoints is part of that. Read `arxiv.md`'s `8.12(e)` row in full
+before starting (`Grep`/`Read` with `offset`/`limit`, per this file's own discipline) — it already
+contains a detailed re-scoping investigation with findings 1–2 on what `SplitSpec'`/
+`IsComputableSplit` actually require for `U`/`V` specifically.
