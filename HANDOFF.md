@@ -10035,3 +10035,32 @@ started.
 Once all four land, `8.12(d)(5)` is complete and `8.12(d)(6)` (final `EffectiveIso` assembly)
 becomes the next target. The `(e)(b)`–`(f)(a)` `SplitV.lean` thread remains open in parallel; no
 dependency identified.
+
+**2026-07-05 — Exercise 8.12(d)(5)(f)(iii) `Pass`: `toD0Code_rel_iff`.** New `section
+ToD0CodeRelIff` appended to `Exercise812d.lean` (after `DomainIsoCode812dIsComputableMap`).
+Matched the plan exactly, first try, no surprises: exact mirror of `(f)(i)`'s `toD1Code_rel_iff`
+with `P₀`/`P₁`, `D₀`/`D₁`, `toD1Code`/`toD0Code`, `XPseqCode`/`YPseqCode` swapped throughout —
+`show (∃ _ : D₁.mem (P₁.X m), (toD0Code … (D₁.principal (P₁.mem_X m))).mem (P₀.X n)) ↔ _` (relying
+on `domainIsoCode812d.symm.toFun = domainIsoCode812d.invFun = toD0Code …` holding definitionally,
+exactly as `Theorem88n.lean`'s `isoProj_rel_iff_incl` relies on the same fact for
+`domainIsoCode`), `simp only [toD0Code, mem_principal]`, same two-line `constructor`/`rintro`/
+`exact` shape. Zero `sorry`; `lake build Scott1980` (3165 jobs) and `lake env lean
+Exercise812d.lean` both clean (only the pre-existing `(b)(ii)`-era `linter.unusedSectionVars`
+warning on `yPseqAtomIdx_eq_of_dichotomy` remains, unchanged — not introduced by this checkpoint).
+`#print axioms toD0Code_rel_iff` gives `⊆ {propext, Classical.choice, Quot.sound}`, matching this
+section's established baseline. `arxiv.md`: `8.12(d)(5)(f)(iii)` row updated to `Pass`;
+`8.12(d)(5)(f)` umbrella row updated to note `(f)(i)`–`(iii)` `Pass`, `(f)(iv)` not started.
+
+**Status: `8.12(d)(5)(f)(iii)` is `Pass`.** **Resume protocol:** next up is
+`8.12(d)(5)(f)(iv)` (`domainIsoCode812d_symm_isComputableMap`), the last of the four `(f)`
+sub-parts — exact mirror of `(f)(ii)`'s `domainIsoCode812d_isComputableMap` via `(f)(iii)`'s
+`toD0Code_rel_iff`, swapping `P₀`↔`P₁`, `XPseqCode`↔`YPseqCode`/`primrec_YPseqCode`,
+`eq_computable`/`incl_computable` roles: `hA : RecDecidable (fun w => P₀.X w.unpair.2.unpair.2 =
+P₀.X (YPseqCode … w.unpair.1))` via `P₀.eq_computable.comp hg` (`hg` built from
+`primrec_YPseqCode`); `hB : RecDecidable (fun w => P₁.X w.unpair.2.unpair.1 ⊆ P₁.X w.unpair.1)`
+via `P₁.incl_computable.comp hh`; `(hA.and hB).re.proj` closes the outer `∃ k`; final
+`REPred.of_iff` after a `show` to unfold `IsComputableMap P₁ P₀ (ofIso (domainIsoCode812d
+…).symm)`, closed via `rw [toD0Code_rel_iff]` plus the same `constructor`/`rintro`/`exact`
+shuffle. Once this lands, `8.12(d)(5)` is complete in full and `8.12(d)(6)` (final `EffectiveIso`
+assembly) becomes the next target. The `(e)(b)`–`(f)(a)` `SplitV.lean` thread remains open in
+parallel; no dependency identified.
