@@ -2383,13 +2383,13 @@ Lecture VIII covers retractions, projections, and the construction of the univer
 * **Mathematical Target:** `(atomPairG (deltaPair i) n).1 ≠ ∅ → atomPairJunk n i = 0` (tentative names `atomPairG_fst_eq_empty_of_junk_eq_one` for the induction, then its contrapositive `atomPairJunk_eq_zero_of_ne_empty`)
 * **Lean File:** — (not yet started)
 * **Proof Notes:** proved as the contrapositive "junk newly `1` at some step ⟹ the classical component is already `∅` from that step on forever", by induction on `n`. Two ingredients, both already `Pass`, do the real work: (a) whichever half-step's *direct* check trips (`emptyInterDec_eq_one_iff`/`emptyDiffDec_eq_one_iff`'s biconditionals — decider-reads-`1` ⟺ genuine classical emptiness, under `IsPositive`/`DiffClosed`+`NoMinimal`) makes that step's direct-refined component literally `∅`; (b) if instead the *other* side's direct check trips, `atomPairG_invariant`'s `A = ∅ ↔ B = ∅` dichotomy (holds at every depth) transfers the emptiness across; and once a component is `∅`, `split_fst_subset'`/`split_snd_subset'` (split outputs `⊆` their context) plus the trivial `∅ ∩ X = ∅`/`∅ \ X = ∅` propagate it forward through every later step automatically.
-* **Status:** Scoped, not started; the substantive new content in this whole closure — no dependency on `(c)(i)`–`(c)(iv)` to *state*, but needed by `(c)(vi)` to *apply*
+* **Status:** Scoped, not started. **Dependency direction (one-way, not circular):** `(c)(v)` is self-contained — it needs *none* of `(c)(i)`–`(c)(iv)` to state or prove, only pre-existing `Pass` ingredients (`emptyInterDec_eq_one_iff`/`emptyDiffDec_eq_one_iff`, `atomPairG_invariant`, `split_fst_subset'`/`split_snd_subset'`) unrelated to this closure's earlier sub-goals. It is however itself a *dependency of* `(c)(vi)` below (which also separately needs `(c)(iv)`) — the arrow points `(c)(v) → (c)(vi)` only, never the reverse.
 
 ##### Exercise 8.12(d)(4)(c)(vi): assemble into the unconditional "found" fact
 * **Mathematical Target:** `∃ i < 4ⁿ, xPseqAtomJunk n i = 0`, unconditionally — then specialize into unconditional `XPseqCode_mem`/`mem_XPseqCode_iff` (dropping their `hfound` hypothesis)
 * **Lean File:** — (not yet started)
 * **Proof Notes:** chain `(c)(iv)` + `(c)(v)` + `(d)(3)(d)`'s already-`Pass` *forward* half of `atomPairCodeState_correct` (rewriting the now-known-non-junk classical piece as the code-indexed one) + `emptyInterDec_eq_one_iff`'s converse reading, landing exactly on `xPseqAtomJunk_eq`'s defining condition `emptyInterDec P₀ (idx0, n) = 0`. This discharges `XFold_found_iff`'s hypothesis at `N = 4ⁿ`. **Once done, `(c)`'s overall Status above upgrades from `Partial` to `Pass` (unconditional).**
-* **Status:** Scoped, not started; depends on `(c)(iv)` and `(c)(v)`
+* **Status:** Scoped, not started. **Depends on `(c)(iv)` and `(c)(v)` (both already `Pass`/scoped above) as inputs — this sub-goal only *consumes* them, so there is no cycle.**
 
 #### Exercise 8.12(d)(4)(d)
 * **Mathematical Target:** `YPseqCode`, the code-level `Y`-side union fold (double union), with closed-form correctness
