@@ -9108,3 +9108,55 @@ writing `(d)(v)`, re-read `(c)(v)`'s full proof (`section AtomPairCorrect5`,
 which sub-case (`xcheck`/`ycheck`) is now the "direct" trigger for the `D₁`-side and which needs the
 invariant-dichotomy transfer — the two sub-steps' roles are expected to swap analogously. Read
 `arxiv.md`'s `8.12(d)(4)(d)(v)` row for the exact statement.
+
+---
+
+**2026-07-04 checkpoint — `8.12(d)(4)(d)(v)` is `Pass`.** Proved `atomPairG_snd_eq_empty_of_junk_eq_one`/
+`atomPairJunk_eq_zero_of_snd_ne_empty`, appended to the end of `section AtomPairCorrect5`
+(`Exercise812d.lean`, right before `end AtomPairCorrect5`) — the `D₁`-side converse-biconditional
+mirroring `(c)(v)`. Confirmed the scoping prediction exactly: worked out the swap by first tracing
+`atomPairG_succ_eq`'s exact unfolding (`atomPairG (n+1) = yStepG splitY (xStepG splitX A B Xn b1).1
+(xStepG splitX A B Xn b1).2 Yn b2`) to identify which of `xStepG`/`yStepG`'s two components is the
+"direct-refine" (trivial, testable via one presentation's decider) vs. "split" (needs `SplitSpec'`)
+side on each of the two half-steps, before writing any proof text. Both `(c)(v)`/`(d)(v)` share the
+*identical* unfolding chain down to `hjunk1 : selectFn xcheck 1 ycheck = 1` (the per-step algebra is
+side-agnostic); the two branches diverge from there: **`xcheck = 0`** (`X`-sub-step non-junk) — the
+`Y`-sub-step's own direct-refine check trips `B2` (the `D₁`-side) *directly* via
+`emptyInterDec_eq_one_iff`/`emptyDiffDec_eq_one_iff` (`P₁`) — and since `B2` **is** `(d)(v)`'s target
+here, **no `atomPairG_invariant` hop is needed** (unlike `(c)(v)`, whose target `A2` needed the
+invariant's dichotomy to hop across from this same trigger). **`xcheck = 1`** (`X`-sub-step's own
+check trips) — `hA1eq : A1 = ∅` derives identically to `(c)(v)`'s own chase (via `P₀`), but `(d)(v)`'s
+target `B2` needs a hop *from* `A1` *to* `B1` via `xStepG_spec`'s own half-step biconditional
+`hspecAB` (a purely local one-step fact already in scope, *not* the depth-crossing
+`atomPairG_invariant`), then propagates via the *trivial* `yStepG_snd_subset` (no `SplitSpec'`
+needed) in place of `(c)(v)`'s `SplitSpec'`-needing `yStepG_fst_subset`. **Net result: `(d)(v)`'s
+proof needs `atomPairG_invariant` in neither branch — genuinely simpler than `(c)(v)`'s own proof**
+(the "already junk, propagate" branch is a direct `atomPairG_fst_subset`→`atomPairG_snd_subset`
+swap, unchanged in structure). `atomPairJunk_eq_zero_of_snd_ne_empty` is the routine contrapositive,
+identical in shape to `(c)(v)`'s own. No Lean gotchas — went in clean on the first attempt (the
+upfront `xStepG`/`yStepG` unfolding analysis paid off; no trial-and-error needed once the case
+identification was worked out on paper first). Axiom-audited: both `⊆{propext, Classical.choice,
+Quot.sound}` (ambient baseline, matching `(c)(v)`'s own footprint exactly). Whole-project `lake
+build` (3164 jobs) green, zero `sorry`. `arxiv.md`: `(d)(v)`'s own row updated to `Pass` with a
+dense proof note documenting the swap in full; `(d)(4)(d)`'s umbrella row updated to note
+`(d)(i)`–`(d)(v)` `Pass`, only `(d)(vi)` remaining `Scoped`.
+
+**Status: `8.12(d)(4)(d)(v)` is `Pass`.** **Resume protocol:** next up is `(d)(vi)` — the final
+assembly of `(d)(4)(d)`'s closure, doubled over `bx`: `∃ i < 4ⁿ, ∃ bx ≤ 1, yPseqAtomJunk n i bx = 0`,
+unconditionally, then specializing into unconditional `YPseqCode_mem`/`mem_YPseqCode_iff`. Mirrors
+`(c)(vi)`'s `xPseqAtomJunk_exists_zero`/`XFold_four_pow_found`/`XPseqCode_mem_unconditional`/
+`mem_XPseqCode_iff_unconditional` chain (`section XPseqCodeUnconditional`), chaining `(d)(iv)`'s
+`exists_atomPairG_deltaPair_inter_Yn_ne_empty` with `(d)(v)`'s
+`atomPairJunk_eq_zero_of_snd_ne_empty` plus `(d)(3)(d)`'s `atomPairCodeState_correct` and
+`emptyInterDec_eq_one_iff`'s converse reading — landing on `yPseqAtomJunk`'s defining condition.
+Per `arxiv.md`'s own scoping note, the one new wrinkle beyond `(c)(vi)`'s template is `bx`:
+`(d)(iv)`'s covering fact only needs `P₁.X n ≠ ∅`, independent of `bx`, so expect *either*
+`YFoldInner n 0 _` or `YFoldInner n 1 _` (or plausibly both) to pick up the unconditional "found"
+fact through `combineFound2`'s own "propagate whichever side found something" branch — no need to
+actually determine which `bx` in advance; check `combineFound2`'s exact correctness lemma names
+(`found_iff`/`mem_of_found`/`mem_iff` for `combineFound2`, `(d)(4)(d)`'s own row/`YPseqCode`
+section) before writing. **Once `(d)(vi)` lands, `8.12(d)(4)(d)` upgrades from `Partial` to `Pass`
+unconditionally, and per the `(d)(4)` umbrella note, all of `8.12(d)(4)`'s sub-parts
+`(a)`–`(d)` become `Pass`** — read `arxiv.md`'s `8.12(d)(4)(d)(vi)` row and the `YPseqCode`
+section (`Exercise812d.lean`) for the exact statement and existing `combineFound2`/`YFoldInner`
+machinery to chain into.
