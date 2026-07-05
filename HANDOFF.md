@@ -9783,3 +9783,33 @@ before starting — consider re-scoping into sub-parts first if `left_inv`/`righ
 turn out to need substantial chained reasoning, mirroring how `(d)(5)(d)` itself was re-scoped. The
 `(e)(b)`–`(f)(a)` `SplitV.lean` thread (eleven checkpoints back) remains open in parallel; no
 dependency between the two has been identified.
+
+**2026-07-05 — Exercise 8.12(d)(5)(e)(i) `Pass`: `X_eq_iff_XPseqCode_eq`, the same-family
+`embed_eq_iff` companion.** New `section XEqIffXPseqCodeEq` appended to `Exercise812d.lean` (after
+`ToD0Code`). `theorem X_eq_iff_XPseqCode_eq (i j : ℕ) : P₀.X i = P₀.X j ↔ P₁.X (XPseqCode … i) =
+P₁.X (XPseqCode … j)` — matched the planned proof exactly, direct transcription of
+`Exercise812c.lean`'s `X_eq_iff_XPseq_eq` (lines 2027–2041): each direction is
+`Set.Subset.antisymm` of `(d)(5)(b)(iv)`'s `X_subset_iff_XPseqCode_subset` applied at `(i, j)` and
+`(j, i)` (`.mp`/`.mpr` on `h.subset`/`h.symm.subset`), no new mathematical content, no surprises.
+Zero `sorry`; `lake build Scott1980` (3165 jobs) and `lake env lean Exercise812d.lean` both clean
+(only the pre-existing `(b)(ii)`-era `linter.unusedSectionVars` warning on
+`yPseqAtomIdx_eq_of_dichotomy` remains, unchanged — not introduced by this checkpoint).
+`#print axioms X_eq_iff_XPseqCode_eq` gives `⊆ {propext, Classical.choice, Quot.sound}`, matching
+this section's established baseline (choice inherited from `splitChoice'`/`atomPairG`-family
+precedents, no new taint). `arxiv.md`: `8.12(d)(5)(e)(i)` row updated to `Pass` with a dense proof
+note; `8.12(d)(5)(e)` umbrella row updated to "`(e)(i)` `Pass`; `(e)(ii)`–`(iv)` not started".
+
+**Status: `8.12(d)(5)(e)(i)` is `Pass`.** **Resume protocol:** next up is `8.12(d)(5)(e)(ii)` — the
+standalone `left_inv` content, `theorem toD0Code_toD1Code (x : D₀.Element) : toD0Code … (toD1Code
+… x) = x`. Per `arxiv.md`'s own proof-notes plan (finding 1, `8.12(d)(5)(e)` row): via
+`Element.ext`, reduce to `∀ S, (∃ m n, S = P₀.X (YPseqCode … m) ∧ P₁.X m = P₁.X (XPseqCode … n) ∧
+x.mem (P₀.X n)) ↔ x.mem S`. Forward (`⟸`): `x.sub`/`P₀.surj` names `S` as some `P₀.X n`; take `m :=
+XPseqCode … n` (handed over for free, no search); `P₁.X m = P₁.X (XPseqCode … n)` is `rfl`;
+`(d)(5)(c)(iii)`'s `XPseqCode_eq_Y_iff_X_eq_YPseqCode n (XPseqCode … n) |>.mp rfl` gives `S = P₀.X
+(YPseqCode … m)` for free (self-referential pair, exactly `toD1Code_up_mem`'s pattern). Backward
+(`⟹`): consume witness `⟨m, n, hS, hmn, hxn⟩`, `XPseqCode_eq_Y_iff_X_eq_YPseqCode n m` transports
+`hmn` into `P₀.X n = P₀.X (YPseqCode … m)`, combine with `hS` to get `S = P₀.X n`, close via `hxn`.
+Expected comparably short to `toD1Code_up_mem`/`toD0Code_up_mem` (no `hXcover`/`hYcover`-style
+double search). Then `8.12(d)(5)(e)(iii)` (`right_inv`, exact mirror) and `8.12(d)(5)(e)(iv)`
+(final `domainIsoCode812d`/`isomorphic_812d` assembly). The `(e)(b)`–`(f)(a)` `SplitV.lean` thread
+remains open in parallel; no dependency identified.

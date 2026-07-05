@@ -5482,3 +5482,49 @@ def toD0Code (y : D₁.Element) : D₀.Element where
     hD₀nomin hxSplit hD₁pos hD₁diff hD₁nomin hySplit hD₀mne hD₁mne hUnion0 hUnion1 y
 
 end ToD0Code
+
+section XEqIffXPseqCodeEq
+
+variable {α β : Type*} {D₀ : NeighborhoodSystem α} {D₁ : NeighborhoodSystem β}
+  (P₀ : ComputablePresentation D₀) (P₁ : ComputablePresentation D₁)
+  (hDiff0 : IsComputableDiff P₀) (hDiff1 : IsComputableDiff P₁)
+  (splitX : Set α → Set β → Set α → Set β × Set β) (hSplitX : IsComputableSplit P₀ P₁ splitX)
+  (splitY : Set β → Set α → Set β → Set α × Set α) (hSplitY : IsComputableSplit P₁ P₀ splitY)
+  (hD₀pos : D₀.IsPositive) (hD₀diff : D₀.DiffClosed) (hD₀nomin : D₀.NoMinimal)
+  (hxSplit : SplitSpec' D₁ splitX)
+  (hD₁pos : D₁.IsPositive) (hD₁diff : D₁.DiffClosed) (hD₁nomin : D₁.NoMinimal)
+  (hySplit : SplitSpec' D₀ splitY)
+  (hD₀mne : D₀.master.Nonempty) (hD₁mne : D₁.master.Nonempty)
+  (hUnion0 : IsComputableUnion P₀) (hUnion1 : IsComputableUnion P₁)
+
+include hD₀pos hD₀diff hD₀nomin hxSplit hD₁pos hD₁diff hD₁nomin hySplit hD₀mne hD₁mne hUnion0
+  hUnion1 in
+/-- **Exercise 8.12(d)(5)(e)(i).** The same-family `embed_eq_iff` companion, generalizing
+`Exercise812c.lean`'s `X_eq_iff_XPseq_eq` to the code level: `P₀.X i = P₀.X j ↔ P₁.X (XPseqCode
+… i) = P₁.X (XPseqCode … j)`, needed by `(e)(iv)`'s `domainIsoCode812d.map_rel_iff'`. Pure
+packaging, no new mathematical content: each direction is `Set.Subset.antisymm` of
+`(d)(5)(b)(iv)`'s `X_subset_iff_XPseqCode_subset` applied at `(i, j)` and `(j, i)`, exactly
+mirroring `X_eq_iff_XPseq_eq`'s proof line-for-line. -/
+theorem X_eq_iff_XPseqCode_eq (i j : ℕ) :
+    P₀.X i = P₀.X j ↔
+      P₁.X (XPseqCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion1 i) =
+        P₁.X (XPseqCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion1 j) := by
+  constructor
+  · intro h
+    exact Set.Subset.antisymm
+      ((X_subset_iff_XPseqCode_subset P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hD₀pos
+        hD₀diff hD₀nomin hxSplit hD₁pos hD₁diff hD₁nomin hySplit hD₀mne hD₁mne hUnion0 hUnion1 i
+        j).mp h.subset)
+      ((X_subset_iff_XPseqCode_subset P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hD₀pos
+        hD₀diff hD₀nomin hxSplit hD₁pos hD₁diff hD₁nomin hySplit hD₀mne hD₁mne hUnion0 hUnion1 j
+        i).mp h.symm.subset)
+  · intro h
+    exact Set.Subset.antisymm
+      ((X_subset_iff_XPseqCode_subset P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hD₀pos
+        hD₀diff hD₀nomin hxSplit hD₁pos hD₁diff hD₁nomin hySplit hD₀mne hD₁mne hUnion0 hUnion1 i
+        j).mpr h.subset)
+      ((X_subset_iff_XPseqCode_subset P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hD₀pos
+        hD₀diff hD₀nomin hxSplit hD₁pos hD₁diff hD₁nomin hySplit hD₀mne hD₁mne hUnion0 hUnion1 j
+        i).mpr h.symm.subset)
+
+end XEqIffXPseqCodeEq
