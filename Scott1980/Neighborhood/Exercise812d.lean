@@ -3581,3 +3581,228 @@ theorem mem_YPseqCode_iff_unconditional (n : ℕ) (z : α) :
       hD₀diff hD₀nomin hxSplit hD₁pos hD₁diff hD₁nomin hySplit hD₀mne hD₁mne hUnion0 n) z
 
 end YPseqCodeUnconditional
+
+/-! ## 8.12(d)(5)(a): zero/master facts for `XPseqCode`/`YPseqCode`
+
+Generalizes `Exercise812c.lean`'s `XPseq_zero`/`YPseq_zero` to the code level: given Scott's
+zero-convention `hX0 : P₀.X 0 = D₀.master`/`hY0 : P₁.X 0 = D₁.master` (the code-level analogue of
+`(c)(vii)`'s own `hX0`/`hY0`), `P₁.X (XPseqCode … 0) = D₁.master` and `P₀.X (YPseqCode … 0) =
+D₀.master`.
+
+Both proofs need only the depth-`0` slice of the fold: `4 ^ 0 = 1` forces the existential witness
+`i` in `mem_XPseqCode_iff_unconditional`/`mem_YPseqCode_iff_unconditional` to be `0`, `atomPairG`'s
+own `n = 0` base clause is `(D₀.master, D₁.master)` regardless of sign-history
+(`atomPairCodeState_correct`'s zero case, unconditionally non-junk via the new `atomPairJunk_zero`),
+and the *same* `SplitSpec'` argument `XPseq_zero`/`YPseq_zero` use — the "−"-branch forced empty by
+`A \ Xn = D₀.master \ D₀.master = ∅` (resp. `D₁`-side), pinning the "+"-branch to the full union via
+`(split A B Xn).1 ∪ (split A B Xn).2 = B` — transports through `IsComputableSplit.posIdx_spec`
+verbatim. The `⊆ D₁.master`/`⊆ D₀.master` half of each equality needs no case analysis at all: every
+half-step atom is `mem`-genuine unconditionally (`xPseqAtomIdx_mem`/`yPseqAtomIdx_mem`), hence
+`⊆ D₁.master`/`D₀.master` via `sub_master` regardless of which bit-source/junk-status witnessed it.
+
+The `Y`-side reuses the `X`-side computation directly: `yPseqAtomState`'s inner `xSubStep` call at
+bit `bx = 1` is *definitionally* `xPseqAtomState` (identical packed arguments), so the `D₁`-side
+value already computed for `XPseqCode`'s zero fact doubles as the "`B`"-input the `Y`-sub-step's
+own split (`hSplitY`) needs — only the `D₀`-direct-refine companion value (`xPseqAtomIdx0_eq`, the
+`stateIdx0` twin of `xPseqAtomIdx_eq`) is new content. -/
+
+section XYPseqCodeZero
+
+variable {α β : Type*} {D₀ : NeighborhoodSystem α} {D₁ : NeighborhoodSystem β}
+  (P₀ : ComputablePresentation D₀) (P₁ : ComputablePresentation D₁)
+  (hDiff0 : IsComputableDiff P₀) (hDiff1 : IsComputableDiff P₁)
+  (splitX : Set α → Set β → Set α → Set β × Set β) (hSplitX : IsComputableSplit P₀ P₁ splitX)
+  (splitY : Set β → Set α → Set β → Set α × Set α) (hSplitY : IsComputableSplit P₁ P₀ splitY)
+  (hD₀pos : D₀.IsPositive) (hD₀diff : D₀.DiffClosed) (hD₀nomin : D₀.NoMinimal)
+  (hxSplit : SplitSpec' D₁ splitX)
+  (hD₁pos : D₁.IsPositive) (hD₁diff : D₁.DiffClosed) (hD₁nomin : D₁.NoMinimal)
+  (hySplit : SplitSpec' D₀ splitY)
+  (hD₀mne : D₀.master.Nonempty) (hD₁mne : D₁.master.Nonempty)
+  (hUnion0 : IsComputableUnion P₀) (hUnion1 : IsComputableUnion P₁)
+  (hX0 : P₀.X 0 = D₀.master) (hY0 : P₁.X 0 = D₁.master)
+
+/-- **The depth-`0` state is never junk**, for any bit-source `k`: `atomPairCodeState`'s own base
+clause (`stateBase2`) hardcodes junk `0`, regardless of `k`. -/
+theorem atomPairJunk_zero (k : ℕ) :
+    atomPairJunk P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY 0 k = 0 := by
+  unfold atomPairJunk
+  simp [atomPairCodeState, atomPairBase, stateBase2]
+
+/-- **The half-step atom's `D₀`-direct-refine index, in closed form, when non-junk**: the
+`D₀`-side twin of `xPseqAtomIdx_eq`, reading off `xSubStep`'s *other* output (`stateIdx0`, the
+direct `∩`/`\` refinement against `P₀.X n`, rather than `stateIdx1`'s split branch). -/
+theorem xPseqAtomIdx0_eq {n i : ℕ}
+    (h : xPseqAtomJunk P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY n i = 0) :
+    stateIdx0 (xPseqAtomState P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY n i) =
+      P₀.inter (atomPairIdx0 P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY n i) n := by
+  have h' : stateJunk (xSubStep P₀ P₁ hDiff0 splitX hSplitX (Nat.pair n (Nat.pair 1
+      (packState2 (atomPairIdx0 P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY n i)
+        (atomPairIdx1 P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY n i)
+        (atomPairJunk P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY n i))))) = 0 := h
+  rw [xSubStep_junk_eq] at h'
+  unfold xPseqAtomState
+  rw [xSubStep_idx0_eq (h := h'), stateIdx0_packState2, selectFn_one]
+
+include hD₀pos hD₀diff hD₀nomin hxSplit hD₁pos hD₁diff hD₁nomin hySplit hD₀mne hD₁mne hX0 in
+/-- **8.12(d)(5)(a), `X`-side.** `P₁.X (XPseqCode … 0) = D₁.master`. -/
+theorem XPseqCode_zero :
+    P₁.X (XPseqCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion1 0) = D₁.master := by
+  have hjunk0 := atomPairJunk_zero P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY 0
+  have hcs := atomPairCodeState_correct P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY 0 0 hjunk0
+  have hA0 : P₀.X (atomPairIdx0 P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY 0 0) =
+      D₀.master := hcs.1
+  have hB0 : P₁.X (atomPairIdx1 P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY 0 0) =
+      D₁.master := hcs.2
+  have hxjunk0 : xPseqAtomJunk P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY 0 0 = 0 := by
+    rw [xPseqAtomJunk_eq, hjunk0, selectFn_zero]
+    by_contra hcon
+    have hle := emptyInterDec_le_one P₀ (Nat.pair
+      (atomPairIdx0 P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY 0 0) 0)
+    have h1 : emptyInterDec P₀ (Nat.pair
+        (atomPairIdx0 P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY 0 0) 0) = 1 := by omega
+    have hempty := (emptyInterDec_eq_one_iff P₀ hD₀pos hD₀nomin _ _).mp h1
+    rw [hA0, hX0, Set.inter_self] at hempty
+    exact hD₀mne.ne_empty hempty
+  have hidxeq : xPseqAtomIdx P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY 0 0 =
+      hSplitX.posIdx (atomPairIdx0 P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY 0 0)
+        (atomPairIdx1 P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY 0 0) 0 :=
+    xPseqAtomIdx_eq P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hxjunk0
+  have hposspec := hSplitX.posIdx_spec
+    (atomPairIdx0 P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY 0 0)
+    (atomPairIdx1 P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY 0 0) 0
+  rw [hA0, hB0, hX0] at hposspec
+  have hAB1 : D₀.master = ∅ ↔ D₁.master = ∅ :=
+    ⟨fun h => absurd h hD₀mne.ne_empty, fun h => absurd h hD₁mne.ne_empty⟩
+  have hBE1 : D₁.master = ∅ ∨ D₁.mem D₁.master := Or.inr D₁.master_mem
+  have hspec1 := hxSplit hAB1 hBE1 D₀.master
+  have hdiff1 : D₀.master \ D₀.master = ∅ := Set.diff_self
+  have h2empty1 : (splitX D₀.master D₁.master D₀.master).2 = ∅ := hspec1.2.2.2.1.mp hdiff1
+  have hunion1 : (splitX D₀.master D₁.master D₀.master).1 = D₁.master := by
+    have hu := hspec1.2.2.2.2.1
+    rwa [h2empty1, Set.union_empty] at hu
+  have hzeroeq : P₁.X (xPseqAtomIdx P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY 0 0) =
+      D₁.master := by rw [hidxeq, ← hposspec]; exact hunion1
+  apply Set.Subset.antisymm
+  · intro z hz
+    obtain ⟨i, -, -, hzi⟩ := (mem_XPseqCode_iff_unconditional P₀ P₁ hDiff0 hDiff1 splitX hSplitX
+      splitY hSplitY hD₀pos hD₀diff hD₀nomin hxSplit hD₁pos hD₁diff hD₁nomin hySplit hD₀mne hD₁mne
+      hUnion1 0 z).mp hz
+    exact D₁.sub_master (xPseqAtomIdx_mem P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY 0 i) hzi
+  · intro z hz
+    refine (mem_XPseqCode_iff_unconditional P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY
+      hD₀pos hD₀diff hD₀nomin hxSplit hD₁pos hD₁diff hD₁nomin hySplit hD₀mne hD₁mne hUnion1 0
+      z).mpr ⟨0, by norm_num, hxjunk0, ?_⟩
+    rwa [hzeroeq]
+
+include hD₀pos hD₀diff hD₀nomin hxSplit hD₁pos hD₁diff hD₁nomin hySplit hD₀mne hD₁mne hX0 hY0 in
+/-- **8.12(d)(5)(a), `Y`-side.** `P₀.X (YPseqCode … 0) = D₀.master`. -/
+theorem YPseqCode_zero :
+    P₀.X (YPseqCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0 0) = D₀.master := by
+  have hjunk0 := atomPairJunk_zero P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY 0
+  have hcs := atomPairCodeState_correct P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY 0 0 hjunk0
+  have hA0 : P₀.X (atomPairIdx0 P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY 0 0) =
+      D₀.master := hcs.1
+  have hB0 : P₁.X (atomPairIdx1 P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY 0 0) =
+      D₁.master := hcs.2
+  have hxjunk0 : xPseqAtomJunk P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY 0 0 = 0 := by
+    rw [xPseqAtomJunk_eq, hjunk0, selectFn_zero]
+    by_contra hcon
+    have hle := emptyInterDec_le_one P₀ (Nat.pair
+      (atomPairIdx0 P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY 0 0) 0)
+    have h1 : emptyInterDec P₀ (Nat.pair
+        (atomPairIdx0 P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY 0 0) 0) = 1 := by omega
+    have hempty := (emptyInterDec_eq_one_iff P₀ hD₀pos hD₀nomin _ _).mp h1
+    rw [hA0, hX0, Set.inter_self] at hempty
+    exact hD₀mne.ne_empty hempty
+  have hidxeq : xPseqAtomIdx P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY 0 0 =
+      hSplitX.posIdx (atomPairIdx0 P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY 0 0)
+        (atomPairIdx1 P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY 0 0) 0 :=
+    xPseqAtomIdx_eq P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hxjunk0
+  have hposspec := hSplitX.posIdx_spec
+    (atomPairIdx0 P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY 0 0)
+    (atomPairIdx1 P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY 0 0) 0
+  rw [hA0, hB0, hX0] at hposspec
+  have hAB1 : D₀.master = ∅ ↔ D₁.master = ∅ :=
+    ⟨fun h => absurd h hD₀mne.ne_empty, fun h => absurd h hD₁mne.ne_empty⟩
+  have hBE1 : D₁.master = ∅ ∨ D₁.mem D₁.master := Or.inr D₁.master_mem
+  have hspec1 := hxSplit hAB1 hBE1 D₀.master
+  have hdiff1 : D₀.master \ D₀.master = ∅ := Set.diff_self
+  have h2empty1 : (splitX D₀.master D₁.master D₀.master).2 = ∅ := hspec1.2.2.2.1.mp hdiff1
+  have hunion1 : (splitX D₀.master D₁.master D₀.master).1 = D₁.master := by
+    have hu := hspec1.2.2.2.2.1
+    rwa [h2empty1, Set.union_empty] at hu
+  have hzeroeq : P₁.X (xPseqAtomIdx P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY 0 0) =
+      D₁.master := by rw [hidxeq, ← hposspec]; exact hunion1
+  -- The `D₀`-direct-refine companion value at the same depth/bit-source is also the full master.
+  have hidx0eq : stateIdx0 (xPseqAtomState P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY 0 0) =
+      P₀.inter (atomPairIdx0 P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY 0 0) 0 :=
+    xPseqAtomIdx0_eq P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hxjunk0
+  have hinterex : ∃ k, P₀.X k ⊆
+      P₀.X (atomPairIdx0 P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY 0 0) ∩ P₀.X 0 :=
+    ⟨atomPairIdx0 P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY 0 0, by
+      rw [hA0, hX0, Set.inter_self]⟩
+  have hidx0set : P₀.X (stateIdx0 (xPseqAtomState P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY
+      hSplitY 0 0)) = D₀.master := by
+    rw [hidx0eq, P₀.inter_spec hinterex, hA0, hX0, Set.inter_self]
+  -- `stateIdx1` of the incoming `X`-sub-step state is definitionally `xPseqAtomIdx`.
+  have hstateIdx1 : stateIdx1 (xPseqAtomState P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY
+      0 0) = xPseqAtomIdx P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY 0 0 := rfl
+  -- `yPseqAtomState`'s inner `X`-sub-step call at `bx = 1` is definitionally `xPseqAtomState`, so
+  -- its own "found" condition reduces to the already-established `hxjunk0`/`hzeroeq`.
+  have hraw : selectFn (stateJunk (xPseqAtomState P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY
+      hSplitY 0 0)) 1 (selectFn 1
+        (emptyInterDec P₁ (Nat.pair (stateIdx1 (xPseqAtomState P₀ P₁ hDiff0 hDiff1 splitX hSplitX
+          splitY hSplitY 0 0)) 0))
+        (emptyDiffDec P₁ hDiff1 (Nat.pair (stateIdx1 (xPseqAtomState P₀ P₁ hDiff0 hDiff1 splitX
+          hSplitX splitY hSplitY 0 0)) 0))) = 0 := by
+    have hxjunk0' : stateJunk (xPseqAtomState P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY
+        0 0) = 0 := hxjunk0
+    rw [hxjunk0', selectFn_zero, selectFn_one, hstateIdx1]
+    by_contra hcon
+    have hle := emptyInterDec_le_one P₁ (Nat.pair
+      (xPseqAtomIdx P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY 0 0) 0)
+    have h1 : emptyInterDec P₁ (Nat.pair
+        (xPseqAtomIdx P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY 0 0) 0) = 1 := by omega
+    have hempty := (emptyInterDec_eq_one_iff P₁ hD₁pos hD₁nomin _ _).mp h1
+    rw [hzeroeq, hY0, Set.inter_self] at hempty
+    exact hD₁mne.ne_empty hempty
+  have hyidx0raw := ySubStep_idx0_eq P₀ P₁ hDiff1 splitY hSplitY (h := hraw)
+  rw [selectFn_one, hstateIdx1] at hyidx0raw
+  have hyidxeq : yPseqAtomIdx P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY 0 0 1 =
+      hSplitY.posIdx (xPseqAtomIdx P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY 0 0)
+        (stateIdx0 (xPseqAtomState P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY 0 0)) 0 :=
+    hyidx0raw
+  have hyjunkeq : yPseqAtomJunk P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY 0 0 1 = 0 := by
+    show stateJunk (ySubStep P₀ P₁ hDiff1 splitY hSplitY (Nat.pair 0 (Nat.pair 1
+      (xPseqAtomState P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY 0 0)))) = 0
+    rw [ySubStep_junk_eq]; exact hraw
+  have hposspec2 := hSplitY.posIdx_spec
+    (xPseqAtomIdx P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY 0 0)
+    (stateIdx0 (xPseqAtomState P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY 0 0)) 0
+  rw [hzeroeq, hidx0set, hY0] at hposspec2
+  have hAB2 : D₁.master = ∅ ↔ D₀.master = ∅ := hAB1.symm
+  have hBE2 : D₀.master = ∅ ∨ D₀.mem D₀.master := Or.inr D₀.master_mem
+  have hspec2 := hySplit hAB2 hBE2 D₁.master
+  have hdiff2 : D₁.master \ D₁.master = ∅ := Set.diff_self
+  have h2empty2 : (splitY D₁.master D₀.master D₁.master).2 = ∅ := hspec2.2.2.2.1.mp hdiff2
+  have hunion2 : (splitY D₁.master D₀.master D₁.master).1 = D₀.master := by
+    have hu := hspec2.2.2.2.2.1
+    rwa [h2empty2, Set.union_empty] at hu
+  have hyzeroeq : P₀.X (yPseqAtomIdx P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY 0 0 1) =
+      D₀.master := by rw [hyidxeq, ← hposspec2]; exact hunion2
+  apply Set.Subset.antisymm
+  · intro z hz
+    rcases (mem_YPseqCode_iff_unconditional P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY
+      hD₀pos hD₀diff hD₀nomin hxSplit hD₁pos hD₁diff hD₁nomin hySplit hD₀mne hD₁mne hUnion0 0
+      z).mp hz with ⟨i, -, -, hzi⟩ | ⟨i, -, -, hzi⟩
+    · exact D₀.sub_master
+        (yPseqAtomIdx_mem P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY 0 i 0) hzi
+    · exact D₀.sub_master
+        (yPseqAtomIdx_mem P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY 0 i 1) hzi
+  · intro z hz
+    refine (mem_YPseqCode_iff_unconditional P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY
+      hD₀pos hD₀diff hD₀nomin hxSplit hD₁pos hD₁diff hD₁nomin hySplit hD₀mne hD₁mne hUnion0 0
+      z).mpr (Or.inr ⟨0, by norm_num, hyjunkeq, ?_⟩)
+    rwa [hyzeroeq]
+
+end XYPseqCodeZero

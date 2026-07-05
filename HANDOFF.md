@@ -9300,3 +9300,44 @@ new file, not just a design note; needs a primitive-recursive `myFirstBit` bound
 the midpoint-bisection transcription of `V_no_minimal`'s already-constructive proof. Read `arxiv.md`'s
 `8.12(e)(b)` row for the exact planned statements, and `Scott1980/Neighborhood/Exercise812e.lean`'s
 docstring for the `left_congr`/`right_congr` obligations `SplitV.lean`'s bisection will need to satisfy.
+
+## 2026-07-05 checkpoint — `8.12(d)(5)(a)` executed (Pass), out of order relative to `(e)`/`(f)` branch
+
+Went back and executed the still-open `(d)(5)(a)` sub-goal (the first of `(d)(5)`'s own 6 sub-parts,
+scoped two checkpoints ago but left un-started when the session pivoted to trace the `(d)`↔`(e)`/`(f)`
+relationship). Confirms the original plan's prediction exactly: **no interleaving layer needed**, direct
+`n = 0` unfolding suffices, transcribing `XPseq_zero`/`YPseq_zero`'s (`Exercise812c.lean`) `SplitSpec'`
+argument verbatim at the code level.
+
+Appended `section XYPseqCodeZero` to `Exercise812d.lean` (new hypotheses `hX0 : P₀.X 0 = D₀.master`,
+`hY0 : P₁.X 0 = D₁.master`, the code-level zero-convention mirroring `(c)(vii)`'s own):
+- `atomPairJunk_zero` — new generic helper, junk is `0` at depth `0` for any bit-source `k`
+  (`atomPairCodeState`'s `stateBase2` base clause is junk-free unconditionally).
+- `xPseqAtomIdx0_eq` — new generic helper, the `stateIdx0`/direct-refine twin of the pre-existing
+  `xPseqAtomIdx_eq` (reads `xSubStep`'s *other* output).
+- `XPseqCode_zero : P₁.X (XPseqCode … 0) = D₁.master` and
+  `YPseqCode_zero : P₀.X (YPseqCode … 0) = D₀.master` — the two headline theorems.
+
+Two simplifications beyond the original plan, surfaced only while writing the proof: (1) the `⊆`
+direction of both equalities needs **no witness/case-analysis on `i` at all** — `xPseqAtomIdx_mem`/
+`yPseqAtomIdx_mem` are unconditional, so `sub_master` closes it straight from the raw existential; only
+`⊇` needs the explicit `i = 0` witness. (2) The `Y`-side proof needed no new `ySubStep`-unfolding work:
+`yPseqAtomState`'s inner `xSubStep` call at `bx = 1` is **definitionally** `xPseqAtomState` (identical
+packed arguments), so the `X`-side's already-computed `D₁.master` value doubles as the `Y`-sub-step's
+own `SplitSpec'` input directly (via `show`/defeq, `xPseqAtomIdx_eq`'s own technique) — only the
+`D₀`-direct-refine companion (`xPseqAtomIdx0_eq`) was genuinely new content.
+
+Built (`lake build` — 3165 jobs, `lake env lean Exercise812d.lean` directly — both clean, zero new
+warnings). Axiom-audited: `XPseqCode_zero`/`YPseqCode_zero`/both new helpers all
+`⊆ {propext, Classical.choice, Quot.sound}`, matching this section's established baseline
+(`mem_XPseqCode_iff_unconditional`/`atomPairCodeState_correct` carry the identical footprint) — no new
+choice introduced. `arxiv.md`'s `8.12(d)(5)(a)` row updated to `Pass` with the dense proof note above.
+
+**Status: `8.12(d)(5)(a)` is `Pass`.** **Two parallel open threads now:** (i) `8.12(d)(5)(b)`–`(f)`
+(interleaving/order layer through computability; read `arxiv.md`'s `8.12(d)(5)` row for the Route
+1/Route 2 design decision on `(b)` before starting — Route 2 (direct argument from
+`atomPairG_disjoint`/`atomPairG_invariant`/`xStepG_snd_union` + `mem_XPseqCode_iff_unconditional`/
+`mem_YPseqCode_iff_unconditional`) is recommended first, capped, falling back to Route 1 (explicit
+interleaving) if no clean argument surfaces quickly); (ii) `8.12(e)(b)`–`(f)(a)` (the `SplitV.lean`/
+generic-bisection branch, see previous checkpoint). Either is a valid next step; no dependency between
+them has been identified.
