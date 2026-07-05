@@ -257,4 +257,155 @@ theorem primrec_splitVRight : Nat.Primrec splitVRight := by
       simp only [unpair_pair_fst, unpair_pair_snd]
   exact (Nat.Primrec.pair hk1 hclear).of_eq fun n => rfl
 
+/-! ## 8.12(e)(b)(iv): correctness — `VX_splitVLeft`/`VX_splitVRight`, `splitV_disjoint`,
+`splitV_union`
+
+Transcribes `V_no_minimal`'s `hInter`/`hUnion` computations (`Exercise812.lean` lines 242–261) to
+the `splitVLeft`/`splitVRight` code level, substituting `myFirstBit`'s spec for the classical
+`hbit`/`ℓ₀` and `myClearBit_eq_xor` for the raw `^^^` occurrences. The one genuine addition beyond
+a verbatim transcription: since `splitVBit`'s `ℓ₀` ranges over the *whole* `[0, 2^(k+1))` (found on
+the upsampled mask `M` directly, per `(e)(b)(iii)`'s docstring) rather than being handed a priori
+as `< 2^k` with a fixed twin `ℓ₀ + 2^k`, `splitV_twin_testBit` below establishes the general
+twin-bit fact (`M`'s bit `ℓ₀ ^^^ 2^k` is set whenever bit `ℓ₀` is) needed for `VX_splitVRight`'s
+nonemptiness — proved directly from `levelSet_myUpsample` (no fresh `testBit`-level `myUpsample`
+lemma needed), by reducing both `ℓ₀` and its twin mod `2^k` and observing they agree there. -/
+
+/-- `splitVUpsampled n`'s mask always has *some* set bit below `2^(k+1)` — inherited from
+`canonIdx n` always presenting a non-empty `levelSet` (`VX_nonempty`), transported one level up via
+`levelSet_myUpsample`. Feeds `myFirstBit_lt`/`myFirstBit_testBit`. -/
+theorem splitV_mask_nonempty (n : ℕ) :
+    ∃ ℓ < 2 ^ ((canonIdx n).unpair.1 + 1), (splitVUpsampled n).testBit ℓ = true := by
+  have hne : (levelSet (canonIdx n).unpair.1 (canonIdx n).unpair.2).Nonempty := VX_nonempty n
+  apply levelSet_nonempty_iff.mp
+  show (levelSet ((canonIdx n).unpair.1 + 1) (splitVUpsampled n)).Nonempty
+  unfold splitVUpsampled
+  rwa [levelSet_myUpsample (Nat.le_succ _)]
+
+theorem splitV_bit_lt (n : ℕ) : splitVBit n < 2 ^ ((canonIdx n).unpair.1 + 1) :=
+  myFirstBit_lt (splitV_mask_nonempty n)
+
+theorem splitV_bit_testBit (n : ℕ) : (splitVUpsampled n).testBit (splitVBit n) = true :=
+  myFirstBit_testBit (splitV_mask_nonempty n)
+
+/-- **The twin-bit fact.** `myUpsample`'s duplication structure means *any* set bit `ℓ₀ < 2^(k+1)`
+of the upsampled mask has a genuine twin at `ℓ₀ ^^^ 2^k` (also set): reduce both `ℓ₀` and its twin
+mod `2^k` (they agree there, `hmod`, since `xor`-ing in `2^k` only ever touches bit `k`), then
+transport the resulting `m`-level membership fact back up to `M`'s level via
+`levelSet_myUpsample`. -/
+theorem splitV_twin_testBit (n : ℕ) :
+    (splitVUpsampled n).testBit (splitVBit n ^^^ 2 ^ (canonIdx n).unpair.1) = true := by
+  set k := (canonIdx n).unpair.1 with hk
+  set m := (canonIdx n).unpair.2 with hm
+  set ℓ₀ := splitVBit n with hℓ₀
+  set M := splitVUpsampled n with hMdef
+  have hlevelEq : levelSet (k + 1) M = levelSet k m := by
+    rw [hMdef]; unfold splitVUpsampled; exact levelSet_myUpsample (Nat.le_succ k) m
+  have hlt : ℓ₀ < 2 ^ (k + 1) := splitV_bit_lt n
+  have hbit : M.testBit ℓ₀ = true := splitV_bit_testBit n
+  have h2 : (2 : ℕ) ^ (k + 1) = 2 * 2 ^ k := by rw [pow_succ]; ring
+  have hpos : (2 : ℕ) ^ k > 0 := Nat.two_pow_pos k
+  have h2k : (2 : ℕ) ^ k < 2 ^ (k + 1) := by omega
+  have htwinlt : ℓ₀ ^^^ 2 ^ k < 2 ^ (k + 1) := Nat.xor_lt_two_pow hlt h2k
+  have hmod : (ℓ₀ ^^^ 2 ^ k) % 2 ^ k = ℓ₀ % 2 ^ k := by
+    apply Nat.eq_of_testBit_eq
+    intro i
+    rw [Nat.testBit_mod_two_pow, Nat.testBit_mod_two_pow, Nat.testBit_xor, Nat.testBit_two_pow]
+    rcases lt_or_ge i k with hik | hik
+    · rw [decide_eq_true_iff.mpr hik, decide_eq_false_iff_not.mpr (show k ≠ i by omega),
+        Bool.xor_false]
+    · rw [decide_eq_false_iff_not.mpr (show ¬ i < k by omega)]
+      simp
+  have h1 : ℓ₀ ∈ levelSet k m := by
+    have hM : ℓ₀ ∈ levelSet (k + 1) M := by
+      rw [mem_levelSet, Nat.mod_eq_of_lt hlt]; exact hbit
+    rwa [hlevelEq] at hM
+  have h2' : (ℓ₀ ^^^ 2 ^ k) ∈ levelSet k m := by
+    rw [mem_levelSet, hmod]
+    rwa [mem_levelSet] at h1
+  rw [← hlevelEq] at h2'
+  rwa [mem_levelSet, Nat.mod_eq_of_lt htwinlt] at h2'
+
+/-- `ℓ₀ ^^^ 2 ^ k` is always genuinely different from `ℓ₀` (used to show `2 ^ ℓ₀` and `M ^^^ 2 ^
+ℓ₀`'s witnessing bits are disjoint). -/
+private theorem xor_two_pow_ne_self (a k : ℕ) : a ^^^ 2 ^ k ≠ a := by
+  have hb : (2 : ℕ) ^ k ≠ 0 := (Nat.two_pow_pos k).ne'
+  intro h
+  apply hb
+  have h2 : a ^^^ (a ^^^ 2 ^ k) = a ^^^ a := by rw [h]
+  simp at h2
+
+theorem splitV_left_nonempty (n : ℕ) :
+    (levelSet ((canonIdx n).unpair.1 + 1) (2 ^ splitVBit n)).Nonempty :=
+  levelSet_nonempty_iff.mpr ⟨splitVBit n, splitV_bit_lt n, by simp⟩
+
+theorem splitV_right_nonempty (n : ℕ) :
+    (levelSet ((canonIdx n).unpair.1 + 1) (myClearBit (splitVUpsampled n) (splitVBit n))).Nonempty := by
+  rw [myClearBit_eq_xor (splitV_bit_testBit n)]
+  have h2 : (2 : ℕ) ^ ((canonIdx n).unpair.1 + 1) = 2 * 2 ^ (canonIdx n).unpair.1 := by
+    rw [pow_succ]; ring
+  have hpos : (2 : ℕ) ^ (canonIdx n).unpair.1 > 0 := Nat.two_pow_pos _
+  have h2k : (2 : ℕ) ^ (canonIdx n).unpair.1 < 2 ^ ((canonIdx n).unpair.1 + 1) := by omega
+  refine levelSet_nonempty_iff.mpr
+    ⟨splitVBit n ^^^ 2 ^ (canonIdx n).unpair.1,
+      Nat.xor_lt_two_pow (splitV_bit_lt n) h2k, ?_⟩
+  rw [Nat.testBit_xor, splitV_twin_testBit n, Nat.testBit_two_pow,
+    decide_eq_false_iff_not.mpr (xor_two_pow_ne_self (splitVBit n) (canonIdx n).unpair.1).symm]
+  rfl
+
+/-- **`splitVLeft` realizes `Y := levelSet (k+1) (2^ℓ₀)`**, `V_no_minimal`'s "left" half. -/
+theorem VX_splitVLeft (n : ℕ) :
+    VX (splitVLeft n) = levelSet ((canonIdx n).unpair.1 + 1) (2 ^ splitVBit n) := by
+  have hne : (levelSet (splitVLeft n).unpair.1 (splitVLeft n).unpair.2).Nonempty := by
+    unfold splitVLeft
+    rw [unpair_pair_fst, unpair_pair_snd]
+    exact splitV_left_nonempty n
+  show levelSet (canonIdx (splitVLeft n)).unpair.1 (canonIdx (splitVLeft n)).unpair.2 = _
+  rw [canonIdx_eq_self_of_nonempty hne]
+  unfold splitVLeft
+  rw [unpair_pair_fst, unpair_pair_snd]
+
+/-- **`splitVRight` realizes `Z := levelSet (k+1) (M ^^^ 2^ℓ₀)`**, `V_no_minimal`'s "right" half. -/
+theorem VX_splitVRight (n : ℕ) :
+    VX (splitVRight n) =
+      levelSet ((canonIdx n).unpair.1 + 1) (myClearBit (splitVUpsampled n) (splitVBit n)) := by
+  have hne : (levelSet (splitVRight n).unpair.1 (splitVRight n).unpair.2).Nonempty := by
+    unfold splitVRight
+    rw [unpair_pair_fst, unpair_pair_snd]
+    exact splitV_right_nonempty n
+  show levelSet (canonIdx (splitVRight n)).unpair.1 (canonIdx (splitVRight n)).unpair.2 = _
+  rw [canonIdx_eq_self_of_nonempty hne]
+  unfold splitVRight
+  rw [unpair_pair_fst, unpair_pair_snd]
+
+/-- **Exercise 8.12(e)(b), disjointness**: `splitVLeft`/`splitVRight` cover disjoint pieces —
+transcribes `V_no_minimal`'s `hInter` verbatim. -/
+theorem splitV_disjoint (n : ℕ) : VX (splitVLeft n) ∩ VX (splitVRight n) = ∅ := by
+  rw [VX_splitVLeft, VX_splitVRight, myClearBit_eq_xor (splitV_bit_testBit n),
+    levelSet_inter_same_level]
+  ext i
+  simp only [mem_levelSet, Set.mem_empty_iff_false, iff_false, Nat.testBit_and, Bool.and_eq_true]
+  rintro ⟨h1, h2⟩
+  have hpos : i % 2 ^ ((canonIdx n).unpair.1 + 1) = splitVBit n := by
+    by_contra hne'
+    rw [Nat.testBit_two_pow] at h1
+    exact hne' (of_decide_eq_true h1).symm
+  rw [hpos, Nat.testBit_xor, splitV_bit_testBit n] at h2
+  simp at h2
+
+/-- **Exercise 8.12(e)(b), covering**: `splitVLeft`/`splitVRight` reunite to `VX n` — transcribes
+`V_no_minimal`'s `hUnion` verbatim. -/
+theorem splitV_union (n : ℕ) : VX (splitVLeft n) ∪ VX (splitVRight n) = VX n := by
+  have hML : levelSet ((canonIdx n).unpair.1 + 1) (splitVUpsampled n) = VX n := by
+    unfold splitVUpsampled VX
+    exact levelSet_myUpsample (Nat.le_succ _) _
+  rw [VX_splitVLeft, VX_splitVRight, myClearBit_eq_xor (splitV_bit_testBit n),
+    levelSet_union_same_level, ← hML]
+  congr 1
+  apply Nat.eq_of_testBit_eq
+  intro i
+  rw [Nat.testBit_or, Nat.testBit_xor]
+  rcases eq_or_ne i (splitVBit n) with rfl | hi
+  · simp [splitV_bit_testBit n]
+  · simp [Ne.symm hi]
+
 end Scott1980.Neighborhood

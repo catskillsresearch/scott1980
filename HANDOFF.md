@@ -10412,3 +10412,47 @@ twin-bit position for a general `ℓ₀ < 2^(k+1)` is `ℓ₀ ^^^ 2^k` (equivale
 likely provable directly from `myUpsample`'s own defining property (`levelSet_myUpsample`/
 `testBit_upsample`, `LevelSetPrimrec.lean`/`Exercise812.lean`) plus a case split on `ℓ₀ < 2^k` vs
 `≥ 2^k`, before the `hInter`/`hUnion` transcription can go through almost verbatim as planned.
+
+**2026-07-05 — Exercise 8.12(e)(b)(iv) `Pass`: correctness, completing `8.12(e)(b)` in full.**
+Appended to `Scott1980/Neighborhood/SplitV.lean`. Ten new declarations, bottom-up: `splitV_mask_
+nonempty` (the upsampled mask `M` always has *some* set bit `< 2^(k+1)`, inherited from `canonIdx
+n` always presenting a non-empty `levelSet` via `VX_nonempty`, transported up a level via
+`levelSet_myUpsample`) feeds `myFirstBit_lt`/`myFirstBit_testBit` directly (`splitV_bit_lt`/
+`splitV_bit_testBit`). **The twin-bit lemma flagged in the last checkpoint (`splitV_twin_testBit`)
+was resolved *without* needing any fresh `testBit`-level `myUpsample` lemma**, by working entirely
+at the `Set`-membership level instead of raw bit arithmetic: reduce both `ℓ₀` and its twin `ℓ₀ ^^^
+2^k` mod `2^k` (`hmod`, a small `Nat.eq_of_testBit_eq` case split — xor-ing in `2^k` only touches
+bit `k`, so both sides agree below `k` and vanish above), then bridge `m`-level membership
+(`levelSet k m`) up to `M`'s level (`levelSet (k+1) M`) via `levelSet_myUpsample` and `mem_
+levelSet`. `splitV_left_nonempty`/`splitV_right_nonempty` then package `Y`/`Z`'s nonemptiness
+(`Z`'s needs `xor_two_pow_ne_self : a ^^^ 2^k ≠ a`, a two-line `Nat.xor`-cancellation argument, to
+see `2^ℓ₀`'s bit is *off* at the twin position). `VX_splitVLeft`/`VX_splitVRight` are `canonIdx_
+eq_self_of_nonempty` unfoldings mirroring `SplitU.lean`'s own `UX_splitULeft`/`UX_splitURight`
+`show`-then-`rw` idiom exactly; `splitV_disjoint`/`splitV_union` then transcribe `V_no_minimal`'s
+`hInter`/`hUnion` (`Exercise812.lean` lines 242–261) essentially verbatim. **Real gotcha, hit
+twice, same root cause each time:** `(2:ℕ)^k < 2^(k+1)` derived from the bare equation `h2 :
+2^(k+1) = 2*2^k` alone made `omega` fail with "No usable constraints found" — `omega` treats
+`2^k`/`2^(k+1)` as opaque atoms, and `x < 2x` needs `x > 0`, which the equation alone doesn't
+supply (unlike `(e)(b)(ii)`'s analogous step, which happened to have an unrelated `_ < 2^ℓ`
+hypothesis already in context, silently supplying positivity "for free" via `ℕ`'s `a < b → b >
+0`). Fixed both occurrences by adding an explicit `have hpos := Nat.two_pow_pos _` before the
+`omega` call. **Lesson: any `omega` call meant to derive `2^a < 2^b` (or similar) from a bare
+`2^b = c * 2^a`-shaped equation needs an explicit `Nat.two_pow_pos`/positivity hypothesis fed in
+alongside it — don't rely on some unrelated hypothesis happening to supply it "for free".** Zero
+`sorry`; `lake build Scott1980` (3166 jobs) clean, zero new warnings. `#print axioms` on all ten
+new declarations gives `⊆ {propext, Classical.choice, Quot.sound}`, the expected project-wide
+baseline (confirmed inherited from `canonIdx`, no fresh leak). `arxiv.md`: `8.12(e)(b)(iv)` row →
+`Pass`; `8.12(e)(b)` umbrella → **COMPLETE**; `8.12(e)` umbrella note updated to `(a)`–`(b)` `Pass`.
+
+**Status: Exercise 8.12(e)(b) is COMPLETE (`(i)`–`(iv)` all `Pass`).** **Resume protocol:** next up
+is `8.12(e)(c)` — the generic decider+bisection → `IsComputableSplit` construction (per `arxiv.md`'s
+row): a *generic*, reusable `noncomputable def splitFromBisection {P Q} (hpos) (hnomin) (hdiff) (B
+: ComputableBisection Q) : Set α → Set γ → Set α → Set γ × Set γ`, built via `Classical.choose`
+inversion plus `(e)(a)`'s already-`Pass` case split (`posIdxFromBisection`/`negIdxFromBisection`,
+`Exercise812e.lean`), together with `theorem isComputableSplit_ofBisection : IsComputableSplit P Q
+(splitFromBisection hpos hnomin hdiff B)`. `posIdx_primrec`/`negIdx_primrec` should be immediate
+from `(e)(a)`'s already-typechecked `def`s; `posIdx_spec`/`negIdx_spec` are where `(e)(a)`'s
+`left_congr`/`right_congr` fields actually get used (bridging whatever witness `Classical.choose`
+happens to return back to a canonical `(n, k, m)` triple). Once `(e)(c)` lands, `(e)(d)` instantiates
+it for `U`↔`V` using `(e)(b)`'s now-complete `splitVLeft`/`splitVRight` (packaged as a `Computable
+Bisection`), giving `splitX812e` — the exercise's literal target — completing `8.12(e)`.
