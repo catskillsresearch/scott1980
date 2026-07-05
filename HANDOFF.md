@@ -9446,3 +9446,58 @@ plan, including the still-outstanding `succ`-shaped closed-form wrappers over `(
 headline facts that `(b)(iii)` will need for its odd-depth half-steps). The `(e)(b)`–`(f)(a)`
 `SplitV.lean` thread (two checkpoints back) remains open in parallel; no dependency between the two
 has been identified.
+
+## 2026-07-05 checkpoint — `8.12(d)(5)(b)(iii)` (`Pass`)
+
+Completed `(d)(5)(b)(iii)`, the generalized interleaved-family machinery, appended to
+`Exercise812d.lean`'s new `section CombinedCode`. `combinedXCode`/`combinedYCode` defined (with
+`_even`/`_odd` unfolding lemmas); `combinedδ`/`deinterleaveδ` reused verbatim from
+`Exercise812c.lean` (pure functions with no `X`/`Y`/`D₀`/`D₁` dependence, exactly as `arxiv.md`'s
+plan anticipated — no code-level replica needed).
+
+The substantial new content was generalizing `(b)(i)`/`(b)(ii)`'s I-formulas from a bounded
+bit-source `k < 4 ^ n` up to an *arbitrary* history `δ : ℕ → Bool × Bool`
+(`xStepG_snd_eq_inter_XPseqCode`/`yStepG_fst_eq_inter_YPseqCode`), then completing each into a
+full two-branch closed form (`xStepG_snd_succ_eq_XPseqCode`/`yStepG_fst_succ_eq_YPseqCode`),
+mirroring `Exercise812c.lean`'s `xStep_snd_succ_eq`/`yStep_fst_succ_eq`. The generalization strategy:
+encode `δ`'s depth-`n` prefix as `k := encodeDeltaPair δ n` (`atomPairG_congr` makes `atomPairG δ n`
+match `atomPairG (deltaPair k) n` exactly), then handle two new cases beyond `(b)(i)`/`(b)(ii)`'s own
+splits — the classical component already `∅` (trivial via `SplitSpec'`), and the "junk-mismatch"
+case (classical component non-empty, so `atomPairJunk n k = 0`, yet the half-step's own junk flag is
+freshly `1` at exactly `(n, k[, bx])` — `(b)(i)`/`(b)(ii)`'s headline can't be invoked directly since
+its `junk = 0` precondition fails, so both sides are shown `= ∅` independently: the code side via
+one layer of `xSubStep_junk_eq`/`ySubStep_junk_eq` unfolding to locate which check tripped, the
+classical-intersection side via `mem_XPseqCode_iff_unconditional`/`_YPseqCode_...`'s witness
+necessarily differing from the target, disjoint via `atomPairCodeState_disjoint` or
+`xStepG_disjoint_of_ne`). Everything past the two closed forms
+(`genAtom_combinedXCode_succ_eq`/`_YCode_succ_eq`, `atomPairG_fst_eq_genAtomCode`/`_snd_eq_genAtomCode`,
+`hcoreCode_even`/`_odd`/`hcoreCode`) is a direct line-for-line transcription of `Exercise812c.lean`'s
+classical proofs. `hcore`/`hcore_even`/`hcore_odd` renamed `hcoreCode`/`hcoreCode_even`/`hcoreCode_odd`
+to avoid a same-namespace clash with the classical versions (both files share
+`namespace Scott1980.Neighborhood`).
+
+One genuine performance bug: `yStepG_fst_eq_inter_YPseqCode`'s junk-mismatch branch initially timed
+out even at `maxHeartbeats 1000000`, from re-unfolding the same large `packState2`/`xSubStep` term
+three separate times (once each for the `≤ 1` bound, the non-junk-witness contradiction, and the
+final junk-mismatch disjointness argument); fixed by computing the shared
+`stateJunk s1 = selectFn … (emptyInterDec …) (emptyDiffDec …)` equation *once* (`hs1junk_eq`) and
+reusing it, rather than raising the heartbeat limit further (though `4000000` was set as a margin
+regardless).
+
+Built (`lake build` — 2990 jobs — and `lake env lean Exercise812d.lean` directly, both clean; the
+same pre-existing harmless `linter.unusedSectionVars` warning on `(b)(ii)`'s dichotomy lemma remains,
+unchanged). Zero `sorry`. Axiom-audited: `hcoreCode`, both new I-formulas, and
+`yStepG_fst_succ_eq_YPseqCode` all give `⊆ {propext, Classical.choice, Quot.sound}`, matching this
+section's established baseline. `arxiv.md`'s `8.12(d)(5)(b)(iii)` row updated to `Pass` with a dense
+proof note; the parent `8.12(d)(5)(b)` row's status line updated to reflect `(b)(i)`–`(b)(iii)` as
+`Pass`.
+
+**Status: `8.12(d)(5)(b)(iii)` is `Pass`.** **Resume protocol:** next up is `(d)(5)(b)(iv)`, the
+headline transfer theorems — assembling `X_subset_iff_XPseqCode_subset`/`YPseqCode_subset_iff_Y_subset`/
+`X_inter_eq_iff_XPseqCode_inter_eq`/`YPseqCode_inter_eq_iff_Y_inter_eq` from `(b)(iii)`'s `hcoreCode`
+via `Theorem88.lean`'s already-fully-generic `transfer_dir` (zero new general theory needed, only new
+instantiations), mirroring `Exercise812c.lean`'s `transfer_empty_combined`/`transfer_subset_combined`/
+`transfer_double_subset_combined`/`transfer_inter_eq_combined` wrappers (lines 1494–1649) then
+specializing via `combinedXCode_even`/`_odd`/`combinedYCode_even`/`_odd`. Read `arxiv.md`'s
+`8.12(d)(5)(b)(iv)` row before starting. The `(e)(b)`–`(f)(a)` `SplitV.lean` thread (three checkpoints
+back) remains open in parallel; no dependency between the two has been identified.
