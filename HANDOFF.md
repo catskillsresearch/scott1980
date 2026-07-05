@@ -9160,3 +9160,32 @@ unconditionally, and per the `(d)(4)` umbrella note, all of `8.12(d)(4)`'s sub-p
 `(a)`–`(d)` become `Pass`** — read `arxiv.md`'s `8.12(d)(4)(d)(vi)` row and the `YPseqCode`
 section (`Exercise812d.lean`) for the exact statement and existing `combineFound2`/`YFoldInner`
 machinery to chain into.
+
+## 2026-07-05 checkpoint — Exercise 8.12(d)(4)(d)(vi) is `Pass`: `8.12(d)(4)` fully closed
+
+Proved the final assembly `section YPseqCodeUnconditional` (`Exercise812d.lean`, immediately after
+`end YPseqCode`): `yPseqAtomJunk_exists_zero` (`∃ i < 4ⁿ, ∃ bx ≤ 1, yPseqAtomJunk n i bx = 0`,
+unconditionally), `YFoldInner_or_found`, `YPseqCode_four_pow_found`,
+`YPseqCode_mem_unconditional`, and `mem_YPseqCode_iff_unconditional`. The one genuine wrinkle
+beyond `(c)(vi)`'s template: `yPseqAtomJunk n i bx`'s content is the depth-`n`-plus-half-step split
+piece `(xStepG splitX A B (P₀.X n) bx).2`, one half-step deeper than `(d)(iv)`'s covering target
+`B = (atomPairG (deltaPair i) n).2` — bridged via `(d)(i)`'s `xStepG_snd_union` (`A = ∅ ↔ B = ∅`
+dichotomy from `atomPairG_invariant`, not `xStepG_spec`, since `bx` is a free chosen bit, not
+`δ n`'s pinned bit) plus `Set.union_inter_distrib_right`/`by_contra`/`push Not`, forcing *at least
+one* of the two split pieces to meet `P₁.X n` — no advance determination of which `bx` needed. A
+new private helper `yPseqAtomJunk_eq_zero_of_bit` does the actual `xSubStep`/`ySubStep` chase for a
+chosen `b : Bool` (`atomPairCodeState_correct` + `emptyInterDec_eq_one_iff`/`emptyDiffDec_eq_one_iff`
+converses, `P₀`-side then `P₁`-side), using `set` (not raw inline terms) for the packed depth-`n`
+state and post-`xSubStep` state to avoid paren-counting errors in the 4-level-deep nested terms.
+Axiom-audited: all five new theorems `⊆{propext, Classical.choice, Quot.sound}`, matching `(c)(vi)`'s
+footprint exactly. Whole-project `lake build` (3164 jobs) green, zero `sorry`. Full proof notes in
+`arxiv.md`'s `8.12(d)(4)(d)(vi)` row.
+
+**Status: `8.12(d)(4)(d)` is `Pass` in full (all of `(d)(i)`–`(d)(vi)`), and per the `(d)(4)`
+umbrella, all of `8.12(d)(4)`'s sub-parts `(a)`–`(d)` are now `Pass` — `8.12(d)(4)` is complete.**
+`8.12(d)`'s remaining open sub-parts are `(d)(5)` and `(d)(6)` (both `Deferred`, not yet started —
+see their rows in `arxiv.md` for cross-reference findings from `(d)(4)`'s scoping, notably that
+`(d)(5)`/`(d)(6)` likely reduce to applying `Approximable.lean`'s `ofIso` to `domainIso812c` rather
+than re-deriving bespoke `ApproximableMap`s). **Resume protocol:** next up is `8.12(d)(5)` —
+`IsComputableMap P₀ P₁`/`IsComputableMap P₁ P₀` for `toD1`/`toD0`'s underlying maps. Read
+`arxiv.md`'s `8.12(d)(5)` row for the exact statement and cross-reference notes before starting.
