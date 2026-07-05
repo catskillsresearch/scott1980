@@ -9744,3 +9744,42 @@ stated direction (it may differ from `X_inter_eq_iff_XPseqCode_inter_eq`'s, as `
 `8.12(d)(5)(d)` is complete and `(d)(5)(e)` (`domainIsoCode812d`) becomes unblocked. Read
 `arxiv.md`'s `8.12(d)(5)(d)(iv)` row before starting. The `(e)(b)`–`(f)(a)` `SplitV.lean` thread
 (ten checkpoints back) remains open in parallel; no dependency between the two has been identified.
+
+## 2026-07-05 checkpoint — `8.12(d)(5)(d)(iv)` (`Pass`) — `8.12(d)(5)(d)` complete
+
+Executed `(d)(5)(d)(iv)` this session, appended to `Exercise812d.lean`'s new `section ToD0Code`
+(following `ToD0CodeUpMem`): `toD0Code : D₁.Element → D₀.Element`, the code-level pullback filter
+`{S | ∃ n, S = P₀.X (YPseqCode … n) ∧ y.mem (P₁.X n)}`, the exact mirror of `(d)(5)(d)(ii)`'s
+`toD1Code`. `sub`/`master_mem`/`up_mem` matched the plan exactly (`YPseqCode_mem_unconditional`/
+`YPseqCode_zero` at `n = 0` with `hY0`/`toD0Code_up_mem y`).
+
+`inter_mem` needed the anticipated `P₀`/`P₁`-swapped correction (flagged in the previous
+checkpoint's resume note): witness `P₁.inter i j` (not `P₀.inter i j`), since `toD0Code`'s shared
+index feeds `y.mem (P₁.X n)`, a `P₁`-side fact — `y.inter_mem`/`y.sub` plus `P₁.surj`/
+`P₁.inter_spec` give `P₁.X (P₁.inter i j) = P₁.X i ∩ P₁.X j`, and `(d)(5)(b)(iv)`'s
+`YPseqCode_inter_eq_iff_Y_inter_eq` transports it to `YPseqCode`. **The flagged orientation
+asymmetry was confirmed real**: `YPseqCode_inter_eq_iff_Y_inter_eq`'s iff has the `YPseqCode`-side
+on the *left* (opposite of `X_inter_eq_iff_XPseqCode_inter_eq`), so closing needed `.mpr
+hinterEq.symm` rather than `.mp hinterEq` — matched the anticipation exactly, built clean on the
+first attempt with no trial-and-error needed.
+
+Built (`lake build` — 3165 jobs — and `lake env lean Exercise812d.lean` directly, both clean; only
+the pre-existing `(b)(ii)`-era `linter.unusedSectionVars` warning remains, unchanged). Zero `sorry`.
+Axiom-audited: `toD0Code` gives `⊆ {propext, Classical.choice, Quot.sound}`, matching this section's
+established baseline. `arxiv.md`'s `(d)(5)(d)(iv)` row updated to `Pass`; the parent `8.12(d)(5)(d)`
+row updated to `Pass` (all of `(i)`–`(iv)` complete); the grandparent `8.12(d)(5)` row updated to
+reflect `(a)`–`(d)` all `Pass`, `(e)`–`(f)` remaining.
+
+**Status: `8.12(d)(5)(d)`, hence `8.12(d)(5)(d)(iv)`, is `Pass`.** **Resume protocol:** next up is
+`8.12(d)(5)(e)`, `domainIsoCode812d` (the generalized order isomorphism) — per `arxiv.md`'s own
+proof-notes plan: first `X_eq_iff_XPseqCode_eq` (the same-family `embed_eq_iff` companion, packaged
+from `(d)(5)(b)`'s subset facts via `Set.Subset.antisymm` in each direction, mirroring
+`Exercise812c.lean`'s `X_eq_iff_XPseq_eq`), then `domainIsoCode812d : DomainIso D₀ D₁` itself
+(`toFun := toD1Code …`; `invFun := toD0Code …`; `left_inv`/`right_inv` via `Element.ext` plus the
+mutual-inverse content already established in `toD1Code_up_mem`/`toD0Code_up_mem`'s closing index
+equations; `map_rel_iff'` via `X_eq_iff_XPseqCode_eq`), direct transcriptions of `domainIso812c`'s
+own two proof blocks (`Exercise812c.lean`, (c)(vii)(6)). Read `arxiv.md`'s `8.12(d)(5)(e)` row
+before starting — consider re-scoping into sub-parts first if `left_inv`/`right_inv`/`map_rel_iff'`
+turn out to need substantial chained reasoning, mirroring how `(d)(5)(d)` itself was re-scoped. The
+`(e)(b)`–`(f)(a)` `SplitV.lean` thread (eleven checkpoints back) remains open in parallel; no
+dependency between the two has been identified.
