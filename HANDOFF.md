@@ -8843,3 +8843,31 @@ matching `atomPairG_fst_union_step`). Whole-project `lake build` (3164 jobs) gre
 sign-histories as `deltaPair`-matching bit-sources" (bridging the `Fin n → Bool × Bool`-indexed
 covering fact just proved to the code-level `i < 4ⁿ`/`deltaPair i` indexing `XPseqCode`'s fold
 actually uses). Read `arxiv.md`'s `(d)(4)(c)` row for `(c)(iii)`'s exact statement.
+
+## 2026-07-04 checkpoint: `(c)(iii)` done — `encodeDeltaPair`/`atomPairG_master_covered_deltaPair`
+
+Implemented the base-`4` inverse of `deltaPair` and used it to transport `(c)(ii)`'s covering fact
+to the bit-source indexing `XPseqCode` actually uses. **Signature choice:** `encodeDeltaPair
+(δ : ℕ → Bool × Bool) : ℕ → ℕ` (total `δ`, depth `n` as 2nd arg) rather than the originally-scoped
+`(Fin n → Bool × Bool) → ℕ` — mirrors `Theorem88d.lean`'s `encodeBits`/`deltaOf_encodeBits`
+precedent exactly, padding via `extendTruePair` only at the call site. `encodeDeltaPair_lt`
+(`< 4ⁿ`) is a one-line induction. `deltaPair_encodeDeltaPair` (the inversion property) needed new
+base-4 arithmetic (no `Nat.testBit` API to reuse, unlike `encodeBits`'s base-2 proof): two private
+helpers `digit_add_mul_pow_of_lt` (`Nat.exists_eq_add_of_lt` + `ring` + `Nat.add_mul_div_left` +
+`Nat.add_mul_mod_self_left`) and `digit_eq_of_encodeDeltaPair` (`Nat.add_mul_div_right` +
+`Nat.div_eq_of_lt`), then a `Nat.lt_succ_iff_lt_or_eq` split closed by `omega`/IH (`i < n` case) or
+a four-way `Bool` case split + `Prod.ext_iff` (`i = n` case). `atomPairG_master_covered_deltaPair`
+(new `section AtomPairGenDelta`, its own copy of `AtomPairGen`'s `variable`/`include` block, since
+`deltaPair` is declared after `AtomPairGen` closes) chains `atomPairG_master_covered` with
+`deltaPair_encodeDeltaPair`/`atomPairG_congr`.
+
+Prototyped the arithmetic in a scratch file against plain `import Mathlib` first (novel base-4
+reasoning, no existing precedent to copy verbatim) — paid off, went in cleanly on the first
+attempt once integrated. Axiom-audited: all three new theorems `⊆{propext, Classical.choice,
+Quot.sound}` (ambient baseline). Whole-project `lake build` (3164 jobs) green, zero `sorry`.
+`arxiv.md`'s `(c)(iii)` row updated to `Pass`; `(c)`'s own row now notes `(c)(i)`–`(c)(iii)` `Pass`.
+
+**Status: `8.12(d)(4)(c)(iii)` is `Pass`.** **Resume protocol:** next up is `(c)(iv)` — "non-trivial
+intersection with `P₀.X n`, still classical": `∃ i < 4ⁿ, (atomPairG (deltaPair i) n).1 ∩ P₀.X n ≠ ∅`,
+combining `(c)(iii)`'s covering fact with `P₀.X n ⊆ D₀.master` and `P₀.X n ≠ ∅` (`NoMinimal` +
+`P₀.mem_X n`). Read `arxiv.md`'s `(d)(4)(c)` row for `(c)(iv)`'s exact statement.

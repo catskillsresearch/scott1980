@@ -1180,6 +1180,116 @@ theorem deltaPair_fst_eq_true_iff (k i : ℕ) : (deltaPair k i).1 = true ↔ (k 
 theorem deltaPair_snd_eq_true_iff (k i : ℕ) : (deltaPair k i).2 = true ↔ (k / 4 ^ i / 2) % 2 = 1 := by
   unfold deltaPair; simp
 
+/-! ### `encodeDeltaPair`: realizing a prescribed finite `Bool × Bool` sign-prefix as a bit-source
+
+**8.12(d)(4)(c)(iii).** The two-sided, base-`4` analogue of `Theorem88d.lean`'s `encodeBits`
+(itself mirrored from `Theorem88a.lean`'s `Yidx_nonempty`-style existence device): given *any*
+`δ : ℕ → Bool × Bool`, `encodeDeltaPair δ n` is a bit-source whose first `n` `deltaPair`-digits
+match `δ`'s first `n` values exactly. Builds up one base-`4` digit (rather than one bit) per step,
+packing `(δ n).1`/`(δ n).2` into that digit's two bits exactly as `atomPairStep` unpacks them
+(`rem % 2`, `(rem / 2) % 2`). Purely a `Prop`-level existence tool, never claimed `Nat.Primrec` —
+same status as `encodeBits`. -/
+
+def encodeDeltaPair (δ : ℕ → Bool × Bool) : ℕ → ℕ
+  | 0 => 0
+  | n + 1 => encodeDeltaPair δ n +
+      ((if (δ n).1 then 1 else 0) + (if (δ n).2 then 2 else 0)) * 4 ^ n
+
+theorem encodeDeltaPair_lt (δ : ℕ → Bool × Bool) : ∀ n, encodeDeltaPair δ n < 4 ^ n
+  | 0 => by simp [encodeDeltaPair]
+  | n + 1 => by
+      have ih := encodeDeltaPair_lt δ n
+      have h4 : (4 : ℕ) ^ (n + 1) = 4 ^ n * 4 := pow_succ 4 n
+      show encodeDeltaPair δ n +
+        ((if (δ n).1 then 1 else 0) + (if (δ n).2 then 2 else 0)) * 4 ^ n < 4 ^ (n + 1)
+      rcases Bool.eq_false_or_eq_true (δ n).1 with h1 | h1 <;>
+        rcases Bool.eq_false_or_eq_true (δ n).2 with h2 | h2 <;>
+        simp only [h1, h2, if_true, if_false, Bool.false_eq_true] <;> omega
+
+/-- Adding a higher digit (`d * 4 ^ n`, `n > i`) never disturbs a `deltaPair`-digit strictly
+below `n`. The purely-arithmetic core making `encodeDeltaPair`'s induction go through. -/
+private theorem digit_add_mul_pow_of_lt (m d i n : ℕ) (hi : i < n) :
+    (m + d * 4 ^ n) / 4 ^ i % 4 = m / 4 ^ i % 4 := by
+  obtain ⟨j, rfl⟩ := Nat.exists_eq_add_of_lt hi
+  have heq : d * 4 ^ (i + j + 1) = 4 ^ i * (4 * 4 ^ j * d) := by ring
+  rw [heq, Nat.add_mul_div_left m _ (pow_pos (by norm_num) i)]
+  rw [show 4 * 4 ^ j * d = 4 * (4 ^ j * d) by ring]
+  exact Nat.add_mul_mod_self_left _ _ _
+
+/-- `encodeDeltaPair`'s freshly-added digit at position `n` is read straight back off by dividing
+out the lower `4 ^ n` (which is exactly `encodeDeltaPair δ n`, `< 4 ^ n` by `encodeDeltaPair_lt`,
+hence contributes `0` to the quotient). -/
+private theorem digit_eq_of_encodeDeltaPair (δ : ℕ → Bool × Bool) (n : ℕ) :
+    encodeDeltaPair δ (n + 1) / 4 ^ n =
+      (if (δ n).1 then 1 else 0) + (if (δ n).2 then 2 else 0) := by
+  show (encodeDeltaPair δ n +
+      ((if (δ n).1 then 1 else 0) + (if (δ n).2 then 2 else 0)) * 4 ^ n) / 4 ^ n = _
+  rw [Nat.add_mul_div_right _ _ (pow_pos (by norm_num) n),
+    Nat.div_eq_of_lt (encodeDeltaPair_lt δ n), Nat.zero_add]
+
+/-- **The inversion property**: `deltaPair (encodeDeltaPair δ n)` agrees with `δ` on every position
+strictly below `n`. Combined with `atomPairG_congr` (`(d)(1)`, already `Pass`), this is exactly
+what transports `(c)(ii)`'s `Fin n → Bool × Bool`-indexed classical covering fact into the
+`deltaPair`/bit-source-indexed one `XPseqCode`'s fold actually uses (`atomPairG_master_covered_deltaPair`
+below). -/
+theorem deltaPair_encodeDeltaPair (δ : ℕ → Bool × Bool) :
+    ∀ n i, i < n → deltaPair (encodeDeltaPair δ n) i = δ i := by
+  intro n
+  induction n with
+  | zero => intro i hi; exact absurd hi (Nat.not_lt_zero i)
+  | succ n ih =>
+    intro i hi
+    rcases Nat.lt_succ_iff_lt_or_eq.mp hi with hi' | rfl
+    · show (decide ((encodeDeltaPair δ (n + 1) / 4 ^ i) % 2 = 1),
+          decide ((encodeDeltaPair δ (n + 1) / 4 ^ i / 2) % 2 = 1)) = δ i
+      have key : encodeDeltaPair δ (n + 1) / 4 ^ i % 4 = encodeDeltaPair δ n / 4 ^ i % 4 := by
+        show (encodeDeltaPair δ n +
+          ((if (δ n).1 then 1 else 0) + (if (δ n).2 then 2 else 0)) * 4 ^ n) / 4 ^ i % 4 = _
+        exact digit_add_mul_pow_of_lt _ _ _ _ hi'
+      have h1 : (encodeDeltaPair δ (n + 1) / 4 ^ i) % 2 =
+          (encodeDeltaPair δ n / 4 ^ i) % 2 := by omega
+      have h2 : (encodeDeltaPair δ (n + 1) / 4 ^ i / 2) % 2 =
+          (encodeDeltaPair δ n / 4 ^ i / 2) % 2 := by omega
+      rw [h1, h2]
+      show (decide ((encodeDeltaPair δ n / 4 ^ i) % 2 = 1),
+          decide ((encodeDeltaPair δ n / 4 ^ i / 2) % 2 = 1)) = δ i
+      exact ih i hi'
+    · have hd := digit_eq_of_encodeDeltaPair δ i
+      show (decide ((encodeDeltaPair δ (i + 1) / 4 ^ i) % 2 = 1),
+          decide ((encodeDeltaPair δ (i + 1) / 4 ^ i / 2) % 2 = 1)) = δ i
+      rw [hd]
+      rcases Bool.eq_false_or_eq_true (δ i).1 with h1 | h1 <;>
+        rcases Bool.eq_false_or_eq_true (δ i).2 with h2 | h2 <;>
+        simp [h1, h2, Prod.ext_iff]
+
+section AtomPairGenDelta
+
+variable {α β : Type*} (D₀ : NeighborhoodSystem α) (D₁ : NeighborhoodSystem β)
+  (hD₀pos : D₀.IsPositive) (hD₀diff : D₀.DiffClosed)
+  (splitY : Set β → Set α → Set β → Set α × Set α) (hySplit : SplitSpec' D₀ splitY)
+  (hD₁pos : D₁.IsPositive) (hD₁diff : D₁.DiffClosed)
+  (splitX : Set α → Set β → Set α → Set β × Set β) (hxSplit : SplitSpec' D₁ splitX)
+  (X : ℕ → Set α) (Y : ℕ → Set β) (hXmem : ∀ n, D₀.mem (X n)) (hYmem : ∀ n, D₁.mem (Y n))
+  (hD₀mne : D₀.master.Nonempty) (hD₁mne : D₁.master.Nonempty)
+
+include hD₀pos hD₀diff hySplit hD₁pos hD₁diff hxSplit hXmem hYmem hD₀mne hD₁mne in
+/-- **8.12(d)(4)(c)(iii): transporting the covering fact to a `deltaPair`-indexed one.** Combines
+`(c)(ii)`'s `atomPairG_master_covered` (covering by `Fin n → Bool × Bool` histories) with
+`encodeDeltaPair`/`deltaPair_encodeDeltaPair` (realizing any such history, padded via
+`extendTruePair`, as a genuine bit-source) and `atomPairG_congr` (depth-`n` value depends only on
+history strictly below `n`) to land on exactly the indexing `XPseqCode`'s fold uses. -/
+theorem atomPairG_master_covered_deltaPair (n : ℕ) :
+    ∀ z ∈ D₀.master, ∃ i < 4 ^ n, z ∈ (atomPairG D₀ D₁ splitY splitX X Y (deltaPair i) n).1 := by
+  intro z hz
+  obtain ⟨δ', hδ'⟩ := atomPairG_master_covered D₀ D₁ hD₀pos hD₀diff splitY hySplit hD₁pos hD₁diff
+    splitX hxSplit X Y hXmem hYmem hD₀mne hD₁mne n z hz
+  refine ⟨encodeDeltaPair (extendTruePair δ') n, encodeDeltaPair_lt _ n, ?_⟩
+  rw [atomPairG_congr D₀ D₁ splitY splitX X Y
+    (fun i hi => deltaPair_encodeDeltaPair (extendTruePair δ') n i hi)]
+  exact hδ'
+
+end AtomPairGenDelta
+
 section AtomPairCorrect
 
 variable {α β : Type*} {D₀ : NeighborhoodSystem α} {D₁ : NeighborhoodSystem β}
