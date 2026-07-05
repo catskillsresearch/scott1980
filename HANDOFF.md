@@ -9548,3 +9548,60 @@ just completed: direct specializations of `X_subset_iff_XPseqCode_subset`/
 `XPseq_eq_Y_iff_X_eq_YPseq` ((c)(vii)(3)/(4)). Read `arxiv.md`'s `8.12(d)(5)(c)` row before
 starting. The `(e)(b)`–`(f)(a)` `SplitV.lean` thread (four checkpoints back) remains open in
 parallel; no dependency between the two has been identified.
+
+## 2026-07-05 checkpoint — `8.12(d)(5)(c)` re-scoped; `8.12(d)(5)(c)(i)` (`Pass`)
+
+Before executing, `(d)(5)(c)`'s row was re-scoped into 3 sub-parts, `(c)(i)`–`(c)(iii)`: on
+inspection, `Exercise812c.lean`'s own three theorems ((c)(vii)(3)/(4), lines 1864–1944) are already
+cleanly independent proof units (two symmetric one-shot `transfer_subset_combined` specializations
+plus one packaging theorem consuming both), so no design investigation was needed (unlike
+`(d)(5)(b)`'s own re-scoping) — purely mechanical division mirroring the existing structure.
+
+Executed `(c)(i)` this session, appended to `Exercise812d.lean`'s new `section
+CombinedCodeCrossFamily` (following `CombinedCodeTransfer`): `X_subset_YPseqCode_iff_XPseqCode_subset_Y`,
+one direct specialization of `(d)(5)(b)(iv)`'s `transfer_subset_combinedCode` at mixed indices
+`(2i, 2j+1)`, then `rw`-ing `combinedXCode_even`/`combinedXCode_odd`/`combinedYCode_even`/
+`combinedYCode_odd` plus the same two `Set.inter_eq_self_of_subset_right` bookkeeping steps
+`X_subset_iff_XPseqCode_subset` already uses. Matched the plan exactly, no surprises, no new lemma
+content.
+
+Built (`lake build` — 3165 jobs — and `lake env lean Exercise812d.lean` directly, both clean; only
+the pre-existing `(b)(ii)`-era `linter.unusedSectionVars` warning remains, unchanged). Zero
+`sorry`. Axiom-audited: `X_subset_YPseqCode_iff_XPseqCode_subset_Y` gives
+`⊆ {propext, Classical.choice, Quot.sound}`, matching this section's established baseline.
+`arxiv.md`'s `8.12(d)(5)(c)` row updated with the 3-way sub-part breakdown; `(c)(i)`'s own row
+updated to `Pass`.
+
+**Status: `8.12(d)(5)(c)(i)` is `Pass`.** **Resume protocol:** next up is `(d)(5)(c)(ii)`
+(`YPseqCode_subset_X_iff_Y_subset_XPseqCode`), the symmetric specialization of
+`transfer_subset_combinedCode` at `(2i + 1, 2j)`, mirroring `Exercise812c.lean`'s
+`YPseq_subset_X_iff_Y_subset_XPseq` (lines 1882–1895) — same proof shape as `(c)(i)` with the
+mirror-image `rw`/bookkeeping order. Then `(c)(iii)` (`XPseqCode_eq_Y_iff_X_eq_YPseqCode`) packages
+both via `Set.Subset.antisymm`, mirroring `XPseq_eq_Y_iff_X_eq_YPseq` (lines 1921–1944). Read
+`arxiv.md`'s `8.12(d)(5)(c)(ii)`/`(c)(iii)` rows before starting. The `(e)(b)`–`(f)(a)`
+`SplitV.lean` thread (five checkpoints back) remains open in parallel; no dependency between the
+two has been identified.
+
+## 2026-07-05 checkpoint — `8.12(d)(5)(c)(ii)` (`Pass`)
+
+Executed `(c)(ii)` this session, appended to `Exercise812d.lean`'s existing `section
+CombinedCodeCrossFamily` (right after `(c)(i)`): `YPseqCode_subset_X_iff_Y_subset_XPseqCode`, the
+symmetric specialization of `transfer_subset_combinedCode` at `(2i + 1, 2j)`, `rw`-ing
+`combinedXCode_odd`/`combinedXCode_even`/`combinedYCode_odd`/`combinedYCode_even` then the
+mirror-image `Set.inter_eq_self_of_subset_right` pair. Matched the plan exactly, no surprises, no
+new lemma content — same proof shape as `(c)(i)` with the mirror-image `rw`/bookkeeping order.
+
+Built (`lake build` — 3165 jobs — and `lake env lean Exercise812d.lean` directly, both clean; only
+the pre-existing `(b)(ii)`-era `linter.unusedSectionVars` warning remains, unchanged). Zero
+`sorry`. Axiom-audited: `YPseqCode_subset_X_iff_Y_subset_XPseqCode` gives
+`⊆ {propext, Classical.choice, Quot.sound}`, matching this section's established baseline.
+`arxiv.md`'s `(c)(ii)` row updated to `Pass`.
+
+**Status: `8.12(d)(5)(c)(ii)` is `Pass`.** **Resume protocol:** next up is `(d)(5)(c)(iii)`
+(`XPseqCode_eq_Y_iff_X_eq_YPseqCode`), pure packaging of `(c)(i)`/`(c)(ii)` via
+`Set.Subset.antisymm` in each direction (no new mathematical content), mirroring
+`Exercise812c.lean`'s `XPseq_eq_Y_iff_X_eq_YPseq` (lines 1921–1944) line-for-line. Once `(c)(iii)`
+lands, `8.12(d)(5)(c)` is complete and `(d)(5)(d)` (`toD1Code`/`toD0Code`) becomes unblocked. Read
+`arxiv.md`'s `8.12(d)(5)(c)(iii)` row before starting. The `(e)(b)`–`(f)(a)` `SplitV.lean` thread
+(six checkpoints back) remains open in parallel; no dependency between the two has been
+identified.

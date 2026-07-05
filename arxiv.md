@@ -2522,8 +2522,29 @@ Lecture VIII covers retractions, projections, and the construction of the univer
   - `theorem YPseqCode_subset_X_iff_Y_subset_XPseqCode (i j : ℕ) : P₀.X (YPseqCode … i) ⊆ P₀.X j ↔ P₁.X i ⊆ P₁.X (XPseqCode … j)`
   - `theorem XPseqCode_eq_Y_iff_X_eq_YPseqCode (j k : ℕ) : P₁.X (XPseqCode … j) = P₁.X k ↔ P₀.X j = P₀.X (YPseqCode … k)`
 * **Lean File:** — (not yet started)
-* **Proof Notes (plan):** per `(c)(vii)(3)`'s own docstring, these need **no new proof machinery** beyond `(d)(5)(b)`'s transfer facts — direct specializations of the same interleaved-family transfer theorem at *mixed* even/odd (resp. odd/even) index pairs, simplified by the same `Set.inter_eq_self_of_subset_right` bookkeeping `(c)(vii)(3)` uses. `XPseqCode_eq_Y_iff_X_eq_YPseqCode` packages both cross-parity subset facts via `Set.Subset.antisymm` in each direction, exactly as `XPseq_eq_Y_iff_X_eq_YPseq` does.
-* **Status:** Scoped, not started — depends on `(d)(5)(b)`
+* **Proof Notes (plan):** per `(c)(vii)(3)`'s own docstring, these need **no new proof machinery** beyond `(d)(5)(b)`'s transfer facts — direct specializations of the same interleaved-family transfer theorem at *mixed* even/odd (resp. odd/even) index pairs, simplified by the same `Set.inter_eq_self_of_subset_right` bookkeeping `(c)(vii)(3)` uses. `XPseqCode_eq_Y_iff_X_eq_YPseqCode` packages both cross-parity subset facts via `Set.Subset.antisymm` in each direction, exactly as `XPseq_eq_Y_iff_X_eq_YPseq` does. **Sub-part breakdown:** `Exercise812c.lean`'s own three theorems ((c)(vii)(3)/(4), lines 1864–1944) are already three independent, cleanly-separated proof units — two symmetric one-shot `transfer_subset_combined` specializations (each `≈15` lines) plus one packaging theorem consuming both — so this row is re-scoped into 3 sub-parts, `(c)(i)`–`(c)(iii)` below, matching that natural division exactly (no further design work needed, unlike `(d)(5)(b)`'s own re-scoping, which required a genuine investigation first).
+* **Status:** Design decision not needed (mechanical); re-scoped into 3 sub-parts below (none started)
+
+##### Exercise 8.12(d)(5)(c)(i): the cross-parity order fact, `even`/`odd` mix
+* **Mathematical Target:** the code-level analogue of `Exercise812c.lean`'s `X_subset_YPseq_iff_XPseq_subset_Y` (lines 1864–1880):
+  - `theorem X_subset_YPseqCode_iff_XPseqCode_subset_Y (i j : ℕ) : P₀.X i ⊆ P₀.X (YPseqCode … j) ↔ P₁.X (XPseqCode … i) ⊆ P₁.X j`
+* **Lean File:** `Exercise812d.lean` (new `section CombinedCodeCrossFamily`, appended after `CombinedCodeTransfer`)
+* **Proof Notes:** exactly as planned — one direct specialization of `(d)(5)(b)(iv)`'s `transfer_subset_combinedCode` at the mixed indices `(2i, 2j+1)` (`combinedXCode` at an even index against `combinedYCode` at an odd index), then `rw [combinedXCode_even, combinedXCode_odd, combinedYCode_even, combinedYCode_odd, …]` plus the same two `Set.inter_eq_self_of_subset_right` bookkeeping steps `X_subset_iff_XPseqCode_subset` already uses (`D₀.sub_master (P₀.mem_X i)` on the left, `D₁.sub_master (P₁.mem_X (XPseqCode … i))` on the right). No new lemma content, direct transcription — matched the plan exactly, no surprises. Zero `sorry`; `lake build` (3165 jobs) and `lake env lean Exercise812d.lean` both clean (only the pre-existing `(b)(ii)`-era `linter.unusedSectionVars` warning remains, unchanged). `#print axioms X_subset_YPseqCode_iff_XPseqCode_subset_Y` gives `⊆ {propext, Classical.choice, Quot.sound}`, matching this section's established baseline.
+* **Status:** Pass
+
+##### Exercise 8.12(d)(5)(c)(ii): the cross-parity order fact, `odd`/`even` mix
+* **Mathematical Target:** the code-level analogue of `Exercise812c.lean`'s `YPseq_subset_X_iff_Y_subset_XPseq` (lines 1882–1895), symmetric to `(c)(i)`:
+  - `theorem YPseqCode_subset_X_iff_Y_subset_XPseqCode (i j : ℕ) : P₀.X (YPseqCode … i) ⊆ P₀.X j ↔ P₁.X i ⊆ P₁.X (XPseqCode … j)`
+* **Lean File:** `Exercise812d.lean` (same `section CombinedCodeCrossFamily` as `(c)(i)`)
+* **Proof Notes:** exactly as planned — the symmetric specialization of `transfer_subset_combinedCode` at `(2i + 1, 2j)`, `rw`-ing `combinedXCode_odd`/`combinedXCode_even`/`combinedYCode_odd`/`combinedYCode_even` then the mirror-image `Set.inter_eq_self_of_subset_right` pair (`D₀.sub_master (P₀.mem_X (YPseqCode … i))` on the left, `D₁.sub_master (P₁.mem_X j)` on the right). No new lemma content, matched the plan exactly. Zero `sorry`; `lake build` (3165 jobs) and `lake env lean Exercise812d.lean` both clean (only the pre-existing `(b)(ii)`-era `linter.unusedSectionVars` warning remains, unchanged). `#print axioms YPseqCode_subset_X_iff_Y_subset_XPseqCode` gives `⊆ {propext, Classical.choice, Quot.sound}`, matching this section's established baseline.
+* **Status:** Pass
+
+##### Exercise 8.12(d)(5)(c)(iii): the cross-parity `embed_eq_iff` analogue
+* **Mathematical Target:** the code-level analogue of `Exercise812c.lean`'s `XPseq_eq_Y_iff_X_eq_YPseq` (lines 1921–1944), needed by `(d)(5)(d)`'s `toD1Code`/`toD0Code` `up_mem` case to rename a covering witness back into `XPseqCode`/`YPseqCode` "coordinates":
+  - `theorem XPseqCode_eq_Y_iff_X_eq_YPseqCode (j k : ℕ) : P₁.X (XPseqCode … j) = P₁.X k ↔ P₀.X j = P₀.X (YPseqCode … k)`
+* **Lean File:** `Exercise812d.lean` (same new section as `(c)(i)`/`(c)(ii)`)
+* **Proof Notes (plan):** pure packaging, no new mathematical content — each direction is `Set.Subset.antisymm` combining `(c)(i)` applied at `(j, k)` with `(c)(ii)` applied at `(k, j)` (one `.mpr`/`.mp` on each of `h.subset`/`h.symm.subset`), exactly mirroring `XPseq_eq_Y_iff_X_eq_YPseq`'s four-line proof body line-for-line.
+* **Status:** Scoped, not started — depends on `(c)(i)`, `(c)(ii)`
 
 #### Exercise 8.12(d)(5)(d): `toD1Code`/`toD0Code`, the generalized elementwise maps
 * **Mathematical Target:** generalizing `toD1`/`toD0` ((c)(vii)(4)/(5)) — tentative names, final naming deferred to execution:
