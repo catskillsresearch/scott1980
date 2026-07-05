@@ -10182,3 +10182,29 @@ umbrella row updated to note `(a)` `Pass`, `(b)`–`(c)` not started.
 directly, exactly mirroring `(d)(5)(e)(iv)`'s `domainIsoCode812d`/`isomorphic_812d` assembly
 pattern). Once all three land, `8.12(d)(6)` — hence `8.12(d)` in full — is complete. The
 `(e)(b)`–`(f)(a)` `SplitV.lean` thread remains open in parallel; no dependency identified.
+
+**2026-07-05 — Exercise 8.12(d)(6)(b) `Pass`: `toMap_comp_invMap`.** New `section
+ToMapComp812d` appended to `Exercise812d.lean` (after `InvMapComp812d`). Matched the plan
+exactly, first try, no surprises: exact mirror of `(a)`'s `invMap_comp_toMap` (independent of
+it), direct transcription of `Theorem88n.lean`'s `isoInj_comp_isoProj` at `e := domainIsoCode812d
+…` — `apply ext_of_toElementMap; intro y; rw [toElementMap_comp]; show (ofIso e).toElementMap
+((ofIso e.symm).toElementMap y) = _; rw [toElementMap_ofIso, toElementMap_ofIso,
+OrderIso.apply_symm_apply, toElementMap_idMap]`. Same five-line shape as `(a)` with `e`/`e.symm`
+swapped and `OrderIso.apply_symm_apply` in place of `OrderIso.symm_apply_apply`. Zero `sorry`;
+`lake build Scott1980` (3165 jobs) and `lake env lean Exercise812d.lean` both clean (only the
+pre-existing `(b)(ii)`-era `linter.unusedSectionVars` warning on `yPseqAtomIdx_eq_of_dichotomy`
+remains, unchanged). `#print axioms toMap_comp_invMap` gives `⊆ {propext, Classical.choice,
+Quot.sound}`, matching this section's established baseline. `arxiv.md`: `8.12(d)(6)(b)` row
+updated to `Pass`; `8.12(d)(6)` umbrella row updated to note `(a)`–`(b)` `Pass`, `(c)` not
+started.
+
+**Status: `8.12(d)(6)(b)` is `Pass`.** **Resume protocol:** next up is the final `8.12(d)(6)(c)`
+— the `effectiveIso812d`/`effectivelyIsomorphic_812d` assembly, citing `(a)`/`(b)`
+(`invMap_comp_toMap`/`toMap_comp_invMap`) plus `(d)(5)(f)`'s
+`domainIsoCode812d_isComputableMap`/`domainIsoCode812d_symm_isComputableMap` directly, exactly
+mirroring `(d)(5)(e)(iv)`'s `domainIsoCode812d`/`isomorphic_812d` assembly pattern: a `def
+effectiveIso812d : EffectiveIso P₀ P₁ where toMap := …; invMap := …; toMap_computable := …;
+invMap_computable := …; left_inv := invMap_comp_toMap …; right_inv := toMap_comp_invMap …`
+followed by `theorem effectivelyIsomorphic_812d : EffectivelyIsomorphic P₀ P₁ := ⟨effectiveIso812d
+…⟩`. Once this lands, `8.12(d)(6)` — hence `8.12(d)` in full — is complete. The `(e)(b)`–`(f)(a)`
+`SplitV.lean` thread remains open in parallel; no dependency identified.
