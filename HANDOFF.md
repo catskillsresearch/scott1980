@@ -9043,3 +9043,33 @@ scoping note, this is expected to be close to free: it reuses `(c)(iii)`'s `enco
 of `.1` (no new base-4 encoding needed — `encodeDeltaPair`/`deltaPair` are already symmetric in
 `.1`/`.2`, only `atomPairG_master_covered`/`_snd`'s covering fact differs by side). Read `arxiv.md`'s
 `8.12(d)(4)(d)(iii)` row for the exact statement.
+
+---
+
+**2026-07-04 checkpoint — `8.12(d)(4)(d)(iii)` is `Pass`.** Proved `atomPairG_master_covered_deltaPair_snd`
+(`section AtomPairGenDelta`, immediately after `atomPairG_master_covered_deltaPair`), the `D₁`-side
+mirror transporting `(d)(ii)`'s `atomPairG_master_covered_snd` into the `deltaPair`-indexed form
+`∀ z ∈ D₁.master, ∃ i < 4ⁿ, z ∈ (atomPairG (deltaPair i) n).2`. Exactly as scoped: a verbatim
+transcription of `(c)(iii)`'s `atomPairG_master_covered_deltaPair` proof — swap `.1`→`.2`,
+`D₀.master`→`D₁.master`, `atomPairG_master_covered`→`atomPairG_master_covered_snd` — with no new
+base-4 encoding needed, since `encodeDeltaPair`/`deltaPair`/`deltaPair_encodeDeltaPair`/
+`atomPairG_congr` are already symmetric in `.1`/`.2`. `section AtomPairGenDelta`'s existing
+`variable`/`include` block already covered exactly what `atomPairG_master_covered_snd` needs (it's
+the identical list `(c)(iii)`'s own section already carries), so no new section was required — just
+one more `theorem` + `include ... in` dropped in before `end AtomPairGenDelta`. No Lean gotchas —
+went in clean on the first attempt (`lake env lean Exercise812d.lean` direct type-check, then a
+scratch `#print axioms` file after a full `lake build Scott1980.Neighborhood.Exercise812d`, since
+the scratch file imports the compiled `.olean` rather than re-elaborating the source). Axiom-audited
+(`#print axioms`): `⊆{propext, Classical.choice, Quot.sound}` (ambient baseline, matching
+`atomPairG_master_covered_deltaPair`'s own footprint exactly). Whole-project `lake build`
+(3164 jobs) green, zero `sorry`. `arxiv.md`: `(d)(iii)`'s own row updated to `Pass` with a dense
+proof note; `(d)(4)(d)`'s umbrella row updated to note `(d)(i)`–`(d)(iii)` `Pass`, `(d)(iv)`–`(d)(vi)`
+still `Scoped`.
+
+**Status: `8.12(d)(4)(d)(iii)` is `Pass`.** **Resume protocol:** next up is `(d)(iv)` — combine
+`(d)(iii)` with `P₁.X n ⊆ D₁.master` (`D₁.sub_master`) and `P₁.X n ≠ ∅` (via `hD₁nomin.mem_ne_empty
+(P₁.mem_X n)`) to get `∃ i < 4ⁿ, (atomPairG (deltaPair i) n).2 ∩ P₁.X n ≠ ∅`, mirroring `(c)(iv)`'s
+`exists_atomPairG_deltaPair_inter_Xn_ne_empty` proof verbatim (swap `.1`→`.2`, `D₀`→`D₁`, `P₀`→`P₁`,
+`hD₀nomin`→`hD₁nomin`). This alone doesn't yet fix `bx` — that's resolved only in `(d)(vi)`. Read
+`arxiv.md`'s `8.12(d)(4)(d)(iv)` row for the exact statement and `(c)(iv)`'s row/proof (`section
+AtomPairCorrect4`) for the template to mirror.
