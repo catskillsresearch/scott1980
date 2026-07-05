@@ -10105,3 +10105,80 @@ see `(d)(5)(e)`'s row, findings 1–2). Once `EffectiveIso`'s exact structure/hy
 pinned down by that re-verification, the assembly itself should be close to immediate (every
 field is a direct citation of an already-`Pass` lemma). The `(e)(b)`–`(f)(a)` `SplitV.lean` thread
 remains open in parallel; no dependency identified.
+
+**2026-07-05 — Exercise 8.12(d)(6): scoping-only pass (no code), per user request.** Re-scoped
+`8.12(d)(6)` into 3 sub-parts, `arxiv.md` rows **`8.12(d)(6)(a)`–`(c)`**, before writing any Lean,
+by re-verifying the previous checkpoint's flagged open question and hand-tracing the assembly
+against `Theorem88n.lean`'s `isoProj_comp_isoInj`/`isoInj_comp_isoProj` precedent. **Two findings:**
+1. **The re-verification the previous checkpoint asked for came back the *opposite* of what was
+   guessed**: `(e)`'s "further correction" (that `(d)(6)` should *drop* `SplitSpec'`/`hxSplit`/
+   `hySplit` entirely) is itself wrong upon inspection — `hxSplit`/`hySplit` genuinely appear
+   inside the proof terms of the `(b)` interleaving layer's disjointness facts (`xStepG_disjoint_
+   of_ne hxSplit …`, `Exercise812d.lean:4150,4162,4600,4631`), which `up_mem`/`toD1Code`/
+   `toD0Code`/`domainIsoCode812d` all transitively depend on — confirmed independently by Lean's
+   own `linter.unusedSectionVars` never flagging `hxSplit`/`hySplit` as unused across any
+   `(d)(5)(f)` theorem (only `hD₀nomin`/`hD₁nomin`, elsewhere, ever get flagged). `(e)`'s finding 1
+   is really about `AtomPairCode`/`XPseqCode`/`YPseqCode`'s *bare index formulas* only citing
+   `IsComputableSplit` — a narrower, still-true claim that doesn't extend to the correctness/order
+   lemmas built on top. **Net: `8.12(d)(6)`'s hypothesis list is simply `(d)(5)(f)`'s own
+   `include` list verbatim** (`P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hD₀pos hD₀diff
+   hD₀nomin hxSplit hD₁pos hD₁diff hD₁nomin hySplit hD₀mne hD₁mne hUnion0 hUnion1 hX0 hY0`) — no
+   reduction, no addition.
+2. **The assembly needs zero new mathematical content beyond `(d)(5)`'s already-`Pass` lemmas.**
+   `Theorem88n.lean`'s `isoProj_comp_isoInj`/`isoInj_comp_isoProj` are *generic* facts about
+   `ofIso e`/`ofIso e.symm` for *any* `OrderIso e`, needing nothing iso-specific beyond `e` itself
+   — so with `e := domainIsoCode812d …`, the `EffectiveIso`-level `left_inv`/`right_inv` follow via
+   `ext_of_toElementMap`/`toElementMap_comp`/`toElementMap_ofIso`(×2)/`OrderIso.symm_apply_apply`
+   (resp. `.apply_symm_apply`)/`toElementMap_idMap`, the *exact* four-line shape at
+   `Theorem88n.lean` lines 59–75, substituting `domainIsoCode812d` for `domainIsoCode P`.
+   **Crucially this needs *none* of `(d)(5)(e)`'s `toD0Code_toD1Code`/`toD1Code_toD0Code`
+   directly** — those built `domainIsoCode812d`'s own `OrderIso.left_inv`/`.right_inv` fields;
+   once `domainIsoCode812d` exists as a bona fide `OrderIso`, the `ApproximableMap`-level mutual-
+   inverse facts are free. `toMap_computable`/`invMap_computable` are literal citations of
+   `(d)(5)(f)`'s `domainIsoCode812d_isComputableMap`/`_symm_isComputableMap`.
+Sub-part breakdown mirrors `(d)(5)(e)`'s `(e)(ii)`/`(e)(iii)`/`(e)(iv)` pattern (one lemma per
+mutual-inverse direction, then final assembly), not `(d)(5)(f)`'s per-direction-pairing, since
+here the `_computable` fields are direct citations rather than new `rel_iff`-driven proofs:
+**`(d)(6)(a)`** `invMap_comp_toMap` (mirrors `isoProj_comp_isoInj`); **`(d)(6)(b)`**
+`toMap_comp_invMap` (mirrors `isoInj_comp_isoProj`, independent of `(a)`); **`(d)(6)(c)`** the
+full `effectiveIso812d`/`effectivelyIsomorphic_812d` assembly (depends on `(a)`/`(b)` plus
+`(d)(5)(f)`'s two `_isComputableMap` theorems). No Lean code changed this checkpoint — `arxiv.md`'s
+`8.12(d)(6)` row rewritten with the corrected finding and a 3-way sub-part breakdown; new rows
+`8.12(d)(6)(a)`–`(c)` added, all `Scoped, not started`.
+
+**Status: Exercise 8.12(d)(6) is `Partial`, now scoped into `(a)`–`(c)`, none started.** **Resume
+protocol:** start with `8.12(d)(6)(a)` (`invMap_comp_toMap`) — per `arxiv.md`'s row, direct
+transcription of `Theorem88n.lean`'s `isoProj_comp_isoInj` at `e := domainIsoCode812d …`:
+`apply ext_of_toElementMap; intro x; rw [toElementMap_comp]; show (ofIso e.symm).toElementMap
+((ofIso e).toElementMap x) = _; rw [toElementMap_ofIso, toElementMap_ofIso,
+OrderIso.symm_apply_apply, toElementMap_idMap]`. Then `(d)(6)(b)` (`toMap_comp_invMap`, exact
+mirror via `OrderIso.apply_symm_apply`), then `(d)(6)(c)` (the `effectiveIso812d`/
+`effectivelyIsomorphic_812d` final assembly, citing `(a)`/`(b)` plus `(d)(5)(f)`'s
+`domainIsoCode812d_isComputableMap`/`_symm_isComputableMap` directly). Once all three land,
+`8.12(d)(6)` — hence `8.12(d)` in full — is complete. The `(e)(b)`–`(f)(a)` `SplitV.lean` thread
+remains open in parallel; no dependency identified.
+
+**2026-07-05 — Exercise 8.12(d)(6)(a) `Pass`: `invMap_comp_toMap`.** New `section
+InvMapComp812d` appended to `Exercise812d.lean` (after `DomainIsoCode812dSymmIsComputableMap`).
+Matched the plan exactly, first try, no surprises: direct transcription of `Theorem88n.lean`'s
+`isoProj_comp_isoInj` at `e := domainIsoCode812d …` — `apply ext_of_toElementMap; intro x; rw
+[toElementMap_comp]; show (ofIso e.symm).toElementMap ((ofIso e).toElementMap x) = _; rw
+[toElementMap_ofIso, toElementMap_ofIso, OrderIso.symm_apply_apply, toElementMap_idMap]`. No case
+split, no search, five lines; no unfolding of named `isoInj`/`isoProj` abbreviations needed
+(`Theorem88n.lean` routes through those, `Exercise812d.lean` writes `ofIso (domainIsoCode812d …)`/
+`.symm` out directly). Zero `sorry`; `lake build Scott1980` (3165 jobs) and `lake env lean
+Exercise812d.lean` both clean (only the pre-existing `(b)(ii)`-era `linter.unusedSectionVars`
+warning on `yPseqAtomIdx_eq_of_dichotomy` remains, unchanged — not introduced by this checkpoint).
+`#print axioms invMap_comp_toMap` gives `⊆ {propext, Classical.choice, Quot.sound}`, matching this
+section's established baseline. `arxiv.md`: `8.12(d)(6)(a)` row updated to `Pass`; `8.12(d)(6)`
+umbrella row updated to note `(a)` `Pass`, `(b)`–`(c)` not started.
+
+**Status: `8.12(d)(6)(a)` is `Pass`.** **Resume protocol:** next up is `8.12(d)(6)(b)`
+(`toMap_comp_invMap`) — exact mirror of `(a)` (independent of it), mirroring `Theorem88n.lean`'s
+`isoInj_comp_isoProj`: same five-line shape with `e`/`e.symm` swapped and
+`OrderIso.apply_symm_apply` in place of `OrderIso.symm_apply_apply`. Then `(d)(6)(c)` (the
+`effectiveIso812d`/`effectivelyIsomorphic_812d` final assembly, citing `(a)`/`(b)` plus
+`(d)(5)(f)`'s `domainIsoCode812d_isComputableMap`/`domainIsoCode812d_symm_isComputableMap`
+directly, exactly mirroring `(d)(5)(e)(iv)`'s `domainIsoCode812d`/`isomorphic_812d` assembly
+pattern). Once all three land, `8.12(d)(6)` — hence `8.12(d)` in full — is complete. The
+`(e)(b)`–`(f)(a)` `SplitV.lean` thread remains open in parallel; no dependency identified.
