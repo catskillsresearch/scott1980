@@ -8871,3 +8871,32 @@ Quot.sound}` (ambient baseline). Whole-project `lake build` (3164 jobs) green, z
 intersection with `P₀.X n`, still classical": `∃ i < 4ⁿ, (atomPairG (deltaPair i) n).1 ∩ P₀.X n ≠ ∅`,
 combining `(c)(iii)`'s covering fact with `P₀.X n ⊆ D₀.master` and `P₀.X n ≠ ∅` (`NoMinimal` +
 `P₀.mem_X n`). Read `arxiv.md`'s `(d)(4)(c)` row for `(c)(iv)`'s exact statement.
+
+## 2026-07-04 checkpoint: `(c)(iv)` done — `exists_atomPairG_deltaPair_inter_Xn_ne_empty`
+
+Implemented the non-trivial-intersection fact, purely classically: `∃ i < 4ⁿ,
+(atomPairG (deltaPair i) n).1 ∩ P₀.X n ≠ ∅`. Direct composition of already-`Pass` pieces —
+`atomPairG_master_covered_deltaPair` (`(c)(iii)`) applied to any `z ∈ P₀.X n` (which lies in
+`D₀.master` via `D₀.sub_master`), landing `z` in some covering piece.
+
+**One new hypothesis needed:** `P₀.X n ≠ ∅` needs genuine `hD₀nomin : D₀.NoMinimal` (via
+`hD₀nomin.mem_ne_empty (P₀.mem_X n)`), not just `IsPositive`/`DiffClosed`/`SplitSpec'`/
+`master.Nonempty` — `(d)(1)`'s generalized layer deliberately dropped `NoMinimal` for the
+*construction*, but `(c)(iv)` is the one closure sub-goal needing the *global* "every genuine
+neighbourhood is non-empty" fact, which only `NoMinimal` supplies. Added to a fresh `section
+AtomPairCorrect4` (mirroring `AtomPairCorrect3`'s variable list — needs both `(d)(1)`'s abstract
+hypotheses and `P₀`/`P₁` to talk about `P₀.X n`/`deltaPair`). No Lean gotchas. Also updated the
+in-file "flagged, deferred gap" docstring (just above `YPseqCode`'s section) to note the classical
+half of the promising route is now fully done (`(c)(i)`–`(c)(iv)`), narrowing what's left to
+`(c)(v)`/`(c)(vi)`'s converse-biconditional.
+
+Axiom-audited: `⊆{propext, Classical.choice, Quot.sound}` (ambient baseline). Whole-project `lake
+build` (3164 jobs) green, zero `sorry`. `arxiv.md`'s `(c)(iv)` row updated to `Pass`; `(c)`'s own
+row now notes `(c)(i)`–`(c)(iv)` `Pass`.
+
+**Status: `8.12(d)(4)(c)(iv)` is `Pass`.** **Resume protocol:** next up is `(c)(v)` — "the
+converse-biconditional — `(c)`'s originally-named gap, now itself a concrete induction":
+`(atomPairG (deltaPair i) n).1 ≠ ∅ → atomPairJunk n i = 0` (tentative names
+`atomPairG_fst_eq_empty_of_junk_eq_one` for the induction, then its contrapositive
+`atomPairJunk_eq_zero_of_ne_empty`). Read `arxiv.md`'s `(d)(4)(c)` row for `(c)(v)`'s exact
+statement — this is the largest remaining piece of `(d)(4)(c)`'s closure.

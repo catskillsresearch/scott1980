@@ -2165,6 +2165,36 @@ theorem mem_XPseqCode_iff {n : ℕ}
 
 end XPseqCode
 
+section AtomPairCorrect4
+
+variable {α β : Type*} {D₀ : NeighborhoodSystem α} {D₁ : NeighborhoodSystem β}
+  (P₀ : ComputablePresentation D₀) (P₁ : ComputablePresentation D₁)
+  (hDiff0 : IsComputableDiff P₀) (hDiff1 : IsComputableDiff P₁)
+  (splitX : Set α → Set β → Set α → Set β × Set β) (hSplitX : IsComputableSplit P₀ P₁ splitX)
+  (splitY : Set β → Set α → Set β → Set α × Set α) (hSplitY : IsComputableSplit P₁ P₀ splitY)
+  (hD₀pos : D₀.IsPositive) (hD₀diff : D₀.DiffClosed) (hxSplit : SplitSpec' D₁ splitX)
+  (hD₁pos : D₁.IsPositive) (hD₁diff : D₁.DiffClosed) (hySplit : SplitSpec' D₀ splitY)
+  (hD₀mne : D₀.master.Nonempty) (hD₁mne : D₁.master.Nonempty) (hD₀nomin : D₀.NoMinimal)
+
+include hD₀pos hD₀diff hxSplit hD₁pos hD₁diff hySplit hD₀mne hD₁mne hD₀nomin in
+/-- **8.12(d)(4)(c)(iv): non-trivial intersection with `P₀.X n`, still classical.** Combines
+`(c)(iii)`'s `atomPairG_master_covered_deltaPair` with `P₀.X n ⊆ D₀.master` (`sub_master`) and
+`P₀.X n ≠ ∅` (fresh here: `hD₀nomin.mem_ne_empty`, the one place in `(d)(4)(c)`'s whole closure that
+needs `NoMinimal` itself, rather than just `SplitSpec'`/`IsPositive`/`DiffClosed` — `(d)(1)`'s
+generalized layer deliberately dropped `NoMinimal`, but this specific fact ("every genuine
+neighbourhood, not just the master, is non-empty") has no substitute among the weaker hypotheses).
+Picks any `z ∈ P₀.X n` (exists by the above), lands it in some covering piece via `(c)(iii)`, and
+that piece's `i` is exactly the witness. -/
+theorem exists_atomPairG_deltaPair_inter_Xn_ne_empty (n : ℕ) :
+    ∃ i < 4 ^ n, (atomPairG D₀ D₁ splitY splitX P₀.X P₁.X (deltaPair i) n).1 ∩ P₀.X n ≠ ∅ := by
+  obtain ⟨z, hz⟩ := Set.nonempty_iff_ne_empty.mpr (hD₀nomin.mem_ne_empty (P₀.mem_X n))
+  have hzmaster : z ∈ D₀.master := D₀.sub_master (P₀.mem_X n) hz
+  obtain ⟨i, hi, hzcover⟩ := atomPairG_master_covered_deltaPair D₀ D₁ hD₀pos hD₀diff splitY hySplit
+    hD₁pos hD₁diff splitX hxSplit P₀.X P₁.X P₀.mem_X P₁.mem_X hD₀mne hD₁mne n z hzmaster
+  exact ⟨i, hi, Set.nonempty_iff_ne_empty.mp ⟨z, hzcover, hz⟩⟩
+
+end AtomPairCorrect4
+
 /-! ### A flagged, deferred gap: unconditional "found" at `N = 4ⁿ`
 
 `Theorem88d.lean` discharges its own analogous conditional hypothesis unconditionally via
@@ -2176,17 +2206,15 @@ analogue of `Exercise812c.lean`'s `XPseq_ne_empty`, which is there proved via th
 `combinedX`/`combinedY`/`transfer_inter_empty_combined` detour (the same machinery `(d)(4)(b)`'s
 scope note found unnecessary for the *conditional* correctness above).
 
-**A promising route, sketched but not carried out today:** by induction on `n`, the *classical*
-sets `⋃ i < 4ⁿ, (atomPairG … n i).1` cover `D₀.master` — the algebraic identity making each
-`4`-way split of a parent's children re-union back to *exactly* the parent (`(A ∩ Xₙ) ∪ (A \ Xₙ)
-= A` on the direct side, `SplitSpec'`'s unconditional `I ∪ J = B` on the split side) needs no
-case-adaptivity at all, unlike trying to track *which specific* branch stays non-empty at each step.
-Combined with `P₀.X n ⊆ D₀.master` and `P₀.X n ≠ ∅` (`NoMinimal`), any `z ∈ P₀.X n` lands in some
-covering piece, giving the desired non-trivial intersection classically. What is **still missing**
-to transport this back to the code level is the *converse* half of `(d)(3)(d)`'s
-`atomPairCodeState_correct` — currently only "`junk = 0` ⟹ code matches classical" is `Pass`; "code
-classical is non-empty ⟹ `junk = 0`" (the biconditional) is not yet proved, and is a large enough
-piece of new work to warrant its own future sub-part rather than blocking `(d)(4)(c)`/`(d)` today. -/
+**The classical half of a promising route is now done** (`(d)(4)(c)`'s nested sub-goals
+`(c)(i)`–`(c)(iv)`, all `Pass`): by induction on `n`, the classical `atomPairG`-pieces cover
+`D₀.master` (`atomPairG_master_covered`/`atomPairG_master_covered_deltaPair`), giving
+`exists_atomPairG_deltaPair_inter_Xn_ne_empty` — some bit-source `i < 4ⁿ` whose depth-`n` `D₀`-side
+intersects `P₀.X n` non-trivially, purely classically. What is **still missing** to transport this
+back to the code level is the *converse* half of `(d)(3)(d)`'s `atomPairCodeState_correct` —
+currently only "`junk = 0` ⟹ code matches classical" is `Pass`; "code classical is non-empty ⟹
+`junk = 0`" (the biconditional) is not yet proved. `(d)(4)(c)`'s remaining nested sub-goals
+`(c)(v)`/`(c)(vi)` are exactly this converse-biconditional induction and its final assembly. -/
 
 /-! ## 8.12(d)(4)(d): `YPseqCode`, the code-level `Y`-side union fold
 
