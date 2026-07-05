@@ -9605,3 +9605,32 @@ lands, `8.12(d)(5)(c)` is complete and `(d)(5)(d)` (`toD1Code`/`toD0Code`) becom
 `arxiv.md`'s `8.12(d)(5)(c)(iii)` row before starting. The `(e)(b)`–`(f)(a)` `SplitV.lean` thread
 (six checkpoints back) remains open in parallel; no dependency between the two has been
 identified.
+
+## 2026-07-05 checkpoint — `8.12(d)(5)(c)(iii)` (`Pass`) — `8.12(d)(5)(c)` complete
+
+Executed `(c)(iii)` this session, appended to `Exercise812d.lean`'s existing `section
+CombinedCodeCrossFamily` (right after `(c)(ii)`): `XPseqCode_eq_Y_iff_X_eq_YPseqCode`, pure
+packaging of `(c)(i)`'s `X_subset_YPseqCode_iff_XPseqCode_subset_Y` and `(c)(ii)`'s
+`YPseqCode_subset_X_iff_Y_subset_XPseqCode` via `Set.Subset.antisymm` in each direction — no new
+mathematical content, exact line-for-line transcription of `Exercise812c.lean`'s
+`XPseq_eq_Y_iff_X_eq_YPseq` (lines 1921–1944), substituting the `(c)(i)`/`(c)(ii)` code-level facts
+for their classical counterparts. Matched the plan exactly, no surprises.
+
+Built (`lake build` — 3165 jobs — and `lake env lean Exercise812d.lean` directly, both clean; only
+the pre-existing `(b)(ii)`-era `linter.unusedSectionVars` warning remains, unchanged). Zero
+`sorry`. Axiom-audited: `XPseqCode_eq_Y_iff_X_eq_YPseqCode` gives
+`⊆ {propext, Classical.choice, Quot.sound}`, matching this section's established baseline.
+`arxiv.md`'s `(c)(iii)` row updated to `Pass`; the parent `8.12(d)(5)(c)` row's status updated to
+`Pass` (all three sub-parts `(c)(i)`–`(c)(iii)` complete).
+
+**Status: `8.12(d)(5)(c)`, hence `8.12(d)(5)(c)(iii)`, is `Pass`.** **Resume protocol:** next up is
+`8.12(d)(5)(d)`, `toD1Code`/`toD0Code` (the generalized elementwise maps) — per `arxiv.md`'s own
+proof-notes plan: `sub` from `XPseqCode_mem_unconditional`/`YPseqCode_mem_unconditional` (`(d)(4)`,
+already `Pass`); `master_mem` from `(d)(5)(a)`'s zero facts at `n = 0`; `inter_mem` simplified (no
+`exists_inter_index_X`/`Y`-analogue or `hXcover`/`hYcover` hypothesis needed — cite
+`P₁.inter i j`/`P₁.inter_spec` (resp. `P₀.inter`) directly); `up_mem` from `(d)(5)(c)`'s
+cross-family facts (just completed) plus `P₀.surj`/`P₁.surj` (Definition 7.1, replacing `(c)(vii)`'s
+assumed `hXcover`/`hYcover`), transcribing `Exercise812c.lean`'s `toD1`/`toD0` `up_mem` proof body
+directly. Read `arxiv.md`'s `8.12(d)(5)(d)` row before starting. The `(e)(b)`–`(f)(a)` `SplitV.lean`
+thread (seven checkpoints back) remains open in parallel; no dependency between the two has been
+identified.

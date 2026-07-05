@@ -5231,4 +5231,33 @@ theorem YPseqCode_subset_X_iff_Y_subset_XPseqCode (i j : ℕ) :
     Set.inter_eq_self_of_subset_right (D₁.sub_master (P₁.mem_X i))] at key
   exact key
 
+include hD₀pos hD₀diff hD₀nomin hxSplit hD₁pos hD₁diff hD₁nomin hySplit hD₀mne hD₁mne hUnion0
+  hUnion1 in
+/-- **Exercise 8.12(d)(5)(c)(iii), the cross-parity `embed_eq_iff` analogue.** `P₁.X (XPseqCode …
+j) = P₁.X k ↔ P₀.X j = P₀.X (YPseqCode … k)`: code-level analogue of `Exercise812c.lean`'s
+`XPseq_eq_Y_iff_X_eq_YPseq` — pure packaging of `(c)(i)`/`(c)(ii)` via `Set.Subset.antisymm` in
+each direction, no new mathematical content. Needed because `(d)(5)(d)`'s `toD1Code`/`toD0Code`
+`up_mem` case must rename a covering witness produced by `P₀.surj`/`P₁.surj` back into the
+`XPseqCode`/`YPseqCode` "coordinates" that the filter `x`/`y` actually testifies about. -/
+theorem XPseqCode_eq_Y_iff_X_eq_YPseqCode (j k : ℕ) :
+    P₁.X (XPseqCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion1 j) = P₁.X k ↔
+      P₀.X j = P₀.X (YPseqCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion0 k) := by
+  constructor
+  · intro h
+    exact Set.Subset.antisymm
+      ((X_subset_YPseqCode_iff_XPseqCode_subset_Y P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY
+        hSplitY hD₀pos hD₀diff hD₀nomin hxSplit hD₁pos hD₁diff hD₁nomin hySplit hD₀mne hD₁mne
+        hUnion0 hUnion1 j k).mpr h.subset)
+      ((YPseqCode_subset_X_iff_Y_subset_XPseqCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY
+        hSplitY hD₀pos hD₀diff hD₀nomin hxSplit hD₁pos hD₁diff hD₁nomin hySplit hD₀mne hD₁mne
+        hUnion0 hUnion1 k j).mpr h.symm.subset)
+  · intro h
+    exact Set.Subset.antisymm
+      ((X_subset_YPseqCode_iff_XPseqCode_subset_Y P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY
+        hSplitY hD₀pos hD₀diff hD₀nomin hxSplit hD₁pos hD₁diff hD₁nomin hySplit hD₀mne hD₁mne
+        hUnion0 hUnion1 j k).mp h.subset)
+      ((YPseqCode_subset_X_iff_Y_subset_XPseqCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY
+        hSplitY hD₀pos hD₀diff hD₀nomin hxSplit hD₁pos hD₁diff hD₁nomin hySplit hD₀mne hD₁mne
+        hUnion0 hUnion1 k j).mp h.symm.subset)
+
 end CombinedCodeCrossFamily
