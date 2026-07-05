@@ -9668,3 +9668,43 @@ direct `P₁.inter i j`/`P₁.inter_spec` citation, no helper lemma needed; `up_
 x`. Then `(d)(5)(d)(iii)`/`(iv)` mirror `(i)`/`(ii)` for `toD0Code`. Read `arxiv.md`'s
 `8.12(d)(5)(d)(ii)`–`(iv)` rows before starting. The `(e)(b)`–`(f)(a)` `SplitV.lean` thread (eight
 checkpoints back) remains open in parallel; no dependency between the two has been identified.
+
+## 2026-07-05 checkpoint — `8.12(d)(5)(d)(ii)` (`Pass`) — `toD1Code` full assembly
+
+Executed `(d)(5)(d)(ii)` this session, appended to `Exercise812d.lean`'s new `section ToD1Code`
+(following `ToD1CodeUpMem`): `toD1Code : D₀.Element → D₁.Element`, the code-level pushforward
+filter `{T | ∃ n, T = P₁.X (XPseqCode … n) ∧ x.mem (P₀.X n)}`. `sub`/`master_mem`/`up_mem` matched
+the pre-scoped plan exactly (`XPseqCode_mem_unconditional`/`XPseqCode_zero` at `n = 0` with `hX0`
+(a fresh section variable, mirroring `(d)(5)(a)`'s own `hX0`)/`toD1Code_up_mem x`).
+
+**One correction to the pre-plan, found while writing the Lean (not just executing it):**
+`inter_mem`'s sketched one-liner (`P₁.inter i j`/`P₁.inter_spec`) does not type-check — `toD1Code`'s
+shared witness `n` in `∃ n, T = P₁.X (XPseqCode … n) ∧ x.mem (P₀.X n)` must be a **`P₀`-side** index
+(it feeds `x.mem (P₀.X n)`), so the witness has to come from `P₀.inter`, not `P₁.inter`. Corrected
+proof: `x.inter_mem hxi hxj` plus `x.sub` shows `P₀.X i ∩ P₀.X j` is already `D₀`-genuine, so
+`P₀.surj` names it as some `P₀.X m` outright (`hm.le` gives the `∃k, X k ⊆ X i ∩ X j` consistency
+`P₀.inter_spec` needs — no search beyond the one `surj` call), yielding
+`P₀.X (P₀.inter i j) = P₀.X i ∩ P₀.X j`; `(d)(5)(b)(iv)`'s `X_inter_eq_iff_XPseqCode_inter_eq`
+(`.symm`'d for orientation) transports this same equation across to `XPseqCode`, landing the first
+conjunct. Still **no** `exists_inter_index_X`-style covering-search helper needed overall (the
+parent row's finding 3 holds, just via `P₀.inter`/`P₀.surj` rather than `P₁.inter`/`P₁.surj`).
+
+Built (`lake build` — 3165 jobs — and `lake env lean Exercise812d.lean` directly, both clean; only
+the pre-existing `(b)(ii)`-era `linter.unusedSectionVars` warning remains, unchanged). Zero `sorry`.
+Axiom-audited: `toD1Code` gives `⊆ {propext, Classical.choice, Quot.sound}`, matching this section's
+established baseline. `arxiv.md`'s `(d)(5)(d)(ii)` row updated to `Pass`; the parent `8.12(d)(5)(d)`
+row's status updated to reflect `(i)`–`(ii)` done, `(iii)`–`(iv)` remaining.
+
+**Status: `8.12(d)(5)(d)(ii)` is `Pass`.** **Resume protocol:** next up is `(d)(5)(d)(iii)`
+(`toD0Code`'s `up_mem` helper), the exact mirror of `(d)(5)(d)(i)` for the `D₁ → D₀` direction —
+destructure `h1` as `⟨i, rfl, hyi⟩`; `P₀.surj hD0S2` names `S2` as some `P₀.X k`; `(d)(5)(c)(ii)`'s
+`YPseqCode_subset_X_iff_Y_subset_XPseqCode i k` turns `hS1S2` into `P₁.X i ⊆ P₁.X (XPseqCode … k)`;
+`y.up_mem hyi (XPseqCode_mem_unconditional … k) this` gives `y.mem (P₁.X (XPseqCode … k))`; close via
+`(d)(5)(c)(iii)`'s `XPseqCode_eq_Y_iff_X_eq_YPseqCode k (XPseqCode … k) |>.mp rfl`. Then `(d)(5)(d)(iv)`
+(`toD0Code`, full assembly) mirrors `(d)(5)(d)(ii)` — **watch for the same `inter_mem`-witness
+subtlety just found**: the shared index there must be a **`P₁`-side** index (`P₁.inter i j`, since
+`toD0Code`'s predicate is `∃ n, S = P₀.X (YPseqCode … n) ∧ y.mem (P₁.X n)`), with `P₁.surj`/
+`P₁.inter_spec`/`YPseqCode_inter_eq_iff_Y_inter_eq` playing the roles `P₀.surj`/`P₀.inter_spec`/
+`X_inter_eq_iff_XPseqCode_inter_eq` played here. Read `arxiv.md`'s `8.12(d)(5)(d)(iii)`–`(iv)` rows
+before starting. The `(e)(b)`–`(f)(a)` `SplitV.lean` thread (nine checkpoints back) remains open in
+parallel; no dependency between the two has been identified.
