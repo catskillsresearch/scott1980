@@ -9183,9 +9183,120 @@ footprint exactly. Whole-project `lake build` (3164 jobs) green, zero `sorry`. F
 
 **Status: `8.12(d)(4)(d)` is `Pass` in full (all of `(d)(i)`–`(d)(vi)`), and per the `(d)(4)`
 umbrella, all of `8.12(d)(4)`'s sub-parts `(a)`–`(d)` are now `Pass` — `8.12(d)(4)` is complete.**
-`8.12(d)`'s remaining open sub-parts are `(d)(5)` and `(d)(6)` (both `Deferred`, not yet started —
-see their rows in `arxiv.md` for cross-reference findings from `(d)(4)`'s scoping, notably that
-`(d)(5)`/`(d)(6)` likely reduce to applying `Approximable.lean`'s `ofIso` to `domainIso812c` rather
-than re-deriving bespoke `ApproximableMap`s). **Resume protocol:** next up is `8.12(d)(5)` —
-`IsComputableMap P₀ P₁`/`IsComputableMap P₁ P₀` for `toD1`/`toD0`'s underlying maps. Read
-`arxiv.md`'s `8.12(d)(5)` row for the exact statement and cross-reference notes before starting.
+`8.12(d)`'s remaining open sub-parts are `(d)(5)` and `(d)(6)` (both `Deferred`, not yet started).
+
+## 2026-07-05 checkpoint — `8.12(d)(5)` re-scoped (investigation only, no code)
+
+**Important correction found while scoping, before writing any code:** the plan above/in
+`arxiv.md`'s prior `(d)(4)`/`(d)(6)` notes — reuse `domainIso812c` directly via `ofIso` — is
+**wrong**. `domainIso812c`'s `toD1`/`toD0` (`Exercise812c.lean`) are hardcoded through `atomPair` to
+the *classical, choice-derived* `splitChoice' D₁ hD₁nomin`/`splitChoice' D₀ hD₀nomin`, disconnected
+from this track's *effective* `splitX`/`splitY`; `SplitSpec'` doesn't pin down a unique split, so
+`atomPairG`'s (`XPseqCode`'s/`YPseqCode`'s) recovered neighbourhoods are generally different sets
+from `XPseq`'s/`YPseq`'s. `(d)(5)` genuinely needs a **fresh** order-iso built directly on
+`atomPairG`/`XPseqCode`/`YPseqCode`, mirroring `Exercise812c.lean`'s *entire* interleaving-and-Iso
+chain ((c)(vi)(5)(b)–(vii), `combinedX`/`combinedY`/`genAtom`/`transfer_*`/`toD1`/`toD0`/
+`domainIso812c`, ~550 lines) generalized over `splitX`/`splitY` — confirmed by grep that
+`Exercise812d.lean` has zero such generalized analogues yet (unstarted, not merely deferred). One
+genuine simplification found *for* `(d)`, though: `P₀`/`P₁` being full `ComputablePresentation`s
+(not bare enumerations like `(c)(vii)`'s `X`/`Y`) means `inter_mem` needs no `exists_inter_index_X`/
+`Y`-style classical detour at all — `P₀.inter`/`P₁.inter`/`inter_spec` (Definition 7.1) already give
+a primitive-recursive intersection index directly.
+
+Re-scoped `(d)(5)` into 6 dependent sub-goals, each now its **own `arxiv.md` block** (`#### Exercise
+8.12(d)(5)(a)`–`(f)`, mirroring `(d)(4)(a)`–`(d)`'s block structure) with a concrete proposed
+theorem statement per block, strictly sequential (`(a) → (b) → (c) → (d) → (e) → (f)`): (a)
+zero/master facts (`XPseqCode_zero`/`YPseqCode_zero`, new `hX0`/`hY0` hypotheses), (b) the
+interleaving/order layer generalized (the hard, large prerequisite — flagged with a recommended
+"bounded shortcut search first, fall back to full transcription" design decision), (c) cross-family
+order/equality facts consuming (b), (d) `toD1Code`/`toD0Code` (tentative names, with `inter_mem`/
+`up_mem` simplified per findings 3/(d)'s own note — no `exists_inter_index_X`/`Y` or `hXcover`/
+`hYcover` needed, `P₀.inter`/`P₁.surj` suffice), (e) `domainIsoCode812d : DomainIso D₀ D₁` +
+headline iso corollary, (f) the exercise's actual literal target — `IsComputableMap` for
+`ofIso domainIsoCode812d`/`.symm`, a clean `isoInj_isComputableMap`-style argument (unfolds to
+`∃ k, P₁.X m = P₁.X (XPseqCode k) ∧ P₀.X n ⊆ P₀.X k`, r.e. via `P₁.eq_computable` reindexed by
+`primrec_XPseqCode` conjoined with `P₀.incl_computable`). Annotated `(d)(4)`'s finding 4 and
+`(d)(6)`'s proof note in `arxiv.md` with pointers to this correction so they aren't read as
+still-current.
+
+**Status: `8.12(d)(5)` is `Deferred`, re-scoped only — no Lean code written this session.**
+**Resume protocol:** next up is executing `(d)(5)(a)` (lightest sub-part — direct `n = 0` unfolding,
+no interleaving needed), then confront the design decision on `(d)(5)(b)` before committing to the
+full transcription. Read `arxiv.md`'s `8.12(d)(5)` row (5 findings + design decision) and its own
+`(d)(5)(a)`–`(f)` sub-rows for the exact planned statements before starting; these supersede the
+now-corrected `(d)(4)`/`(d)(6)` cross-reference notes.
+
+## 2026-07-05 checkpoint — `8.12(e)`/`8.12(f)` re-scoped (investigation only, no code)
+
+Same-session follow-up to the `(d)(5)` re-scoping above, tracing *exactly* how `(d)`'s
+`IsComputableSplit`/`SplitSpec'` structures are consumed by `Exercise812d.lean`'s actual code (not
+just their declared types), to scope `(e)`/`(f)` (`U`/`V` each satisfying the extension property).
+
+**Key finding — the concrete `splitX`/`splitY` this track needs almost certainly need *only*
+`IsComputableSplit`, not the classical `SplitSpec'` (correcting `(d)(6)`'s draft note, which assumed
+both).** Grep-confirmed the `AtomPairCode`/`XPseqCode`/`YPseqCode` sections never assume `SplitSpec'`/
+`hxSplit`/`hySplit`. Tracing `xSubStep`'s body shows why this is consistent rather than a gap: the
+split's chosen-branch index is only ever *retained* (not overwritten to the junk sentinel `0`) when
+the prober-side direct refinement (`emptyInterDec`/`emptyDiffDec`, generic, `(d)(2)`) is already known
+nonempty — so a literal `∅` output is never actually required downstream (and, for `U`/`V` specifically,
+could not be: `Q.X k` is never literally `∅`, since both systems' `mem` bake in `Set.Nonempty`, which
+would make a literal `SplitSpec'` for a `Q.X`-valued split internally inconsistent). A fully
+context-blind split (ignoring the probe entirely) is nonetheless *ruled out*, not just unnecessary:
+`XPseqCode` always forces the "+" sub-bit, so a context-blind split's image would be a single ⊆-chain,
+but `U`'s order is not a chain — genuine probe-dependence is unavoidable for order-reflection.
+
+**The one genuinely new piece of combinatorics needed — a computable canonical bisection of a single
+`V`-neighbourhood into two disjoint (automatically nonempty) proper pieces — turns out to be exactly
+`V_no_minimal`'s existing proof (`Exercise812.lean`), which is already fully constructive** (refine
+one level finer via `upsample`, peel off one witnessing bit); it just needs extracting into
+`Nat.Primrec` form (`SplitV.lean`, mirroring `SplitU.lean`'s existing `U`-side construction). And
+`(f)`'s analogous split needs *no* new bisection at all — it reuses `SplitU.lean` (already `Pass`,
+built for Theorem 8.8(b)) directly.
+
+Re-scoped `(e)` into 4 dependent sub-goals (`(e)(a)`–`(d)`: the contract/case-split design, `SplitV.lean`,
+a generic decider+bisection→`IsComputableSplit` constructor shared with `(f)`, and the `U`↔`V`
+instantiation) and `(f)` into a single sub-goal (`(f)(a)`: instantiate the same generic constructor with
+roles swapped, reusing `SplitU.lean` verbatim). Annotated `(d)(6)`'s proof note with a pointer to this
+correction.
+
+**Status: `8.12(e)`/`8.12(f)` are `Deferred`, re-scoped only — no Lean code written this session.**
+**Resume protocol:** next up is executing `(e)(a)` (finalize the exact 3-way case-split design — no
+code, just pins down the precise `if`-`then`-`else` shape) then `(e)(b)` (`SplitV.lean`, the first
+real new Lean file for this branch — a `myFirstBit` bounded-search primitive-recursive finder plus
+the midpoint-bisection transcription of `V_no_minimal`). Read `arxiv.md`'s `8.12(e)` row (5 findings)
+and its own `(e)(a)`–`(d)`/`(f)(a)` sub-rows for the exact planned statements before starting.
+
+## 2026-07-05 checkpoint — new project-wide policy: every sub-goal row is a real Lean declaration
+
+**Policy change (user-directed):** a scoped sub-goal is no longer allowed to be prose-only ("design
+decision", "investigation finding") with no corresponding Lean artifact. From now on, **every
+`arxiv.md` sub-row must state an actual Lean `def`/`structure`/`theorem`, and its "Pass" criterion is
+that declaration typechecking in Lean** (zero `sorry` for anything claiming to be a `theorem`; a bare
+`def`/`structure` typechecks by construction once its type is well-formed, no separate proof burden).
+This replaces the previous "Scoped, not started" placeholder style for pure design steps.
+
+**Immediate consequence, applied to `8.12(e)(a)`** (previously a no-code "scoping finding" row): turned
+it into a real file, `Scott1980/Neighborhood/Exercise812e.lean` (wired into `Scott1980.lean`), with:
+- `structure ComputableBisection` (the reusable "computable canonical bisection of a
+  `ComputablePresentation`'s own neighbourhoods" shape anticipated by the `(e)` row's finding 4).
+- `ComputableBisection.posIdxFromBisection`/`negIdxFromBisection : ℕ → ℕ → ℕ → ℕ`, the concrete
+  3-way case-split design from the old prose plan, now literal `def`s.
+
+**Genuine new finding, surfaced only by actually writing the Lean (not by the prose plan alone):**
+`ComputableBisection` needed two extra fields, `left_congr`/`right_congr` (`∀ k k', Q.X k = Q.X k' →
+Q.X (left k) = Q.X (left k')`, resp. `right`) — without them, `(e)(c)`'s later `splitFromBisection`
+(a genuine classical function of *sets*, needed to even state `IsComputableSplit`) cannot be shown
+well-defined, since `ComputablePresentation.X` is generally many-to-one. Satisfied by any
+canonicalizing construction (expected free for `SplitU.lean`/the planned `SplitV.lean`, via
+`canonCode`-style invariance) but must be checked when `(e)(b)`/`(f)(a)` actually build their
+bisections, not merely assumed. `arxiv.md`'s `(e)(a)`/`(e)(c)` rows updated with the full argument.
+
+Built, `lake build Scott1980.Neighborhood.Exercise812e` green, zero `sorry`, axiom-audited (`#print
+axioms` on both new `def`s): `[Classical.choice]` only, inherited from `emptyInterDec`/`emptyDiffDec`'s
+own use of choice-extracted existence witnesses (`(d)(2)`) — no new choice introduced here.
+
+**Status: `8.12(e)(a)` is `Pass`.** **Resume protocol:** next up is `(e)(b)` (`SplitV.lean`) — a real
+new file, not just a design note; needs a primitive-recursive `myFirstBit` bounded-search finder plus
+the midpoint-bisection transcription of `V_no_minimal`'s already-constructive proof. Read `arxiv.md`'s
+`8.12(e)(b)` row for the exact planned statements, and `Scott1980/Neighborhood/Exercise812e.lean`'s
+docstring for the `left_congr`/`right_congr` obligations `SplitV.lean`'s bisection will need to satisfy.
