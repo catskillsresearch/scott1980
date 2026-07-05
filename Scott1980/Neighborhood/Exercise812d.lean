@@ -2343,7 +2343,7 @@ theorem atomPairJunk_eq_zero_of_ne_empty {i n : ℕ}
 
 end AtomPairCorrect5
 
-/-! ### A flagged, deferred gap: unconditional "found" at `N = 4ⁿ`
+/-! ### 8.12(d)(4)(c)(vi): assembling the unconditional "found" fact
 
 `Theorem88d.lean` discharges its own analogous conditional hypothesis unconditionally via
 `exists_atomUEmpty_zero`/`yFold_two_pow_found`, using structure specific to that one-sided
@@ -2354,9 +2354,9 @@ analogue of `Exercise812c.lean`'s `XPseq_ne_empty`, which is there proved via th
 `combinedX`/`combinedY`/`transfer_inter_empty_combined` detour (the same machinery `(d)(4)(b)`'s
 scope note found unnecessary for the *conditional* correctness above).
 
-**Both classical and converse-biconditional halves are now done** (`(d)(4)(c)`'s nested sub-goals
-`(c)(i)`–`(c)(v)`, all `Pass`): by induction on `n`, the classical `atomPairG`-pieces cover
-`D₀.master` (`atomPairG_master_covered`/`atomPairG_master_covered_deltaPair`), giving
+**Both classical and converse-biconditional halves were already done** (`(d)(4)(c)`'s nested
+sub-goals `(c)(i)`–`(c)(v)`, all `Pass`): by induction on `n`, the classical `atomPairG`-pieces
+cover `D₀.master` (`atomPairG_master_covered`/`atomPairG_master_covered_deltaPair`), giving
 `exists_atomPairG_deltaPair_inter_Xn_ne_empty` — some bit-source `i < 4ⁿ` whose depth-`n` `D₀`-side
 intersects `P₀.X n` non-trivially, purely classically (`(c)(i)`–`(c)(iv)`). `(c)(v)`'s
 `atomPairJunk_eq_zero_of_ne_empty` supplies exactly the missing converse half of
@@ -2364,9 +2364,93 @@ intersects `P₀.X n` non-trivially, purely classically (`(c)(i)`–`(c)(iv)`). 
 the code level: since `(atomPairG ... n).1 ∩ P₀.X n ≠ ∅` forces `(atomPairG ... n).1 ≠ ∅`, it
 forces `atomPairJunk n i = 0` (i.e. `xPseqAtomJunk n i = 0`, `atomPairJunk_eq_zero_of_ne_empty`),
 discharging `XFold_found_iff`'s hypothesis at exactly the witness `i` from
-`exists_atomPairG_deltaPair_inter_Xn_ne_empty`. `(d)(4)(c)`'s only remaining nested sub-goal,
-`(c)(vi)`, is the final assembly chaining these two facts into the unconditional "found" statement
-`∃ i < 4ⁿ, xPseqAtomJunk n i = 0`. -/
+`exists_atomPairG_deltaPair_inter_Xn_ne_empty`.
+
+**This section (`(c)(vi)`) is the final assembly**, chaining those two facts exactly as planned:
+`xPseqAtomJunk_exists_zero` is the unconditional "found" existential itself; `XFold_four_pow_found`
+transports it through `XFold_found_iff` to the fold's own found flag at `N = 4ⁿ`
+(mirroring `Theorem88d.lean`'s `yFold_two_pow_found`); and `XPseqCode_mem_unconditional`/
+`mem_XPseqCode_iff_unconditional` re-specialize `XPseqCode_mem`/`mem_XPseqCode_iff` at that
+unconditional witness, dropping the `hfound` hypothesis entirely. This closes `(d)(4)(c)` in full
+(all of `(c)(i)`–`(c)(vi)` now `Pass`, unconditionally). -/
+
+section XPseqCodeUnconditional
+
+variable {α β : Type*} {D₀ : NeighborhoodSystem α} {D₁ : NeighborhoodSystem β}
+  (P₀ : ComputablePresentation D₀) (P₁ : ComputablePresentation D₁)
+  (hDiff0 : IsComputableDiff P₀) (hDiff1 : IsComputableDiff P₁)
+  (splitX : Set α → Set β → Set α → Set β × Set β) (hSplitX : IsComputableSplit P₀ P₁ splitX)
+  (splitY : Set β → Set α → Set β → Set α × Set α) (hSplitY : IsComputableSplit P₁ P₀ splitY)
+  (hD₀pos : D₀.IsPositive) (hD₀diff : D₀.DiffClosed) (hD₀nomin : D₀.NoMinimal)
+  (hxSplit : SplitSpec' D₁ splitX)
+  (hD₁pos : D₁.IsPositive) (hD₁diff : D₁.DiffClosed) (hD₁nomin : D₁.NoMinimal)
+  (hySplit : SplitSpec' D₀ splitY)
+  (hD₀mne : D₀.master.Nonempty) (hD₁mne : D₁.master.Nonempty) (hUnion1 : IsComputableUnion P₁)
+
+include hD₀pos hD₀diff hD₀nomin hxSplit hD₁pos hD₁diff hD₁nomin hySplit hD₀mne hD₁mne in
+/-- **8.12(d)(4)(c)(vi), step 1: the unconditional "found" existential.** Combines
+`exists_atomPairG_deltaPair_inter_Xn_ne_empty` (some bit-source `i < 4ⁿ` whose depth-`n` `D₀`-side
+classical piece meets `P₀.X n`) with `atomPairJunk_eq_zero_of_ne_empty` (a non-empty classical
+piece forces its recorded state non-junk) and `atomPairCodeState_correct`'s forward half (rewriting
+the now-known-non-junk classical piece as the code-indexed `P₀.X (atomPairIdx0 ...)`) to land the
+non-trivial intersection at the *code* level, `P₀.X (atomPairIdx0 ... n i) ∩ P₀.X n ≠ ∅`. Reading
+this off `emptyInterDec`'s converse (`emptyInterDec_eq_one_iff`, contrapositive via
+`emptyInterDec_le_one`) gives exactly `emptyInterDec P₀ (atomPairIdx0 ... n i, n) = 0`, which is
+`xPseqAtomJunk_eq`'s defining condition once `atomPairJunk n i = 0` collapses the `selectFn`. -/
+theorem xPseqAtomJunk_exists_zero (n : ℕ) :
+    ∃ i < 4 ^ n, xPseqAtomJunk P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY n i = 0 := by
+  obtain ⟨i, hi, hne⟩ := exists_atomPairG_deltaPair_inter_Xn_ne_empty P₀ P₁ splitX splitY
+    hD₀pos hD₀diff hxSplit hD₁pos hD₁diff hySplit hD₀mne hD₁mne hD₀nomin n
+  have hAne : (atomPairG D₀ D₁ splitY splitX P₀.X P₁.X (deltaPair i) n).1 ≠ ∅ := fun hA =>
+    hne (Set.subset_eq_empty Set.inter_subset_left hA)
+  have hjunk0 : atomPairJunk P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY n i = 0 :=
+    atomPairJunk_eq_zero_of_ne_empty P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY
+      hD₀pos hD₀diff hD₀nomin hxSplit hD₁pos hD₁diff hD₁nomin hySplit hD₀mne hD₁mne hAne
+  obtain ⟨hidx0, -⟩ := atomPairCodeState_correct P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY
+    i n hjunk0
+  have hne' : P₀.X (atomPairIdx0 P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY n i) ∩
+      P₀.X n ≠ ∅ := by rw [hidx0]; exact hne
+  refine ⟨i, hi, ?_⟩
+  rw [xPseqAtomJunk_eq, hjunk0, selectFn_zero]
+  by_contra hcon
+  have hle := emptyInterDec_le_one P₀ (Nat.pair
+    (atomPairIdx0 P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY n i) n)
+  have h1 : emptyInterDec P₀ (Nat.pair
+      (atomPairIdx0 P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY n i) n) = 1 := by omega
+  exact hne' ((emptyInterDec_eq_one_iff P₀ hD₀pos hD₀nomin _ _).mp h1)
+
+include hD₀pos hD₀diff hD₀nomin hxSplit hD₁pos hD₁diff hD₁nomin hySplit hD₀mne hD₁mne in
+/-- **Step 2: the fold's "found" flag is unconditionally `1` at `N = 4ⁿ`**, mirroring
+`Theorem88d.lean`'s `yFold_two_pow_found` — transport `xPseqAtomJunk_exists_zero` through
+`XFold_found_iff`. -/
+theorem XFold_four_pow_found (n : ℕ) :
+    (XFold P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion1 n (4 ^ n)).unpair.1 = 1 :=
+  (XFold_found_iff P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion1 n (4 ^ n)).mpr
+    (xPseqAtomJunk_exists_zero P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hD₀pos hD₀diff
+      hD₀nomin hxSplit hD₁pos hD₁diff hD₁nomin hySplit hD₀mne hD₁mne n)
+
+include hD₀pos hD₀diff hD₀nomin hxSplit hD₁pos hD₁diff hD₁nomin hySplit hD₀mne hD₁mne in
+/-- **Step 3a: `XPseqCode n` is unconditionally `D₁`-genuine** — `XPseqCode_mem` specialized at
+`XFold_four_pow_found`'s unconditional witness, dropping the `hfound` hypothesis entirely. -/
+theorem XPseqCode_mem_unconditional (n : ℕ) :
+    D₁.mem (P₁.X (XPseqCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion1 n)) :=
+  XPseqCode_mem P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hD₁pos hD₁diff hD₁nomin hUnion1
+    (XFold_four_pow_found P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hD₀pos hD₀diff hD₀nomin
+      hxSplit hD₁pos hD₁diff hD₁nomin hySplit hD₀mne hD₁mne hUnion1 n)
+
+include hD₀pos hD₀diff hD₀nomin hxSplit hD₁pos hD₁diff hD₁nomin hySplit hD₀mne hD₁mne in
+/-- **Step 3b: the closed-form membership characterization of `XPseqCode`, unconditionally** —
+`mem_XPseqCode_iff` specialized the same way. This is `(d)(4)(c)`'s headline closed form, matching
+Scott's `X`-side recursion with no residual "found" side-condition. -/
+theorem mem_XPseqCode_iff_unconditional (n : ℕ) (z : β) :
+    z ∈ P₁.X (XPseqCode P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hUnion1 n) ↔
+      ∃ i < 4 ^ n, xPseqAtomJunk P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY n i = 0 ∧
+        z ∈ P₁.X (xPseqAtomIdx P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY n i) :=
+  mem_XPseqCode_iff P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hD₁pos hD₁diff hD₁nomin
+    hUnion1 (XFold_four_pow_found P₀ P₁ hDiff0 hDiff1 splitX hSplitX splitY hSplitY hD₀pos hD₀diff
+      hD₀nomin hxSplit hD₁pos hD₁diff hD₁nomin hySplit hD₀mne hD₁mne hUnion1 n) z
+
+end XPseqCodeUnconditional
 
 /-! ## 8.12(d)(4)(d): `YPseqCode`, the code-level `Y`-side union fold
 

@@ -8952,3 +8952,40 @@ unconditionally at `N = 4ⁿ`. Once `(c)(vi)` lands, `(d)(4)(c)`'s overall statu
 `Partial` to `Pass` (unconditional `XPseqCode_mem`/`mem_XPseqCode_iff`), and the identical
 `(d)(4)(d)(i)`–`(vi)` closure (`YPseqCode`, symmetric but doubled over `bx`) remains as the next
 major piece after that. Read `arxiv.md`'s `(d)(4)(c)(vi)` row for the exact statement.
+
+---
+
+**2026-07-04 checkpoint — `8.12(d)(4)(c)(vi)` is `Pass`; `8.12(d)(4)(c)` is now `Pass` in full,
+unconditionally.** Assembled the final piece of `(d)(4)(c)`'s closure in a new `section
+XPseqCodeUnconditional` (`Exercise812d.lean`, replacing the old "flagged, deferred gap" docstring
+between `AtomPairCorrect5` and `YPseqCode`'s section), exactly as scoped: **`xPseqAtomJunk_exists_zero`**
+chains `(c)(iv)`'s `exists_atomPairG_deltaPair_inter_Xn_ne_empty` (a bit-source `i < 4ⁿ` with
+`(atomPairG … n).1 ∩ P₀.X n ≠ ∅`) → (contrapositive via `Set.subset_eq_empty Set.inter_subset_left`)
+`(atomPairG … n).1 ≠ ∅` → `(c)(v)`'s `atomPairJunk_eq_zero_of_ne_empty` gives `atomPairJunk n i = 0`
+→ `(d)(3)(d)`'s `atomPairCodeState_correct` (now applicable) rewrites the classical piece as
+`P₀.X (atomPairIdx0 … n i)`, transporting the intersection to the code level → `emptyInterDec_eq_one_iff`'s
+converse (contrapositive via `emptyInterDec_le_one`) reads off `emptyInterDec P₀ (idx0, n) = 0` →
+`xPseqAtomJunk_eq` + `selectFn_zero` collapse this to `xPseqAtomJunk n i = 0` directly. **`XFold_four_pow_found`**
+transports this through `XFold_found_iff` to the fold's own found flag at `N = 4ⁿ` (mirroring
+`Theorem88d.lean`'s `yFold_two_pow_found`). **`XPseqCode_mem_unconditional`/`mem_XPseqCode_iff_unconditional`**
+re-specialize the pre-existing conditional `XPseqCode_mem`/`mem_XPseqCode_iff` at that unconditional
+witness, dropping `hfound` entirely (new names, since Lean forbids re-declaring the closed
+conditional names — nothing else in the file depended on replacing them). New section's variable
+list is exactly `AtomPairCorrect5`'s plus `hUnion1` (the union of what the classical existence
+argument and the code-level fold each need). Verified all four upstream lemma signatures
+(`exists_atomPairG_deltaPair_inter_Xn_ne_empty`, `atomPairJunk_eq_zero_of_ne_empty`,
+`atomPairCodeState_correct`, `emptyInterDec_eq_one_iff`) via a scratch `#check` file before wiring
+call sites — went in cleanly on the first attempt, no Lean gotchas. Axiom-audited (`#print axioms`):
+all four new theorems `⊆ {propext, Classical.choice, Quot.sound}`, matching this closure's baseline
+throughout. Whole-project `lake build` (3164 jobs) green, zero `sorry`. `arxiv.md`: `(c)(vi)`'s own
+row updated to `Pass`; `(d)(4)(c)`'s umbrella row upgraded from `Partial` to `Pass`
+(unconditional); `(d)(4)`'s and `(d)`'s own umbrella `Status` lines updated to reflect
+`(d)(4)(a)`–`(d)(4)(c)` all `Pass`, only `(d)(4)(d)` (the symmetric `YPseqCode` closure, `(d)(i)`–`(d)(vi)`,
+doubled over the extra `bx` bit) remaining `Partial`.
+
+**Status: `8.12(d)(4)(c)` is `Pass` in full.** **Resume protocol:** next up is `8.12(d)(4)(d)`'s own
+nested closure (`(d)(i)`–`(d)(vi)`, currently `Scoped`, not started) — the symmetric unconditional
+"found" fact for `YPseqCode`'s outer 2-way union of two inner `4ⁿ`-folds (`YFoldInner n 0 _`/
+`YFoldInner n 1 _`), needing the doubled-over-`bx` analogue of `(c)(i)`–`(c)(vi)`'s whole chain.
+Read `arxiv.md`'s `8.12(d)(4)(d)` row and its own `(d)(i)`–`(d)(vi)` sub-rows for the exact planned
+breakdown before executing.
