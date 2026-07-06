@@ -11283,3 +11283,37 @@ sets closed under complement, `I` proper ideal iff `{Yᶜ : Y∈I}` proper filte
 clopens) is next, then `(c4)` (assembly: non-empty open `O ↦ idealOf O ↦` (c3) dual filter `↦`
 (c2) `Corresponds` `↦` filter of `ℕ`-clopens `= V.Element ↦` (`8.13a`) element of `U`). All
 independently optional — `8.13`'s mathematical content is already `Pass` via `(a)`+`(b)`.
+
+## 2026-07-06 (final for today): Exercise 8.13 complete in full — (c3)/(c4) land, all of 8.13 Pass
+
+**`8.13(c3)`** (`Exercise813c.lean`, new section, **Pass**): a `g`-generic toolkit (not Cantor-
+specific) — `dualFilter x := {Y | Yᶜ ∈ x}` turns a downward-closed/finite-join-closed/`univ`-
+excluding family (ideal) into an upward-closed/finite-meet-closed/`∅`-excluding/`univ`-containing
+one (filter), via five small lemmas (`generatedBy_of_mem_dualFilter`, `univ_mem_dualFilter`,
+`not_empty_mem_dualFilter`, `inter_mem_dualFilter`, `up_mem_dualFilter`) each a one-line De Morgan
+argument — matching exactly `Basic.lean`'s `Element` fields, by design, so `(c4)` could assemble a
+literal `V.Element` term straight from them.
+
+**`8.13(c4)`** (**Pass**, completing `8.13(c)` and hence all of `8.13`): `idealOf O := {Y |
+GeneratedBy genPoint Y ∧ Y ⊆ O}` is a proper ideal iff `O ≠ Set.univ`; four `Corresponds` helpers
+(`generatedBy_left/right`, `nonempty_iff`, `inter`) transport the dual filter through `(c2)`'s
+`Corresponds` to `ℕ`-clopens; `elementOfOpen` assembles the result directly as a `V.Element`
+(all four fields discharged from the `(c3)` toolkit + the `Corresponds` helpers, no new axioms),
+hence — via `exercise813a` — an element of `U`.
+
+**A genuine correction to Scott's own phrasing, caught along the way**: "non-empty" is, taken
+literally, the *wrong* exclusion for this construction. `idealOf ∅ = {∅}` dualizes just fine (to
+`{Set.univ}`, the legitimate — if degenerate — **bottom** element of `U`); what actually breaks
+properness is `O = Set.univ` (forces the dual filter to contain `∅`, forbidden by `V_mem_iff_
+generatedBy`). The load-bearing hypothesis is `O ≠ Set.univ` ("proper"), not `O.Nonempty` —
+documented prominently in the file's `(c4)` section docstring.
+
+**Result:** `lake build` (3178 jobs) clean, zero `sorry` across the whole `Exercise813c.lean` file
+(all of `(c1)`–`(c4)`); `#print axioms` on `elementOfOpen`/`Corresponds.nonempty_iff` (and every
+other headline in the file) `⊆ {propext, Classical.choice, Quot.sound}`, the project's standard
+baseline — nothing new introduced by any of `8.13(b)`/`(c1)`–`(c4)`. `arxiv.md`: `8.13(c3)`/`(c4)`
+rows → `Pass`; `8.13(c)` and the parent `8.13` row → `Pass` in full (all of `(a)`/`(b)`/`(c)` done).
+
+**Resume protocol / next steps:** Exercise 8.13 is fully done, including every optional/expository
+extension the user asked for. Nothing pending on 8.13. Pick the next `Deferred`/`Partial` row in
+`arxiv.md` for the next session.
