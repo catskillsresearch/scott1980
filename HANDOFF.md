@@ -11225,3 +11225,36 @@ updated (`(a)` and `(b)` both `Pass`, `(c)` remains the only open/optional item)
 `8.13(c)` (topologists' Cantor-space remark — still has the open "which of (i)/(ii) to formalize"
 question from the earlier scoping row; ask the user before starting it). Otherwise pick the next
 `Deferred`/`Partial` row in `arxiv.md`.
+
+## 2026-07-06 (later still): Exercise 8.13(c) — Stone-duality connection to Cantor space (in progress)
+
+User chose the "full Stone duality" scope for `8.13(c)` (over the more modest `IsTopologicalBasis`-
+only reading). Recorded a four-subgoal breakdown in `arxiv.md` (`8.13(c1)`–`(c4)`): the literal
+"filters ≃o opens" reading is false (filters correspond, order-*reversingly*, to non-empty closed
+sets); the reading that actually lands on "opens" goes through the dual notion (**ideals**), since
+`⋃`-of-an-ideal-of-clopens is open, and `Y ↦ Yᶜ` turns ideals into filters. Chain: non-empty open
+`O ↦ idealOf O ↦` (c3, complementation) `↦` dual filter of Cantor clopens `↦` (c2, `Lindenbaum`-
+mediated order-iso) `↦` filter of `ℕ`-clopens `= V.Element ↦` (`8.13a`) element of `U`.
+
+**`8.13(c1)` done** (`Scott1980/Neighborhood/Exercise813c.lean`, **Pass**): Cantor space's clopen
+algebra is exactly `GeneratedBy genPoint` (`genPoint i := {x : ℕ→Bool | x i = true}`, the literal
+transcription of `8.13(a)`'s `generator i`). Easy direction (`generatedBy_genPoint_isClopen`):
+structural induction, clopens closed under Boolean ops. Hard direction
+(`isClopen_iff_generatedBy_genPoint`): compactness argument — `box I f` (finite-support basis
+element) from `isOpen_pi_iff`, each `box` is `GeneratedBy genPoint` (`Finset.induction_on`,
+mirrors `8.13(a)`'s `generatedBy_affine`), clopen ⟹ compact extracts a finite subcover of `box`es,
+their union (= `Y`) is `GeneratedBy genPoint` by `generatedBy_genPoint_biUnion` (mirrors
+`generatedBy_biUnion_affine`). Free corollary `isOpen_iff_exists_iUnion_generatedBy`: opens (not
+just clopens) are unions of `GeneratedBy genPoint` sets. `lake build` (3178 jobs) clean, zero
+`sorry`; axiom baseline unchanged (`⊆ {propext, Classical.choice, Quot.sound}`).
+
+Lean gotchas hit: (1) `eq_comm` as a `simp` arg caused "maximum recursion depth reached" (rewrite
+loop) — fixed by splitting the `by_cases` branches and using the hypothesis (`hfa : f a = true`)
+directly as a rewrite rule instead; (2) `Finset.induction_on` over a *generic* index type `β` (not
+`ℕ`) needs `classical` first for the `DecidableEq β` instance `insert` requires.
+
+**Resume protocol / next steps:** `8.13(c2)` (`Lindenbaum`-mediated order-iso between
+`{X:Set ℕ|GeneratedBy generator X}` and `{Y:Set(ℕ→Bool)|GeneratedBy genPoint Y}`, via a second
+`evalSet'` evaluation of `8.13(b)`'s `Formula`) is next, then `(c3)` (ideal/filter complementation,
+small general lemma) and `(c4)` (assembly). All independently optional — `8.13`'s mathematical
+content is already `Pass` via `(a)`+`(b)`.
