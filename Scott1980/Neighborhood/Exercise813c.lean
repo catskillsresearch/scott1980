@@ -1,4 +1,4 @@
-import Scott1980.Neighborhood.Exercise813a
+import Scott1980.Neighborhood.Exercise813b
 import Mathlib.Topology.Constructions
 import Mathlib.Topology.Compactness.Compact
 import Mathlib.Topology.Clopen
@@ -155,5 +155,160 @@ theorem isOpen_iff_exists_iUnion_generatedBy {O : Set (ℕ → Bool)} :
       exact hYO hxY
   · rintro ⟨S, hS, rfl⟩
     exact isOpen_biUnion fun Y hY => (generatedBy_genPoint_isClopen (hS Y hY)).isOpen
+
+/-!
+## `8.13(c2)`: `generator`/`genPoint` realize the same free Boolean algebra
+
+`8.13(b)`'s `Formula`/`evalV` already has one evaluation, `evalSet : Formula → Set ℕ`
+(`var i ↦ generator i`). A *second* evaluation, `evalSet' : Formula → Set (ℕ → Bool)`
+(`var i ↦ genPoint i`), is even simpler than the first: since Cantor space's own points
+`x : ℕ → Bool` already *are* valuations, `mem_evalSet'_iff` needs no bit-encoding step (unlike
+`8.13(b)`'s `mem_evalSet_iff`, which had to translate `n : ℕ` into a valuation via its bits) —
+and consequently `semanticEquiv_iff_evalSet'_eq` needs no finitary agreement argument either.
+
+`Corresponds X Y := ∃ φ, evalSet φ = X ∧ evalSet' φ = Y` witnesses, via a common `Formula`, that
+`generator`'s algebra `{X | GeneratedBy generator X}` and `genPoint`'s algebra
+`{Y | GeneratedBy genPoint Y}` are "the same" abstract Boolean algebra: `Corresponds` relates them
+functionally in both directions (`exists_corresponds_of_generatedBy_generator/genPoint`,
+`Corresponds.unique_left/right`) and respects `⊆` (`Corresponds.subset_iff`) — i.e. it is exactly
+an order-isomorphism between the two concrete algebras, without needing any (nonexistent) bijection
+of the wildly different underlying carriers `ℕ`/`ℕ → Bool`.
+-/
+
+/-- The *same* recursion as `evalSet`, but interpreted via `genPoint` instead of `generator`. -/
+def evalSet' : Formula → Set (ℕ → Bool)
+  | .var i => genPoint i
+  | .bot => ∅
+  | .top => Set.univ
+  | .neg φ => (evalSet' φ)ᶜ
+  | .and φ ψ => evalSet' φ ∩ evalSet' ψ
+  | .or φ ψ => evalSet' φ ∪ evalSet' ψ
+
+/-- Cantor space's own points already *are* valuations, so this bridge is definitional-level
+simple: no bit-encoding step is needed (contrast `8.13(b)`'s `mem_evalSet_iff`). -/
+theorem mem_evalSet'_iff (x : ℕ → Bool) (φ : Formula) :
+    x ∈ evalSet' φ ↔ evalV x φ = true := by
+  induction φ with
+  | var i => simp [evalSet', evalV]
+  | bot => simp [evalSet', evalV]
+  | top => simp [evalSet', evalV]
+  | neg φ ih => simp [evalSet', evalV, ih]
+  | and φ ψ ihφ ihψ => simp [evalSet', evalV, ihφ, ihψ]
+  | or φ ψ ihφ ihψ => simp [evalSet', evalV, ihφ, ihψ]
+
+theorem generatedBy_iff_exists_evalSet' {Y : Set (ℕ → Bool)} :
+    GeneratedBy genPoint Y ↔ ∃ φ : Formula, evalSet' φ = Y := by
+  constructor
+  · intro h
+    induction h with
+    | of i => exact ⟨.var i, rfl⟩
+    | univ => exact ⟨.top, rfl⟩
+    | @inter X Y _ _ ih1 ih2 =>
+      obtain ⟨φ, rfl⟩ := ih1; obtain ⟨ψ, rfl⟩ := ih2
+      exact ⟨.and φ ψ, rfl⟩
+    | @union X Y _ _ ih1 ih2 =>
+      obtain ⟨φ, rfl⟩ := ih1; obtain ⟨ψ, rfl⟩ := ih2
+      exact ⟨.or φ ψ, rfl⟩
+    | @compl X _ ih =>
+      obtain ⟨φ, rfl⟩ := ih
+      exact ⟨.neg φ, rfl⟩
+  · rintro ⟨φ, rfl⟩
+    induction φ with
+    | var i => exact GeneratedBy.of i
+    | bot => simpa using GeneratedBy.univ.compl
+    | top => exact GeneratedBy.univ
+    | neg φ ih => exact ih.compl
+    | and φ ψ ihφ ihψ => exact ihφ.inter ihψ
+    | or φ ψ ihφ ihψ => exact ihφ.union ihψ
+
+/-- No finitary agreement argument is needed here (contrast `8.13(b)`'s `semanticEquiv_iff_
+evalSet_eq`): `evalV`'s own domain `ℕ → Bool` already *is* Cantor space's points. -/
+theorem semanticEquiv_iff_evalSet'_eq {φ ψ : Formula} :
+    SemanticEquiv φ ψ ↔ evalSet' φ = evalSet' ψ := by
+  constructor
+  · intro h
+    ext x
+    rw [mem_evalSet'_iff, mem_evalSet'_iff, h]
+  · intro h v
+    have hmem : v ∈ evalSet' φ ↔ v ∈ evalSet' ψ := by rw [h]
+    rw [mem_evalSet'_iff, mem_evalSet'_iff] at hmem
+    rcases hφ : evalV v φ with - | - <;> rcases hψ : evalV v ψ with - | - <;> simp_all
+
+/-- The same finitary-free argument as `semanticEquiv_iff_evalSet'_eq`, for entailment. -/
+theorem entails_iff_evalSet'_subset {φ ψ : Formula} :
+    Entails φ ψ ↔ evalSet' φ ⊆ evalSet' ψ := by
+  constructor
+  · intro h x hx
+    rw [mem_evalSet'_iff] at hx ⊢
+    exact h _ hx
+  · intro h v hv
+    exact (mem_evalSet'_iff v ψ).mp (h ((mem_evalSet'_iff v φ).mpr hv))
+
+/-- `Lindenbaum`'s canonical map to Cantor-space clopens, the counterpart of `8.13(b)`'s
+`Lindenbaum.toSet`. -/
+def Lindenbaum.toSet' : Lindenbaum → Set (ℕ → Bool) :=
+  Quotient.lift evalSet' fun _ _ h => semanticEquiv_iff_evalSet'_eq.mp h
+
+@[simp] theorem Lindenbaum.toSet'_mk (φ : Formula) :
+    Lindenbaum.toSet' ⟦φ⟧ = evalSet' φ := rfl
+
+theorem Lindenbaum.toSet'_injective : Function.Injective Lindenbaum.toSet' := by
+  intro x y
+  induction x using Quotient.ind with
+  | _ φ =>
+    induction y using Quotient.ind with
+    | _ ψ =>
+      intro h
+      exact Quotient.sound (semanticEquiv_iff_evalSet'_eq.mpr h)
+
+theorem Lindenbaum.range_toSet' :
+    Set.range Lindenbaum.toSet' = {Y | GeneratedBy genPoint Y} := by
+  ext Y
+  simp only [Set.mem_range, Set.mem_setOf_eq, generatedBy_iff_exists_evalSet']
+  constructor
+  · rintro ⟨x, rfl⟩
+    induction x using Quotient.ind with
+    | _ φ => exact ⟨φ, rfl⟩
+  · rintro ⟨φ, rfl⟩
+    exact ⟨⟦φ⟧, rfl⟩
+
+/-- **`8.13(c2)`, the headline.** `X` and `Y` are the `evalSet`/`evalSet'` images of a *common*
+`Formula` — i.e. the same node of the (unique, up to `SemanticEquiv`) Lindenbaum algebra. -/
+def Corresponds (X : Set ℕ) (Y : Set (ℕ → Bool)) : Prop :=
+  ∃ φ : Formula, evalSet φ = X ∧ evalSet' φ = Y
+
+theorem exists_corresponds_of_generatedBy_generator {X : Set ℕ} (hX : GeneratedBy generator X) :
+    ∃ Y, Corresponds X Y := by
+  obtain ⟨φ, hφ⟩ := generatedBy_iff_exists_evalSet.mp hX
+  exact ⟨evalSet' φ, φ, hφ, rfl⟩
+
+theorem exists_corresponds_of_generatedBy_genPoint {Y : Set (ℕ → Bool)}
+    (hY : GeneratedBy genPoint Y) : ∃ X, Corresponds X Y := by
+  obtain ⟨φ, hφ⟩ := generatedBy_iff_exists_evalSet'.mp hY
+  exact ⟨evalSet φ, φ, rfl, hφ⟩
+
+theorem Corresponds.unique_right {X : Set ℕ} {Y₁ Y₂ : Set (ℕ → Bool)}
+    (h1 : Corresponds X Y₁) (h2 : Corresponds X Y₂) : Y₁ = Y₂ := by
+  obtain ⟨φ, hφX, hφY⟩ := h1
+  obtain ⟨ψ, hψX, hψY⟩ := h2
+  have hse : SemanticEquiv φ ψ := semanticEquiv_iff_evalSet_eq.mpr (hφX.trans hψX.symm)
+  rw [← hφY, ← hψY, semanticEquiv_iff_evalSet'_eq.mp hse]
+
+theorem Corresponds.unique_left {X₁ X₂ : Set ℕ} {Y : Set (ℕ → Bool)}
+    (h1 : Corresponds X₁ Y) (h2 : Corresponds X₂ Y) : X₁ = X₂ := by
+  obtain ⟨φ, hφX, hφY⟩ := h1
+  obtain ⟨ψ, hψX, hψY⟩ := h2
+  have hse : SemanticEquiv φ ψ := semanticEquiv_iff_evalSet'_eq.mpr (hφY.trans hψY.symm)
+  rw [← hφX, ← hψX, semanticEquiv_iff_evalSet_eq.mp hse]
+
+/-- `Corresponds` also matches `⊆` — i.e. it is an order-isomorphism between the two concrete
+algebras, not just a bijection. -/
+theorem Corresponds.subset_iff {X₁ X₂ : Set ℕ} {Y₁ Y₂ : Set (ℕ → Bool)}
+    (h1 : Corresponds X₁ Y₁) (h2 : Corresponds X₂ Y₂) : X₁ ⊆ X₂ ↔ Y₁ ⊆ Y₂ := by
+  obtain ⟨φ, hφX, hφY⟩ := h1
+  obtain ⟨ψ, hψX, hψY⟩ := h2
+  subst hφX; subst hφY; subst hψX; subst hψY
+  exact ⟨fun hsub => entails_iff_evalSet'_subset.mp (entails_iff_evalSet_subset.mpr hsub),
+    fun hsub => entails_iff_evalSet_subset.mp (entails_iff_evalSet'_subset.mpr hsub)⟩
 
 end Scott1980.Neighborhood

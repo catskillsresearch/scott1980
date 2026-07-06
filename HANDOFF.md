@@ -11258,3 +11258,28 @@ directly as a rewrite rule instead; (2) `Finset.induction_on` over a *generic* i
 `evalSet'` evaluation of `8.13(b)`'s `Formula`) is next, then `(c3)` (ideal/filter complementation,
 small general lemma) and `(c4)` (assembly). All independently optional — `8.13`'s mathematical
 content is already `Pass` via `(a)`+`(b)`.
+
+## 2026-07-06 (later still): Exercise 8.13(c2) — generator/genPoint realize the same algebra (Pass)
+
+Added to `Scott1980/Neighborhood/Exercise813c.lean` (same file as `(c1)`, new section). Reuses
+`8.13(b)`'s `Formula`/`evalV` with a *second* evaluation `evalSet' : Formula → Set (ℕ → Bool)`
+(`var i ↦ genPoint i`) — simpler than `evalSet` since `x : ℕ → Bool` already *is* a valuation
+(`mem_evalSet'_iff` needs no bit-encoding, so `semanticEquiv_iff_evalSet'_eq`/`entails_iff_
+evalSet'_subset` need no finitary agreement argument, unlike `8.13(b)`'s versions). Mirrored
+`generatedBy_iff_exists_evalSet'`, `Lindenbaum.toSet'`/`toSet'_injective`/`range_toSet'`.
+
+Headline: rather than bundling an explicit `OrderIso` (would need a `PartialOrder Lindenbaum`
+instance — judged disproportionate), defined the lighter-weight **`Corresponds X Y := ∃ φ,
+evalSet φ = X ∧ evalSet' φ = Y`**, and proved it functionally relates the two algebras in both
+directions (`exists_corresponds_of_generatedBy_generator/genPoint`, `Corresponds.unique_left/
+right`) and respects `⊆` (`Corresponds.subset_iff`) — exactly the data of an order-isomorphism,
+stated relationally instead of as a bundled structure.
+
+**Result:** `lake build` (3178 jobs) clean, zero `sorry`, axiom baseline unchanged (`⊆ {propext,
+Classical.choice, Quot.sound}`). `arxiv.md`: `8.13(c2)` row → `Pass`.
+
+**Resume protocol / next steps:** `8.13(c3)` (general small lemma: for a Boolean subalgebra of
+sets closed under complement, `I` proper ideal iff `{Yᶜ : Y∈I}` proper filter, applied to Cantor
+clopens) is next, then `(c4)` (assembly: non-empty open `O ↦ idealOf O ↦` (c3) dual filter `↦`
+(c2) `Corresponds` `↦` filter of `ℕ`-clopens `= V.Element ↦` (`8.13a`) element of `U`). All
+independently optional — `8.13`'s mathematical content is already `Pass` via `(a)`+`(b)`.
