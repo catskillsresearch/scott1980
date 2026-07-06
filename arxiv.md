@@ -2920,8 +2920,9 @@ Lecture VIII covers retractions, projections, and the construction of the univer
 
 #### Exercise 8.13(c3)
 * **Mathematical Target:** For a Boolean subalgebra of sets closed under complement, `I` is a proper ideal iff `{Yᶜ : Y ∈ I}` is a proper filter
-* **Lean File:** — (not started)
-* **Status:** Not started
+* **Lean File:** `Scott1980/Neighborhood/Exercise813c.lean` (same file as `(c1)`/`(c2)`, new section)
+* **Proof Notes:** A `g`-generic toolkit (not Cantor-specific — works for any `{α : Type*}`/`g : ℕ → Set α`): `dualFilter x := {Y | Yᶜ ∈ x}` (`Y ↦ Yᶜ` applied to a whole family; `dualFilter_dualFilter` records it as its own inverse). Rather than bundling `IsIdealOf`/`IsFilterOf` structures, each of the four defining properties is its own small lemma taking exactly the hypothesis it needs, chosen to match `Basic.lean`'s `Element` fields one-for-one so `8.13(c4)` could assemble a literal `V.Element` term directly from them: `generatedBy_of_mem_dualFilter` (membership in `GeneratedBy g` propagates, via `GeneratedBy.compl`), `univ_mem_dualFilter` (an ideal containing `∅` dualizes to a filter containing `univ`), `not_empty_mem_dualFilter` (an ideal excluding `univ` dualizes to a filter excluding `∅`), `inter_mem_dualFilter` (join-closed ideal dualizes to meet-closed filter, via `(Y∩Z)ᶜ = Yᶜ∪Zᶜ`), `up_mem_dualFilter` (downward-closed ideal dualizes to upward-closed filter, via `Z⊆Y ↔ Yᶜ⊆Zᶜ`) — each a one-line De Morgan argument. `lake build` (3178 jobs) clean, zero `sorry`; axiom baseline unchanged.
+* **Status:** Pass
 
 #### Exercise 8.13(c4)
 * **Mathematical Target:** Assembly: non-empty open `O ⊆ 2^ℕ ↦ idealOf O ↦` (c3) dual filter `↦` (c2) filter of `ℕ`-clopens `= V.Element ↦` (`8.13a`) element of `U`
