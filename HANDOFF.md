@@ -10712,3 +10712,53 @@ mechanical given `(i)`–`(ii)`: package `B812e : ComputableBisection VComputabl
 fed `U`'s already-`Pass` `IsPositive`/`NoMinimal`/`DiffClosed` facts (`Exercise812c.lean`). Once
 `(e)(d)(iii)` lands, `8.12(e)` is **COMPLETE** in full, and `8.12(f)` (reusing `SplitU.lean`'s
 existing bisection directly, per `8.12(e)`'s own finding 5 in `arxiv.md`) should be quick.
+
+**2026-07-05 — Exercise 8.12(e)(d)(iii) `Pass`: `B812e`/`splitX812e`/`isComputableSplit_812e`,
+completing Exercise 8.12(e) in full.** New file `Scott1980/Neighborhood/Exercise812eD.lean`
+(imports `Exercise812e`, `SplitV`, `UComputablePresentation`; wired into `Scott1980.lean`).
+**One real gap found while assembling, not caught by the earlier scoping pass**: the plan's
+parenthetical "`(U's IsComputableDiff)`" assumed such an instance already existed —
+grep-confirmed it did not; `IsComputableDiff` (`Exercise812d.lean`, `(d)(3)(a)`) had never been
+instantiated for `U` or `V`. Building it was genuinely mechanical (not a new mathematical gap like
+`(e)(d)(i)`/`(ii)`'s), since `IntervalPrimrec.lean` already supplies every raw piece
+unconditionally: `diffCode`/`primrec_diffCode` (code-level set difference) and
+`presentedIntervals_decodeQPairList_diffCode` (its correctness — unconditional, no emptiness case
+split, unlike `combineCode`'s consistency side). `Udiff n m := diffCode (canonCode n) (canonCode
+m)` plus `Udiff_primrec`/`Udiff_eq_diff`/`U_diff_iff_nonempty`/`Udiff_spec`/`U_diff_computable` are
+a direct structural mirror of `UComputablePresentation.lean`'s own
+`Uinter`/`Uinter_primrec`/`Uinter_spec`/`U_cons_computable`, substituting `diffCode` for
+`combineCode` and `U_diff_mem` (`Exercise812c.lean`, already `Pass`) for `U_isPositive` as the
+"always mem-or-∅" fact driving the "consistency ≡ non-emptiness" decidability reduction.
+`U_isComputableDiff` packages the four pieces directly (a plain `def`, not `noncomputable` —
+`Udiff` itself is choice-free data, mirroring `UComputablePresentation`'s own pattern). `B812e`/
+`splitX812e`/`isComputableSplit_812e` themselves matched the plan exactly: `B812e` a direct
+field-by-field assembly from `SplitV.lean`'s declarations, `splitX812e`/`isComputableSplit_812e`
+one-line instantiations of `Exercise812e.lean`'s generic `splitFromBisection`/
+`isComputableSplit_ofBisection` fed `U_isPositive`/`U_noMinimal`/`U_diffClosed`. **One mechanical
+gotcha, the same one already documented for `isComputableSplit_ofBisection` itself**:
+`isComputableSplit_812e` needed `noncomputable def`, not `theorem` — `IsComputableSplit` is a
+data-carrying structure (`posIdx`/`negIdx` fields are `ℕ`-valued functions), so `theorem ... :=`
+fails elaboration ("is not a proposition"). Zero `sorry`; `lake build Scott1980` (3168 jobs) clean,
+zero new lints. `#print axioms` on all 10 new declarations gives `⊆ {propext, Classical.choice,
+Quot.sound}` throughout (`Udiff` itself fully choice-free; the rest inherited from `U`'s own
+`cons_computable`/`canonCode` machinery and `splitFromBisection`'s `Classical.choose`, matching the
+project-wide baseline). `arxiv.md`: `8.12(e)(d)(iii)` row → `Pass`; `8.12(e)(d)` umbrella →
+**COMPLETE**; `8.12(e)` umbrella → **COMPLETE in full** (`(a)`–`(d)` all `Pass`).
+
+**Status: Exercise 8.12(e) is COMPLETE in full.** **Resume protocol:** next up is `8.12(f)` —
+per `8.12(e)`'s own finding 5 (`arxiv.md`), this should be comparatively quick: a single one-line
+instantiation of `Exercise812e.lean`'s generic `splitFromBisection`/`isComputableSplit_ofBisection`
+construction with roles swapped — `V` as prober (its own `IsPositive`/`NoMinimal`/`DiffClosed`,
+`Exercise812c.lean`, already `Pass`, plus the generic `emptyInterDec`/`emptyDiffDec` deciders) and
+`U` as target, reusing `SplitU.lean`'s *already-`Pass`* `splitULeft`/`splitURight`/
+`splitU_disjoint`/`splitU_union` directly as the `ComputableBisection` — no new bisection
+construction needed (unlike `(e)(d)`, `U`'s own canonical bisection was already built for Theorem
+8.8(b)). Will also need a fresh `IsComputableDiff VComputablePresentation` instance (mirroring this
+checkpoint's `U_isComputableDiff`/`Udiff` — check whether `V`'s bitmask "and-not" formula
+(`testBit_xor_and_self`, `Exercise812c.lean`) already has a code-level `Nat.Primrec` counterpart
+before building one fresh) and `SplitU.lean`'s own `left_congr`/`right_congr` fields — check
+whether these are already free (per `(e)(a)`'s own docstring, `SplitU.lean`'s `splitULeft`/
+`splitURight` are built via `canonCode`, which already collapses every representative of a given
+set to one canonical index, unlike `V`'s `canonIdx` — so, unlike `(e)(d)`'s `V`-side gap, these are
+plausibly free here, but must be checked, not assumed). See `arxiv.md`'s `8.12(f)`/`8.12(f)(a)` rows
+for the existing scoping.
