@@ -11028,3 +11028,59 @@ wants `8.12(g)` fully closed:** redesign `posIdxFromBisection`/`negIdxFromBisect
 generic machinery needs no further change), prove the two concrete `SplitSpec'` instances, then
 `8.12(g)(4)`'s field-by-field `effectiveIso812d` instantiation should indeed be mechanical as
 originally scoped.
+
+**2026-07-06 (same day, follow-up) — Exercise 8.12(g)(3) concrete construction completed, then
+8.12(g)(4) final assembly: Exercise 8.12 is now `Pass` in its entirety.**
+
+**`8.12(g)(3)`'s remaining half.** Key realization that made this tractable: `posIdxFromBisection`/
+`negIdxFromBisection` (the *index*-level functions) needed **zero** changes — they already compute
+exactly the right index in the "genuinely nonempty" branch and an unread junk placeholder (`m`) in
+the "should be `∅`" branch of each field. The bug was purely that `splitFromBisection` (the
+*set*-level function, `Exercise812e.lean`) wrapped *both* branches in `Q.X (⋯)`, which can never
+literally be `∅`. Fix: redefine `splitFromBisection` to case directly on the same two deciders at
+the `Set γ × Set γ` level: `emptyInterDec` fires ⟹ `(∅, B')`; else `emptyDiffDec` fires ⟹ `(B', ∅)`;
+else the genuine bisection `(Q.X (B.left m), Q.X (B.right m))`. Proved well-defined (independent of
+which witness `Classical.choose` picks for the "presented" existential) via one new bridging lemma,
+`splitFromBisection_eq` (built from the pre-existing `emptyInterDec_congr`/`emptyDiffDec_congr`/
+`B.left_congr`/`B.right_congr`) — both `isComputableSplit_ofBisection`'s (now much simpler)
+`posIdx_spec`/`negIdx_spec` proofs and the new `SplitSpec'` proof are built directly on top of it.
+Also swapped the previous "not presented → junk `(B', B')`" fallback (provably wrong in general:
+`.1 ∩ .2 = B' ∩ B' = B'`, not `∅`, unless `B' = ∅`) for the classical `splitChoice'`
+(`Exercise812c.lean`) — needed since `SplitSpec'` quantifies over **every** `A`/`Xn : Set α`, not
+just presented ones, but free to change since `IsComputableSplit`'s own `_spec` fields never
+constrain the non-presented case. `splitFromBisection` gained one new parameter,
+`hWnomin : W.NoMinimal` (needed to build the `splitChoice'` fallback) — threaded as a new section
+`variable` in `Exercise812e.lean`, and through to the two concrete call sites
+(`Exercise812eD.lean`'s `V_noMinimal`, `Exercise812f.lean`'s `U_noMinimal`).
+
+The new theorem `ComputableBisection.splitFromBisection_isSplitSpec'` needs exactly one hypothesis
+beyond `isComputableSplit_ofBisection`'s own: `hQne : ∀ j, Q.X j ≠ ∅`, used *only* in the "neither
+decider fires" branch (to show the bisection's two halves are individually non-empty, matching
+`A ∩ Xn ≠ ∅ ↔ .1 ≠ ∅`/`A \ Xn ≠ ∅ ↔ .2 ≠ ∅`) — genuinely not derivable from `ComputableBisection`'s
+abstract fields alone (nothing there rules out `Q.X (B.left m) = ∅` for an arbitrary `W`; only
+`disjoint`/`union` are required), but trivial for both concrete systems (`VX_nonempty`/`U_mem_UX`'s
+own `Nonempty` conjunct, both already `Pass`). The two decider-fires branches need no such
+hypothesis: `.1`/`.2` are literally `∅`/`B'` there, and the `↔`s reduce to `hAB` via the algebraic
+facts `A ∩ Xn = ∅ → A \ Xn = A` (resp. symmetric) — the same two facts `exists_split'`
+(`Exercise812c.lean`) already uses. Concrete instances: `hxSplit812e : SplitSpec' V splitX812e`
+(`Exercise812eD.lean`) and `hySplit812f : SplitSpec' U splitX812f` (`Exercise812f.lean`), each one
+direct application of `splitFromBisection_isSplitSpec'`.
+
+**`8.12(g)(4)`.** With `(g)(1)`–`(g)(3)` all in hand, the final assembly went through exactly as
+originally scoped, zero surprises: a single instantiation of `effectiveIso812d`
+(`Exercise812d.lean` `(d)(6)`) with `D₀ := U`, `D₁ := V` and every fact built across `(c)`–`(g)(3)`,
+in a new file `Exercise812g4.lean` (wired into `Scott1980.lean`). One small wrinkle:
+`EffectiveIso` lives in the `Scott1980.Neighborhood.Exercise718` namespace specifically (not just
+`Scott1980.Neighborhood`), needing an explicit `open Exercise718`.
+
+**Result:** `effectiveIso812_UV : EffectiveIso UComputablePresentation VComputablePresentation`
+(`Exercise812g4.lean`) — Exercise 8.12 is complete in full, all of `8.12(a)`–`8.12(g)` now `Pass`.
+`lake build` (3175 jobs) clean; `grep -rn sorry Scott1980/` returns zero actual `sorry` uses
+project-wide. Axiom audit: `effectiveIso812_UV`/`hxSplit812e`/`hySplit812f`/
+`splitFromBisection_isSplitSpec'` all `⊆ {propext, Classical.choice, Quot.sound}` — `Classical.choice`
+is the same pre-existing baseline used throughout `Exercise812d.lean`/`Exercise812e.lean`/
+`Exercise718.lean` (all `open scoped Classical`), not a fresh leak. `arxiv.md`: `8.12(g)(3)`,
+`8.12(g)(4)`, `8.12(g)` umbrella, and the top-level `8.12` row all updated to `Pass`.
+
+**Resume protocol / next steps:** Exercise 8.12 needs no further work. Pick the next `Deferred`/
+`Partial` row in `arxiv.md` (`Grep` for `Deferred`/`Partial` to find candidates) to continue with.

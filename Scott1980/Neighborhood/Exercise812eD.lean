@@ -116,6 +116,7 @@ def B812e : ComputableBisection VComputablePresentation where
 bisection. -/
 noncomputable def splitX812e : Set ℚ → Set ℕ → Set ℚ → Set ℕ × Set ℕ :=
   ComputableBisection.splitFromBisection UComputablePresentation U_isComputableDiff B812e
+    V_noMinimal
 
 /-- **Exercise 8.12(e), completed in full**: `splitX812e` satisfies `IsComputableSplit`.
 `noncomputable def`, not `theorem` — `IsComputableSplit` is a data-carrying structure (its
@@ -124,6 +125,15 @@ itself (`(e)(c)(ii)`). -/
 noncomputable def isComputableSplit_812e :
     IsComputableSplit UComputablePresentation VComputablePresentation splitX812e :=
   ComputableBisection.isComputableSplit_ofBisection UComputablePresentation U_isComputableDiff
-    B812e U_isPositive U_noMinimal U_diffClosed
+    B812e V_noMinimal U_isPositive U_noMinimal U_diffClosed
+
+/-- **`8.12(g)(3)`, `U`-as-prober half**: `splitX812e` also satisfies `SplitSpec'` — completing the
+concrete-construction half of `8.12(g)(3)` left open by `Exercise812e.lean`'s generic
+`splitFromBisection_isSplitSpec'`. The extra hypothesis it needs, `∀ j, VX j ≠ ∅`, is immediate:
+every `VX j` is `V.mem`-genuine (`VComputablePresentation.mem_X`) and `V.mem` structurally excludes
+`∅` (`V.mem X := ∃ k m, X = levelSet k m ∧ X.Nonempty`, `Exercise812.lean` line 199). -/
+theorem hxSplit812e : SplitSpec' V splitX812e :=
+  ComputableBisection.splitFromBisection_isSplitSpec' UComputablePresentation U_isComputableDiff
+    B812e V_noMinimal U_isPositive U_noMinimal U_diffClosed (fun j => (VX_nonempty j).ne_empty)
 
 end Scott1980.Neighborhood
