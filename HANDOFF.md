@@ -10577,3 +10577,49 @@ own docstring, resolved here for the first time; `disjoint`/`union` are already 
 fed `U`'s already-`Pass` `IsPositive`/`NoMinimal`/`DiffClosed` facts (`Exercise812c.lean`). Once
 `(e)(d)` lands, `8.12(e)` is **COMPLETE** in full, and `8.12(f)` (reusing `SplitU.lean`'s existing
 bisection directly, per `8.12(e)`'s own finding 5) should be comparatively quick.
+
+**2026-07-05 — Exercise 8.12(e)(d) re-scoped into 3 sub-parts, `(e)(d)(i)`–`(iii)`, after finding a
+genuine mathematical gap (not just a bookkeeping one) before writing any code.** Checked the
+"expected free... but must be checked" hope from `(e)(a)`'s own docstring about `splitVLeft`/
+`splitVRight`'s `left_congr`/`right_congr` — **it's false as currently defined**, confirmed by an
+explicit counterexample: `V`'s codes are highly non-canonical (`canonIdx` never collapses across
+levels, only handling "empty → master"), so a fixed set is presentable at *any* sufficiently fine
+level via repeated `myUpsample`. Take `X = evens`: presented at `(k,m) = (1,1)`, `splitVLeft`
+returns `Y = levelSet 2 1 = \{n ≡ 0 \bmod 4\} = \{0,4,8,12,…\}`; presented at `(k,m) = (2,5)`
+(`5 = myUpsample 1 2 1`, the *same set*, merely upsampled once), `splitVLeft` returns
+`Y' = levelSet 3 1 = \{n ≡ 0 \bmod 8\} = \{0,8,16,24,…\}` — `Y ≠ Y'` (`4 ∈ Y \setminus Y'`) despite
+identical input sets. The splitting *bit* `ℓ₀` itself is presentation-invariant (`= min X`, since
+upsampling only adds duplicate copies at *higher* positions), but the *level* `k+1` used as the
+residue-class modulus is not intrinsic to the set, only to the presentation — that's the whole bug.
+**Fix, and why it's substantial**: canonicalize to the set's *minimal* periodic level before
+bisecting (intrinsic, hence presentation-independent) rather than `canonIdx n`'s raw level. This
+needs: a new primitive-recursive "find the true period" function, proof it preserves `levelSet`,
+and — the crux — a **uniqueness** lemma (two presentations of the same set share the same minimal
+level/mask), which is what actually *delivers* `left_congr`/`right_congr` once `splitVLeft`/
+`splitVRight` are rerouted through it. Comparable in scope to all of `(e)(b)` combined; deliberately
+kept **separate** from `canonIdx`/`VX` themselves (already `Pass`, load-bearing everywhere else in
+the codebase) rather than folded into them. Split accordingly:
+- **`(e)(d)(i)`**: `minLevel`/`minMask` (bounded search for the true period, mirroring `myFirstBit`'s
+  `Nat.rec`-fold idiom), `primrec_minLevel`/`primrec_minMask`, `levelSet_minLevel` (preserves the
+  set), and the crux `minLevel_unique` (same set ⟹ same minimal `(level, mask)`).
+- **`(e)(d)(ii)`**: reroute `SplitV.lean`'s pipeline through `(i)`'s minimal presentation instead of
+  `canonIdx n`'s raw level; re-derive `VX_splitVLeft`/`VX_splitVRight`/`splitV_disjoint`/
+  `splitV_union` (expected light re-derivations, same shape as `(e)(b)(iv)`); prove the actual
+  `splitVLeft_congr`/`splitVRight_congr` from `(i)`'s uniqueness — expected to close by `congrArg`
+  once the pipeline is rerouted, since `minLevel_unique` forces `n`/`n'` to route through the
+  *identical* minimal pair.
+- **`(e)(d)(iii)`**: package as `ComputableBisection VComputablePresentation` (`B812e`) and
+  instantiate `isComputableSplit_ofBisection` for `U`↔`V` (`splitX812e`/`isComputableSplit_812e`,
+  the exercise's actual literal target) — mechanical given `(i)`–`(ii)`.
+
+`arxiv.md`: `8.12(e)(d)` row is now an umbrella (Deferred) with sub-rows `8.12(e)(d)(i)`–`(iii)`
+(all Scoped, not started) containing the above as their full proof-notes plans; `8.12(e)` umbrella
+note updated to flag the re-scoping and the discovered gap.
+
+**Status: `8.12(e)(d)` is re-scoped, not started.** **Resume protocol:** next up is `8.12(e)(d)(i)`
+— `minLevel`/`minMask` and the crux `minLevel_unique` lemma (see `arxiv.md` row for exact planned
+statements). This is the most mathematically substantial single sub-part encountered in `8.12(e)`
+so far — budget accordingly, and consider whether `minLevel_unique`'s induction needs its own
+further sub-goaling once its actual proof shape becomes clear (unlike every other sub-part so far,
+this one was *not* fully de-risked by the scoping pass, since uniqueness-of-minimal-period proofs
+can hide real induction-order/well-foundedness subtleties that only surface while writing the proof).
