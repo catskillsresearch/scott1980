@@ -11178,3 +11178,50 @@ Remaining optional work, only if the user wants it: `8.13(b)` (literal `Formula`
 bridge) and `8.13(c)` (topologists' Cantor-space remark, still has the open "which of (i)/(ii) to
 formalize" question from the earlier scoping row). Otherwise pick the next `Deferred`/`Partial` row
 in `arxiv.md`.
+
+## 2026-07-06 (later): Exercise 8.13(b) — the Lindenbaum bridge (`Scott1980/Neighborhood/Exercise813b.lean`, Pass)
+
+User explicitly asked to do the optional `8.13(b)` too ("Can you do it?"). Implemented the
+recommended "Option A" (semantic-equivalence quotient), no full proof calculus/soundness/
+completeness metatheory needed:
+
+* `Formula` — minimal `var`/`bot`/`top`/`neg`/`and`/`or` AST over `ℕ`-indexed variables.
+* `evalV : (ℕ → Bool) → Formula → Bool` — standard truth-valuation semantics.
+* `evalSet : Formula → Set ℕ` — the *same* recursion, interpreted via `8.13(a)`'s
+  `generator i ↦ var i` (i.e. the specific homomorphism `Formula → Set ℕ`).
+* `mem_evalSet_iff : n ∈ evalSet φ ↔ evalV (fun i => n.testBit i) φ = true` — the bridge, by
+  structural induction.
+* `generatedBy_iff_exists_evalSet` — `evalSet`'s range is exactly `GeneratedBy generator`, both
+  directions by induction (constructors line up 1-1 with `Formula`'s).
+* `vars : Formula → Finset ℕ`, `evalV_eq_of_agree` — a formula's truth value only depends on its
+  (finite) variables.
+* `exists_bitsOf_agree` — for any finite `S` and valuation `v`, some `n : ℕ` matches `v` on `S`
+  (witnessed via `bitmaskOf`, reusing `8.13(a)`'s `testBit_bitmaskOf`).
+* **The one substantive lemma**, `semanticEquiv_iff_evalSet_eq`: `SemanticEquiv φ ψ` (`∀ v,
+  evalV v φ = evalV v ψ` — quantifying over *all* valuations) `↔ evalSet φ = evalSet ψ` (which only
+  "tests" the countably many bit-derived valuations). ⟸ is `mem_evalSet_iff` twice. ⟹ needs
+  `exists_bitsOf_agree` to swap an arbitrary `v` for a matching bit-derived one on `vars φ ∪ vars ψ`
+  (a Bool-iff-to-Bool-eq case split was needed since `rw` can't match an equation-of-two-terms goal
+  against an `= true`-shaped lemma — see the file for the `rcases ... <;> simp_all` idiom).
+* `Lindenbaum := Quotient formulaSetoid` — literally *the Lindenbaum algebra of propositional
+  calculus*, as a type. `Lindenbaum.toSet` (`Quotient.lift evalSet`, well-defined by ⟸ above),
+  `Lindenbaum.toSet_injective` (⟹ above + `Quotient.sound`), `Lindenbaum.range_toSet : Set.range
+  toSet = {X | GeneratedBy generator X}` (⟹ `generatedBy_iff_exists_evalSet`) — together, `8.13`'s
+  parenthetical ("free BA on `ℵ₀`-generators = Lindenbaum algebra of propositional calculus") is
+  now a proved bijection `Lindenbaum ≃ {X // GeneratedBy generator X}`, not an assertion.
+* Bonus, same finitary technique: `Entails`/`entails_iff_evalSet_subset` — the bijection also
+  matches semantic entailment with `⊆`, i.e. respects order, without bundling a full
+  `BooleanAlgebra Lindenbaum` instance (would need ~10+ axiom lemmas — judged disproportionate;
+  the iff-lemmas already carry the mathematical content).
+
+**Result:** `lake build` (3177 jobs) clean, zero `sorry`. Axiom audit on `Lindenbaum.toSet_
+injective`/`Lindenbaum.range_toSet`/`semanticEquiv_iff_evalSet_eq`/`entails_iff_evalSet_subset` all
+`⊆ {propext, Classical.choice, Quot.sound}` — confirmed by comparison to `#print axioms
+exercise813a` that this is the same pre-existing baseline inherited transitively from `8.13(a)`'s
+`≅ᴰ` chain, nothing new introduced here. `arxiv.md`: `8.13(b)` row → `Pass`; parent `8.13` row
+updated (`(a)` and `(b)` both `Pass`, `(c)` remains the only open/optional item).
+
+**Resume protocol / next steps:** Exercise 8.13 is now fully done except the independently-optional
+`8.13(c)` (topologists' Cantor-space remark — still has the open "which of (i)/(ii) to formalize"
+question from the earlier scoping row; ask the user before starting it). Otherwise pick the next
+`Deferred`/`Partial` row in `arxiv.md`.
