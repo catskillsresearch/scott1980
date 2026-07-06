@@ -10623,3 +10623,45 @@ so far — budget accordingly, and consider whether `minLevel_unique`'s inductio
 further sub-goaling once its actual proof shape becomes clear (unlike every other sub-part so far,
 this one was *not* fully de-risked by the scoping pass, since uniqueness-of-minimal-period proofs
 can hide real induction-order/well-foundedness subtleties that only surface while writing the proof).
+
+**2026-07-05 — Exercise 8.12(e)(d)(i) done (`minLevel`/`minMask`/`minLevel_unique`), new file
+`Scott1980/Neighborhood/MinLevel.lean`.** The feared extra sub-goaling wasn't needed, but the actual
+proof took a materially different (and simpler) route than the scoping pass's draft, after finding
+the draft's periodicity modulus was off by an exponent (`levelSet k m` truncates masks at
+`myModPow2 _ (2^k) = m % 2^(2^k)`, matching `myUpsample_lt`'s own bound, not `m % 2^k`). Concretely:
+- `isPeriodicMask k j m` (`{0,1}`): rather than the drafted `O(2^k)`-body bounded `∀`-check (needing
+  new quantifier infrastructure), it's an `O(1)` formula comparing `myUpsample j k (myModPow2 m
+  (2^j))` against `myModPow2 m (2^k)` via the standard `isZero`-of-two-sided-subtraction equality
+  decider — reusing `myUpsample`/`myModPow2` wholesale. `isPeriodicMask_iff : isPeriodicMask k j m =
+  1 ↔ levelSet k m = levelSet j m` (`j ≤ k`) falls out of two already-`Pass` facts alone
+  (`levelSet_myUpsample`, `levelSet_inj_of_lt`), no new induction.
+- `minLevel`/`minMask`: `myFirstBit`'s (`SplitV.lean`) bounded-`Nat.rec`-fold idiom transplanted
+  verbatim, base case `j = k` always available (`isPeriodicMask_self`). `primrec_minLevel`'s only
+  wrinkle vs. `primrec_myFirstBit`: the fixed parameter threaded through `Nat.Primrec.prec` is the
+  *pair* `pair k m`, needing one extra `unpair.1.unpair.{1,2}` layer throughout.
+- **The crux, `minLevel_unique`, did *not* need the drafted `max k₁ k₂`/strong-induction machinery
+  at all.** It reduces to one new elementary lemma, `levelSet_presentable_imp_self`: if
+  `levelSet k m` is presentable at level `j ≤ k` via *any* witness mask, it's already presentable
+  there via `m`'s own canonical witness `myModPow2 m (2^j)` — proved by two direct specializations
+  of the `Set.ext_iff` unfolding of the hypothesis (at `n = i` and `n = i % 2^j`, for each bit
+  position `i < 2^k`), pure substitution, **no induction whatsoever**. `minLevel_eq`/`minMask_eq`
+  then close via a short `by_contra`/trichotomy argument (two minimal witnesses, one strictly below
+  the other, contradicts the smaller's own minimality) plus one `levelSet_inj_of_lt` call.
+
+Zero `sorry`; `lake build Scott1980` (3167 jobs) clean. `#print axioms` on all 8 new/key
+declarations gives `⊆ {propext, Classical.choice, Quot.sound}` — the same inherited `Nat`-order
+footprint documented project-wide, no fresh leak (this file introduces no `Classical.choice`/
+`Exists.choose` of its own — a genuinely choice-free construction). `arxiv.md`: `8.12(e)(d)(i)` row
+→ `Pass`; `8.12(e)(d)` umbrella note updated (`(i)` `Pass`, `(ii)`–`(iii)` not started).
+
+**Status: `8.12(e)(d)(i)` is COMPLETE.** **Resume protocol:** next up is `8.12(e)(d)(ii)` — reroute
+`SplitV.lean`'s `splitVLeft`/`splitVRight` pipeline through `MinLevel.lean`'s `minLevel`/`minMask`
+(applied to `(canonIdx n).unpair.1`/`.unpair.2`) instead of `canonIdx n`'s raw level, re-derive
+`VX_splitVLeft`/`VX_splitVRight`/`splitV_disjoint`/`splitV_union` (expected light re-derivations,
+same shape as `(e)(b)(iv)`), and prove the actual `splitVLeft_congr`/`splitVRight_congr` from
+`minLevel_unique` — expected to close by `congrArg` once the pipeline is rerouted, since
+`minLevel_unique` forces `n`/`n'` presenting the same `VX`-set to route through the *identical*
+minimal `(level, mask)` pair (apply `minLevel_unique` to `canonIdx n`/`canonIdx n'`, using
+`VX n = VX n'` unfolded via `VX`'s own definition to `levelSet (canonIdx n).1 (canonIdx n).2 =
+levelSet (canonIdx n').1 (canonIdx n').2`). See `arxiv.md`'s `8.12(e)(d)(ii)` row for the full
+planned signatures.
