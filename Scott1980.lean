@@ -203,3 +203,6 @@ import Scott1980.Neighborhood.Exercise812d
 import Scott1980.Neighborhood.Exercise812e
 import Scott1980.Neighborhood.Exercise812eD
 import Scott1980.Neighborhood.SplitV
+import Scott1980.Neighborhood.VDiff
+import Scott1980.Neighborhood.UBisection2
+import Scott1980.Neighborhood.Exercise812f

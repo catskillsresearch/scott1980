@@ -10763,3 +10763,62 @@ set to one canonical index, unlike `V`'s `canonIdx` — so, unlike `(e)(d)`'s `V
 plausibly free here, but must be checked, not assumed). See `arxiv.md`'s `8.12(f)` row for the
 existing scoping (kept as a single row, not split into sub-parts, since it genuinely is one atomic
 step — a single one-line instantiation plus one repackaging).
+
+**2026-07-05 — Exercise 8.12(f) `Pass`, completing Exercise 8.12 in full.** Two gaps found while
+assembling, neither anticipated by the previous checkpoint's scoping:
+
+1. **`SplitU.lean`'s `splitULeft`/`splitURight` genuinely fail `left_congr`/`right_congr`** — the
+   previous checkpoint's "plausibly free" guess was wrong. `canonCode` clips/filters but never
+   *merges* overlapping/adjacent intervals, so `[(0,1)]` and `[(0,1/2),(1/2,1)]` both canonically
+   present `U.master`, yet have different first pairs (midpoints `1/2` vs. `1/4`) — genuinely
+   different `splitULeft`/`splitURight` outputs for the same set. Fixed with a **new** file,
+   `Scott1980/Neighborhood/UBisection2.lean` (does not touch `SplitU.lean`, which stays as-is for
+   `8.8(b)`'s own purposes): split at the midpoint of the presented set's *intrinsic* `(min, max)`
+   — `min X = min_i pᵢ.1` (attained, since every `Ico` is left-closed) and `sup X = max_i pᵢ.2` (an
+   upper bound approached arbitrarily closely, `listMaxSnd_tight`) are genuine invariants of the
+   set `X` itself, not of which presenting list computes them, so splitting at their midpoint is
+   automatically presentation-independent — no interval-merging machinery needed (lighter than
+   `MinLevel.lean`'s fix for `V`'s analogous `(e)(d)` gap). `listMinFst`/`listMaxSnd` (list-level,
+   via direct `List.foldl` induction — the more roundabout route through generic `List ℚ`
+   helpers-plus-`List.map` bridging lemmas was tried first and abandoned as needlessly fragile;
+   direct induction on `List (ℚ × ℚ)` with the projection embedded in the fold step was far more
+   robust) are mirrored at the code level (`listMinFstCode`/`listMaxSndCode`) via
+   `Recursive.lean`'s generic `foldCode` combinator, folding `ratMinCode`/`ratMaxCode`
+   (`RationalPrimrec.lean`) over the raw pair-code list. `splitU2Left`/`splitU2Right` then reuse
+   `SplitU.lean`'s `clipLtListCode`/`clipGeListCode` unchanged; `UX_splitU2Left`/`UX_splitU2Right`'s
+   correctness proofs mirror `SplitU.lean`'s `UX_splitULeft`/`UX_splitURight` almost exactly, with
+   the nonemptiness witness for the left piece now `listMinFst` itself (`listMinFst_mem_presentedIntervals`)
+   and for the right piece a point supplied by `listMaxSnd_tight` (rather than the first pair's
+   endpoints). `splitU2Left_congr`/`splitU2Right_congr` — the whole point of the exercise — follow
+   from `listMinFst_congr`/`listMaxSnd_congr` (both proved by antisymmetry/contradiction against the
+   `_mem_presentedIntervals`/`_lower_bound`/`_upper_bound`/`_tight` characterizations, exactly
+   mirroring `MinLevel.lean`'s `minLevel_unique` argument shape for `V`). Packaged as
+   `UBisection2 : ComputableBisection UComputablePresentation`.
+2. **`V`'s `IsComputableDiff` instance had never been built** (mirrors `8.12(e)(d)(iii)`'s analogous
+   gap for `U`, but for the opposite prober role). New file `Scott1980/Neighborhood/VDiff.lean`:
+   mirrors `LevelSetPrimrec.lean`'s `VinterRaw`/`Vinter` exactly, substituting `Exercise812c.lean`'s
+   `levelSet_diff` (driven by the bitwise "and-not" identity `a ^^^ (a &&& b)`,
+   `testBit_xor_and_self`) for `levelSet_myInter`. The one new primitive-recursive piece needed: a
+   choice-free bitwise XOR `myXor` (mirroring `myLand`/`myLor` bit-for-bit, `Nat.testBit_xor` in
+   place of `Nat.testBit_and`/`Nat.testBit_lor`), composed with the already-`Pass` `myLand` as
+   `myAndNot a b := myXor a (myLand a b)` to realize `a ^^^ (a &&& b)` for free — no new arithmetic
+   identity needed beyond `myXor_eq_xor`/`myLand_eq_land`. `Vdiff`/`Vdiff_primrec`/`Vdiff_spec`/
+   `V_diff_computable` mirror `Vinter`'s four-piece structure exactly, packaged as
+   `V_isComputableDiff : IsComputableDiff VComputablePresentation`.
+
+With both gaps closed, `Exercise812f.lean` is the one-line instantiation originally planned:
+`splitX812f := ComputableBisection.splitFromBisection VComputablePresentation V_isComputableDiff
+UBisection2`, `isComputableSplit_812f := ComputableBisection.isComputableSplit_ofBisection
+VComputablePresentation V_isComputableDiff UBisection2 V_isPositive V_noMinimal V_diffClosed` —
+directly mirroring `Exercise812eD.lean`'s `splitX812e`/`isComputableSplit_812e` with prober/target
+roles swapped. Zero `sorry`; `lake build Scott1980` (3171 jobs) clean, zero new lints/warnings.
+`#print axioms isComputableSplit_812f` gives `⊆ {propext, Classical.choice, Quot.sound}`, identical
+to `isComputableSplit_812e`'s own audit (`Classical.choice` inherited from `splitFromBisection`'s
+`Classical.choose` on the existential triple — genuinely unavoidable, `IsComputableSplit.split` is
+itself a classical function of sets, not indices; matches the project-wide baseline, no fresh
+leak). `arxiv.md`: `8.12(f)` row → `Pass`; `8.12` umbrella → **COMPLETE in full** (`(a)`–`(f)` all
+`Pass`).
+
+**Status: Exercise 8.12 is COMPLETE in full.** **Resume protocol:** re-read `arxiv.md` for the next
+open exercise (grep for rows not marked `Pass`); no specific next item was queued as of this
+checkpoint.
