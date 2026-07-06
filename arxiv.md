@@ -3122,9 +3122,9 @@ Lecture VIII covers retractions, projections, and the construction of the univer
 
 #### Exercise 8.18
 * **Mathematical Target:** establish the unproved cases of 8.10
-* **Lean File:** — (Formalization deferred)
-* **Proof Notes:** establish the unproved cases of 8.10
-* **Status:** Deferred
+* **Lean File:** `Scott1980/Neighborhood/Exercise818.lean`
+* **Proof Notes:** **Every case of Proposition 8.10 — all three combinators `+`/`×`/`→`, both halves (projection-preservation and finitary-preservation-with-isomorphism) — was already fully established** by `Proposition810.lean` (`isProjection_sumComb`/`isProjection_prodComb`/`isProjection_arrowComb`/`isProjection_combinators`) and `Proposition810b.lean` (`finitaryProjection_sumComb`/`finitaryProjection_prodComb`/`finitaryProjection_arrowComb`/`finitaryProjection_combinators`, plus explicit isomorphisms `sumComb_elementIso`/`prodComb_elementIso`/`arrowComb_elementIso`). Scott's text left several cases (most plausibly `+`/`→`, which needed genuinely new `sumMap`/`expMap` bifunctor infrastructure beyond the "obvious" `×` case) as reader exercises, but this project closed all of them while formalizing Proposition 8.10 itself — so Exercise 8.18 needed **zero new proof content**, only assembling both halves into one headline `exercise_8_18` under this exercise's name. `lake build` (whole project) green, zero `sorry`, zero new warnings. Axiom audit: `⊆{propext,Classical.choice,Quot.sound}`, identical to Proposition 8.10's own footprint (inherited from `U`, nothing new).
+* **Status:** Pass
 
 #### Exercise 8.19
 * **Mathematical Target:** consequences of two known facts

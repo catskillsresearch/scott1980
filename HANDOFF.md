@@ -11950,3 +11950,30 @@ out in the Proof Notes).
 **Next up:** pick the next `Deferred` row in `arxiv.md` (e.g. Exercise 8.18 — "establish the unproved
 cases of 8.10"; or Proposition 8.10's own deferred finitary-closure second half; or consider a
 repo-wide grep for other unguarded `ext_of_toElementMap` uses per the lesson above).
+
+## 2026-07-06 (continued 5) — Exercise 8.18: Pass, zero new proof content (pure citation)
+
+**Exercise 8.18.** "Many of the cases of 8.10 were left unproved. Please establish these assertions
+explicitly."
+
+Checked `arxiv.md`'s Proposition 8.10(a)/(b) rows first — **both already `Pass`**, and covering *all
+three* combinators (`+`/`×`/`→`) in *both* halves (projection-preservation, `Proposition810.lean`;
+finitary-preservation-with-explicit-isomorphism, `Proposition810b.lean`). I.e. this project's own
+formalization of Proposition 8.10 already closed every case Scott left as a reader exercise — nothing
+was actually left unproved by *this* development. `Scott1980/Neighborhood/Exercise818.lean` is
+therefore a **pure citation, zero new proof content**: `exercise_8_18` just conjoins
+`isProjection_combinators` and `finitaryProjection_combinators` into one headline under the
+exercise's name. `lake build` (whole project) green, zero `sorry`, zero new warnings. Axiom audit:
+`exercise_8_18` `⊆ {propext, Classical.choice, Quot.sound}`, identical to Proposition 8.10's own
+footprint (inherited from `U`, nothing new). Wired into `Scott1980.lean`. `arxiv.md`'s Exercise 8.18
+row updated to `Pass`.
+
+**Lesson:** before starting a "prove exercise N" task, always grep `arxiv.md` for exercises/
+propositions *that N cross-references* (here, "8.10") — sometimes the cited material was already
+fully closed by an earlier session's work under a different heading, making the "new" exercise a
+free citation rather than fresh mathematics. Worth doing this check first on every future exercise
+too.
+
+**Status of Exercise 8.18: DONE (Pass).** **Next up:** Exercise 8.19 ("consequences of two known
+facts") — check the source text first for which two facts before starting, since it may be another
+citation-style exercise; or Exercise 8.20 (`D ⊴ D+D`).
