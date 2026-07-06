@@ -11084,3 +11084,97 @@ is the same pre-existing baseline used throughout `Exercise812d.lean`/`Exercise8
 
 **Resume protocol / next steps:** Exercise 8.12 needs no further work. Pick the next `Deferred`/
 `Partial` row in `arxiv.md` (`Grep` for `Deferred`/`Partial` to find candidates) to continue with.
+
+## 2026-07-06 — Exercise 8.13 scoped (no code yet; two open decisions block starting)
+
+User asked "is 8.13 another monster? If so, break it down before proving anything" — did a scoping
+investigation only, per that instruction. Full write-up is in `arxiv.md`'s `8.13`/`8.13(a)`/
+`8.13(b)`/`8.13(c)` rows (just above); this is a short pointer plus the two things a future session
+needs to resolve before writing code.
+
+**Bottom line:** yes, it's new territory (zero Boolean-algebra/filter/propositional-logic/
+Cantor-space code anywhere in `Scott1980/` today), but **structurally much smaller than `8.12`**
+for two reasons found during scoping:
+1. `8.13` only asks for plain `≅ᴰ` (`DomainIso`), never "effective" — so none of `8.12(d)`–`(g)`'s
+   `ComputablePresentation`/`IsComputableSplit`/`IsComputableDiff`/`IsComputableUnion` machinery is
+   needed. `Exercise812c.lean`'s `domainIso812c`/`isomorphic_812c` (`D₀ ≅ᴰ D₁` from plain
+   `ℕ`-indexed `IsPositive`/`DiffClosed`/`NoMinimal` enumerations) is directly reusable.
+2. `V` (`Exercise812.lean`'s `levelSet k m := {n | m.testBit (n % 2^k)}`) **already *is* the free
+   Boolean algebra on `ℵ₀` generators**, concretely realized via the low-order bits of `n` — so
+   `8.13(a)`'s plan is "port `levelSet`/`V` to `cylinderSet`/`Lindenbaum` on `ℕ → Bool` instead of
+   `ℕ`, iso the two (near-mechanical, same `(k,m)` index space), then compose with the already-`Pass`
+   `effectiveIso812_UV.toDomainIso : U ≅ᴰ V`." `8.13(a)` is **unblocked** — could be started in a
+   future session without any further decisions.
+
+**Two decisions still needed from the user before `8.13(b)`/`(c)` can start** (both are genuine
+scope/rigor trade-offs, not technical blockers):
+* **`8.13(b)` (logicians, "= Lindenbaum algebra" bridge):** Option A (recommended) — define the
+  Lindenbaum algebra via a `Formula`/`eval` AST quotiented by *semantic* equivalence (small, no
+  proof calculus). Option B — build an actual propositional proof system + soundness + completeness
+  first (a metatheory project likely bigger than all of `8.12`).
+* **`8.13(c)` (topologists, Cantor-space connection):** the literal "proper filters `≃o` non-empty
+  open subsets of `2^ℕ`" is **false** — checked carefully: every `Element` contains `master`
+  (`Element.master_mem`, `Basic.lean:216`), so `x ↦ ⋃ x.mem` is constant. The real correspondence
+  (`x ↦ ⋂ x.mem`, via compactness) is order-reversing onto non-empty **closed** sets, with
+  *compact/principal* elements exactly matching *clopen* (hence open) ones — echoing `8.12`'s own
+  "compact = principal" aside. Two candidate formalization targets recorded in `arxiv.md`'s `8.13(c)`
+  row: (i) the precise closed-set duality (real content, but needs dualizing to even mention "open",
+  and still isn't literally "non-empty opens"), or (ii) the much more modest fact that `8.13(a)`'s
+  `cylinderSet` family is a topological basis for Mathlib's standard product topology on `ℕ → Bool`.
+
+**Resume protocol:** if the user has answered the two decisions above, start with `8.13(a)` (fully
+unblocked regardless) — port `levelSet`/`V`'s proofs to `cylinderSet`/`Lindenbaum`,  then the
+`Lindenbaum ≅ᴰ V` iso, then compose with `effectiveIso812_UV.toDomainIso`. If undecided, ask before
+touching `8.13(b)`/`(c)` code.
+
+## 2026-07-06 (same day, later) — `8.13(a)` done; `(b)` demoted to optional
+
+User asked "does Option A completely answer the question posed by Scott?" — worked through it
+carefully: **the "= Lindenbaum algebra of propositional calculus" parenthetical in the exercise
+statement is Scott's own gloss identifying the free-BA-on-`ℵ₀`-generators object for readers who
+know it under that name — it is not a second sub-goal the exercise asks the solver to (re)derive.**
+What the exercise actually asks to be proved is "`U ≅` domain of proper filters of the free BA on
+`ℵ₀` generators," and *that* only needs a concrete algebra with countably many *independent*
+generators (the standard characterizing property) — no formula syntax required at all. So
+`8.13(b)` (a literal `Formula`/`eval` syntactic bridge) is optional/non-blocking, not something
+`8.13(a)` needs to wait on.
+
+User then asked to do `8.13(a)` without worrying about `(b)`/`(c)`. **It landed even smaller than
+the optimistic scoping estimate**: no new `NeighborhoodSystem` was built at all. `V`
+(`Exercise812.lean`, on `ℕ`, not `ℕ → Bool`) *already is* the free Boolean algebra on `ℵ₀`
+generators, avoiding every bit of the anticipated `cylinderSet`/Cantor-space bookkeeping. New file
+`Scott1980/Neighborhood/Exercise813a.lean` (wired into `Scott1980.lean`):
+
+* `generator i := {n | n.testBit i}` — the `ℵ₀` generators, concretely.
+* `GeneratedBy generator` — a small hand-rolled inductive (`of`/`univ`/`inter`/`union`/`compl`), the
+  Boolean subalgebra of `Set ℕ` they generate (no such generic notion existed anywhere yet).
+* `V_mem_iff_generatedBy : V.mem X ↔ GeneratedBy generator X ∧ X.Nonempty` — the crux. Soundness by
+  structural induction (reusing `V_union_mem`/`levelSet_inter` for `union`/`inter`, a new
+  `levelSet_compl` for `compl`); completeness via `levelSet_eq_biUnion` + a new `affine_eq_biInter`
+  (a single residue class is a finite meet of generators/complements) reassembled by
+  `Finset.induction_on`. Since `Element` (`Basic.lean`) is *definitionally* "proper filter of the
+  algebra" once this iff is in hand, `V.Element` **is** the domain of proper filters, with zero
+  further translation needed.
+* `generators_independent` — every finite Boolean combination of finitely many generators is
+  non-empty (witnessed directly via `bitmaskOf`) — the standard "freely generates a BA"
+  characterization, in full.
+* `exercise813a : U ≅ᴰ V := ⟨effectiveIso812_UV.toDomainIso⟩` — literally just citing the already-
+  `Pass` `8.12(g)(4)` result. No new back-and-forth argument needed, exactly as scoped.
+
+New reusable arithmetic (didn't exist in Mathlib, needed a hand proof each): `testBit_mod_two_pow`
+(`(n % 2^k).testBit i = decide (i<k) && n.testBit i`, via `Nat.testBit_two_pow_mul_add` fed
+`Nat.div_add_mod`) and `testBit_sum_two_pow`/`bitmaskOf` (read off a prescribed finite bit pattern,
+via `Finset.toFinset_bitIndices_sum_two_pow` — the same trick `Exercise812.lean`'s `upsample`
+already used once, generalized).
+
+**Result:** `lake build` (3176 jobs) clean, zero `sorry`. Axiom audit:
+`exercise813a`/`V_mem_iff_generatedBy`/`generators_independent` all
+`⊆ {propext, Classical.choice, Quot.sound}`, the same baseline as everything else touching `V`/`U`.
+`arxiv.md`: `8.13(a)` row → `Pass`; parent `8.13` row → `Partial` (re-worded: `(b)`/`(c)` are now
+explicitly optional/non-blocking, not required for "the logicians' half is done").
+
+**Resume protocol / next steps:** Exercise 8.13's mathematical content (logicians' half) is done.
+Remaining optional work, only if the user wants it: `8.13(b)` (literal `Formula`-syntax Lindenbaum
+bridge) and `8.13(c)` (topologists' Cantor-space remark, still has the open "which of (i)/(ii) to
+formalize" question from the earlier scoping row). Otherwise pick the next `Deferred`/`Partial` row
+in `arxiv.md`.
