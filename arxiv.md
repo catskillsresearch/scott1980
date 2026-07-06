@@ -2824,18 +2824,12 @@ Lecture VIII covers retractions, projections, and the construction of the univer
 
 #### Exercise 8.12(f)
 * **Mathematical Target:** Part 6 of 7 — `V` satisfies (c)/(d)'s extension property relative to `U`: build a concrete `splitY : Set ℕ → Set ℚ → Set ℕ → Set ℚ × Set ℚ` with `IsComputableSplit VComputablePresentation UComputablePresentation splitY`.
-* **Lean File:** — (not yet started); umbrella — see sub-row **8.12(f)(a)** below
-* **Proof Notes:** per `(e)`'s scoping (same findings apply symmetrically), `(f)` reduces to a *single* one-line instantiation of `(e)(c)`'s generic construction with roles swapped: `V` as prober (its own `(c)(i)`-established `IsPositive`/`NoMinimal`/diff-closedness plus the generic `emptyInterDec`/`emptyDiffDec` deciders) and `U` as target — reusing `SplitU.lean`'s *already-`Pass`* `splitULeft`/`splitURight`/`splitU_disjoint`/`splitU_union` directly as the `ComputableBisection`, no new bisection construction needed at all. Confirms the old "`(f)` expected easier" intuition, though for the sharper reason found while scoping `(e)`: not `V`'s coarseness, but that `U`'s own canonical bisection was already built for Theorem 8.8(b) (`SplitU.lean`).
-* **Status:** Deferred — reduces to 1 sub-part below, blocked on `(e)(c)`
-
-#### Exercise 8.12(f)(a): instantiate `(e)(c)` for `V`↔`U` — `splitY812f`
-* **Mathematical Target:**
-  - `def UComputableBisection : ComputableBisection UComputablePresentation := ⟨splitULeft, splitURight, primrec_splitULeft, primrec_splitURight, splitU_disjoint, splitU_union⟩` (pure repackaging of `SplitU.lean`'s already-`Pass` facts)
-  - `splitY812f := splitFromBisection V_isPositive V_noMinimal (V's `IsComputableDiff`) UComputableBisection`
-  - `theorem isComputableSplit_812f : IsComputableSplit VComputablePresentation UComputablePresentation splitY812f`
 * **Lean File:** — (not yet started)
-* **Proof Notes (plan):** one-line instantiation exactly mirroring `(e)(d)`'s shape with roles swapped; the only work is repackaging `SplitU.lean`'s four already-proved facts into the `ComputableBisection` shape.
-* **Status:** Scoped, not started — depends on `(e)(c)`; completes `(f)`
+* **Proof Notes:** per `(e)`'s scoping (same findings apply symmetrically), `(f)` reduces to a *single* one-line instantiation of `(e)(c)`'s generic construction with roles swapped: `V` as prober (its own `(c)(i)`-established `IsPositive`/`NoMinimal`/diff-closedness plus the generic `emptyInterDec`/`emptyDiffDec` deciders) and `U` as target — reusing `SplitU.lean`'s *already-`Pass`* `splitULeft`/`splitURight`/`splitU_disjoint`/`splitU_union` directly as the `ComputableBisection`, no new bisection construction needed at all. Confirms the old "`(f)` expected easier" intuition, though for the sharper reason found while scoping `(e)`: not `V`'s coarseness, but that `U`'s own canonical bisection was already built for Theorem 8.8(b) (`SplitU.lean`). No sub-part split needed here (unlike `(e)(d)`) — kept as a single row since it genuinely is one atomic step, not several:
+  - `def UComputableBisection : ComputableBisection UComputablePresentation := ⟨splitULeft, splitURight, primrec_splitULeft, primrec_splitURight, splitU_disjoint, splitU_union⟩` (pure repackaging of `SplitU.lean`'s already-`Pass` facts — plus `left_congr`/`right_congr`, which `(e)(a)`'s docstring flags as needing an actual check for `SplitU.lean`, not just assumption, before this compiles)
+  - `splitY812f := splitFromBisection VComputablePresentation (V's `IsComputableDiff`) UComputableBisection`
+  - `theorem isComputableSplit_812f : IsComputableSplit VComputablePresentation UComputablePresentation splitY812f`, via `isComputableSplit_ofBisection` fed `V_isPositive`/`V_noMinimal`/`V_diffClosed`
+* **Status:** Deferred — blocked on nothing further (`(e)(c)`'s generic construction is `Pass`); will also need a fresh `IsComputableDiff VComputablePresentation` instance (mirroring `(e)(d)(iii)`'s `U_isComputableDiff`/`Udiff` — check whether `V`'s bitmask "and-not" formula, `testBit_xor_and_self` in `Exercise812c.lean`, already has a code-level `Nat.Primrec` counterpart before building one fresh) and a check that `SplitU.lean`'s `splitULeft`/`splitURight` genuinely satisfy `left_congr`/`right_congr` (plausibly free, since they're built via `canonCode`, which already collapses every representative of a set to one canonical index — unlike `V`'s `canonIdx`, which is why `(e)(d)` needed the `MinLevel.lean` fix — but must be checked, not assumed)
 
 #### Exercise 8.12(g)
 * **Mathematical Target:** Part 7 of 7 — assembly: apply (c)/(d)'s general lemma to the concrete `U`,`V` using (e)/(f)'s extension-property proofs to conclude `U ≅ᴰ V` effectively, closing out Exercise 8.12

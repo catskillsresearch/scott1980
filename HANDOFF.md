@@ -10760,5 +10760,6 @@ before building one fresh) and `SplitU.lean`'s own `left_congr`/`right_congr` fi
 whether these are already free (per `(e)(a)`'s own docstring, `SplitU.lean`'s `splitULeft`/
 `splitURight` are built via `canonCode`, which already collapses every representative of a given
 set to one canonical index, unlike `V`'s `canonIdx` — so, unlike `(e)(d)`'s `V`-side gap, these are
-plausibly free here, but must be checked, not assumed). See `arxiv.md`'s `8.12(f)`/`8.12(f)(a)` rows
-for the existing scoping.
+plausibly free here, but must be checked, not assumed). See `arxiv.md`'s `8.12(f)` row for the
+existing scoping (kept as a single row, not split into sub-parts, since it genuinely is one atomic
+step — a single one-line instantiation plus one repackaging).
