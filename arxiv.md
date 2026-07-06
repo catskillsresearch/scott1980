@@ -29,6 +29,42 @@ This Lean 4 artifact formalizes the mathematical objects that these 1980 lecture
 2. **$\omega$-algebraic:** Every element in the domain can be represented as the supremum of a countable set of compact (finite) elements, mirroring how infinite data is built from finite tokens.
 3. **Consistently Complete:** If any two pieces of information do not outright contradict each other, they possess a join (least upper bound), allowing consistent computation streams to merge safely.
 
+### A caveat: topology gives way to recursion-theoretic bookkeeping, not to simplicity
+
+Scott's 1980 pivot (§1–3 above) trades point-set topology for order theory and finite tokens, and for
+most of the monograph that trade genuinely simplifies the formalization: neighbourhood systems,
+approximable maps, and the domain-equation solutions of Lectures I–VI are combinatorial objects with
+comparatively little topological machinery behind them. But it would be a mistake to read this as "the
+1980 lectures are elementary throughout." From Lecture VII onward, Scott's subject is **computability
+*in* domains** — effectively given presentations, computable elements, computable maps — and this
+content is intrinsically recursion theory, not topology. Mechanizing it honestly means mechanizing
+recursion theory, and that turns out to be the more expensive half of this formalization by a wide
+margin, for a reason specific to this project's foundational choices rather than to Scott's mathematics:
+
+Mathlib's own recursion theory (`Nat.Primrec`, `Primrec`, `Partrec`, `ComputablePred`) is unusable here
+because its correctness lemmas are proved via tactics (`grind`, `lia`, the `Nat.unpair_pair` simp set)
+that route through `Classical.choice`, which would silently taint every downstream computability result
+in this project with an axiom this formalization otherwise avoids (see the choice discipline below).
+The practical consequence is that `Recursive.lean` — a *from-scratch*, choice-free recursion theory
+(primitive-recursive `Nat.pair`/`unpair` round-trips, `Nat.sqrt` correctness, recursively-decidable
+predicates and their closure lemmas, course-of-values recursion via fuel-indexed tables) — is now
+**4,000+ lines**, roughly **9× the size of `Basic.lean`** (450 lines), the file containing the actual
+domain-theoretic definitions (neighbourhood systems, elements, subsystems) that this whole
+formalization is nominally *about*. A representative data point: Exercise 8.15's "computable elements
+correspond to effectively presented domains" half needed perhaps 30–40 lines of genuine
+neighbourhood-system reasoning (an intersection dichotomy, a filter-closure invariant), sitting on top
+of 250+ lines encoding finite binary trees as `Nat.pair`-coded naturals and proving their evaluation is
+primitive recursive — a fact any computability textbook states in one sentence, made expensive here
+purely because Lean's `Nat.pair`/`Nat.unpair` are not kernel-reducible and Mathlib's off-the-shelf
+apparatus is off-limits by this project's own discipline.
+
+In short: the 1980 lectures did succeed in retiring topology as the dominant technical overhead, but
+Lecture VII onward replaces it with a different overhead — recursion-theoretic encoding and
+course-of-values bookkeeping — that is, in this formalization, actually the larger of the two by line
+count. This is a cost of the choice-free discipline adopted below, not a property of Scott's
+mathematics; a formalization willing to inherit `Classical.choice` through Mathlib's recursion theory
+would find Lecture VII's exercises considerably shorter.
+
 ---
 
 ## Methodology
@@ -2941,8 +2977,8 @@ Lecture VIII covers retractions, projections, and the construction of the univer
   is. (Hint: the finite elements of the domain correspond exactly to the finite systems `X ◁ D`.)
   For `D = 𝒰`, show the computable elements correspond exactly to the effectively presented domains
   (up to effective isomorphism).
-* **Lean File:** `Scott1980/Neighborhood/Exercise815.lean` (first half done; second half's 6a–6e
-  enumeration done, `inter`/`cons_computable`/6f/6g deferred)
+* **Lean File:** `Scott1980/Neighborhood/Exercise815.lean` (complete: both halves done, choice-free
+  modulo the pre-existing `UX` artifact; 6g deliberately out of scope, documented in-file)
 * **Proof Notes:** direct (non-`Exercise222`) construction. Fix a `ComputablePresentation P` of `D`.
   For a finite index list `js : List ℕ`, the *finitely generated subsystem* `Fin(js) := {Y ∣ ∃ sub
   ⊑ js, D.mem Y ∧ Y = interFrom P D.master sub}` (reusing `Theorem75.lean`'s `interFrom`) is itself a
@@ -3021,35 +3057,56 @@ Lecture VIII covers retractions, projections, and the construction of the univer
     `exists_preimage_of_forall_mem`). All choice-free (the `Classical.choice` `#print axioms` shows for
     anything touching `UX` is `Definition87.lean`'s already-documented, pre-existing Mathlib-`ℚ`-order
     artifact, confirmed by auditing `U_mem_UX` directly — not anything new here).
-  * **6e (`inter`/`cons_computable`) — a newly-identified, sharper obstacle, not completed.** This is a
-    *different* problem from the Prop-extraction issue above (fully avoided by `Q'X`/`Q'Xcode` being
-    directly-defined functions throughout) — it is purely arithmetic: **`Uinter`'s fallback is not
-    "conservative"**. The natural `Q'inter r n m := encodeList (decodeList n ++ decodeList m)`
-    (extend-and-refold) fails `inter_spec`: if `Q'X r m`'s own from-scratch fold happens to fall back
-    internally (its true partial intersection was empty) while the *combined* `n++m` fold does not hit
-    that same empty spot, `Q'X r n ∩ Q'X r m` (inflated by the stray fallback) and `Q'X r (Q'inter r n
-    m)` (computed honestly along the concatenation) can genuinely differ. The fix `Q'inter r n m :=
-    Uinter (Q'Xcode r n) (Q'Xcode r m)` (apply `Uinter` once more atop the already-computed indices)
-    repairs `inter_spec` cleanly via the exact, unconditional `Uinter_spec` (no compounding), but then
-    `cons_computable`'s witness `∃k, Q'Xrk ⊆ Q'Xrn ∩ Q'Xrm` needs a `k` *in `Q'X`'s own index type*
-    landing on that value — impossible without re-indexing `Q'X` by a small term language `{base list,
-    combine n₁ n₂}` via course-of-values recursion (the same technique as `Recursive.lean`'s `tabCode`,
-    a new instance of it). Comparable in size to Subgoal 4 itself; **not attempted**. See `HANDOFF.md`'s
-    2026-07-06 (continued) checkpoint.
-  * **6f (capstone `IsEffectivelyGiven`)**: blocked on the above — not attempted.
-  * **6g**: record explicitly (here and in `HANDOFF.md`) that the fully general converse — *every*
-    abstract presentation of `D'x` is effectively isomorphic to the `P`-relative one 6e/6f would have
-    built — is **not attempted**: it is a deeper "uniqueness of computable numberings" fact, is
-    genuinely what Scott's "(up to effective isomorphism)" parenthetical is doing work for, and is out
-    of scope here.
-* **Status:** In Progress. First half (Subgoals 1–5) done, choice-free. Second half's core
-  biconditional (6a–6d, `subsystemU_element_computable_iff`) done, choice-free — the faithful, provable
-  generalization of Definition 7.2's "index set r.e." discussion to `{X ∣ X ◁ 𝒰}`. Second half's
-  enumeration/onto-ness (`Q'X`, `Q'x_mem_X`, `Q'x_surj`) done, choice-free. The `inter`/`cons_computable`
-  fields of a genuine `ComputablePresentation D'x` witness (needed for capstone 6f) hit a newly-diagnosed
-  "safe composition of `Uinter`" obstacle (term-algebra fix scoped, not attempted); the fully general
-  "arbitrary presentation" converse (6g) is deliberately not attempted. See dated checkpoints in
-  `HANDOFF.md`.
+  * **6e (`inter`/`cons_computable`) ✅ — resolved by a binary term algebra.** The obstacle above was a
+    *different* problem from the Prop-extraction issue (fully avoided by `Q'X`/`Q'Xcode` being
+    directly-defined functions throughout) — it was purely arithmetic: **`Uinter`'s fallback is not
+    "conservative"**, so list-code concatenation (`Q'inter r n m := encodeList (decodeList n ++
+    decodeList m)`) fails `inter_spec`, and the alternative fix (`Uinter (Q'Xcode r n) (Q'Xcode r m)`)
+    repairs `inter_spec` but breaks `cons_computable` (its witness needs to be *in `Q'X`'s own index
+    type*). **The fix**: stop indexing `D'x`'s neighbourhoods by lists folded through `Uinter`, and
+    instead index them by a **binary term algebra** — `leafCode j ↦ r j`, `nodeCode t1 t2 ↦ Uinter
+    (val t1) (val t2)`, `masterCode ↦ masterIdx`, `Nat.pair`-encoded (`TermAlgebra` section) — so that
+    combining two already-built codes is *literally* the `node` constructor, staying inside the index
+    type by construction (no search needed to name the combined index). Evaluating a code needs
+    **course-of-values recursion** (a node's two children are only known `≤` the parent via
+    `Nat.unpair`, not decreasing by a fixed amount); this reuses the *already-built, generic*
+    `fuelTable`/`fuelTable_eq_of_recursion`/`primrec_fuelTable` machinery from `Recursive.lean` (built
+    there for `decodeFuelOkChar`/`autStateCardFuelChar`), giving a fuel-free evaluator `TreeVal` with
+    unfolding lemmas at each constructor (`TreeVal_leaf`/`_node`/`_master`, plus tag-generic forms
+    `TreeVal_of_tag0`/`_tag1`/`_tag_ge2` for the `mem_X` induction) and primitive recursiveness
+    (`primrec_TreeVal`). `Q2X r c := UX (TreeVal r c)` re-proves `mem_X` (strong induction on `c`,
+    tag-dispatch, reusing `UX_Uinter_dichotomy`/`nbhdGen_inter`/`interFrom_append_eq` exactly as
+    `toSubsystemSys_mem_foldl_Uinter` did) and `surj` (bridged to the already-proven list-based
+    `Q'x_surj` via `listToTreeAux`, a fold-shaped embedding `List ℕ → ℕ` with `TreeVal r
+    (listToTreeAux acc l) = l.foldl (fun a j => Uinter a (r j)) (TreeVal r acc)`, identified with
+    `idxchain`'s own fold via `List.foldl_map` — no fresh combinatorial work). **The crux**:
+    `Q2inter n m := nodeCode n m` now satisfies `inter_spec` *and* `cons_computable` simultaneously —
+    `Uinter_spec` applies exactly when the consistency hypothesis holds, so `UX_Uinter_dichotomy`'s
+    fallback branch provably never fires on this witness, for *either* field. `interEq_computable`
+    is a pure reindexing of `U_interEq_computable` along the primitive-recursive `TreeVal r` (mirroring
+    `ComputablePresentation.reindexInvolutive`'s pattern, minus the involution — `.comp` only composes
+    forward). All choice-free modulo the same pre-existing `UX`/`Definition87.lean` Mathlib-`ℚ`-order
+    `Classical.choice` artifact (confirmed by auditing `Q2x_mem_X`/`Q2x_surj`/`Q2_interEq_computable`/
+    `Q2_cons_computable`/`Q2inter_spec` directly — nothing new).
+  * **6f (capstone `IsEffectivelyGiven`) ✅.** `Q'xPresentation` assembles `Q2X`/`Q2x_mem_X`/`Q2x_surj`/
+    `Q2_interEq_computable`/`Q2_cons_computable`/`Q2inter`/`Q2inter_spec`/`masterCode`/
+    `Q2X_masterIdx_spec` into a genuine `ComputablePresentation (toSubsystemSys UP x)`.
+    `subsystemU_effectivelyGiven_of_isComputableElement`: if `x` is a computable element of `SubD UP`,
+    then `D'x := toSubsystemSys UP x` is effectively given — completing, for `D = 𝒰`, the "computable
+    elements correspond to effectively presented domains" half of Exercise 8.15, relative to `UP`'s own
+    enumeration.
+  * **6g**: record explicitly (in-file and here) that the fully general converse — *every*
+    abstract presentation of `D'x` is effectively isomorphic to the `UP`-relative one 6e/6f built — is
+    **deliberately not attempted**: it is a deeper "uniqueness of computable numberings" fact
+    (Rogers-style), is genuinely what Scott's "(up to effective isomorphism)" parenthetical is doing
+    work for, and is out of scope here.
+* **Status:** **Pass.** First half (Subgoals 1–5) done, choice-free. Second half's core biconditional
+  (6a–6d, `subsystemU_element_computable_iff`) done, choice-free — the faithful, provable
+  generalization of Definition 7.2's "index set r.e." discussion to `{X ∣ X ◁ 𝒰}`. Second half's full
+  `ComputablePresentation D'x` (6e's enumeration *and* `inter`/`cons_computable`, via the binary term
+  algebra `TreeVal`, plus capstone 6f) done, choice-free modulo the pre-existing `UX` artifact; the
+  fully general "arbitrary presentation" converse (6g) is deliberately out of scope. See dated
+  checkpoints in `HANDOFF.md`.
 
 #### Exercise 8.16
 * **Mathematical Target:** finitary projections `a:E→E`

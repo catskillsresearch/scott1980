@@ -11786,3 +11786,65 @@ biconditional (6a–6d) ✅, second half's enumeration/onto-ness (`Q'X`/`Q'x_mem
 choice-free. The `inter`/`cons_computable` fields of a genuine `Q'x : ComputablePresentation D'x`
 (needed for capstone 6f, `D'x.IsEffectivelyGiven`) and the general-`Q` converse (6g) are **not done** —
 the term-algebra recipe above is the concrete next step if resumed.
+
+## 2026-07-06 (continued 2) — Exercise 8.15: DONE. Term algebra built; `inter`/`cons_computable`/6f/6g complete
+
+Implemented the term-algebra recipe scoped in the checkpoint immediately above, all in
+`Exercise815.lean`, all choice-free modulo the same pre-existing `UX`/`Definition87.lean` artifact
+(`#print axioms` audited directly on every new theorem below):
+
+* **`TermAlgebra` section**: `leafCode j := Nat.pair 0 j`, `nodeCode t1 t2 := Nat.pair 1 (Nat.pair t1
+  t2)`, `masterCode := Nat.pair 2 0`, plus the strict-decrease lemmas needed for course-of-values
+  recursion (`unpair_snd_lt_of_unpair_fst_pos`, `nodeCode_fst_lt`/`_snd_lt`).
+* **`TreeVal` section**: a fuel-free evaluator `TreeVal r c` for term-algebra codes, built via
+  `Recursive.lean`'s **existing, generic** `fuelTable`/`fuelTable_eq_of_recursion`/`primrec_fuelTable`
+  machinery (no new course-of-values apparatus needed) — `QBody` (one fuel step, tag-dispatch on
+  `c.unpair.1` via `selectFn`/`isOne`), `QLookup`/`primrec_QLookup` (table-lookup version,
+  primrec — the fiddly part: `Nat.pair`/`unpair` aren't definitional here, so composing them naively
+  inside a `.of_eq` caused a `whnf` timeout; fixed by `match`-ing on the tag explicitly and using
+  targeted `simp only` per branch rather than one general symbolic rewrite), `QFuel`/`primrec_QFuel2`
+  (jointly primrec in `(fuel, code)`), `QFuel_stable` (strong induction on `c`, the stabilization fact
+  that licenses reading off a fuel-free `TreeVal c := QFuel r (c+1) c`), and unfolding lemmas at each
+  constructor (`TreeVal_leaf`/`_node`/`_master`) plus **tag-generic** forms
+  (`TreeVal_of_tag0`/`_tag1`/`_tag_ge2`, for arbitrary codes rather than literal
+  `leafCode`/`nodeCode`/`masterCode` — needed by the `mem_X` induction below, which case-splits on an
+  arbitrary code's tag).
+* **`Q2X r c := UX (TreeVal r c)`** — the term-algebra-indexed enumeration. `Q2x_mem_X` (strong
+  induction on `c`, tag-dispatch, reusing `UX_Uinter_dichotomy`/`nbhdGen_inter`/
+  `interFrom_append_eq` exactly as `toSubsystemSys_mem_foldl_Uinter` did for the list version).
+  `Q2x_surj`: rather than reprove onto-ness from scratch, bridged to the *already-proven* list-based
+  `Q'x_surj` via `listToTreeAux : ℕ → List ℕ → ℕ` (a fold-shaped embedding, `listToTreeAux acc (j::l)
+  = listToTreeAux (nodeCode acc (leafCode j)) l`, mirroring `List.foldl`'s own accumulator shape) with
+  `TreeVal_listToTreeAux : TreeVal r (listToTreeAux acc l) = l.foldl (fun a j => Uinter a (r j))
+  (TreeVal r acc)` (proved by induction on `l`; the naive `show`-based proof attempt hit the same
+  `whnf`-timeout/`maxRecDepth` issue as `QLookup` above and had to be rewritten via
+  `simp only [listToTreeAux, List.foldl_cons]` instead of `show`+`rfl`), then identified with
+  `idxchain`'s own fold via `List.foldl_map` — no fresh combinatorial work, pure bridging.
+* **The crux, `Q2inter`/`Q2inter_spec`/`Q2_cons_computable`**: `Q2inter n m := nodeCode n m`. This
+  single witness now satisfies **both** `inter_spec` (via `Uinter_spec`, applicable exactly when the
+  consistency hypothesis holds — the dichotomy's fallback provably cannot fire) **and**
+  `cons_computable`'s backward direction (same witness, same reasoning) *simultaneously* — this is
+  exactly what the list-code domain could not do (§the obstacle diagnosed in the previous checkpoint:
+  no way to *name* a combined index without a term-algebra index type). `Q2_interEq_computable` is a
+  pure reindexing of `U_interEq_computable` along `primrec_TreeVal`, mirroring
+  `ComputablePresentation.reindexInvolutive`'s pattern (minus the involution, since `.comp` only ever
+  composes forward — no inverse needed for this direction).
+* **`Q'xPresentation`** assembles all of the above into a genuine `ComputablePresentation
+  (toSubsystemSys UComputablePresentation x)`, and **`subsystemU_effectivelyGiven_of_isComputableElement`**
+  (capstone 6f) concludes: `x` computable ⟹ `D'x := toSubsystemSys UComputablePresentation x` is
+  effectively given.
+* **6g**: added an in-file documentation note (mirroring `arxiv.md`'s existing wording) that the fully
+  general "arbitrary presentation" converse is a deeper "uniqueness of computable numberings" fact,
+  deliberately out of scope.
+
+`lake build` (whole project) is green, zero `sorry`, zero new warnings. Axiom audit: `Q2x_mem_X`,
+`Q2x_surj`, `Q2_interEq_computable`, `Q2_cons_computable`, `Q2inter_spec`, `Q'xPresentation`,
+`subsystemU_effectivelyGiven_of_isComputableElement` all `⊆ {propext, Classical.choice, Quot.sound}`,
+matching `Q'x_mem_X`/`Q'x_surj`/`U_mem_UX`'s **pre-existing** footprint exactly (confirmed by direct
+side-by-side `#print axioms` — nothing new is choice-tainted by this session's work).
+
+**Status of Exercise 8.15: DONE (Pass).** Both halves complete, choice-free modulo the pre-existing
+`UX` artifact. `arxiv.md`'s Exercise 8.15 entry updated to `Pass`. 6g (general-presentation converse)
+remains explicitly, deliberately out of scope (documented in both `arxiv.md` and in-file).
+**Next up:** pick the next `Deferred`/in-progress row in `arxiv.md` in sequence (e.g. Exercise 8.16,
+or Proposition 8.10's deferred finitary-closure second half).

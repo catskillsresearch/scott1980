@@ -891,7 +891,7 @@ theorem Q'x_surj (r : ℕ → ℕ) (x : (SubD UComputablePresentation).Element)
   rw [Q'X_eq, decodeList_encodeList, hsub0, hYeq]
   exact idxchain_spec UComputablePresentation (hYeq ▸ hDY)
 
-/-! ### The remaining gap: `inter`/`cons_computable` need a term-algebra encoding, not attempted
+/-! ### The remaining gap: `inter`/`cons_computable` need a term-algebra encoding (resolved below)
 
 `Q'X r` (above) is a fully choice-free, primitive-recursive **enumeration of `D'x`'s neighbourhoods,
 onto** (`Q'x_mem_X`, `Q'x_surj`) — the enumeration half of a `ComputablePresentation D'x`. Completing
@@ -923,10 +923,483 @@ witness from a `Prop`" issue logged earlier (that issue is avoided entirely by `
 directly-defined functions throughout; the *actual* remaining obstacle is this purely arithmetic
 "safe composition of finitely many `Uinter` calls" question). See `HANDOFF.md`'s 2026-07-06 checkpoint.
 
-**Status of Exercise 8.15's second half:** the core biconditional (6a–6d) is complete and choice-free.
-The enumeration/onto half of 6e (`Q'X`, `Q'x_mem_X`, `Q'x_surj`) is complete and choice-free. The
-`inter`/`cons_computable` half of 6e, the capstone `IsEffectivelyGiven` corollary (6f), and the
-fully general "arbitrary presentation" converse (6g) are not attempted. -/
+**Resolution (below): a binary term algebra fixes `inter`/`cons_computable` cleanly.** The fix is to
+stop indexing `D'x`'s neighbourhoods by *lists* folded left-to-right through `Uinter` (not
+compositional under concatenation, as diagnosed above), and instead index them by a **binary term
+algebra** — codes for `leaf j ↦ r j` and `node t1 t2 ↦ Uinter (val t1) (val t2)` — so that combining
+two already-built codes is *literally* the `node` constructor, staying inside the index type by
+construction (no search needed to name the combined index, unlike the list-code domain). -/
+
+/-! ### The term algebra codes: `leaf j`, `node t1 t2`, `master`
+
+Evaluating a code needs **course-of-values recursion** (a `node`'s two children are only known
+`≤` the parent via `Nat.unpair`, not decreasing by a fixed amount), for which we reuse the
+*already-built, generic* `fuelTable`/`fuelTable_eq_of_recursion`/`primrec_fuelTable` machinery from
+`Recursive.lean` (built there for `decodeFuelOkChar`/`autStateCardFuelChar`) rather than
+re-deriving course-of-values primitive recursiveness from scratch. -/
+
+section TermAlgebra
+
+/-- `leaf j`: the term-algebra code evaluating to `r j`. -/
+def leafCode (j : ℕ) : ℕ := Nat.pair 0 j
+
+/-- `node t1 t2`: the term-algebra code evaluating to `Uinter (val t1) (val t2)`. -/
+def nodeCode (t1 t2 : ℕ) : ℕ := Nat.pair 1 (Nat.pair t1 t2)
+
+/-- `master`: the term-algebra code evaluating to `𝒰`'s master index. -/
+def masterCode : ℕ := Nat.pair 2 0
+
+/-- If `c`'s tag (`c.unpair.1`) is nonzero, `c`'s payload (`c.unpair.2`) is *strictly* smaller than
+`c` itself — the key well-foundedness fact driving `nodeCode`'s children being strictly smaller
+than the parent (choice-free: only uses the custom `unpair_pair`/`le_pair_right`/
+`Nat.pair_lt_pair_left`, all already audited elsewhere in this file). -/
+theorem unpair_snd_lt_of_unpair_fst_pos {c : ℕ} (h : 0 < c.unpair.1) : c.unpair.2 < c := by
+  have h1 : c.unpair.2 ≤ Nat.pair 0 c.unpair.2 := le_pair_right 0 c.unpair.2
+  have h2 : Nat.pair 0 c.unpair.2 < Nat.pair c.unpair.1 c.unpair.2 := Nat.pair_lt_pair_left _ h
+  rw [Nat.pair_unpair] at h2
+  omega
+
+/-- `nodeCode t1 t2`'s two children are each strictly smaller than the whole code. -/
+theorem nodeCode_fst_lt (t1 t2 : ℕ) : t1 < nodeCode t1 t2 := by
+  have hpos : 0 < (nodeCode t1 t2).unpair.1 := by
+    unfold nodeCode; rw [unpair_pair_fst]; omega
+  have hsnd : (nodeCode t1 t2).unpair.2 < nodeCode t1 t2 :=
+    unpair_snd_lt_of_unpair_fst_pos hpos
+  have ht1 : t1 ≤ (nodeCode t1 t2).unpair.2 := by
+    unfold nodeCode; rw [unpair_pair_snd]; exact le_pair_left t1 t2
+  omega
+
+theorem nodeCode_snd_lt (t1 t2 : ℕ) : t2 < nodeCode t1 t2 := by
+  have hpos : 0 < (nodeCode t1 t2).unpair.1 := by
+    unfold nodeCode; rw [unpair_pair_fst]; omega
+  have hsnd : (nodeCode t1 t2).unpair.2 < nodeCode t1 t2 :=
+    unpair_snd_lt_of_unpair_fst_pos hpos
+  have ht2 : t2 ≤ (nodeCode t1 t2).unpair.2 := by
+    unfold nodeCode; rw [unpair_pair_snd]; exact le_pair_right t1 t2
+  omega
+
+end TermAlgebra
+
+/-! ### `TreeVal r`: evaluating a term-algebra code, via course-of-values fuel recursion -/
+
+section TreeVal
+
+variable (r : ℕ → ℕ)
+
+/-- One fuel-recursion step for evaluating a term-algebra code: tag `0` (`leaf j`) applies `r` to
+the payload; tag `1` (`node t1 t2`) combines the two (previous-fuel-level) recursive values via
+`Uinter`; any other tag (`master`, or junk) falls back to `𝒰`'s master index. Mirrors
+`decodeFuelOkCharBody`'s tag-dispatch shape exactly. -/
+def QBody (prev : ℕ → ℕ) (c : ℕ) : ℕ :=
+  selectFn (isOne (1 - c.unpair.1)) (r c.unpair.2)
+    (selectFn (isOne (2 - c.unpair.1))
+      (Uinter (prev c.unpair.2.unpair.1) (prev c.unpair.2.unpair.2))
+      UComputablePresentation.masterIdx)
+
+/-- `QBody`'s value at `c` depends on `prev` only through its values at `c`'s two (`Nat.unpair`)
+children — the locality fact needed to bridge two different `prev`s that merely *agree* there. -/
+theorem QBody_local (f g : ℕ → ℕ) (c : ℕ)
+    (h1 : f c.unpair.2.unpair.1 = g c.unpair.2.unpair.1)
+    (h2 : f c.unpair.2.unpair.2 = g c.unpair.2.unpair.2) :
+    QBody r f c = QBody r g c := by
+  unfold QBody
+  rw [h1, h2]
+
+/-- `QBody`'s step with `prev` replaced by table lookup (`fuelTable`'s calling convention). -/
+def QLookup (w : ℕ) : ℕ := QBody r (fun c' => nthCode w.unpair.1 c' 0) w.unpair.2
+
+theorem primrec_QLookup (hr : Nat.Primrec r) : Nat.Primrec (QLookup r) := by
+  have hleaf : Nat.Primrec (fun w : ℕ => r w.unpair.2.unpair.2) :=
+    hr.comp (Nat.Primrec.right.comp Nat.Primrec.right)
+  have hleft : Nat.Primrec (fun w : ℕ => nthCode w.unpair.1 w.unpair.2.unpair.2.unpair.1 0) :=
+    (primrec_nthCode.comp (Nat.Primrec.left.pair
+      ((Nat.Primrec.left.comp (Nat.Primrec.right.comp Nat.Primrec.right)).pair
+        (Nat.Primrec.const 0)))).of_eq fun w => by simp only [unpair_pair_fst, unpair_pair_snd]
+  have hright : Nat.Primrec (fun w : ℕ => nthCode w.unpair.1 w.unpair.2.unpair.2.unpair.2 0) :=
+    (primrec_nthCode.comp (Nat.Primrec.left.pair
+      ((Nat.Primrec.right.comp (Nat.Primrec.right.comp Nat.Primrec.right)).pair
+        (Nat.Primrec.const 0)))).of_eq fun w => by simp only [unpair_pair_fst, unpair_pair_snd]
+  have hnode : Nat.Primrec (fun w : ℕ =>
+      Uinter (nthCode w.unpair.1 w.unpair.2.unpair.2.unpair.1 0)
+        (nthCode w.unpair.1 w.unpair.2.unpair.2.unpair.2 0)) :=
+    (Uinter_primrec.comp (hleft.pair hright)).of_eq fun w => by
+      simp only [unpair_pair_fst, unpair_pair_snd]
+  have htag : Nat.Primrec (fun w : ℕ => w.unpair.2.unpair.1) :=
+    Nat.Primrec.left.comp Nat.Primrec.right
+  have hisone1 : Nat.Primrec (fun w : ℕ => isOne (1 - w.unpair.2.unpair.1)) :=
+    primrec_isOne.comp (primrec_sub₂ (Nat.Primrec.const 1) htag)
+  have hisone2 : Nat.Primrec (fun w : ℕ => isOne (2 - w.unpair.2.unpair.1)) :=
+    primrec_isOne.comp (primrec_sub₂ (Nat.Primrec.const 2) htag)
+  refine (primrec_selectFn hisone1 hleaf
+    (primrec_selectFn hisone2 hnode (Nat.Primrec.const UComputablePresentation.masterIdx))).of_eq
+    fun w => ?_
+  show _ = QLookup r w
+  unfold QLookup QBody
+  match tag : w.unpair.2.unpair.1 with
+  | 0 =>
+    have h10 : (1 - 0 : ℕ) = 1 := rfl
+    simp only [h10, isOne_one, selectFn_one]
+  | 1 =>
+    have h01' : (1 - 1 : ℕ) = 0 := rfl
+    have h12' : (2 - 1 : ℕ) = 1 := rfl
+    simp only [h01', h12', isOne_zero, isOne_one, selectFn_zero, selectFn_one]
+  | t + 2 =>
+    have h01' : (1 - (t + 2) : ℕ) = 0 := Nat.sub_eq_zero_of_le (by omega)
+    have h12' : (2 - (t + 2) : ℕ) = 0 := Nat.sub_eq_zero_of_le (by omega)
+    simp only [h01', h12', isOne_zero, selectFn_zero]
+
+/-- `QFuel r fuel c`: fuel-indexed evaluation of a term-algebra code (base value `0` at `fuel = 0`,
+irrelevant since every use below supplies `fuel > c`). -/
+def QFuel : ℕ → ℕ → ℕ
+  | 0, _ => 0
+  | fuel + 1, c => QBody r (QFuel fuel) c
+
+theorem QFuel_fuelTable_eq :
+    ∀ fuel bound c, c ≤ bound →
+      nthCode (fuelTable (QLookup r) bound fuel) c 0 = QFuel r fuel c :=
+  fuelTable_eq_of_recursion (F := QFuel r) (Body := QBody r) (fun _ => rfl) (fun _ _ => rfl)
+    (fun table c => by unfold QLookup QBody; simp only [unpair_pair_fst, unpair_pair_snd])
+    (fun f g c h => QBody_local r f g c
+      (h c.unpair.2.unpair.1 (le_trans (unpair_left_le c.unpair.2) (unpair_snd_le c)))
+      (h c.unpair.2.unpair.2 (le_trans (unpair_snd_le c.unpair.2) (unpair_snd_le c))))
+
+/-- **`QFuel r` is jointly primitive recursive in `(fuel, code)`.** Mirrors
+`primrec_decodeFuelOkChar2` exactly. -/
+theorem primrec_QFuel2 (hr : Nat.Primrec r) :
+    Nat.Primrec (fun s : ℕ => QFuel r s.unpair.1 s.unpair.2) := by
+  have hft := primrec_fuelTable (primrec_QLookup r hr)
+  have hpack : Nat.Primrec (fun s : ℕ => Nat.pair s.unpair.2 s.unpair.1) :=
+    Nat.Primrec.pair Nat.Primrec.right Nat.Primrec.left
+  have hcomp : Nat.Primrec (fun s => fuelTable (QLookup r) s.unpair.2 s.unpair.1) :=
+    (hft.comp hpack).of_eq fun s => by simp only [unpair_pair_fst, unpair_pair_snd]
+  have hnth : Nat.Primrec
+      (fun s => nthCode (fuelTable (QLookup r) s.unpair.2 s.unpair.1) s.unpair.2 0) :=
+    (primrec_nthCode.comp
+      (hcomp.pair ((Nat.Primrec.right).pair (Nat.Primrec.const 0)))).of_eq
+      fun s => by simp only [unpair_pair_fst, unpair_pair_snd]
+  exact hnth.of_eq fun s => QFuel_fuelTable_eq r s.unpair.1 s.unpair.2 s.unpair.2 (le_refl _)
+
+/-- **Stabilization.** Once the fuel exceeds the code, `QFuel r`'s value no longer depends on
+*which* sufficiently-large fuel was supplied — the key fact letting us read off a genuine,
+fuel-free evaluator `TreeVal` below. Proved by strong induction on `c`, splitting on whether `c`'s
+tag is `0` (no recursion, both sides agree immediately) or positive (both children are strictly
+`< c`, via `unpair_snd_lt_of_unpair_fst_pos`, so the induction hypothesis applies to them). -/
+theorem QFuel_stable :
+    ∀ c fuel fuel', c < fuel → c < fuel' → QFuel r fuel c = QFuel r fuel' c := by
+  intro c
+  induction c using Nat.strong_induction_on with
+  | _ c ih =>
+    intro fuel fuel' hfuel hfuel'
+    obtain ⟨f, rfl⟩ : ∃ f, fuel = f + 1 := ⟨fuel - 1, by omega⟩
+    obtain ⟨f', rfl⟩ : ∃ f', fuel' = f' + 1 := ⟨fuel' - 1, by omega⟩
+    show QBody r (QFuel r f) c = QBody r (QFuel r f') c
+    rcases Nat.eq_zero_or_pos c.unpair.1 with htag0 | htagpos
+    · have hval : isOne (1 - c.unpair.1) = 1 := by rw [htag0]; rfl
+      unfold QBody
+      simp only [hval, selectFn_one]
+    · have hsndlt : c.unpair.2 < c := unpair_snd_lt_of_unpair_fst_pos htagpos
+      have h1lt : c.unpair.2.unpair.1 < c := lt_of_le_of_lt (unpair_left_le c.unpair.2) hsndlt
+      have h2lt : c.unpair.2.unpair.2 < c := lt_of_le_of_lt (unpair_snd_le c.unpair.2) hsndlt
+      have hfc : c ≤ f := by omega
+      have hfc' : c ≤ f' := by omega
+      have e1 := ih c.unpair.2.unpair.1 h1lt f f'
+        (lt_of_lt_of_le h1lt hfc) (lt_of_lt_of_le h1lt hfc')
+      have e2 := ih c.unpair.2.unpair.2 h2lt f f'
+        (lt_of_lt_of_le h2lt hfc) (lt_of_lt_of_le h2lt hfc')
+      exact QBody_local r (QFuel r f) (QFuel r f') c e1 e2
+
+/-- **`TreeVal r c`: the fuel-free evaluator** (fuel `c + 1` is always enough, `c` being an upper
+bound on any code's own recursion depth). -/
+def TreeVal (c : ℕ) : ℕ := QFuel r (c + 1) c
+
+theorem TreeVal_eq_QFuel {c fuel : ℕ} (h : c < fuel) : TreeVal r c = QFuel r fuel c :=
+  QFuel_stable r c (c + 1) fuel (Nat.lt_succ_self c) h
+
+theorem primrec_TreeVal (hr : Nat.Primrec r) : Nat.Primrec (TreeVal r) := by
+  have h2 := primrec_QFuel2 r hr
+  have hpack : Nat.Primrec (fun c : ℕ => Nat.pair (c + 1) c) :=
+    (primrec_add₂ Nat.Primrec.id (Nat.Primrec.const 1)).pair Nat.Primrec.id
+  refine (h2.comp hpack).of_eq fun c => ?_
+  show QFuel r (Nat.pair (c + 1) c).unpair.1 (Nat.pair (c + 1) c).unpair.2 = TreeVal r c
+  rw [unpair_pair_fst, unpair_pair_snd]
+  rfl
+
+/-- **Unfolding at a leaf.** -/
+theorem TreeVal_leaf (j : ℕ) : TreeVal r (leafCode j) = r j := by
+  have htag : (leafCode j).unpair.1 = 0 := by unfold leafCode; rw [unpair_pair_fst]
+  have hpay : (leafCode j).unpair.2 = j := by unfold leafCode; rw [unpair_pair_snd]
+  have h1 : isOne (1 - (leafCode j).unpair.1) = 1 := by rw [htag]; rfl
+  show QBody r (QFuel r (leafCode j)) (leafCode j) = r j
+  unfold QBody
+  simp only [h1, hpay, selectFn_one]
+
+/-- **Unfolding at the master constant.** -/
+theorem TreeVal_master : TreeVal r masterCode = UComputablePresentation.masterIdx := by
+  have htag : masterCode.unpair.1 = 2 := by unfold masterCode; rw [unpair_pair_fst]
+  have h1 : isOne (1 - masterCode.unpair.1) = 0 := by rw [htag]; rfl
+  have h2 : isOne (2 - masterCode.unpair.1) = 0 := by rw [htag]; rfl
+  show QBody r (QFuel r masterCode) masterCode = UComputablePresentation.masterIdx
+  unfold QBody
+  simp only [h1, h2, selectFn_zero]
+
+/-- **Unfolding at a node.** -/
+theorem TreeVal_node (t1 t2 : ℕ) :
+    TreeVal r (nodeCode t1 t2) = Uinter (TreeVal r t1) (TreeVal r t2) := by
+  have ht1 : t1 < nodeCode t1 t2 := nodeCode_fst_lt t1 t2
+  have ht2 : t2 < nodeCode t1 t2 := nodeCode_snd_lt t1 t2
+  have htag : (nodeCode t1 t2).unpair.1 = 1 := by unfold nodeCode; rw [unpair_pair_fst]
+  have hc1 : (nodeCode t1 t2).unpair.2.unpair.1 = t1 := by
+    unfold nodeCode; rw [unpair_pair_snd, unpair_pair_fst]
+  have hc2 : (nodeCode t1 t2).unpair.2.unpair.2 = t2 := by
+    unfold nodeCode; rw [unpair_pair_snd, unpair_pair_snd]
+  have h1 : isOne (1 - (nodeCode t1 t2).unpair.1) = 0 := by rw [htag]; rfl
+  have h2 : isOne (2 - (nodeCode t1 t2).unpair.1) = 1 := by rw [htag]; rfl
+  show QBody r (QFuel r (nodeCode t1 t2)) (nodeCode t1 t2) = Uinter (TreeVal r t1) (TreeVal r t2)
+  unfold QBody
+  simp only [h1, h2, hc1, hc2, selectFn_zero, selectFn_one]
+  rw [TreeVal_eq_QFuel r ht1, TreeVal_eq_QFuel r ht2]
+
+/-- **Tag-`0` unfolding, for an arbitrary code (not just a literal `leafCode`).** Needed for the
+`mem_X` induction below, which case-splits on an arbitrary code's tag rather than reconstructing it
+as `leafCode`/`nodeCode`/`masterCode`. -/
+theorem TreeVal_of_tag0 {c : ℕ} (h : c.unpair.1 = 0) : TreeVal r c = r c.unpair.2 := by
+  have h1 : isOne (1 - c.unpair.1) = 1 := by rw [h]; rfl
+  show QBody r (QFuel r c) c = r c.unpair.2
+  unfold QBody
+  simp only [h1, selectFn_one]
+
+/-- **Tag-`1` unfolding, for an arbitrary code.** -/
+theorem TreeVal_of_tag1 {c : ℕ} (h : c.unpair.1 = 1) :
+    TreeVal r c = Uinter (TreeVal r c.unpair.2.unpair.1) (TreeVal r c.unpair.2.unpair.2) := by
+  have h1 : isOne (1 - c.unpair.1) = 0 := by rw [h]; rfl
+  have h2 : isOne (2 - c.unpair.1) = 1 := by rw [h]; rfl
+  have hsndlt : c.unpair.2 < c := unpair_snd_lt_of_unpair_fst_pos (by omega)
+  have ht1 : c.unpair.2.unpair.1 < c := lt_of_le_of_lt (unpair_left_le c.unpair.2) hsndlt
+  have ht2 : c.unpair.2.unpair.2 < c := lt_of_le_of_lt (unpair_snd_le c.unpair.2) hsndlt
+  show QBody r (QFuel r c) c = Uinter (TreeVal r c.unpair.2.unpair.1) (TreeVal r c.unpair.2.unpair.2)
+  unfold QBody
+  simp only [h1, h2, selectFn_zero, selectFn_one]
+  rw [TreeVal_eq_QFuel r ht1, TreeVal_eq_QFuel r ht2]
+
+/-- **Tag-`≥ 2` unfolding, for an arbitrary code.** -/
+theorem TreeVal_of_tag_ge2 {c : ℕ} (h : 2 ≤ c.unpair.1) :
+    TreeVal r c = UComputablePresentation.masterIdx := by
+  have h1 : isOne (1 - c.unpair.1) = 0 := by
+    have : (1 - c.unpair.1 : ℕ) = 0 := by omega
+    rw [this]; rfl
+  have h2 : isOne (2 - c.unpair.1) = 0 := by
+    have : (2 - c.unpair.1 : ℕ) = 0 := by omega
+    rw [this]; rfl
+  show QBody r (QFuel r c) c = UComputablePresentation.masterIdx
+  unfold QBody
+  simp only [h1, h2, selectFn_zero]
+
+end TreeVal
+
+/-! ### `Q2X` — the term-algebra-indexed enumeration of `D'x`'s neighbourhoods -/
+
+section TreeVal2
+
+variable (r : ℕ → ℕ) (x : (SubD UComputablePresentation).Element)
+
+/-- **`Q2X r`: the term-algebra enumeration of `D'x`'s neighbourhoods.** -/
+def Q2X (c : ℕ) : Set ℚ := UX (TreeVal r c)
+
+/-- **`mem_X` for `Q2X r`.** Every `Q2X r c` is a `D'x`-neighbourhood — by strong induction on the
+code `c`, splitting on its tag exactly as `TreeVal` itself does: tag `0` (leaf) is
+`D'x.mem (UX (r j))`, always true by `hspec` (witness `j` itself); tag `1` (node) combines the two
+(inductively already-`D'x.mem`) children via `Uinter`'s dichotomy (`UX_Uinter_dichotomy`), landing on
+`D'x.master_mem` on fallback or on `x`'s own filter closure (`nbhdGen_inter`/`interFrom_append_eq`,
+exactly as in `toSubsystemSys_mem_foldl_Uinter`) otherwise; tag `≥ 2` (master) is `D'x.master_mem`
+directly via `masterIdx_spec`. -/
+theorem Q2x_mem_X (hspec : ∀ i, (toSubsystemSys UComputablePresentation x).mem (UX i) ↔ ∃ n, r n = i) :
+    ∀ c, (toSubsystemSys UComputablePresentation x).mem (Q2X r c) := by
+  intro c
+  induction c using Nat.strong_induction_on with
+  | _ c ih =>
+    show (toSubsystemSys UComputablePresentation x).mem (UX (TreeVal r c))
+    rcases Nat.lt_or_ge c.unpair.1 2 with htag | htag
+    · have htag01 : c.unpair.1 = 0 ∨ c.unpair.1 = 1 := by omega
+      rcases htag01 with htagv | htagv
+      · rw [TreeVal_of_tag0 r htagv]
+        exact (hspec (r c.unpair.2)).mpr ⟨c.unpair.2, rfl⟩
+      · rw [TreeVal_of_tag1 r htagv]
+        have hsndlt : c.unpair.2 < c := unpair_snd_lt_of_unpair_fst_pos (by omega)
+        have ht1 : c.unpair.2.unpair.1 < c := lt_of_le_of_lt (unpair_left_le c.unpair.2) hsndlt
+        have ht2 : c.unpair.2.unpair.2 < c := lt_of_le_of_lt (unpair_snd_le c.unpair.2) hsndlt
+        have hm1 := ih c.unpair.2.unpair.1 ht1
+        have hm2 := ih c.unpair.2.unpair.2 ht2
+        unfold Q2X at hm1 hm2
+        rcases UX_Uinter_dichotomy (TreeVal r c.unpair.2.unpair.1) (TreeVal r c.unpair.2.unpair.2)
+          with hcase | hcase
+        · rw [hcase]; exact (toSubsystemSys UComputablePresentation x).master_mem
+        · rw [hcase]
+          obtain ⟨jsA, hxA, subA, hsubA, hDA, hAeq⟩ := hm1
+          obtain ⟨jsB, hxB, subB, hsubB, hDB, hBeq⟩ := hm2
+          have hUmem : U.mem (UX (TreeVal r c.unpair.2.unpair.1) ∩ UX (TreeVal r c.unpair.2.unpair.2)) :=
+            hcase ▸ U_mem_UX (Uinter (TreeVal r c.unpair.2.unpair.1) (TreeVal r c.unpair.2.unpair.2))
+          refine ⟨jsA ++ jsB, nbhdGen_inter UComputablePresentation jsA jsB ▸ x.inter_mem hxA hxB,
+            subA ++ subB, hsubA.append hsubB, hUmem, ?_⟩
+          rw [hAeq, hBeq, interFrom_append_eq UComputablePresentation U.master subA subB]
+    · rw [TreeVal_of_tag_ge2 r htag]
+      show (toSubsystemSys UComputablePresentation x).mem (UX UmasterIdx)
+      rw [UX_UmasterIdx]
+      exact (toSubsystemSys UComputablePresentation x).master_mem
+
+/-- **`surj` bridge, part 1: embed a `List ℕ` into a term-algebra code.** Left-fold accumulator
+mirroring *exactly* the fold shape of `Theorem75.idxchain`/`Q'X` (`Uinter`-folded from the master),
+via `nodeCode`/`leafCode` instead of `Uinter`/`r` directly — so that `TreeVal` evaluates it to the
+same `U`-index (`TreeVal_listToTreeAux` below). -/
+def listToTreeAux : ℕ → List ℕ → ℕ
+  | acc, [] => acc
+  | acc, j :: l => listToTreeAux (nodeCode acc (leafCode j)) l
+
+theorem TreeVal_listToTreeAux (acc : ℕ) (l : List ℕ) :
+    TreeVal r (listToTreeAux acc l) = l.foldl (fun a j => Uinter a (r j)) (TreeVal r acc) := by
+  induction l generalizing acc with
+  | nil => simp [listToTreeAux]
+  | cons j l ih =>
+    simp only [listToTreeAux, List.foldl_cons]
+    rw [ih, TreeVal_node, TreeVal_leaf]
+
+/-- **`surj` for `Q2X r`.** Every `D'x`-neighbourhood `Y` is some `Q2X r c` — reduce to the already-
+proven list-based `Q'x_surj` (`Y = Q'X r n` for some `n`), then push `decodeList n` through
+`listToTreeAux` and identify the result with `idxchain`'s own fold via `List.foldl_map`, so the same
+`n` (repackaged as a tree code) also witnesses `Q2X r`. No fresh combinatorial work: this is a pure
+bridging argument between the list-indexed and term-algebra-indexed enumerations of the *same*
+underlying `Uinter`-folds. -/
+theorem Q2x_surj (hspec : ∀ i, (toSubsystemSys UComputablePresentation x).mem (UX i) ↔ ∃ n, r n = i)
+    {Y : Set ℚ} (hY : (toSubsystemSys UComputablePresentation x).mem Y) :
+    ∃ c, Q2X r c = Y := by
+  obtain ⟨n, hn⟩ := Q'x_surj r x hspec hY
+  refine ⟨listToTreeAux masterCode (decodeList n), ?_⟩
+  have hcode : (decodeList n).foldl (fun a j => Uinter a (r j)) UComputablePresentation.masterIdx
+      = idxchain UComputablePresentation (List.map r (decodeList n)) := by
+    unfold idxchain
+    rw [List.foldl_map]
+    rfl
+  show UX (TreeVal r (listToTreeAux masterCode (decodeList n))) = Y
+  rw [TreeVal_listToTreeAux, TreeVal_master, hcode, ← Q'X_eq]
+  exact hn
+
+/-! ### `inter`/`interEq_computable`/`cons_computable` — resolved by the term algebra
+
+The obstacle diagnosed above (`Uinter`'s non-conservative fallback) is fixed by indexing
+neighbourhoods by term-algebra codes instead of lists: combining two already-built codes `n`, `m` is
+*literally* `nodeCode n m`, no search for a witness code needed, and `Uinter_spec` — applicable
+precisely when the consistency hypothesis holds — guarantees the dichotomy's fallback branch of
+`UX_Uinter_dichotomy` provably never fires on that witness. -/
+
+/-- **`Q2X r`'s intersection function**: literally the `node` constructor. -/
+def Q2inter (c1 c2 : ℕ) : ℕ := nodeCode c1 c2
+
+theorem primrec_Q2inter : Nat.Primrec (fun t : ℕ => Q2inter t.unpair.1 t.unpair.2) := by
+  have heq : (fun t : ℕ => Q2inter t.unpair.1 t.unpair.2) = fun t => Nat.pair 1 t := by
+    funext t; unfold Q2inter nodeCode; rw [pair_unpair]
+  rw [heq]
+  exact Nat.Primrec.pair (Nat.Primrec.const 1) Nat.Primrec.id
+
+/-- **`inter_spec` for `Q2X r`.** The hypothesis is exactly what `Uinter_spec` needs (a `UX`-witness
+of consistency, transported through `TreeVal`), so `nodeCode n m` genuinely indexes the intersection
+— no fallback case to worry about. -/
+theorem Q2inter_spec {n m : ℕ} (h : ∃ k, Q2X r k ⊆ Q2X r n ∩ Q2X r m) :
+    Q2X r (Q2inter n m) = Q2X r n ∩ Q2X r m := by
+  obtain ⟨k, hk⟩ := h
+  show UX (TreeVal r (nodeCode n m)) = UX (TreeVal r n) ∩ UX (TreeVal r m)
+  rw [TreeVal_node]
+  exact Uinter_spec ⟨TreeVal r k, hk⟩
+
+/-- **`interEq_computable` for `Q2X r`.** A pure reindexing of `U`'s own `U_interEq_computable`
+along the primitive-recursive `TreeVal r` — exactly `ComputablePresentation.reindexInvolutive`'s
+`interEq_computable` proof pattern, minus the involution (only needed there for the `masterIdx`/
+`inter` fields, not for `.comp`-reindexing a `RecDecidable`). -/
+theorem Q2_interEq_computable (hr : Nat.Primrec r) :
+    RecDecidable₃ (fun n m k => Q2X r n ∩ Q2X r m = Q2X r k) := by
+  have hTV := primrec_TreeVal r hr
+  have hreindex : Nat.Primrec (fun t : ℕ => Nat.pair (TreeVal r t.unpair.1)
+      (Nat.pair (TreeVal r t.unpair.2.unpair.1) (TreeVal r t.unpair.2.unpair.2))) :=
+    (hTV.comp Nat.Primrec.left).pair
+      ((hTV.comp (Nat.Primrec.left.comp Nat.Primrec.right)).pair
+        (hTV.comp (Nat.Primrec.right.comp Nat.Primrec.right)))
+  refine RecDecidable.of_iff (fun t => ?_) (U_interEq_computable.comp hreindex)
+  simp only [unpair_pair_fst, unpair_pair_snd]
+  rfl
+
+/-- **`cons_computable` for `Q2X r`.** The crux resolved by the term algebra: the backward
+direction's witness is `nodeCode n m`, no search needed to *name* it, and it works because
+`Uinter_spec` applies exactly when consistency holds. -/
+theorem Q2_cons_computable (hr : Nat.Primrec r) :
+    RecDecidable₂ (fun n m => ∃ k, Q2X r k ⊆ Q2X r n ∩ Q2X r m) := by
+  have hTV := primrec_TreeVal r hr
+  have hreindex : Nat.Primrec (fun t : ℕ => Nat.pair (TreeVal r t.unpair.1) (TreeVal r t.unpair.2)) :=
+    (hTV.comp Nat.Primrec.left).pair (hTV.comp Nat.Primrec.right)
+  refine RecDecidable.of_iff (fun t => ?_) (U_cons_computable.comp hreindex)
+  simp only [unpair_pair_fst, unpair_pair_snd]
+  constructor
+  · rintro ⟨k, hk⟩
+    exact ⟨TreeVal r k, hk⟩
+  · rintro ⟨k, hk⟩
+    refine ⟨nodeCode t.unpair.1 t.unpair.2, ?_⟩
+    show UX (TreeVal r (nodeCode t.unpair.1 t.unpair.2)) ⊆
+      UX (TreeVal r t.unpair.1) ∩ UX (TreeVal r t.unpair.2)
+    rw [TreeVal_node, Uinter_spec ⟨k, hk⟩]
+
+theorem Q2X_masterIdx_spec :
+    Q2X r masterCode = (toSubsystemSys UComputablePresentation x).master := by
+  show UX (TreeVal r masterCode) = U.master
+  rw [TreeVal_master]
+  exact UX_UmasterIdx
+
+/-- **Subgoal 6f, capstone.** `D'x := toSubsystemSys UComputablePresentation x` admits a genuine
+`ComputablePresentation`, assembled from `Q2X`/`Q2x_mem_X`/`Q2x_surj`/`Q2_interEq_computable`/
+`Q2_cons_computable`/`Q2inter`/`Q2inter_spec`/`masterCode`/`Q2X_masterIdx_spec` — resolving the gap
+flagged above via the binary term algebra. -/
+def Q'xPresentation (hr : Nat.Primrec r)
+    (hspec : ∀ i, (toSubsystemSys UComputablePresentation x).mem (UX i) ↔ ∃ n, r n = i) :
+    ComputablePresentation (toSubsystemSys UComputablePresentation x) where
+  X := Q2X r
+  mem_X := Q2x_mem_X r x hspec
+  surj := Q2x_surj r x hspec
+  interEq_computable := Q2_interEq_computable r hr
+  cons_computable := Q2_cons_computable r hr
+  inter := Q2inter
+  inter_primrec := primrec_Q2inter
+  inter_spec := fun h => Q2inter_spec r h
+  masterIdx := masterCode
+  masterIdx_spec := Q2X_masterIdx_spec r x
+
+/-- **Subgoal 6f, main corollary.** If `x` is a computable element of `SubD UComputablePresentation`,
+then `D'x := toSubsystemSys UComputablePresentation x` is effectively given — completing, for
+`D = 𝒰`, the second half of Exercise 8.15: computable elements of `SubD UComputablePresentation`
+correspond to effectively presented domains, presented *relative to* `UComputablePresentation`'s own
+enumeration (see the 6g note in `arxiv.md` for why the fully general "arbitrary presentation"
+converse — genuine "uniqueness of computable numberings" — is out of scope). -/
+theorem subsystemU_effectivelyGiven_of_isComputableElement
+    (hx : IsComputableElement (SubDPresentation UComputablePresentation) x) :
+    (toSubsystemSys UComputablePresentation x).IsEffectivelyGiven := by
+  obtain ⟨r, hr, hspec⟩ := (subsystemU_element_computable_iff UComputablePresentation x).mp hx
+  exact ⟨Q'xPresentation r x hr hspec⟩
+
+/-! ### 6g — scope note: the fully general "arbitrary presentation" converse
+
+`subsystemU_effectivelyGiven_of_isComputableElement` reads Scott's "computable elements correspond
+to effectively presented domains (up to effective isomorphism)" via the *specific* presentation
+`Q'xPresentation` built **relative to `UComputablePresentation`'s own enumeration** — the natural,
+provable reading identified in the Subgoal 6 planning note above (a disjoint-interval example shows
+`x.mem (nbhdGen UP js)` does **not** imply `𝒰.mem (interFrom UP 𝒰.master js)` in general, so an
+*arbitrary*, unrelated abstract presentation `Q : ComputablePresentation D'x` cannot be compared to
+`UP` without extra structure).
+
+The fully general converse Scott's parenthetical "(up to effective isomorphism)" is gesturing at —
+that *every* computable presentation of `D'x`, however constructed, is effectively isomorphic to
+`Q'xPresentation` — is a genuine "uniqueness of computable numberings" fact (a Rogers-style theorem:
+two numberings of the same recursively enumerable structure that both make its structural relations
+decidable must be effectively translatable into each other). This is strictly deeper than anything
+Definition 7.1's axioms hand us directly, is not needed for the "correspond to" reading already
+established by `subsystemU_effectivelyGiven_of_isComputableElement`, and is **deliberately left out
+of scope** here. -/
+
+end TreeVal2
 
 end UniversalSubsystem
 
