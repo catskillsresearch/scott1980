@@ -3115,10 +3115,10 @@ Lecture VIII covers retractions, projections, and the construction of the univer
 * **Status:** Pass
 
 #### Exercise 8.17
-* **Mathematical Target:** projection pairs for `U+U`, `U×U`, `U→U`; a universal `V≠U`
-* **Lean File:** — (Formalization deferred)
-* **Proof Notes:** projection pairs for `U+U`, `U×U`, `U→U`; a universal `V≠U`
-* **Status:** Deferred
+* **Mathematical Target:** find explicit projection pairs for `𝒰+𝒰`, `𝒰×𝒰`, `𝒰→𝒰` needed for 8.9; are any of these isomorphic to `𝒰`?; find a universal domain `V ≠ 𝒰`
+* **Lean File:** `Scott1980/Neighborhood/Exercise817.lean`
+* **Proof Notes:** **Part 1** (projection pairs) was already answered by `Definition89.lean`'s `iPlus/jPlus`, `iTimes/jTimes`, `iArrow/jArrow` (via `theorem_8_8_b_strong`); this file restates them under 8.17's name and adds the free bonus corollary `sumUU_trianglelefteq_U`/`prodUU_trianglelefteq_U`/`funSpaceUU_trianglelefteq_U : (·) ⊴ 𝒰` (Lemma 6.15 applied to those exact pairs). **Part 3** (a universal `V≠𝒰`) is answered in full: Exercise 8.12's `V` (a *different* `NeighborhoodSystem ℕ`, not `𝒰`'s `ℚ`) is effectively isomorphic to `𝒰` (`effectiveIso812_UV`), and universality transports along isomorphism (`isUniversal_of_isomorphic`), so `V` is also universal (`V_isUniversal`). This needed one new general-purpose tool not yet in the codebase: **`⊴` is transitive** (`trianglelefteq_trans`), built via a small local heterogeneous `ProjPair` bundle (`ProjPair.ofSubsystem` from Prop 6.12, `ProjPair.ofIso` from Theorem 2.7's `ofIso` — built via `le_iff_toElementMap_le` rather than the classical `ext_of_toElementMap`, to stay choice-free — and `ProjPair.comp`), composed and fed to Lemma 6.15's `trianglelefteq_of_projectionPair`. **Part 2** (is `𝒰+𝒰`/`𝒰×𝒰`/`𝒰→𝒰` ≅ `𝒰`?) is **deliberately deferred**, documented rather than guessed at: only the one-directional embeddings `⊴ 𝒰` come for free; genuine isomorphism would need a converse embedding plus a back-and-forth argument of the same scale as Exercise 8.12's 7-part development, and Scott's own parenthetical ("the author does not know a really good construction for `𝒰→𝒰`") flags that even he did not resolve the `→` case. `lake build` (whole project) green, zero `sorry`. Axiom audit: `trianglelefteq_trans`/`trianglelefteq_of_isomorphic_left`/`isUniversal_of_isomorphic` fully choice-free (`⊆ {propext, Quot.sound}`); the `U`/`V`-mentioning corollaries (`U_isUniversal`, `V_isUniversal`, the three `⊴ 𝒰` bonuses) inherit `Classical.choice` only from `U`'s own pre-existing `Rat`-order-instance provenance, same footprint as every other `U`-mentioning headline theorem.
+* **Status:** Pass (Parts 1 and 3 in full; Part 2 explicitly, honestly scoped out — see Proof Notes)
 
 #### Exercise 8.18
 * **Mathematical Target:** establish the unproved cases of 8.10

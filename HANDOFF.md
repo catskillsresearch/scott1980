@@ -11889,3 +11889,64 @@ layer, no new mathematical content:
 **Status of Exercise 8.16: DONE (Pass).** **Next up:** pick the next `Deferred` row in `arxiv.md` in
 sequence (e.g. Exercise 8.17 — projection pairs for `U+U`/`U×U`/`U→U`, likely a much larger,
 genuinely new construction effort; or Proposition 8.10's deferred finitary-closure second half).
+
+## 2026-07-06 (continued 4) — Exercise 8.17: Pass (Parts 1+3 in full; Part 2 honestly scoped out)
+
+**Exercise 8.17.** Find explicit projection pairs for `𝒰+𝒰`/`𝒰×𝒰`/`𝒰→𝒰` needed for 8.9; are any of
+these isomorphic to `𝒰`?; find a universal domain `V≠𝒰`.
+
+**`Scott1980/Neighborhood/Exercise817.lean`.** Three-way split:
+
+* **Part 1 (projection pairs), free**: `Definition89.lean`'s `iPlus/jPlus`, `iTimes/jTimes`,
+  `iArrow/jArrow` (built via `theorem_8_8_b_strong`, already in the codebase from Definition 8.9's
+  own development) *are* exactly what 8.17 asks for — just restated under this exercise's name.
+  Bonus corollaries `sumUU_trianglelefteq_U`/`prodUU_trianglelefteq_U`/`funSpaceUU_trianglelefteq_U`
+  (`(·) ⊴ 𝒰`) come for free from Lemma 6.15 applied to those exact pairs.
+* **Part 3 (a universal `V≠𝒰`), new work, choice-free**: Exercise 8.12's `V` (`NeighborhoodSystem ℕ`,
+  genuinely a *different* structure from `𝒰 : NeighborhoodSystem ℚ`) is effectively isomorphic to `𝒰`
+  (`effectiveIso812_UV`, already built). Needed one new general tool that **wasn't yet in the
+  codebase despite being an obviously-expected structural fact**: **`⊴` (`Trianglelefteq`,
+  `Lemma615.lean`) is transitive**. Built via a small local heterogeneous bundle `ProjPair D E`
+  (`inj/proj/proj_comp_inj/inj_comp_proj_le` — `Subsystem.ProjectionPair`, Prop 6.12, is
+  deliberately single-token-type, so didn't fit): `ProjPair.ofSubsystem` (from `D◁E`, Prop 6.12),
+  `ProjPair.ofIso` (from a `DomainIso`, Theorem 2.7's `ofIso` — **built via `le_iff_toElementMap_le`
+  rather than the classical `ext_of_toElementMap`**, matching `Theorem86.lean`'s documented
+  discipline, to stay choice-free), and `ProjPair.comp` (composing two pairs: `inj := i₂∘i₁`,
+  `proj := j₁∘j₂`, the `≤`-law via `comp_mono_gen`). `trianglelefteq_trans` composes `D'◁E` (Prop
+  6.12), `E≅E'` (`ofIso`), `E'◁F` (Prop 6.12) into one `D'⇄F` pair, feeds Lemma 6.15's
+  `trianglelefteq_of_projectionPair`, then glues `D≅D'` back on the left
+  (`trianglelefteq_of_isomorphic_left`, a one-liner via `OrderIso.trans`). `IsUniversal W := ∀
+  D [Countable], D⊴W` restates Theorem 8.8(a)'s property abstractly; `isUniversal_of_isomorphic`
+  transports it along `≅ᴰ`; `V_isUniversal := isUniversal_of_isomorphic U_isUniversal ⟨…toDomainIso⟩`
+  closes Part 3.
+* **Part 2 (is `𝒰+𝒰`/`𝒰×𝒰`/`𝒰→𝒰` ≅ `𝒰`?), deliberately deferred**: only the *one-directional*
+  embeddings (bonus corollaries above, `⊴ 𝒰`) come for free from existing machinery. Genuine
+  isomorphism needs a *converse* embedding plus a **back-and-forth argument of the same scale as
+  Exercise 8.12's 7-part, ~2000-line development** (order isos preserve compactness = principal, so
+  a naive "restrict the filter" map provably fails, exactly as diagnosed for `U≅V` — a fresh
+  back-and-forth construction is unavoidable, not just tedious). Scott's own parenthetical — "the
+  author does not know a really good construction for `𝒰→𝒰`" — flags that even he left this open;
+  we do not go further than Scott here. Documented as an explicit, scoped deferral (not a `sorry`).
+
+**Key lesson (choice discipline):** `ApproximableMap.ext_of_toElementMap` (`Approximable.lean`) is
+**not** choice-free (`by_cases` on a bare `Prop` membership pulls in `Classical.choice` via
+`Classical.propDecidable`) — confirmed directly via `#print axioms`, despite being used unguarded in
+several other files (e.g. `Theorem88n.lean`'s `isoProj_comp_isoInj`/`isoInj_comp_isoProj`, which
+already inherit `U`'s own `Classical.choice` footprint anyway so the marginal taint was invisible
+there). For a lemma meant to be genuinely choice-free (no `U` in sight), use `le_iff_toElementMap_le`
++ `le_antisymm` instead (`Theorem86.lean`'s `isRetraction_subApprox` already flags this pattern;
+`ProjPair.ofIso` here is a second confirmed instance). Worth an eventual repo-wide audit: any
+choice-free-claimed file using `ext_of_toElementMap` unguarded should be double-checked.
+
+`lake build` (whole project) green, zero `sorry`, zero new warnings. Axiom audit:
+`trianglelefteq_trans`/`trianglelefteq_of_isomorphic_left`/`isUniversal_of_isomorphic` **fully
+choice-free** (`⊆ {propext, Quot.sound}`); the `U`/`V`-mentioning corollaries inherit
+`Classical.choice` only from `U`'s pre-existing `Rat`-order-instance provenance (same footprint as
+every other `U`-mentioning theorem in this project — confirmed, no new taint). Wired into
+`Scott1980.lean`. `arxiv.md`'s Exercise 8.17 row updated to `Pass` (with Part 2's scope-out spelled
+out in the Proof Notes).
+
+**Status of Exercise 8.17: DONE (Pass, Parts 1+3 in full; Part 2 explicitly scoped out).**
+**Next up:** pick the next `Deferred` row in `arxiv.md` (e.g. Exercise 8.18 — "establish the unproved
+cases of 8.10"; or Proposition 8.10's own deferred finitary-closure second half; or consider a
+repo-wide grep for other unguarded `ext_of_toElementMap` uses per the lesson above).
