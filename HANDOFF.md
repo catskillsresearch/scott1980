@@ -11317,3 +11317,46 @@ rows → `Pass`; `8.13(c)` and the parent `8.13` row → `Pass` in full (all of 
 **Resume protocol / next steps:** Exercise 8.13 is fully done, including every optional/expository
 extension the user asked for. Nothing pending on 8.13. Pick the next `Deferred`/`Partial` row in
 `arxiv.md` for the next session.
+
+## 2026-07-06 (new session): Exercise 8.14 — closure operators, fixed-point set is finitary (Pass)
+
+New file `Scott1980/Neighborhood/Exercise814.lean` (wired into `Scott1980.lean`). Scott: "a
+retraction is a closure operator iff `I_D ⊑ a`; prove the fixed-point set of any closure operator
+is a finitary domain; what are the finite elements?"
+
+**`IsClosureOperator a := IsRetraction a ∧ idMap E ≤ a`** (`Definition81.lean`'s `IsRetraction`
+plus `FunctionSpace.lean`'s `≤` on `ApproximableMap`). Unfolds to inflationary
+(`le_toElementMap_of_isClosureOperator : y ≤ a(y)`).
+
+**Key insight distinguishing this from `Theorem85.lean`'s machinery**: `fixedNbhd`/
+`retractionOfSubsystem` (used for *projections*, `a ≤ I_E`) do NOT apply to closure operators —
+they'd reconstruct a degenerate subsystem. Needed genuinely new compact-element theory instead:
+
+* Compacts of `Fix(a)` (w.r.t. directed unions *within* `Fix(a)`, `IsCompactFix`) are exactly
+  `a(↑X)` for `E`-neighbourhoods `X` (`isCompactFix_toElementMap_principal`) — even though `a(↑X)`
+  is typically *not* itself `E`-principal (e.g. closing `{n}` under `+` in `PN` needs infinitely
+  many `PN`-tokens).
+* Bounded finite joins of compacts are compact (`isCompactFix_sup`, via Exercise 1.27's `sSup`).
+* Built **`domainOfClosure`**: a real `NeighborhoodSystem` on `CompactFix h` (compact fixed
+  points), neighbourhoods = principal up-sets `upFix` (smaller compact ⟹ bigger up-set); its
+  `inter_mem` is `upFix_inter` (∩ of up-sets = up-set of the join).
+* **`fixSetOrderIso : FixSet a ≃o (domainOfClosure h).Element`** via `toElementFilter` (y ↦ compacts
+  below y) / `fromElementFilter` (directed union of confirmed compacts), round-trips using `E`'s
+  own algebraicity transported through `a` (`toElementMap_eq_iSupDirected_genFamily`).
+* **`isFinitary_of_isClosureOperator`**: `⟨CompactFix h, domainOfClosure h, ⟨fixSetOrderIso h⟩⟩`.
+* **Finite elements, exactly** (`isCompactFix_iff`): `y ∈ Fix(a)` compact ⟺ `y = a(↑X)` for a
+  single `X` — sandwich argument (compactness pulls one witness out of the directed decomposition
+  of `y`).
+
+Scott's "give examples of closure operators on `PN`" prompt is expository (not needed for the
+exercise's actual imperative, which is the general theorem); left as an optional non-blocking
+follow-up, not started.
+
+**Result:** `lake build` (2955 jobs) clean, zero `sorry`. `#print axioms` on
+`isFinitary_of_isClosureOperator`/`isCompactFix_iff`/`fixSetOrderIso` ⊆ `{propext, Quot.sound}`
+(choice-free, matches project baseline). `arxiv.md`: `8.14` row → **Pass**.
+
+**Resume protocol / next steps:** `8.14`'s core mathematical content (the general finitary-domain
+theorem + finite-elements characterization) is done. Optional, non-blocking: concrete examples of
+closure operators on `PN` (e.g. "close a set of naturals under addition") — skip unless requested.
+Otherwise pick the next `Deferred` row in `arxiv.md` (`8.15` is next in sequence).

@@ -2931,10 +2931,10 @@ Lecture VIII covers retractions, projections, and the construction of the univer
 * **Status:** Pass
 
 #### Exercise 8.14
-* **Mathematical Target:** *closure operators* (`I⊑a`); fixed-point set finitary
-* **Lean File:** — (Formalization deferred)
-* **Proof Notes:** *closure operators* (`I⊑a`); fixed-point set finitary
-* **Status:** Deferred
+* **Mathematical Target:** *closure operators* (`I⊑a`); fixed-point set finitary; what are the finite elements
+* **Lean File:** `Scott1980/Neighborhood/Exercise814.lean`
+* **Proof Notes:** `IsClosureOperator a := IsRetraction a ∧ idMap E ≤ a` (`I_E ⊑ a`, i.e. `a` inflationary — `le_toElementMap_of_isClosureOperator`). Main theorem **`isFinitary_of_isClosureOperator`**: for any closure operator `a : E → E`, `Fix(a)` (`FixSet a`, from `Theorem85.lean`) is finitary. Strategy: identify the compact elements of `Fix(a)` as exactly `a(↑X)` for `E`-neighbourhoods `X` (`IsCompactFix`, `isCompactFix_toElementMap_principal` — via inflation + `E`'s own `principal_isCompactElt`), show finite bounded joins of compacts are compact (`isCompactFix_sup`, via Exercise 1.27's `sSup`/`le_sSup`/`sSup_le`), then build a genuine `NeighborhoodSystem` **`domainOfClosure`** whose tokens are `CompactFix h` (the compact fixed points) and whose neighbourhoods are principal up-sets `upFix` (smaller compact ⟹ bigger up-set, matching the information order); `inter_mem` is exactly `upFix_inter` (intersection of two up-sets = up-set of the join). The order isomorphism **`fixSetOrderIso : FixSet a ≃o (domainOfClosure h).Element`** goes via `toElementFilter`/`fromElementFilter` (directed union, over `confirmedIdx`, of all compacts confirmed by a filter), with round-trips `toElementFilter_fromElementFilter`/`fromElementFilter_toElementFilter` — the latter using `E`'s algebraicity transported through `a` (`toElementMap_eq_iSupDirected_genFamily`: `y` is the directed union of `a(↑X)` for `X ∈ y`, from applying `a` to `eq_iSupDirected_principal`). **Finite elements answered exactly** (`isCompactFix_iff`): `y ∈ Fix(a)` is compact iff `y = a(↑X)` for a single `E`-neighbourhood `X` — a sandwich argument pulling one witness `X` out of the directed decomposition via compactness. The "give examples on `PN`" prompt is expository and left as an optional non-blocking follow-up (not needed for the exercise's actual imperative). `lake build` (2955 jobs) clean, zero `sorry`; `#print axioms` on `isFinitary_of_isClosureOperator`/`isCompactFix_iff`/`fixSetOrderIso` `⊆ {propext, Quot.sound}`, choice-free.
+* **Status:** Pass
 
 #### Exercise 8.15
 * **Mathematical Target:** `{X∣X◁D}` effectively presented if `D` is
