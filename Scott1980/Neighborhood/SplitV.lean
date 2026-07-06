@@ -1,7 +1,9 @@
 import Scott1980.Neighborhood.LevelSetPrimrec
+import Scott1980.Neighborhood.MinLevel
 
 /-!
-# Exercise 8.12(e)(b) (Scott 1981, PRG-19, Lecture VIII) — a computable canonical bisection for `V`
+# Exercise 8.12(e)(b)/(e)(d)(ii) (Scott 1981, PRG-19, Lecture VIII) — a computable canonical
+bisection for `V`, rerouted through the minimal presentation
 
 ## 8.12(e)(b)(i): `myFirstBit`, the least-set-bit search combinator
 
@@ -193,65 +195,110 @@ theorem myClearBit_eq_xor {m ℓ : ℕ} (h : m.testBit ℓ = true) : myClearBit 
       show j - (ℓ + 1) + (ℓ + 1) = j by omega, decide_eq_false_iff_not.mpr (show ℓ ≠ j by omega)]
     simp
 
+/-! ## 8.12(e)(d)(ii): the minimal presentation of `VX n`, at the code level
+
+`canonIdx n`'s raw `(level, mask)` pair is **not** a presentation-independent invariant of the set
+`VX n` (`MinLevel.lean`'s header, `(e)(d)(i)`'s discovery) — the same set can be `canonIdx`-
+canonical at arbitrarily many different levels via repeated `myUpsample`. `MinLevel.lean` supplies
+the genuine invariant: `(minLevel, minMask)` applied to `canonIdx n`'s own pair. Every downstream
+definition in this file is now built from `splitVMinLevel`/`splitVMinMask` (below) rather than
+`(canonIdx n).unpair.1`/`.unpair.2` directly, so that `splitVLeft`/`splitVRight`'s *outputs* — in
+fact, as it turns out, their raw *indices* (`splitVLeft_eq_of_congr`/`splitVRight_eq_of_congr`,
+stronger than the `left_congr`/`right_congr` fields actually demand) — depend only on `VX n` as a
+set, delivering `ComputableBisection.left_congr`/`right_congr` for `(e)(d)(iii)`. -/
+
+/-- The presentation-independent canonical level of `VX n`. -/
+def splitVMinLevel (n : ℕ) : ℕ := minLevel (canonIdx n).unpair.1 (canonIdx n).unpair.2
+
+/-- The presentation-independent canonical mask of `VX n`, at `splitVMinLevel n`'s width. -/
+def splitVMinMask (n : ℕ) : ℕ := minMask (canonIdx n).unpair.1 (canonIdx n).unpair.2
+
+theorem primrec_splitVMinLevel : Nat.Primrec splitVMinLevel := by
+  have hk : Nat.Primrec (fun n : ℕ => (canonIdx n).unpair.1) :=
+    Nat.Primrec.left.comp primrec_canonIdx
+  have hm : Nat.Primrec (fun n : ℕ => (canonIdx n).unpair.2) :=
+    Nat.Primrec.right.comp primrec_canonIdx
+  exact (primrec_minLevel.comp (hk.pair hm)).of_eq fun n => by
+    simp only [unpair_pair_fst, unpair_pair_snd]; rfl
+
+theorem primrec_splitVMinMask : Nat.Primrec splitVMinMask := by
+  have hk : Nat.Primrec (fun n : ℕ => (canonIdx n).unpair.1) :=
+    Nat.Primrec.left.comp primrec_canonIdx
+  have hm : Nat.Primrec (fun n : ℕ => (canonIdx n).unpair.2) :=
+    Nat.Primrec.right.comp primrec_canonIdx
+  exact (primrec_minMask.comp (hk.pair hm)).of_eq fun n => by
+    simp only [unpair_pair_fst, unpair_pair_snd]; rfl
+
+/-- `(splitVMinLevel n, splitVMinMask n)` presents the same set as `canonIdx n`'s own pair, i.e.
+`VX n` itself. -/
+theorem levelSet_splitVMin (n : ℕ) : levelSet (splitVMinLevel n) (splitVMinMask n) = VX n :=
+  levelSet_minLevel (canonIdx n).unpair.1 (canonIdx n).unpair.2
+
+/-- **The presentation-independence of `splitVMinLevel`/`splitVMinMask`**: two codes presenting the
+*same* `V`-set share the same minimal `(level, mask)` pair — the crux fact, via `MinLevel.lean`'s
+`minLevel_unique`, that ultimately delivers `splitVLeft_congr`/`splitVRight_congr` below. -/
+theorem splitVMin_congr {n n' : ℕ} (hn : VX n = VX n') :
+    splitVMinLevel n = splitVMinLevel n' ∧ splitVMinMask n = splitVMinMask n' := by
+  have h : levelSet (canonIdx n).unpair.1 (canonIdx n).unpair.2 =
+      levelSet (canonIdx n').unpair.1 (canonIdx n').unpair.2 := hn
+  exact minLevel_unique h
+
 /-! ## 8.12(e)(b)(iii): `splitVLeft`/`splitVRight` — the actual computable split
 
 Follows `V_no_minimal`'s construction (`Exercise812.lean`, Scott's remark after Definition 8.7)
-verbatim, at the code level: canonicalize `n` (`canonIdx`, `LevelSetPrimrec.lean`) to get a
-level/mask pair `(k, m)`, upsample `m` one level finer (`M := myUpsample k (k+1) m`), pick the
-splitting bit `ℓ₀` as `M`'s least set bit (`myFirstBit`, `(e)(b)(i)` — the classical proof instead
-draws `ℓ₀` from a bare existential `levelSet_nonempty_iff.mp hne`, bounded by `2 ^ k`; here it is
-found directly on the *upsampled* mask `M`, bounded by `2 ^ (k+1)`, which is fine since `upsample`
+verbatim, at the code level: take `(k, m) := (splitVMinLevel n, splitVMinMask n)` — the *minimal*
+presentation of `VX n` (`(e)(d)(ii)`; before the reroute this was `canonIdx n`'s own, possibly
+non-minimal, pair) — upsample `m` one level finer (`M := myUpsample k (k+1) m`), pick the splitting
+bit `ℓ₀` as `M`'s least set bit (`myFirstBit`, `(e)(b)(i)` — the classical proof instead draws `ℓ₀`
+from a bare existential `levelSet_nonempty_iff.mp hne`, bounded by `2 ^ k`; here it is found
+directly on the *upsampled* mask `M`, bounded by `2 ^ (k+1)`, which is fine since `upsample`
 duplicates every set bit of `m` into a matching pair at level `k+1`, so *any* set bit of `M` has a
 genuine "twin" — `(e)(b)(iv)`'s job to make precise). `splitVLeft`/`splitVRight` then package `Y :=
 levelSet (k+1) (2^ℓ₀)` / `Z := levelSet (k+1) (M ^^^ 2^ℓ₀)` (`V_no_minimal`'s own `Y`/`Z`) as codes,
 using `myClearBit` (`(e)(b)(ii)`) as the computable stand-in for `^^^`. -/
 
-/-- The upsampled mask `M := myUpsample k (k+1) m` for `(k, m) := canonIdx n` — Scott's `M` from
-`V_no_minimal`, at the code level. -/
+/-- The upsampled mask `M := myUpsample k (k+1) m` for `(k, m) := (splitVMinLevel n, splitVMinMask
+n)` — Scott's `M` from `V_no_minimal`, at the code level, fed the *minimal* presentation. -/
 def splitVUpsampled (n : ℕ) : ℕ :=
-  myUpsample (canonIdx n).unpair.1 ((canonIdx n).unpair.1 + 1) (canonIdx n).unpair.2
+  myUpsample (splitVMinLevel n) (splitVMinLevel n + 1) (splitVMinMask n)
 
 theorem primrec_splitVUpsampled : Nat.Primrec splitVUpsampled := by
-  have hk : Nat.Primrec (fun n : ℕ => (canonIdx n).unpair.1) :=
-    Nat.Primrec.left.comp primrec_canonIdx
-  have hk1 : Nat.Primrec (fun n : ℕ => (canonIdx n).unpair.1 + 1) := Nat.Primrec.succ.comp hk
-  have hm : Nat.Primrec (fun n : ℕ => (canonIdx n).unpair.2) :=
-    Nat.Primrec.right.comp primrec_canonIdx
-  exact (primrec_myUpsample.comp (hk.pair (hk1.pair hm))).of_eq fun n => by
+  have hk1 : Nat.Primrec (fun n : ℕ => splitVMinLevel n + 1) :=
+    Nat.Primrec.succ.comp primrec_splitVMinLevel
+  exact (primrec_myUpsample.comp
+      (primrec_splitVMinLevel.pair (hk1.pair primrec_splitVMinMask))).of_eq fun n => by
     simp only [unpair_pair_fst, unpair_pair_snd]; rfl
 
 /-- The splitting bit `ℓ₀` — the least set bit of the upsampled mask `M`, bounded by `2 ^ (k+1)`. -/
 def splitVBit (n : ℕ) : ℕ :=
-  myFirstBit (splitVUpsampled n) (2 ^ ((canonIdx n).unpair.1 + 1))
+  myFirstBit (splitVUpsampled n) (2 ^ (splitVMinLevel n + 1))
 
 theorem primrec_splitVBit : Nat.Primrec splitVBit := by
-  have hk : Nat.Primrec (fun n : ℕ => (canonIdx n).unpair.1) :=
-    Nat.Primrec.left.comp primrec_canonIdx
-  have hk1 : Nat.Primrec (fun n : ℕ => (canonIdx n).unpair.1 + 1) := Nat.Primrec.succ.comp hk
-  have hbound : Nat.Primrec (fun n : ℕ => (2 : ℕ) ^ ((canonIdx n).unpair.1 + 1)) :=
+  have hk1 : Nat.Primrec (fun n : ℕ => splitVMinLevel n + 1) :=
+    Nat.Primrec.succ.comp primrec_splitVMinLevel
+  have hbound : Nat.Primrec (fun n : ℕ => (2 : ℕ) ^ (splitVMinLevel n + 1)) :=
     primrec_two_pow hk1
   exact (primrec_myFirstBit.comp (primrec_splitVUpsampled.pair hbound)).of_eq fun n => by
     simp only [unpair_pair_fst, unpair_pair_snd]; rfl
 
 /-- **`splitVLeft`**: the code for `Y := levelSet (k+1) (2 ^ ℓ₀)`, `V_no_minimal`'s "left" half. -/
-def splitVLeft (n : ℕ) : ℕ := Nat.pair ((canonIdx n).unpair.1 + 1) (2 ^ splitVBit n)
+def splitVLeft (n : ℕ) : ℕ := Nat.pair (splitVMinLevel n + 1) (2 ^ splitVBit n)
 
 /-- **`splitVRight`**: the code for `Z := levelSet (k+1) (M ^^^ 2 ^ ℓ₀)`, `V_no_minimal`'s "right"
 half — `myClearBit` stands in for `^^^` (justified since `ℓ₀` is, by construction, a genuinely set
 bit of `M`; `myClearBit_eq_xor`, `(e)(b)(ii)`). -/
-def splitVRight (n : ℕ) : ℕ := Nat.pair ((canonIdx n).unpair.1 + 1) (myClearBit (splitVUpsampled n) (splitVBit n))
+def splitVRight (n : ℕ) : ℕ :=
+  Nat.pair (splitVMinLevel n + 1) (myClearBit (splitVUpsampled n) (splitVBit n))
 
 theorem primrec_splitVLeft : Nat.Primrec splitVLeft := by
-  have hk : Nat.Primrec (fun n : ℕ => (canonIdx n).unpair.1) :=
-    Nat.Primrec.left.comp primrec_canonIdx
-  have hk1 : Nat.Primrec (fun n : ℕ => (canonIdx n).unpair.1 + 1) := Nat.Primrec.succ.comp hk
+  have hk1 : Nat.Primrec (fun n : ℕ => splitVMinLevel n + 1) :=
+    Nat.Primrec.succ.comp primrec_splitVMinLevel
   have hpow : Nat.Primrec (fun n : ℕ => (2 : ℕ) ^ splitVBit n) := primrec_two_pow primrec_splitVBit
   exact (Nat.Primrec.pair hk1 hpow).of_eq fun n => rfl
 
 theorem primrec_splitVRight : Nat.Primrec splitVRight := by
-  have hk : Nat.Primrec (fun n : ℕ => (canonIdx n).unpair.1) :=
-    Nat.Primrec.left.comp primrec_canonIdx
-  have hk1 : Nat.Primrec (fun n : ℕ => (canonIdx n).unpair.1 + 1) := Nat.Primrec.succ.comp hk
+  have hk1 : Nat.Primrec (fun n : ℕ => splitVMinLevel n + 1) :=
+    Nat.Primrec.succ.comp primrec_splitVMinLevel
   have hclear : Nat.Primrec (fun n : ℕ => myClearBit (splitVUpsampled n) (splitVBit n)) :=
     (primrec_myClearBit.comp (primrec_splitVUpsampled.pair primrec_splitVBit)).of_eq fun n => by
       simp only [unpair_pair_fst, unpair_pair_snd]
@@ -271,17 +318,19 @@ nonemptiness — proved directly from `levelSet_myUpsample` (no fresh `testBit`-
 lemma needed), by reducing both `ℓ₀` and its twin mod `2^k` and observing they agree there. -/
 
 /-- `splitVUpsampled n`'s mask always has *some* set bit below `2^(k+1)` — inherited from
-`canonIdx n` always presenting a non-empty `levelSet` (`VX_nonempty`), transported one level up via
-`levelSet_myUpsample`. Feeds `myFirstBit_lt`/`myFirstBit_testBit`. -/
+`VX n` always being non-empty (`VX_nonempty`), transported to the *minimal* presentation via
+`levelSet_splitVMin`, then one level up via `levelSet_myUpsample`. Feeds
+`myFirstBit_lt`/`myFirstBit_testBit`. -/
 theorem splitV_mask_nonempty (n : ℕ) :
-    ∃ ℓ < 2 ^ ((canonIdx n).unpair.1 + 1), (splitVUpsampled n).testBit ℓ = true := by
-  have hne : (levelSet (canonIdx n).unpair.1 (canonIdx n).unpair.2).Nonempty := VX_nonempty n
+    ∃ ℓ < 2 ^ (splitVMinLevel n + 1), (splitVUpsampled n).testBit ℓ = true := by
+  have hne : (levelSet (splitVMinLevel n) (splitVMinMask n)).Nonempty := by
+    rw [levelSet_splitVMin]; exact VX_nonempty n
   apply levelSet_nonempty_iff.mp
-  show (levelSet ((canonIdx n).unpair.1 + 1) (splitVUpsampled n)).Nonempty
+  show (levelSet (splitVMinLevel n + 1) (splitVUpsampled n)).Nonempty
   unfold splitVUpsampled
   rwa [levelSet_myUpsample (Nat.le_succ _)]
 
-theorem splitV_bit_lt (n : ℕ) : splitVBit n < 2 ^ ((canonIdx n).unpair.1 + 1) :=
+theorem splitV_bit_lt (n : ℕ) : splitVBit n < 2 ^ (splitVMinLevel n + 1) :=
   myFirstBit_lt (splitV_mask_nonempty n)
 
 theorem splitV_bit_testBit (n : ℕ) : (splitVUpsampled n).testBit (splitVBit n) = true :=
@@ -293,9 +342,9 @@ mod `2^k` (they agree there, `hmod`, since `xor`-ing in `2^k` only ever touches 
 transport the resulting `m`-level membership fact back up to `M`'s level via
 `levelSet_myUpsample`. -/
 theorem splitV_twin_testBit (n : ℕ) :
-    (splitVUpsampled n).testBit (splitVBit n ^^^ 2 ^ (canonIdx n).unpair.1) = true := by
-  set k := (canonIdx n).unpair.1 with hk
-  set m := (canonIdx n).unpair.2 with hm
+    (splitVUpsampled n).testBit (splitVBit n ^^^ 2 ^ splitVMinLevel n) = true := by
+  set k := splitVMinLevel n with hk
+  set m := splitVMinMask n with hm
   set ℓ₀ := splitVBit n with hℓ₀
   set M := splitVUpsampled n with hMdef
   have hlevelEq : levelSet (k + 1) M = levelSet k m := by
@@ -335,26 +384,26 @@ private theorem xor_two_pow_ne_self (a k : ℕ) : a ^^^ 2 ^ k ≠ a := by
   simp at h2
 
 theorem splitV_left_nonempty (n : ℕ) :
-    (levelSet ((canonIdx n).unpair.1 + 1) (2 ^ splitVBit n)).Nonempty :=
+    (levelSet (splitVMinLevel n + 1) (2 ^ splitVBit n)).Nonempty :=
   levelSet_nonempty_iff.mpr ⟨splitVBit n, splitV_bit_lt n, by simp⟩
 
 theorem splitV_right_nonempty (n : ℕ) :
-    (levelSet ((canonIdx n).unpair.1 + 1) (myClearBit (splitVUpsampled n) (splitVBit n))).Nonempty := by
+    (levelSet (splitVMinLevel n + 1) (myClearBit (splitVUpsampled n) (splitVBit n))).Nonempty := by
   rw [myClearBit_eq_xor (splitV_bit_testBit n)]
-  have h2 : (2 : ℕ) ^ ((canonIdx n).unpair.1 + 1) = 2 * 2 ^ (canonIdx n).unpair.1 := by
+  have h2 : (2 : ℕ) ^ (splitVMinLevel n + 1) = 2 * 2 ^ splitVMinLevel n := by
     rw [pow_succ]; ring
-  have hpos : (2 : ℕ) ^ (canonIdx n).unpair.1 > 0 := Nat.two_pow_pos _
-  have h2k : (2 : ℕ) ^ (canonIdx n).unpair.1 < 2 ^ ((canonIdx n).unpair.1 + 1) := by omega
+  have hpos : (2 : ℕ) ^ splitVMinLevel n > 0 := Nat.two_pow_pos _
+  have h2k : (2 : ℕ) ^ splitVMinLevel n < 2 ^ (splitVMinLevel n + 1) := by omega
   refine levelSet_nonempty_iff.mpr
-    ⟨splitVBit n ^^^ 2 ^ (canonIdx n).unpair.1,
+    ⟨splitVBit n ^^^ 2 ^ splitVMinLevel n,
       Nat.xor_lt_two_pow (splitV_bit_lt n) h2k, ?_⟩
   rw [Nat.testBit_xor, splitV_twin_testBit n, Nat.testBit_two_pow,
-    decide_eq_false_iff_not.mpr (xor_two_pow_ne_self (splitVBit n) (canonIdx n).unpair.1).symm]
+    decide_eq_false_iff_not.mpr (xor_two_pow_ne_self (splitVBit n) (splitVMinLevel n)).symm]
   rfl
 
 /-- **`splitVLeft` realizes `Y := levelSet (k+1) (2^ℓ₀)`**, `V_no_minimal`'s "left" half. -/
 theorem VX_splitVLeft (n : ℕ) :
-    VX (splitVLeft n) = levelSet ((canonIdx n).unpair.1 + 1) (2 ^ splitVBit n) := by
+    VX (splitVLeft n) = levelSet (splitVMinLevel n + 1) (2 ^ splitVBit n) := by
   have hne : (levelSet (splitVLeft n).unpair.1 (splitVLeft n).unpair.2).Nonempty := by
     unfold splitVLeft
     rw [unpair_pair_fst, unpair_pair_snd]
@@ -367,7 +416,7 @@ theorem VX_splitVLeft (n : ℕ) :
 /-- **`splitVRight` realizes `Z := levelSet (k+1) (M ^^^ 2^ℓ₀)`**, `V_no_minimal`'s "right" half. -/
 theorem VX_splitVRight (n : ℕ) :
     VX (splitVRight n) =
-      levelSet ((canonIdx n).unpair.1 + 1) (myClearBit (splitVUpsampled n) (splitVBit n)) := by
+      levelSet (splitVMinLevel n + 1) (myClearBit (splitVUpsampled n) (splitVBit n)) := by
   have hne : (levelSet (splitVRight n).unpair.1 (splitVRight n).unpair.2).Nonempty := by
     unfold splitVRight
     rw [unpair_pair_fst, unpair_pair_snd]
@@ -385,7 +434,7 @@ theorem splitV_disjoint (n : ℕ) : VX (splitVLeft n) ∩ VX (splitVRight n) = �
   ext i
   simp only [mem_levelSet, Set.mem_empty_iff_false, iff_false, Nat.testBit_and, Bool.and_eq_true]
   rintro ⟨h1, h2⟩
-  have hpos : i % 2 ^ ((canonIdx n).unpair.1 + 1) = splitVBit n := by
+  have hpos : i % 2 ^ (splitVMinLevel n + 1) = splitVBit n := by
     by_contra hne'
     rw [Nat.testBit_two_pow] at h1
     exact hne' (of_decide_eq_true h1).symm
@@ -395,17 +444,62 @@ theorem splitV_disjoint (n : ℕ) : VX (splitVLeft n) ∩ VX (splitVRight n) = �
 /-- **Exercise 8.12(e)(b), covering**: `splitVLeft`/`splitVRight` reunite to `VX n` — transcribes
 `V_no_minimal`'s `hUnion` verbatim. -/
 theorem splitV_union (n : ℕ) : VX (splitVLeft n) ∪ VX (splitVRight n) = VX n := by
-  have hML : levelSet ((canonIdx n).unpair.1 + 1) (splitVUpsampled n) = VX n := by
-    unfold splitVUpsampled VX
-    exact levelSet_myUpsample (Nat.le_succ _) _
+  have hML : levelSet (splitVMinLevel n + 1) (splitVUpsampled n) = VX n := by
+    unfold splitVUpsampled
+    rw [levelSet_myUpsample (Nat.le_succ _)]
+    exact levelSet_splitVMin n
   rw [VX_splitVLeft, VX_splitVRight, myClearBit_eq_xor (splitV_bit_testBit n),
     levelSet_union_same_level, ← hML]
-  congr 1
+  apply congrArg (levelSet (splitVMinLevel n + 1))
   apply Nat.eq_of_testBit_eq
   intro i
   rw [Nat.testBit_or, Nat.testBit_xor]
   rcases eq_or_ne i (splitVBit n) with rfl | hi
   · simp [splitV_bit_testBit n]
   · simp [Ne.symm hi]
+
+/-! ## 8.12(e)(d)(ii): `splitVLeft_congr`/`splitVRight_congr`
+
+The payoff of the reroute through `splitVMinLevel`/`splitVMinMask`: since `splitVMin_congr` shows
+two codes presenting the *same* `VX`-set route through the identical minimal `(level, mask)` pair,
+every downstream quantity built from it (`splitVUpsampled`, `splitVBit`, and hence `splitVLeft`/
+`splitVRight` themselves) is *literally* the same raw index, not merely presenting the same set —
+strictly stronger than the `ComputableBisection.left_congr`/`right_congr` fields actually demand,
+proved first as `splitVLeft_eq_of_congr`/`splitVRight_eq_of_congr` below and then downgraded. -/
+
+/-- **`splitVLeft`'s raw index is presentation-independent** (stronger than `left_congr` needs):
+two codes presenting the same `VX`-set produce the *literally identical* `splitVLeft` index, since
+`splitVMin_congr` forces `splitVUpsampled`/`splitVBit` to agree exactly. -/
+theorem splitVLeft_eq_of_congr {n n' : ℕ} (hn : VX n = VX n') :
+    splitVLeft n = splitVLeft n' := by
+  obtain ⟨hlvl, hmask⟩ := splitVMin_congr hn
+  have hups : splitVUpsampled n = splitVUpsampled n' := by
+    unfold splitVUpsampled; rw [hlvl, hmask]
+  have hbit : splitVBit n = splitVBit n' := by
+    unfold splitVBit; rw [hups, hlvl]
+  unfold splitVLeft
+  rw [hlvl, hbit]
+
+/-- **`splitVRight`'s raw index is presentation-independent** (stronger than `right_congr` needs),
+the same argument as `splitVLeft_eq_of_congr`. -/
+theorem splitVRight_eq_of_congr {n n' : ℕ} (hn : VX n = VX n') :
+    splitVRight n = splitVRight n' := by
+  obtain ⟨hlvl, hmask⟩ := splitVMin_congr hn
+  have hups : splitVUpsampled n = splitVUpsampled n' := by
+    unfold splitVUpsampled; rw [hlvl, hmask]
+  have hbit : splitVBit n = splitVBit n' := by
+    unfold splitVBit; rw [hups, hlvl]
+  unfold splitVRight
+  rw [hlvl, hups, hbit]
+
+/-- **`ComputableBisection.left_congr` for `splitVLeft`.** -/
+theorem splitVLeft_congr {n n' : ℕ} (hn : VX n = VX n') :
+    VX (splitVLeft n) = VX (splitVLeft n') := by
+  rw [splitVLeft_eq_of_congr hn]
+
+/-- **`ComputableBisection.right_congr` for `splitVRight`.** -/
+theorem splitVRight_congr {n n' : ℕ} (hn : VX n = VX n') :
+    VX (splitVRight n) = VX (splitVRight n') := by
+  rw [splitVRight_eq_of_congr hn]
 
 end Scott1980.Neighborhood

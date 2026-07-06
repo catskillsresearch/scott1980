@@ -10665,3 +10665,50 @@ minimal `(level, mask)` pair (apply `minLevel_unique` to `canonIdx n`/`canonIdx 
 `VX n = VX n'` unfolded via `VX`'s own definition to `levelSet (canonIdx n).1 (canonIdx n).2 =
 levelSet (canonIdx n').1 (canonIdx n').2`). See `arxiv.md`'s `8.12(e)(d)(ii)` row for the full
 planned signatures.
+
+**2026-07-05 — Exercise 8.12(e)(d)(ii) `Pass`: `SplitV.lean` rerouted through `MinLevel.lean`'s
+minimal presentation; `splitVLeft_congr`/`splitVRight_congr` proved.** Revised
+`Scott1980/Neighborhood/SplitV.lean` in place (grep-confirmed nothing downstream referenced the
+old `splitVLeft`/`splitVRight`/`VX_splitVLeft`/`VX_splitVRight`/`splitV_disjoint`/`splitV_union`
+yet, so no disruption). New intermediate `splitVMinLevel n := minLevel (canonIdx n).unpair.1
+(canonIdx n).unpair.2` / `splitVMinMask n := minMask (canonIdx n).unpair.1 (canonIdx n).unpair.2`
+(`primrec_splitVMinLevel`/`primrec_splitVMinMask`, `levelSet_splitVMin : levelSet (splitVMinLevel n)
+(splitVMinMask n) = VX n`, `splitVMin_congr : VX n = VX n' → splitVMinLevel n = splitVMinLevel n' ∧
+splitVMinMask n = splitVMinMask n'` — a direct citation of `MinLevel.lean`'s `minLevel_unique`,
+coercing `VX n = VX n'` to `levelSet _ _ = levelSet _ _` via a bare `have h : … := hn` ascription
+that typechecks by unfolding `VX`'s definition, no `show`/`unfold` tactic needed). Every occurrence
+of `(canonIdx n).unpair.1`/`.unpair.2` throughout `splitVUpsampled`/`splitVBit`/`splitVLeft`/
+`splitVRight` and all of `(e)(b)(iv)`'s correctness theorems (`splitV_mask_nonempty` through
+`splitV_union`) replaced by `splitVMinLevel n`/`splitVMinMask n` — light re-derivations exactly as
+anticipated (`splitV_mask_nonempty` gains one `rw [levelSet_splitVMin]` in place of the old direct
+`VX_nonempty n` citation; `splitV_union`'s `hML` likewise gains one `rw [levelSet_myUpsample …]`
+step before closing with `levelSet_splitVMin n`). **`splitVLeft_congr`/`splitVRight_congr` came out
+*stronger* than drafted**: `splitVMin_congr` forces `splitVUpsampled`/`splitVBit` — hence
+`splitVLeft`/`splitVRight` themselves — to be the *literally identical raw index* (not merely
+presenting the same set) for any two codes presenting the same `VX`-set
+(`splitVLeft_eq_of_congr`/`splitVRight_eq_of_congr`, three chained `rw`s through
+`splitVMin_congr`'s pair; the `_congr` theorems then downgrade via one more `rw`). **One real
+gotcha, not anticipated**: `splitV_union`'s final `congr 1` step timed out at `whnf` (200000
+heartbeats) once the level argument became `splitVMinLevel n + 1` — `congr`'s unification
+apparently tries to `whnf`-compare the level arguments on both sides even though they're
+syntactically identical, hitting the exact "expensive bounded-`Nat.rec`-fold `whnf` doesn't respect
+`maxHeartbeats`" pitfall already documented in this file for other such definitions (`minLevel`
+itself is one). Fixed by replacing `congr 1` with `apply congrArg (levelSet (splitVMinLevel n +
+1))`, which fixes the first argument outright (no unification search) and reduces straight to the
+mask-equality goal — a purely tactic-level fix (avoid `congr`'s general unification path), no
+`@[irreducible]` needed this time. Zero `sorry`; `lake build Scott1980` (3167 jobs) and
+`lake env lean SplitV.lean` both clean, zero new warnings. `#print axioms` on all 14 new/revised
+declarations gives `⊆ {propext, Classical.choice, Quot.sound}` throughout (inherited from
+`canonIdx`'s own `Classical.choice`, confirmed no fresh leak — matches the project-wide baseline).
+`arxiv.md`: `8.12(e)(d)(ii)` row → `Pass`; `8.12(e)(d)` umbrella → `(i)`–`(ii)` `Pass`, `(iii)` not
+started; `8.12(e)` umbrella note updated accordingly.
+
+**Status: Exercise 8.12(e)(d)(ii) is COMPLETE.** **Resume protocol:** next up is `8.12(e)(d)(iii)` —
+mechanical given `(i)`–`(ii)`: package `B812e : ComputableBisection VComputablePresentation` from
+`splitVLeft`/`splitVRight`/`primrec_splitVLeft`/`primrec_splitVRight`/`splitV_disjoint`/
+`splitV_union`/`splitVLeft_congr`/`splitVRight_congr` (all already `Pass`), then instantiate
+`splitX812e := Exercise812e.lean`'s `ComputableBisection.splitFromBisection UComputablePresentation
+(U's IsComputableDiff) B812e` and `isComputableSplit_812e := isComputableSplit_ofBisection … B812e`
+fed `U`'s already-`Pass` `IsPositive`/`NoMinimal`/`DiffClosed` facts (`Exercise812c.lean`). Once
+`(e)(d)(iii)` lands, `8.12(e)` is **COMPLETE** in full, and `8.12(f)` (reusing `SplitU.lean`'s
+existing bisection directly, per `8.12(e)`'s own finding 5 in `arxiv.md`) should be quick.
