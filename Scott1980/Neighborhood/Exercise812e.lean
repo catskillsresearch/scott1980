@@ -249,14 +249,14 @@ noncomputable def isComputableSplit_ofBisection (hpos : V.IsPositive) (hnomin : 
   negIdx := negIdxFromBisection P hDiff B
   posIdx_primrec := primrec_posIdxFromBisection P hDiff B
   negIdx_primrec := primrec_negIdxFromBisection P hDiff B
-  posIdx_spec n m k := by
+  posIdx_spec n m k _hne := by
     have hex : ∃ n' m' k', P.X n = P.X n' ∧ Q.X m = Q.X m' ∧ P.X k = P.X k' :=
       ⟨n, m, k, rfl, rfl, rfl⟩
     unfold splitFromBisection
     rw [dif_pos hex]
     obtain ⟨hn', hm', hk'⟩ := hex.choose_spec.choose_spec.choose_spec
     exact (posIdxFromBisection_congr P hDiff B hpos hnomin hdiffClosed hn' hk' hm').symm
-  negIdx_spec n m k := by
+  negIdx_spec n m k _hne := by
     have hex : ∃ n' m' k', P.X n = P.X n' ∧ Q.X m = Q.X m' ∧ P.X k = P.X k' :=
       ⟨n, m, k, rfl, rfl, rfl⟩
     unfold splitFromBisection

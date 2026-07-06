@@ -10819,6 +10819,212 @@ itself a classical function of sets, not indices; matches the project-wide basel
 leak). `arxiv.md`: `8.12(f)` row → `Pass`; `8.12` umbrella → **COMPLETE in full** (`(a)`–`(f)` all
 `Pass`).
 
-**Status: Exercise 8.12 is COMPLETE in full.** **Resume protocol:** re-read `arxiv.md` for the next
-open exercise (grep for rows not marked `Pass`); no specific next item was queued as of this
-checkpoint.
+**Status: Exercise 8.12(a)–(f) are COMPLETE.** Only `8.12(g)` (final assembly) remains.
+
+**2026-07-06 — Exercise 8.12(g) scoped, not yet executed.** Checked whether `(g)` is really "pure
+instantiation" as previously assumed — it is **not**: `Exercise812d.lean`'s actual final-assembly
+theorem, `effectiveIso812d`/`effectivelyIsomorphic_812d`, takes a longer hypothesis list than `(c)`/
+`(d)`'s own headline lemmas. Four hypotheses are genuinely missing, none previously flagged:
+`SplitSpec' V splitX812e`/`SplitSpec' U splitX812f` (a *different*, `Prop`-only set-level splitting
+contract from `IsComputableSplit`, never proved for either concrete split — the open question of the
+four); `IsComputableUnion UComputablePresentation`/`VComputablePresentation` (mirrors
+`IsComputableDiff`'s shape for `∪`, never instantiated for either system, but expected mechanical
+since the underlying union-closure is already unconditionally free from `Exercise812c.lean`'s generic
+`union_mem_or_empty` + `NoMinimal`); and `UX 0 = U.master`/`VX 0 = V.master` (a literal-index-`0`
+fact, distinct from `UmasterIdx`/`VmasterIdx` which are both `≠ 0` — plausibly a short lemma via
+`canonCode`/`canonIdx`'s fallback-on-`0` behavior, but unwritten). Re-scoped into `arxiv.md`'s
+`8.12(g)(1)`–`(4)` sub-rows (small assembly prerequisites; `IsComputableUnion` instances; the two
+`SplitSpec'` proofs; final assembly) — all `Deferred`, none yet started.
+
+**Resume protocol:** start with `8.12(g)(1)` (small, likely-easy prerequisites — `master.Nonempty`
+and the index-`0`-is-master facts), then `8.12(g)(2)` (`IsComputableUnion`, expected mechanical),
+then `8.12(g)(3)` (`SplitSpec'` for both concrete splits — the real open question; decompose along
+`splitFromBisection`'s three-way `emptyInterDec`/`emptyDiffDec`/bisection case split, mirroring
+`(e)(c)`'s `posIdxFromBisection_congr`/`negIdxFromBisection_congr` argument shape), then `8.12(g)(4)`
+(final assembly, pure instantiation once `(g)(1)`–`(3)` are supplied). See `arxiv.md`'s `8.12(g)`
+row for the full hypothesis-by-hypothesis accounting.
+
+**2026-07-06 — Exercise 8.12(g)(1) re-scoped into `(a)`/`(b)`, still not yet executed.** Asked
+whether `(g)(1)` itself needs breaking down further. Checked each of its four facts directly
+against source (not guesswork): all four are confirmed short/mechanical, zero new mathematical
+content, but they split cleanly along the same `U`/`V` axis `(e)`/`(f)` already used, not along the
+`mne`/`X0` axis — so re-scoped as **`8.12(g)(1)(a)`** (`U`-side: `U.master.Nonempty` + `UX 0 =
+U.master`) and **`8.12(g)(1)(b)`** (`V`-side: `V.master.Nonempty` + `VX 0 = V.master`), both
+`Deferred`, in `arxiv.md`. Findings: `master.Nonempty` needs no `NoMinimal` machinery at all (the
+previous checkpoint's guess) — `U.master = Set.Ico 0 1`/`V.master = Set.univ` are directly nonempty
+one-liners. `UX 0 = U.master`: `UX_eq 0` + `decodeQPairList 0 = []` (`decodeList_zero`) +
+`canonList [] = [(0,1)]` (`canonList_eq_of_filter_eq_nil`, hypothesis `rfl` via
+`List.map_nil`/`List.filter_nil`) + the exact `presentedIntervals [(0,1)] = U.master` step already
+inline in `U_mem_presentedIntervals_canonList` (`UComputablePresentation.lean:90–92`) — confirmed
+this chain avoids the code (`canonCode`) layer entirely, though `canonListCode 0 = 0` (hence
+`canonCode 0` also falls to its `masterPairCode` fallback) checks out too via `foldCode`/
+`flatMapCode`'s zero-iteration case, as a cross-check. `VX 0 = V.master`: `Nat.unpair 0 = (0,0)` ⟹
+`levelSet 0 0 = ∅` (`Nat.testBit 0 _ = false` always) ⟹ `myLevelSetNonempty 0 0 = 0` ⟹ `canonIdx 0 =
+Nat.pair 0 1 = VmasterIdx` (`selectFn_zero`, same shape as `canonIdx_eq_master_of_empty`) ⟹ `VX 0 =
+VX VmasterIdx = V.master` via `VX_canonIdx` + the already-`Pass` `VX_VmasterIdx`
+(`LevelSetPrimrec.lean:667–673`). Both `(a)`/`(b)` are now believed to be genuinely quick to write
+up (one short lemma-chain each, no open mathematical question left) — next session can go straight
+to writing the Lean rather than re-deriving.
+
+**2026-07-06 — Exercise 8.12(g)(1)(a) Pass.** Checked whether `(g)(1)(a)` itself needed further
+breakdown first (no — already atomic, same granularity as `UX_UmasterIdx`/`VX_VmasterIdx`), then
+wrote it up exactly per the prior checkpoint's planned chain, new file `Exercise812g1a.lean`
+(wired into `Scott1980.lean`). `U_master_nonempty : U.master.Nonempty := ⟨0, by norm_num [U]⟩` —
+**one real gotcha, found immediately by `lake build`, not anticipated in scoping**: plain
+`norm_num` alone leaves `0 ∈ U.master` unsolved (doesn't unfold the structure projection down to
+`Set.Ico 0 1` on its own); `norm_num [U]` fixes it. `UX_zero : UX 0 = U.master` matched the planned
+chain exactly with no other surprises: `UX_eq` → `decodeQPairList 0 = []` (`decodeList_zero`) →
+`canonList_eq_of_filter_eq_nil (by simp)` → `presentedIntervals_cons`/`presentedIntervals_nil`/
+`Set.union_empty` → `rfl` (`Set.Ico 0 1` is definitionally `U.master`). Zero `sorry`; `lake build
+Scott1980` (3172 jobs) clean, zero new lints. `#print axioms` on both new declarations gives
+`⊆ {propext, Classical.choice, Quot.sound}`, matching `Definition87.lean`'s documented upstream
+`ℚ`-order-taint baseline (no fresh leak). `arxiv.md`: `8.12(g)(1)(a)` → `Pass`; `8.12(g)(1)` →
+`Partial`; `8.12(g)` umbrella → `Partial`. **Next:** `8.12(g)(1)(b)` (`V`-side, symmetric — should
+be similarly quick per its own planned chain), then `8.12(g)(2)`/`8.12(g)(3)`/`8.12(g)(4)`.
+
+**2026-07-06 — Exercise 8.12(g)(1)(b) Pass, completing 8.12(g)(1) in full.** Checked first whether
+`(g)(1)(b)` itself needed further breakdown (no — same atomic-granularity verdict as `(a)`). New
+file `Exercise812g1b.lean` (wired into `Scott1980.lean`), matched the planned chain exactly with
+*zero* new gotchas this time (unlike `(a)`'s `norm_num [U]` surprise). `V_master_nonempty :
+V.master.Nonempty := Set.univ_nonempty` — trivial, `V.master = Set.univ` needs no unfolding lemma.
+New reusable one-liner `levelSet_zero_zero : levelSet 0 0 = ∅` (`ext n; simp [levelSet,
+Nat.zero_testBit]`). `VX_zero : VX 0 = V.master`: `Nat.unpair_zero` + `levelSet_zero_zero` feed
+`canonIdx_eq_master_of_empty` to get `canonIdx 0 = VmasterIdx`; `← VX_canonIdx 0` + that equality +
+the already-`Pass` `VX_VmasterIdx` closes it — exactly the planned "compose one step further"
+chain. Zero `sorry`; `lake build Scott1980` (3173 jobs) clean, zero new lints. `#print axioms` on
+both new declarations gives `⊆ {propext, Classical.choice, Quot.sound}`, matching the project-wide
+baseline. `arxiv.md`: `8.12(g)(1)(b)` → `Pass`; `8.12(g)(1)` umbrella → **`Pass` in full** (both
+`(a)`/`(b)`); `8.12(g)` umbrella → `Partial` (`(g)(1)` done, `(g)(2)`–`(g)(4)` still `Deferred`).
+**Next:** `8.12(g)(2)` (`IsComputableUnion` for `U`/`V`, expected mechanical per the `(g)` scoping
+note), then `8.12(g)(3)` (`SplitSpec'` for both concrete splits — the real remaining open question),
+then `8.12(g)(4)` (final assembly).
+
+**2026-07-06 — Exercise 8.12(g)(2) Pass, both `U`/`V` `IsComputableUnion` instances.** New file
+`Exercise812g2.lean` (wired into `Scott1980.lean`). Confirmed the easiest of the four `(g)`
+sub-parts, purely mechanical, but with one genuine near-miss worth flagging for next time: an
+initial `U_union_exists := ⟨Uunion n m, Uunion_eq_union n m⟩` (mixing the *raw* uncanonicalized
+`Uunion_eq_union` with the *canonicalized* `UX`) triggered a `whnf` **deterministic timeout**
+rather than a clean type error — expensive unification search instead of a fast failure. Fixed by
+deriving `U_union_exists` independently via `U_surj_UX (U_union_UX_mem n m)`, sidestepping `Uunion`
+entirely (mirrors `U_diff_iff_nonempty`'s own `U_surj_UX` use). Lesson: when a `whnf`/elaboration
+timeout appears out of nowhere on an otherwise-simple anonymous-constructor term, suspect a
+raw-vs-canonicalized (or similar "one wrapper layer off") type mismatch before assuming it's a
+genuinely hard unification problem. Also one naming clash (`U_union_mem` already taken by
+`Definition87.lean`'s unrelated `= ∅ ∨ mem` dichotomy lemma → renamed to `U_union_UX_mem`) and one
+missing trailing `rfl` (`Uunion_eq_union`). Otherwise matched the plan exactly: `U`-side mirrors
+`Udiff` substituting `appendListCode` (already in `Recursive.lean`) for `diffCode`; `V`-side mirrors
+`VinterRaw`/`Vinter` verbatim substituting the already-existing `myLor` for `myLand`, plus one new
+lemma `levelSet_myUnion` (the computable version of `Exercise812.lean`'s inlined `V_union_mem`
+identity). Confirmed the scoping note's prediction exactly: **unconditional** on both sides, no
+"-or-∅" case split anywhere, `unionIdx_spec`'s hypothesis literally unused in both instances, and
+`union_computable` is the trivial always-`1` decider for both. Zero `sorry`; `lake build Scott1980`
+(3174 jobs) clean, zero new lints. `#print axioms U_isComputableUnion`/`V_isComputableUnion` both
+give `⊆ {propext, Classical.choice, Quot.sound}`, matching the project-wide baseline. `arxiv.md`:
+`8.12(g)(2)` → `Pass`; `8.12(g)` umbrella → `Partial` (`(g)(1)`/`(g)(2)` done, `(g)(3)`/`(g)(4)`
+still `Deferred`). **Next:** `8.12(g)(3)` (`SplitSpec'` for `splitX812e`/`splitX812f` — the real
+remaining open question, per its own row's three-way case-split plan), then `8.12(g)(4)` (final
+assembly).
+
+**2026-07-06 — Exercise 8.12(g)(3) investigated: confirmed BLOCKING gap, not a bookkeeping hole.**
+The three-way case-split plan sketched in `(g)(3)`'s original row does not work, and the reason is
+structural, not a missing lemma. Full chain (verified against source, no guesswork — see `(g)(3)`'s
+`arxiv.md` row for the complete argument):
+- `splitX812e`'s two outputs are always literally `Q.X (posIdxFromBisection …)`/`Q.X
+  (negIdxFromBisection …)` (`IsComputableSplit`'s own `posIdx_spec`/`negIdx_spec` contract,
+  `Exercise812d.lean` `(d)(2)`), and `Q.X j` (`Q := VComputablePresentation`) is **provably never
+  `∅`** for any `j`, since `V.mem X` (`Exercise812.lean` line 199) structurally requires
+  `X.Nonempty` — same for `U`/`UComputablePresentation` (`Definition87.lean` line 96).
+- `posIdxFromBisection`/`negIdxFromBisection` (`Exercise812e.lean`) *by design* return `m` (i.e.
+  `B` itself, never `∅`) on **both** outputs whenever either `emptyInterDec`/`emptyDiffDec` fires —
+  the file's own docstring says outright that one of the two is "a harmless placeholder that later
+  gets junk-masked … before ever being read." That masking happens in the *separate*,
+  `IsComputableSplit`-only `xSubStep`/`atomPairIdx0/1/Junk` machinery (`(d)(3)(c)`–`(d)(3)(d)`),
+  which never touches `SplitSpec'` — it is not a property of `splitFromBisection` as a literal
+  function.
+- Whenever `A ∩ Xn = ∅` while `B ≠ ∅` — routine, since `atomPairG`'s `Xn := X n` ranges over *all*
+  enumerated neighbourhoods, most disjoint from the current atom — `SplitSpec'` demands `.1 = ∅`,
+  but the actual value is `Q.X m = B ≠ ∅`. This is a real, checkable contradiction, not something
+  that dissolves under a cleverer proof.
+- Cannot be sidestepped by feeding a different, already-`Pass` split in: `effectiveIso812d` binds
+  `hxSplit : SplitSpec' D₁ splitX` to the **same** `splitX` as `hSplitX : IsComputableSplit P₀ P₁
+  splitX` (both threaded through `atomPairG`/`atomPairCodeState_correct`, whose statement literally
+  equates the two `splitX`-parametrized constructions). `splitChoice'` *does* satisfy `SplitSpec'`
+  unconditionally but is choice-based and cannot satisfy `IsComputableSplit`.
+- **Root cause**: `IsComputableSplit`'s codomain convention (output always literally `Q.X(index)`,
+  hence always genuinely nonempty) is structurally incompatible with `SplitSpec'` ever needing an
+  output to be literally `∅`, for any `NeighborhoodSystem` whose `mem` excludes `∅` — true of every
+  instance in this codebase. A real fix needs to weaken `IsComputableSplit.posIdx_spec`/`negIdx_spec`
+  (e.g. `(split …).1 = ∅ ∨ (split …).1 = Q.X (posIdx …)`) and propagate through `(d)(3)`'s
+  `xSubStep`/`atomPairIdx0/1/Junk`/`XFold` plus `(e)`/`(f)`'s already-`Pass` `isComputableSplit_812e`/
+  `isComputableSplit_812f`/`B812e`/`SplitU.lean`/`SplitV.lean` — large, risks re-touching verified
+  `Pass` work, **not attempted**.
+- Flagged to the user directly (via `AskQuestion`, which they skipped/declined to answer, i.e. "use
+  your judgment and continue" — not "go ahead and do the big redesign"). Chose the conservative path:
+  documented the finding thoroughly in `arxiv.md` (`8.12(g)(3)` row, plus updated `(g)`/`(g)(4)`
+  parent notes to point at it) and stopped, rather than unilaterally undertaking the large
+  `IsComputableSplit` redesign or declaring the existing `(d)`/`(e)`/`(f)` `Pass` marks wrong (they
+  remain correct as stated — `IsComputableSplit` itself is a true, proven fact about
+  `splitX812e`/`splitX812f`; it is specifically the *stronger*, separate `SplitSpec'` contract that
+  `(g)(3)` asks for that is unsatisfiable). **No Lean files changed this session; only `arxiv.md`/
+  `HANDOFF.md` updated.** `arxiv.md`: `8.12(g)(3)` → `Deferred` (reworded to make explicit this is a
+  confirmed blocking gap, not an unattempted item); `8.12(g)(4)` → `Deferred`, noted as blocked on
+  `(g)(3)`; `8.12(g)` umbrella note updated to summarize the blocker. **Next, if the user wants to
+  proceed**: either (a) scope and attempt the `IsComputableSplit` weakening + propagation redesign
+  (large — should be its own carefully-scoped multi-step effort, probably touching `Exercise812d.lean`
+  `(d)(2)`/`(d)(3)`, `Exercise812e.lean`, `Exercise812eD.lean`, `Exercise812f.lean`, `SplitU.lean`,
+  `SplitV.lean`), or (b) look for a genuinely different (non-`IsComputableSplit`-shaped) route to an
+  effective `U ≅ V` isomorphism that doesn't go through `SplitSpec'` at all, or (c) accept `8.12(g)`
+  as permanently `Partial` (three of four sub-parts done) and move on to other exercises.
+
+**2026-07-06 — Exercise 8.12(g)(3) design-level repair: `IsComputableSplit`/`SplitSpec'`
+incompatibility fixed (option (a) above, generic-machinery half only).** Weakened
+`IsComputableSplit.posIdx_spec`/`negIdx_spec` (`Exercise812d.lean` `(d)(2)`) from unconditional
+`(split …).1 = Q.X (posIdx …)` to conditional `(split …).1 ≠ ∅ → (split …).1 = Q.X (posIdx …)`
+(symmetrically for `negIdx_spec`) — the exact fix the previous checkpoint's root-cause note
+predicted would work. This is the correct repair, not a workaround: `Q.X j` is never literally `∅`
+(every `ComputablePresentation` index is `mem`-genuine) while `SplitSpec'` genuinely needs a split's
+output to be `∅` sometimes, so an *unconditional* `posIdx_spec` was jointly unsatisfiable with
+`SplitSpec'` for any split whatsoever, not just `splitFromBisection` — the conditional form costs
+nothing at any real call site (every one already knows non-emptiness from context, typically via
+`SplitSpec'`'s own "empty ↔ empty" conjunct) while making the two contracts compatible in principle.
+
+Propagating the change through `Exercise812d.lean` was a wide-but-mechanical ripple, **not** a
+proof-content change: `posIdx_mem`/`negIdx_mem` gained the same `hne` hypothesis; `xSubStep_correct`/
+`ySubStep_correct` (`(d)(3)(b)`) now derive `≠ ∅` from the sub-step's junk flag being `0`
+(`selectFn_one_eq_zero_iff` + `emptyInterDec_eq_one_iff`/`emptyDiffDec_eq_one_iff`) plus
+`SplitSpec'`'s own `.2.2.1`/`.2.2.2.1` conjuncts, needing `atomPairG_invariant`-style `hAB`/`hBmem`
+threaded in as extra explicit parameters (both theorems' own section now includes them); the same
+"derive non-emptiness from the junk flag, then feed `SplitSpec'`, *then* call `posIdx_spec`/
+`negIdx_spec`" pattern had to be re-derived at every downstream consumer: `atomPairCodeState_correct`,
+`xPseqAtomIdx_subset_atomPairIdx1`, `xPseqAtomIdx_eq_inter_XPseqCode`, `yPseqAtomIdx_subset_xStepGFst`,
+`yPseqAtomIdx_subset_atomPairIdx0`, `yPseqAtomIdx_eq_of_dichotomy`, `xStepG_snd_eq_inter_XPseqCode`,
+`yStepG_fst_eq_inter_YPseqCode`'s two-branch closed forms, and every call site of all of the above
+(dozens, across `(d)(3)`–`(d)(5)`) — each needed the newly-required hypotheses (`hD₀nomin`/
+`hD₁nomin`/`hAB`/`hBmem`/`hne`, in each theorem's exact section-declaration order — **not** the order
+listed in its `include` line, which only controls which section variables are pulled in, not their
+positional order in the generated signature) added explicitly, since `include`'s implicit-argument
+mechanism only auto-supplies section variables *within* the section that declares a theorem, never
+across a call from a different section. `Exercise812e.lean`'s `isComputableSplit_ofBisection`
+updated in lockstep (`posIdx_spec`/`negIdx_spec` fields now bind an unused `_hne`; the existing
+congruence-based proof needed no other change). `lake build` (3174 jobs) clean, zero `sorry`, zero
+new lints beyond pre-existing ones. Axiom audit: `xSubStep_correct`/`ySubStep_correct`/
+`atomPairCodeState_correct`/`isComputableSplit_ofBisection` all `⊆ {propext, Classical.choice,
+Quot.sound}` — `Classical.choice` is pre-existing throughout `Exercise812d.lean` (from `by_cases` on
+undecidable set-equality props, via `Classical.propDecidable`), not a fresh leak from this session.
+
+**What is *not* yet done** (the concrete-construction half of `8.12(g)(3)`, deliberately not
+attempted this session — a separate, smaller-but-still-real task): `splitFromBisection`/
+`posIdxFromBisection`/`negIdxFromBisection` (`Exercise812e.lean`) still *unconditionally* fall back
+to `Q.X m` (never literally `∅`) whenever a decider fires, so `SplitSpec' V splitX812e`/
+`SplitSpec' U splitX812f` are still not proved (and not provable as those three defs currently
+stand) — they need to be redefined to conditionally output `∅` (using the *same* decider that fires,
+rather than always falling back to a nonempty placeholder), then `isComputableSplit_ofBisection`'s
+(now-conditional) `posIdx_spec`/`negIdx_spec` re-proved against the new defs, plus a fresh
+`splitFromBisection`-satisfies-`SplitSpec'` theorem written from scratch. `arxiv.md`: `8.12(g)(3)` →
+`Partial` (was `Deferred`/"confirmed blocking gap" — the blocking part is fixed, the construction
+part remains open); `8.12(g)` umbrella and `8.12(g)(4)` notes updated to match. **Next, if the user
+wants `8.12(g)` fully closed:** redesign `posIdxFromBisection`/`negIdxFromBisection`/
+`splitFromBisection` per the paragraph above (`Exercise812e.lean` only — `Exercise812d.lean`'s
+generic machinery needs no further change), prove the two concrete `SplitSpec'` instances, then
+`8.12(g)(4)`'s field-by-field `effectiveIso812d` instantiation should indeed be mechanical as
+originally scoped.
