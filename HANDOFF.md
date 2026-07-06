@@ -11848,3 +11848,44 @@ side-by-side `#print axioms` — nothing new is choice-tainted by this session's
 remains explicitly, deliberately out of scope (documented in both `arxiv.md` and in-file).
 **Next up:** pick the next `Deferred`/in-progress row in `arxiv.md` in sequence (e.g. Exercise 8.16,
 or Proposition 8.10's deferred finitary-closure second half).
+
+## 2026-07-06 (continued 3) — Exercise 8.16: DONE (Pass), both halves already nearly proved
+
+**Exercise 8.16.** For finitary projections `a,b:E→E`, `D_a := {X ∈ E ∣ X ⊑ aX}` (cf. 8.5). Show
+`a ⊑ b ↔ D_a ◁ D_b` (fills the gap at the end of the proof of 8.6); also finish off 8.8 by showing
+`E` effectively given + `a` computable ⟹ `D_a` effectively given.
+
+**Turned out to be almost entirely already proved** — this was a genuinely efficient exercise
+because two earlier theorems (Theorem 8.5/8.6, Theorem 8.8(c)) already did the hard work in full
+generality; `Scott1980/Neighborhood/Exercise816.lean` is a thin (~75-line) assembly/restatement
+layer, no new mathematical content:
+
+* **`D_a` is literally Theorem 8.5's `fixedNbhd a := {X ∈ E ∣ E.mem X ∧ a.rel X X}`** (already built,
+  unconditionally a subsystem `◁ E`, no hypothesis on `a` needed — `Theorem85.lean`).
+* **Part 1** (`isFinitaryProjection_le_iff_fixedNbhd_subsystem`): Theorem 8.6(a)'s
+  `finitaryProjectionSubsystemEquiv : {f ∣ sub f = f} ≃o {D ∣ D ◁ E}` (`Theorem86.lean`) is *already*
+  exactly this order-isomorphism (`≤` on `{D ∣ D ◁ E}` is *literally* `◁`, via `Proposition611.lean`'s
+  `PartialOrder` instance `le D₀ D₁ := D₀.1 ◁ D₁.1`) — restricting from `sub`-fixed points to finitary
+  projections via `sub_eq_self_iff_isFinitaryProjection : sub f = f ↔ IsFinitaryProjection f` gives
+  the exercise's statement directly. Assembled both directions from `OrderIso.monotone` /
+  `.symm.monotone` / `.symm_apply_apply` rather than the auto-generated `OrderIso.map_rel_iff` (whose
+  implicit-argument names for a custom-built `OrderIso` weren't worth guessing/verifying — the
+  `Monotone`-based route uses only strict-implicit `⦃⦄` binders that Lean infers from the explicit
+  hypothesis term, so it's robust to Mathlib's internal naming).
+* **Part 2**: *already fully proved*, in full generality (any `V`/`P`/`a`, not just `U`), as
+  `Theorem88m.lean`'s `fixedNbhd_isEffectivelyGiven {P : ComputablePresentation V} {a}
+  (hcomp : IsComputableMap P P a) : (fixedNbhd a).IsEffectivelyGiven` — `IsComputableMap P P a`
+  already packages "`V` effectively given via `P`, and `a` computable relative to `P`" simultaneously
+  (Definition 7.2 is inherently presentation-relative, so this is the natural, and only meaningful,
+  Lean phrasing of Scott's "`E` effectively given and `a` computable"). **No new proof was needed for
+  Part 2** — `exercise_8_16`'s second conjunct is a direct citation.
+* Both `Exercise816.lean` theorems + `exercise_8_16` audit **`⊆ {propext, Quot.sound}`** (fully
+  choice-free) — Part 2's generic `fixedNbhd_isEffectivelyGiven` is choice-free; the `Classical.choice`
+  tainting only appears when *specialized to `U`* (`theorem_8_8_c`), which this file never does.
+
+`lake build` (whole project) green, zero `sorry`, zero new warnings. Wired into `Scott1980.lean`.
+`arxiv.md`'s Exercise 8.16 row updated to `Pass`.
+
+**Status of Exercise 8.16: DONE (Pass).** **Next up:** pick the next `Deferred` row in `arxiv.md` in
+sequence (e.g. Exercise 8.17 — projection pairs for `U+U`/`U×U`/`U→U`, likely a much larger,
+genuinely new construction effort; or Proposition 8.10's deferred finitary-closure second half).

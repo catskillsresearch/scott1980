@@ -3109,10 +3109,10 @@ Lecture VIII covers retractions, projections, and the construction of the univer
   checkpoints in `HANDOFF.md`.
 
 #### Exercise 8.16
-* **Mathematical Target:** finitary projections `a:E→E`
-* **Lean File:** — (Formalization deferred)
-* **Proof Notes:** finitary projections `a:E→E`
-* **Status:** Deferred
+* **Mathematical Target:** for finitary projections `a,b:E→E`, `a ⊑ b ↔ D_a ◁ D_b` where `D_a = {X ∈ E \| X ⊑ aX}`; if `E` is effectively given and `a:E→E` is computable, then `D_a` is effectively given
+* **Lean File:** `Scott1980/Neighborhood/Exercise816.lean`
+* **Proof Notes:** Both halves were already (nearly) proved by existing machinery, so this is a thin assembly. `D_a` is exactly Theorem 8.5's `fixedNbhd a`. Part 1 (`isFinitaryProjection_le_iff_fixedNbhd_subsystem`) restricts Theorem 8.6(a)'s order-isomorphism `finitaryProjectionSubsystemEquiv : {f \| sub f = f} ≃o {D \| D ◁ E}` (where `≤` on the right is literally `◁`, Prop 6.11) from `sub`-fixed points to finitary projections via `sub_eq_self_iff_isFinitaryProjection`, assembled from `OrderIso.monotone`/`.symm.monotone`/`.symm_apply_apply` rather than the generated `map_rel_iff` (to sidestep guessing Mathlib's implicit-argument names). Part 2 is *already* Theorem 8.8(c)'s `fixedNbhd_isEffectivelyGiven` (`Theorem88m.lean`) in full generality — `IsComputableMap P P a` for any `ComputablePresentation P` of any `E` already packages "`E` effectively given via `P`, `a` computable relative to `P`" — so Part 2 needed no new proof, only a restatement under the exercise's name (`exercise_8_16`). Choice-free (`⊆ {propext, Quot.sound}`).
+* **Status:** Pass
 
 #### Exercise 8.17
 * **Mathematical Target:** projection pairs for `U+U`, `U×U`, `U→U`; a universal `V≠U`
