@@ -83,6 +83,93 @@ noncomputable def negIdxFromBisection (n m k : ℕ) : ℕ :=
   selectFn (emptyInterDec P (Nat.pair n k)) m
     (selectFn (emptyDiffDec P hDiff (Nat.pair n k)) m (B.right m))
 
+/-! ### 8.12(e)(c)(i): decider congruence and index-function well-definedness
+
+`emptyInterDec`/`emptyDiffDec` depend only on the *sets* `P.X n ∩ P.X k`/`P.X n \ P.X k` (via
+`(d)(2)`'s `_eq_one_iff` characterizations), not on which raw index presents them — and, combined
+with `left_congr`/`right_congr` above, this transports all the way up to `posIdxFromBisection`/
+`negIdxFromBisection` being well-defined functions of sets, exactly what `(e)(c)(ii)`'s
+`posIdx_spec`/`negIdx_spec` will need. -/
+
+section Congr
+
+variable {n n' k k' m m' : ℕ}
+
+/-- `emptyInterDec` is a well-defined function of the two *sets* `P.X n`, `P.X k`: it does not
+distinguish between different raw indices presenting the same set. -/
+theorem emptyInterDec_congr (hpos : V.IsPositive) (hnomin : V.NoMinimal)
+    (hn : P.X n = P.X n') (hk : P.X k = P.X k') :
+    emptyInterDec P (Nat.pair n k) = emptyInterDec P (Nat.pair n' k') := by
+  have h1 := emptyInterDec_eq_one_iff P hpos hnomin n k
+  have h2 := emptyInterDec_eq_one_iff P hpos hnomin n' k'
+  rw [hn, hk] at h1
+  have hiff : emptyInterDec P (Nat.pair n k) = 1 ↔ emptyInterDec P (Nat.pair n' k') = 1 :=
+    h1.trans h2.symm
+  have hle1 := emptyInterDec_le_one P (Nat.pair n k)
+  have hle2 := emptyInterDec_le_one P (Nat.pair n' k')
+  omega
+
+/-- `emptyDiffDec` is a well-defined function of the two *sets* `P.X n`, `P.X k`: it does not
+distinguish between different raw indices presenting the same set. Needs `V.DiffClosed`, not just
+`IsComputableDiff P` — a hypothesis gap found while scoping `(e)(c)` (2026-07-05), absent from
+`(e)(c)`'s original draft signature. -/
+theorem emptyDiffDec_congr (hdiffClosed : V.DiffClosed) (hnomin : V.NoMinimal)
+    (hn : P.X n = P.X n') (hk : P.X k = P.X k') :
+    emptyDiffDec P hDiff (Nat.pair n k) = emptyDiffDec P hDiff (Nat.pair n' k') := by
+  have h1 := emptyDiffDec_eq_one_iff P hDiff hdiffClosed hnomin n k
+  have h2 := emptyDiffDec_eq_one_iff P hDiff hdiffClosed hnomin n' k'
+  rw [hn, hk] at h1
+  have hiff : emptyDiffDec P hDiff (Nat.pair n k) = 1 ↔ emptyDiffDec P hDiff (Nat.pair n' k') = 1 :=
+    h1.trans h2.symm
+  have hle1 := emptyDiffDec_le_one P hDiff (Nat.pair n k)
+  have hle2 := emptyDiffDec_le_one P hDiff (Nat.pair n' k')
+  omega
+
+/-- **`posIdxFromBisection` is a well-defined function of sets**: its *output set*
+`Q.X (posIdxFromBisection …)` depends only on `P.X n`, `Q.X m`, `P.X k` as sets, not on the raw
+indices `n, m, k` chosen to present them. Four-way case split on the two `{0,1}`-valued deciders:
+three of the four cases collapse to the shared fallback value `m`/`m'` (needing only `hm`); only the
+"both deciders silent" case needs `B.left_congr`. -/
+theorem posIdxFromBisection_congr (hpos : V.IsPositive) (hnomin : V.NoMinimal)
+    (hdiffClosed : V.DiffClosed) (hn : P.X n = P.X n') (hk : P.X k = P.X k')
+    (hm : Q.X m = Q.X m') :
+    Q.X (posIdxFromBisection P hDiff B n m k) = Q.X (posIdxFromBisection P hDiff B n' m' k') := by
+  unfold posIdxFromBisection
+  rw [emptyInterDec_congr P hpos hnomin hn hk, emptyDiffDec_congr P hDiff hdiffClosed hnomin hn hk]
+  have hle1 := emptyInterDec_le_one P (Nat.pair n' k')
+  have hle2 := emptyDiffDec_le_one P hDiff (Nat.pair n' k')
+  have h1 : emptyInterDec P (Nat.pair n' k') = 0 ∨ emptyInterDec P (Nat.pair n' k') = 1 := by omega
+  have h2 : emptyDiffDec P hDiff (Nat.pair n' k') = 0 ∨
+      emptyDiffDec P hDiff (Nat.pair n' k') = 1 := by omega
+  rcases h1 with h1 | h1
+  · simp only [h1, selectFn_zero]
+    rcases h2 with h2 | h2
+    · simp only [h2, selectFn_zero]; exact B.left_congr m m' hm
+    · simp only [h2, selectFn_one]; exact hm
+  · simp only [h1, selectFn_one]; exact hm
+
+/-- **`negIdxFromBisection` is a well-defined function of sets**, the same argument as
+`posIdxFromBisection_congr` with `B.right_congr` in place of `B.left_congr`. -/
+theorem negIdxFromBisection_congr (hpos : V.IsPositive) (hnomin : V.NoMinimal)
+    (hdiffClosed : V.DiffClosed) (hn : P.X n = P.X n') (hk : P.X k = P.X k')
+    (hm : Q.X m = Q.X m') :
+    Q.X (negIdxFromBisection P hDiff B n m k) = Q.X (negIdxFromBisection P hDiff B n' m' k') := by
+  unfold negIdxFromBisection
+  rw [emptyInterDec_congr P hpos hnomin hn hk, emptyDiffDec_congr P hDiff hdiffClosed hnomin hn hk]
+  have hle1 := emptyInterDec_le_one P (Nat.pair n' k')
+  have hle2 := emptyDiffDec_le_one P hDiff (Nat.pair n' k')
+  have h1 : emptyInterDec P (Nat.pair n' k') = 0 ∨ emptyInterDec P (Nat.pair n' k') = 1 := by omega
+  have h2 : emptyDiffDec P hDiff (Nat.pair n' k') = 0 ∨
+      emptyDiffDec P hDiff (Nat.pair n' k') = 1 := by omega
+  rcases h1 with h1 | h1
+  · simp only [h1, selectFn_zero]
+    rcases h2 with h2 | h2
+    · simp only [h2, selectFn_zero]; exact B.right_congr m m' hm
+    · simp only [h2, selectFn_one]; exact hm
+  · simp only [h1, selectFn_one]; exact hm
+
+end Congr
+
 end ComputableBisection
 
 end Scott1980.Neighborhood

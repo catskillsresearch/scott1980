@@ -10456,3 +10456,71 @@ from `(e)(a)`'s already-typechecked `def`s; `posIdx_spec`/`negIdx_spec` are wher
 happens to return back to a canonical `(n, k, m)` triple). Once `(e)(c)` lands, `(e)(d)` instantiates
 it for `U`↔`V` using `(e)(b)`'s now-complete `splitVLeft`/`splitVRight` (packaged as a `Computable
 Bisection`), giving `splitX812e` — the exercise's literal target — completing `8.12(e)`.
+
+**2026-07-05 — Exercise 8.12(e)(c) re-scoped into 2 sub-parts, `(e)(c)(i)`–`(ii)`, before writing
+any code.** Traced `posIdx_spec`/`negIdx_spec`'s actual requirement (a genuine "function of sets,
+not of one arbitrarily-chosen representative index" property for `splitFromBisection`) down to
+`posIdxFromBisection`'s body (`selectFn (emptyInterDec …) m (selectFn (emptyDiffDec …) m (B.left
+m))`, `Exercise812e.lean`) and found this needs new congruence infrastructure that doesn't exist
+yet, plus **one genuine hypothesis gap**: `emptyDiffDec_eq_one_iff` needs `V.DiffClosed`
+(`Exercise812c.lean`) — a *separate* `Prop` from `IsComputableDiff P` — which `(e)(c)`'s draft
+signature (`hpos`, `hnomin`, `hdiff : IsComputableDiff P`) doesn't list. Split accordingly:
+- **`(e)(c)(i)`**: `emptyInterDec_congr`/`emptyDiffDec_congr` (deciders depend only on the *sets*
+  `P.X n ∩ P.X k`/`P.X n \ P.X k`, not raw indices — from the existing `_eq_one_iff` lemmas,
+  `(d)(2)`, `Pass`, plus a `{0,1}`-valued case split; `emptyDiffDec_congr` needs the new
+  `hdiffClosed : V.DiffClosed` hypothesis), then `posIdxFromBisection_congr`/
+  `negIdxFromBisection_congr` (a 4-way case split on the two deciders' `{0,1}` values, 3 cases
+  collapsing to the shared fallback via `hm` alone, only the "both deciders silent" case needing
+  `(e)(a)`'s `B.left_congr`/`right_congr`).
+- **`(e)(c)(ii)`**: `splitFromBisection` itself (`Classical.choose` inversion on `∃ n k m, A = P.X n
+  ∧ Xn = P.X k ∧ B' = Q.X m`, junk-branch value never read downstream, mirroring `(e)(a)`'s own
+  junk-masking discussion) and `isComputableSplit_ofBisection` (`posIdx`/`negIdx` fields are
+  literally `posIdxFromBisection`/`negIdxFromBisection`, so their `primrec` fields are immediate
+  `(e)(a)` citations; `posIdx_spec`/`negIdx_spec` unfold at the literal triple `(P.X n, Q.X m, P.X
+  k)`, extract whatever witness `Classical.choose` actually returns, bridge back via `(e)(c)(i)`'s
+  congruence lemmas).
+
+`arxiv.md`: `8.12(e)(c)` row is now an umbrella (Deferred) with sub-rows `8.12(e)(c)(i)`–`(ii)`
+(both Scoped, not started) containing the above as their full proof-notes plans.
+
+**Status: `8.12(e)(c)` is re-scoped, not started.** **Resume protocol:** next up is `8.12(e)(c)(i)`
+— decider congruence + `posIdxFromBisection`/`negIdxFromBisection` well-definedness (see `arxiv.md`
+row for exact statements). Likely lands in `Exercise812e.lean` (append) or a new
+`Exercise812eSplit.lean` if `Exercise812e.lean` is getting unwieldy — check its current line count
+first. Remember to add the new `hdiffClosed : V.DiffClosed` hypothesis genuinely required for
+`emptyDiffDec_congr` (not present in `(e)(c)`'s original draft signature).
+
+**2026-07-05 — Exercise 8.12(e)(c)(i) `Pass`: decider congruence + `posIdxFromBisection`/
+`negIdxFromBisection` well-definedness.** Appended to `Scott1980/Neighborhood/Exercise812e.lean`,
+inside `namespace ComputableBisection` (kept in the same file — 88 lines was nowhere near
+"unwieldy"). Four new declarations, matching the plan closely: `emptyInterDec_congr`/
+`emptyDiffDec_congr` combine both sides' `≤ 1` bound with `_eq_one_iff` (`(d)(2)`, `Pass`) rewritten
+via `hn`/`hk` into an `Iff` of `= 1` facts (`h1.trans h2.symm`) — **turns out a bare `omega` call
+closes the final equality directly from the `Iff`-of-equalities hypothesis plus the two `≤ 1`
+bounds, no manual `{0,1}` case split needed** (simpler than the plan anticipated). `posIdxFromBisection_
+congr`/`negIdxFromBisection_congr`: `unfold`, `rw` via the two congruence lemmas to align both sides
+on the same decider values, then an `omega`-derived `{0,1}` case split, 3 of 4 branches closing on
+`hm` alone, only "both deciders silent" needing `B.left_congr`/`right_congr` — exactly per plan.
+**One real gotcha**: the idiom `rw [h1, selectFn_zero]` (`h1 : e = 0`), which works fine elsewhere
+in the codebase for single-occurrence goals, here silently rewrites *only the first* of the two
+occurrences `selectFn 0 m (…)`/`selectFn 0 m' (…)` in the goal — `rw` unifies metavariables against
+the *first* match and then only abstracts occurrences syntactically identical to *that* specific
+instantiation, so the `m'`-side occurrence (a different instantiation of the same general lemma)
+is left unrewritten, producing a bizarre-looking doubled-up type-mismatch error. **Lesson: when a
+goal has the *same* general-pattern lemma (like `selectFn 0 ?a ?b`) applying at two different
+instantiations simultaneously (e.g. once for `m`, once for `m'`), use `simp only […]` instead of
+`rw […]`** — `simp` rewrites every matching instantiation, `rw` only the one it happens to unify
+first. Fixed by switching both `rw [h1, selectFn_zero]`/`rw [h2, selectFn_zero]`-style steps to
+`simp only [h1, selectFn_zero]`/`simp only [h2, selectFn_zero]`. Zero `sorry`; `lake build Scott1980`
+(3166 jobs) clean. `#print axioms` on all four new declarations gives `⊆ {propext, Classical.choice,
+Quot.sound}` (inherited from `emptyInterDec`/`emptyDiffDec`'s own `Classical.choose`-based
+definitions, confirmed no fresh leak). `arxiv.md`: `8.12(e)(c)(i)` row → `Pass`; `8.12(e)(c)`
+umbrella and `8.12(e)` umbrella notes updated accordingly.
+
+**Status: Exercise 8.12(e)(c)(i) is `Pass`.** **Resume protocol:** next up is `8.12(e)(c)(ii)` —
+`splitFromBisection` (the `Classical.choose`-based classical split, via `dite`/`Exists.choose` on
+`∃ n k m, A = P.X n ∧ Xn = P.X k ∧ B' = Q.X m`) and `isComputableSplit_ofBisection` (assembling
+`IsComputableSplit`, with `posIdx`/`negIdx` fields literally `posIdxFromBisection`/
+`negIdxFromBisection`, `posIdx_spec`/`negIdx_spec` bridging `Classical.choose`'s returned witness
+back to the caller's `(n, m, k)` via `(e)(c)(i)`'s freshly-`Pass`'d congruence lemmas) — see
+`arxiv.md`'s `8.12(e)(c)(ii)` row for the exact planned signatures. This completes `8.12(e)(c)`.
