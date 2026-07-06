@@ -10524,3 +10524,56 @@ umbrella and `8.12(e)` umbrella notes updated accordingly.
 `negIdxFromBisection`, `posIdx_spec`/`negIdx_spec` bridging `Classical.choose`'s returned witness
 back to the caller's `(n, m, k)` via `(e)(c)(i)`'s freshly-`Pass`'d congruence lemmas) — see
 `arxiv.md`'s `8.12(e)(c)(ii)` row for the exact planned signatures. This completes `8.12(e)(c)`.
+
+**2026-07-05 — Exercise 8.12(e)(c)(ii) `Pass`: `splitFromBisection` + `isComputableSplit_ofBisection`,
+completing `8.12(e)(c)` in full.** Appended to `Scott1980/Neighborhood/Exercise812e.lean`, inside
+`namespace ComputableBisection`. Four new declarations. **Two deviations from the plan, both found
+while writing the actual code (not anticipated in the scoping pass):**
+1. **`splitFromBisection` itself takes only `P`, `hDiff`, `B`** — not `hpos`/`hnomin`/`hdiffClosed`
+   as the `arxiv.md` draft signature had it — since those three are only ever needed for
+   *correctness* (`isComputableSplit_ofBisection`'s `posIdx_spec`/`negIdx_spec`), never for the
+   `dite`-based definition itself, mirroring `posIdxFromBisection`/`negIdxFromBisection`'s own
+   already-hypothesis-free signatures. `isComputableSplit_ofBisection` takes the three instead.
+2. **`IsComputableSplit`'s `posIdx_primrec`/`negIdx_primrec` fields needed genuinely new proof
+   work**, not just a "citation" as the plan assumed: they demand the index function's *joint*
+   primitive-recursiveness as a single `Nat.Primrec` witness of the packed triple (`t.unpair.1`,
+   `t.unpair.2.unpair.1`, `t.unpair.2.unpair.2`, `IsComputableSplit`'s own coding convention) —
+   `posIdxFromBisection`/`negIdxFromBisection` were only known primitive recursive *compositionally*
+   (built from already-primitive-recursive pieces) but had never been packaged this way. Fixed by
+   `primrec_posIdxFromBisection`/`primrec_negIdxFromBisection`, mirroring `LevelSetPrimrec.lean`'s
+   `primrec_myUpsample` triple-argument idiom exactly: unpack `t`'s three projections, feed
+   `Nat.pair n k` through `primrec_emptyInterDec`/`primrec_emptyDiffDec`, chain two
+   `primrec_selectFn` applications, close with `.of_eq fun _ => rfl` (no `unpair_pair` massaging
+   needed this time — no `Nat.pair`/`unpair` round-trip occurs, so the packed and curried forms are
+   directly definitionally equal, unlike the `whnf`-timeout-prone compositions hit in `(e)(b)(i)`).
+
+`splitFromBisection A B' Xn` is a `dite` on `∃ n m k, A = P.X n ∧ B' = Q.X m ∧ Xn = P.X k` — order
+chosen to match `posIdxFromBisection`'s own `(n, m, k)` argument order directly (simpler than the
+plan's `(n, k, m)` ordering, which would have needed reshuffling the `Exists.choose` chain).
+**A second real gotcha, purely mechanical**: `theorem isComputableSplit_ofBisection ... where`
+failed elaboration with "is not a proposition" — `IsComputableSplit` is a data-carrying `structure`
+(its `posIdx`/`negIdx` fields are genuine `ℕ`-valued functions, not `Prop`s), so it must be a
+`noncomputable def`, not a `theorem`, even though every individual field obligation *is* a `Prop`.
+Also needed `open scoped Classical in` immediately before `splitFromBisection`'s own doc-comment
+(placing it *after* the doc-comment, as `open ... in` swallows the following single command,
+produced a parse error) to supply `Decidable` for the `dite`'s existential condition — the standard
+idiom already used elsewhere in the codebase (`Exercise424.lean`'s `sbFun`). `posIdx_spec`/
+`negIdx_spec` themselves went exactly per plan: `unfold`, `dif_pos` at the trivial witness
+`⟨n, m, k, rfl, rfl, rfl⟩`, `obtain` the conjunction from `hex.choose_spec.choose_spec.choose_spec`,
+close with `(posIdxFromBisection_congr/negIdxFromBisection_congr … ).symm`. Zero `sorry`;
+`lake build Scott1980` (3166 jobs) clean, zero linter errors. `#print axioms` on all four new
+declarations gives `⊆ {propext, Classical.choice, Quot.sound}` (inherited from `posIdxFromBisection`/
+`negIdxFromBisection`'s own deciders plus `splitFromBisection`'s fresh `Classical.choose` on the
+presentation-triple existential, confirmed no unexpected leak). `arxiv.md`: `8.12(e)(c)(ii)` row →
+`Pass`; `8.12(e)(c)` umbrella → **COMPLETE**; `8.12(e)` umbrella note updated to `(a)`–`(c)` `Pass`;
+`8.12(e)(d)`'s row updated to reflect `splitFromBisection`'s actual (not draft) signature.
+
+**Status: Exercise 8.12(e)(c) is COMPLETE (`(i)`–`(ii)` both `Pass`).** **Resume protocol:** next up
+is `8.12(e)(d)` — instantiate for `U`↔`V`, the exercise's literal target: (1) package `(e)(b)`'s
+`splitVLeft`/`splitVRight` as a genuine `ComputableBisection VComputablePresentation` (needs the
+**not-yet-proved** `left_congr`/`right_congr` fields — flagged as a to-check item back in `(e)(a)`'s
+own docstring, resolved here for the first time; `disjoint`/`union` are already `Pass` via
+`splitV_disjoint`/`splitV_union`), then (2) a one-line `isComputableSplit_ofBisection` instantiation
+fed `U`'s already-`Pass` `IsPositive`/`NoMinimal`/`DiffClosed` facts (`Exercise812c.lean`). Once
+`(e)(d)` lands, `8.12(e)` is **COMPLETE** in full, and `8.12(f)` (reusing `SplitU.lean`'s existing
+bisection directly, per `8.12(e)`'s own finding 5) should be comparatively quick.

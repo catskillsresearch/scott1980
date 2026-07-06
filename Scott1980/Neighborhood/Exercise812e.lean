@@ -170,6 +170,100 @@ theorem negIdxFromBisection_congr (hpos : V.IsPositive) (hnomin : V.NoMinimal)
 
 end Congr
 
+/-! ### 8.12(e)(c)(ii): `splitFromBisection` and `isComputableSplit_ofBisection`
+
+The actual classical split, and its `IsComputableSplit` proof, completing `8.12(e)(c)`. Genuinely
+new work beyond `(e)(c)(i)`: the two index functions' *joint* primitive-recursiveness (as a single
+function of the packed triple `Nat.pair n (Nat.pair m k)`, `IsComputableSplit`'s own convention) was
+not yet proved — `posIdxFromBisection`/`negIdxFromBisection` are primitive recursive in each
+*argument* separately (from their own defining pieces) but had not yet been packaged as one
+triple-argument `Nat.Primrec` witness. **Deviation from the `arxiv.md` draft signature**:
+`splitFromBisection` itself takes only `P`, `hDiff`, `B` (not `hpos`/`hnomin`/`hdiffClosed`) — those
+three hypotheses are needed only for *correctness* (`isComputableSplit_ofBisection`'s `posIdx_spec`/
+`negIdx_spec`, via `(e)(c)(i)`'s congruence lemmas), never for the definition itself, mirroring how
+`posIdxFromBisection`/`negIdxFromBisection` are themselves already hypothesis-free to *define*. -/
+
+theorem primrec_posIdxFromBisection :
+    Nat.Primrec (fun t => posIdxFromBisection P hDiff B
+      t.unpair.1 t.unpair.2.unpair.1 t.unpair.2.unpair.2) := by
+  have hn : Nat.Primrec (fun t : ℕ => t.unpair.1) := Nat.Primrec.left
+  have hm : Nat.Primrec (fun t : ℕ => t.unpair.2.unpair.1) := Nat.Primrec.left.comp Nat.Primrec.right
+  have hk : Nat.Primrec (fun t : ℕ => t.unpair.2.unpair.2) := Nat.Primrec.right.comp Nat.Primrec.right
+  have hnk : Nat.Primrec (fun t : ℕ => Nat.pair t.unpair.1 t.unpair.2.unpair.2) := hn.pair hk
+  have hinter : Nat.Primrec
+      (fun t : ℕ => emptyInterDec P (Nat.pair t.unpair.1 t.unpair.2.unpair.2)) :=
+    (primrec_emptyInterDec P).comp hnk
+  have hdiffD : Nat.Primrec
+      (fun t : ℕ => emptyDiffDec P hDiff (Nat.pair t.unpair.1 t.unpair.2.unpair.2)) :=
+    (primrec_emptyDiffDec P hDiff).comp hnk
+  have hleft : Nat.Primrec (fun t : ℕ => B.left t.unpair.2.unpair.1) := B.left_primrec.comp hm
+  have hinner : Nat.Primrec (fun t : ℕ => selectFn
+      (emptyDiffDec P hDiff (Nat.pair t.unpair.1 t.unpair.2.unpair.2)) t.unpair.2.unpair.1
+      (B.left t.unpair.2.unpair.1)) :=
+    primrec_selectFn hdiffD hm hleft
+  exact (primrec_selectFn hinter hm hinner).of_eq fun _ => rfl
+
+theorem primrec_negIdxFromBisection :
+    Nat.Primrec (fun t => negIdxFromBisection P hDiff B
+      t.unpair.1 t.unpair.2.unpair.1 t.unpair.2.unpair.2) := by
+  have hn : Nat.Primrec (fun t : ℕ => t.unpair.1) := Nat.Primrec.left
+  have hm : Nat.Primrec (fun t : ℕ => t.unpair.2.unpair.1) := Nat.Primrec.left.comp Nat.Primrec.right
+  have hk : Nat.Primrec (fun t : ℕ => t.unpair.2.unpair.2) := Nat.Primrec.right.comp Nat.Primrec.right
+  have hnk : Nat.Primrec (fun t : ℕ => Nat.pair t.unpair.1 t.unpair.2.unpair.2) := hn.pair hk
+  have hinter : Nat.Primrec
+      (fun t : ℕ => emptyInterDec P (Nat.pair t.unpair.1 t.unpair.2.unpair.2)) :=
+    (primrec_emptyInterDec P).comp hnk
+  have hdiffD : Nat.Primrec
+      (fun t : ℕ => emptyDiffDec P hDiff (Nat.pair t.unpair.1 t.unpair.2.unpair.2)) :=
+    (primrec_emptyDiffDec P hDiff).comp hnk
+  have hright : Nat.Primrec (fun t : ℕ => B.right t.unpair.2.unpair.1) := B.right_primrec.comp hm
+  have hinner : Nat.Primrec (fun t : ℕ => selectFn
+      (emptyDiffDec P hDiff (Nat.pair t.unpair.1 t.unpair.2.unpair.2)) t.unpair.2.unpair.1
+      (B.right t.unpair.2.unpair.1)) :=
+    primrec_selectFn hdiffD hm hright
+  exact (primrec_selectFn hinter hm hinner).of_eq fun _ => rfl
+
+open scoped Classical in
+/-- **The classical split, built from a `ComputableBisection`**: fall back to the prober-side
+deciders (`(d)(2)`'s `emptyInterDec`/`emptyDiffDec`, exactly as `posIdxFromBisection`/
+`negIdxFromBisection` do) whenever the input triple presents as `(P.X n, Q.X m, P.X k)` for some
+indices, and to a harmless junk value (`(B', B')`) otherwise — never read downstream, since `(e)(d)`/
+`(f)(a)` only ever apply this to literal `(P.X n, Q.X m, P.X k)` triples. -/
+noncomputable def splitFromBisection (A : Set α) (B' : Set γ) (Xn : Set α) : Set γ × Set γ :=
+  if h : ∃ n m k, A = P.X n ∧ B' = Q.X m ∧ Xn = P.X k then
+    (Q.X (posIdxFromBisection P hDiff B h.choose h.choose_spec.choose
+        h.choose_spec.choose_spec.choose),
+     Q.X (negIdxFromBisection P hDiff B h.choose h.choose_spec.choose
+        h.choose_spec.choose_spec.choose))
+  else (B', B')
+
+/-- **`splitFromBisection` satisfies `IsComputableSplit`**, completing `8.12(e)(c)`. `posIdx`/
+`negIdx` are literally `posIdxFromBisection`/`negIdxFromBisection`; the two `_spec` fields unfold
+`splitFromBisection` at the literal triple `(P.X n, Q.X m, P.X k)` (trivially witnessed by
+`(n, m, k)` itself), then bridge `Classical.choose`'s own (possibly different) witness back to
+`n, m, k` via `(e)(c)(i)`'s `posIdxFromBisection_congr`/`negIdxFromBisection_congr`. -/
+noncomputable def isComputableSplit_ofBisection (hpos : V.IsPositive) (hnomin : V.NoMinimal)
+    (hdiffClosed : V.DiffClosed) :
+    IsComputableSplit P Q (splitFromBisection P hDiff B) where
+  posIdx := posIdxFromBisection P hDiff B
+  negIdx := negIdxFromBisection P hDiff B
+  posIdx_primrec := primrec_posIdxFromBisection P hDiff B
+  negIdx_primrec := primrec_negIdxFromBisection P hDiff B
+  posIdx_spec n m k := by
+    have hex : ∃ n' m' k', P.X n = P.X n' ∧ Q.X m = Q.X m' ∧ P.X k = P.X k' :=
+      ⟨n, m, k, rfl, rfl, rfl⟩
+    unfold splitFromBisection
+    rw [dif_pos hex]
+    obtain ⟨hn', hm', hk'⟩ := hex.choose_spec.choose_spec.choose_spec
+    exact (posIdxFromBisection_congr P hDiff B hpos hnomin hdiffClosed hn' hk' hm').symm
+  negIdx_spec n m k := by
+    have hex : ∃ n' m' k', P.X n = P.X n' ∧ Q.X m = Q.X m' ∧ P.X k = P.X k' :=
+      ⟨n, m, k, rfl, rfl, rfl⟩
+    unfold splitFromBisection
+    rw [dif_pos hex]
+    obtain ⟨hn', hm', hk'⟩ := hex.choose_spec.choose_spec.choose_spec
+    exact (negIdxFromBisection_congr P hDiff B hpos hnomin hdiffClosed hn' hk' hm').symm
+
 end ComputableBisection
 
 end Scott1980.Neighborhood
