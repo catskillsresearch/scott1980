@@ -11360,3 +11360,429 @@ follow-up, not started.
 theorem + finite-elements characterization) is done. Optional, non-blocking: concrete examples of
 closure operators on `PN` (e.g. "close a set of naturals under addition") — skip unless requested.
 Otherwise pick the next `Deferred` row in `arxiv.md` (`8.15` is next in sequence).
+
+## 2026-07-06 — Exercise 8.15: subgoal plan (per user request to write subgoals before coding)
+
+Scott: "give a **direct** proof that `{X ∣ X ◁ D}` is effectively presented if `D` is (hint: finite
+elements ↔ finite systems `X ◁ D`); for `D = 𝒰`, computable elements ↔ effectively presented domains
+up to effective isomorphism." New file: `Scott1980/Neighborhood/Exercise815.lean`.
+
+**Why not just reuse `Exercise222`/`Proposition611`'s `subsystemReprIso`?** That route is abstract
+and `Classical.choice`-laden (picks `Cl C F` over an arbitrary, possibly-uncountable family). Scott
+explicitly asks for a *direct* proof, and the hint ("finite elements ↔ finite systems") points at a
+concrete, `ℕ`-indexed construction reusing `Theorem75.lean`'s `interFrom`/`idxchain`/`bitSelect`/
+`decodeList` toolkit (built for exactly this kind of "finite consistent sub-selection" computation).
+Bonus: the direct construction below turns out to be **fully choice-free**, unlike `Exercise222`.
+
+Fix `D : NeighborhoodSystem α`, `P : ComputablePresentation D`.
+
+### Subgoal 1 — `Fin(js)`, the finitely generated subsystem (token type stays `α`)
+* `Fin(js) := {Y ∣ ∃ sub, sub.Sublist js ∧ D.mem Y ∧ Y = interFrom P D.master sub}` (`interFrom` is
+  `Theorem75.lean`'s running intersection, generic in `P`).
+* `finGenSys(js) : NeighborhoodSystem α` with `mem := Fin(js)`, `master := D.master`; prove
+  `finGenSys(js) ◁ D` (`Subsystem`). Closure under consistent intersection: two sub-selections
+  `sub1 sub2 ⊑ js` combine via `sub3 := js.filter (· ∈ sub1 ∨ · ∈ sub2)` (`List.filter_sublist` +
+  a value-set argument, **no bitmask needed at this layer**).
+* Monotonicity: `js ⊑ js' → Fin(js) ⊆ Fin(js')` (trivial, sublist transitivity).
+* **`Fin_concat_le_iff`** (key lemma): for any `D' ◁ D`, `Fin(js₁ ++ js₂) ⊆ D'.mem ↔ Fin(js₁) ⊆
+  D'.mem ∧ Fin(js₂) ⊆ D'.mem`. Proof: decompose a sublist of `js₁++js₂` as `sub1++sub2`
+  (`sub1⊑js₁,sub2⊑js₂`, a `List.Sublist` fact); the subtle point is that `sub1`/`sub2` need **not**
+  be individually `D`-consistent, but `interFrom_mem_of_witness` (already in `Theorem75.lean`!)
+  shows they secretly *are*, using the *full* meet as the witness `Z`. Then `D'.inter_closed` does
+  the rest.
+* **`Fin_le_iff_forall_mem`**: `Fin(js) ⊆ D'.mem ↔ ∀ i ∈ js, D'.mem (P.X i)` — induction on `js`,
+  `cons` step is `Fin_concat_le_iff` at `js = [i] ++ js'` (`Fin([i]) = {D.master, P.X i}` trivially
+  `⊆ D'.mem`).
+
+### Subgoal 2 — the reconstructed system `SubD` (token type `List ℕ`)
+* `nbhd(js) := {js' ∣ Fin(js) ⊆ Fin(js')}` (anti-monotone principal up-set, à la `Exercise222.nbhd`
+  but concrete/`ℕ`-indexed). `SubD.mem N := ∃ js, N = nbhd(js)`, `SubD.master := nbhd([])`.
+* `nbhd(js₁) ∩ nbhd(js₂) = nbhd(js₁++js₂)` is `Fin_concat_le_iff` instantiated at
+  `D' := finGenSys(js')` for the generic `js'` — gives `SubD.inter_mem`.
+* `nbhd(a) = nbhd(b) ↔ Fin(a) = Fin(b)` ("injectivity", `a ∈ nbhd(a)` reflexive + antisymmetry).
+
+### Subgoal 3 — `SubD.Element ≃o {D' ∣ D' ◁ D}` (choice-free!)
+* Forward `toFilter D' := fun N ↦ ∃js, N=nbhd(js) ∧ ∀i∈js, D'.mem(P.X i)`.
+* Backward `ofFilter x := fun Y ↦ ∃js, x.mem(nbhd js) ∧ Y ∈ Fin(js)`; prove `ofFilter x ◁ D`.
+* Round trips both reduce to `Fin_le_iff_forall_mem` + a **finite fold**: given `∀i∈js` individually
+  confirmed by (possibly different) generators `js_i`, concatenate all the `js_i` (fold over the
+  finite list `js`) and use `x.inter_mem` iteratively to get one `js₀` confirmed by `x` with
+  `Fin(js) ⊆ Fin(js₀)` (monotonicity + `Fin_le_iff_forall_mem` at `D'':=finGenSys(js₀)`), then
+  `x.up_mem` along `nbhd(js₀) ⊆ nbhd(js)`. No `Exercise222`-style `Cl`/choice needed anywhere.
+* `map_rel_iff'`: both directions reduce to the same round-trip argument applied to singletons.
+
+### Subgoal 4 — computability: `ComputablePresentation SubD`
+* `X n := nbhd(decodeList n)`; `surj` via `encodeList`/`decodeList_encodeList`.
+* `Fin(js) ⊆ Fin(js')` is a **bounded** `∀ b < 2^len(js), ∃ b' < 2^len(js'), …` statement over
+  `bitSelect`-selected sub-lists (reuse `Theorem75.lean` Milestone 3b's `bitSelect`/
+  `exists_bitSelect_lt`), with antecedent (`D.mem(interFrom …)`) decided via `consChain_iff` and the
+  consequent (set equality) decided via `idxchain_spec` + `P.eq_computable` (compare the two
+  `idxchain` indices). Assemble via `RecDecidable.bForall`/`.bExists`/`.and`/`.of_iff` → `nbhd(a) =
+  nbhd(b)`/`∃k,…` decidable → `interEq_computable`/`cons_computable` for `SubD`.
+
+### Subgoal 5 — main theorem
+* `D.IsEffectivelyGiven → SubD.IsEffectivelyGiven`; combine with Subgoal 3's `OrderIso` and
+  `Proposition611.subPartialOrder` to conclude `{D' ∣ D' ◁ D}` (ordered by `◁`) is (isomorphic to) an
+  effectively given domain — Scott's headline claim, done *directly* (no `Exercise222`, no choice).
+
+### Subgoal 6 — `D = 𝒰` computable-elements characterization (second half)
+* Deferred until Subgoals 1–5 are green; likely substantial (needs "effectively presented domain up
+  to effective isomorphism" as a formalized equivalence). Revisit/scope separately.
+
+**Status at time of writing:** plan recorded, implementation not yet started. Work the subgoals in
+order 1 → 5; each should get its own `lake build` checkpoint before moving on.
+
+## 2026-07-06 — Exercise 8.15: Subgoals 1–2 green
+
+`Scott1980/Neighborhood/Exercise815.lean` builds clean, zero `sorry`, no linter errors.
+
+* **Subgoal 1 done.** `finGen P js` (the `Fin(js)` sub-meets), `finGenSys P js` (as a
+  `NeighborhoodSystem`) + `finGenSys_subsystem : finGenSys P js ◁ D`, and the workhorse
+  `finGen_le_iff_forall_mem : finGen P js ⊆ D'.mem ↔ ∀ i ∈ js, D'.mem (P.X i)` (for any `D' ◁ D`) —
+  proved by induction on `js` via `interFrom_mem_of_witness` + `D'.inter_closed`. Corollary
+  `finGen_append_le_iff : finGen P (js1++js2) ⊆ D'.mem ↔ finGen P js1 ⊆ D'.mem ∧ finGen P js2 ⊆
+  D'.mem` via `List.forall_mem_append`.
+* **Subgoal 2 done.** `nbhdGen P js := {js' | finGen P js ⊆ finGen P js'}` (the up-set `nbhd(js)`);
+  `SubD P : NeighborhoodSystem (List ℕ)` with `mem N := ∃ js, N = nbhdGen P js`,
+  `master := nbhdGen P []`. Key facts: `nbhdGen_eq_iff : nbhdGen P a = nbhdGen P b ↔ finGen P a =
+  finGen P b` (injectivity, via `Set.ext_iff` + `self_mem_nbhdGen` twice + antisymmetry) and
+  `nbhdGen_inter : nbhdGen P js1 ∩ nbhdGen P js2 = nbhdGen P (js1++js2)` (`finGen_append_le_iff`
+  instantiated at `D' := finGenSys(js')` for the ext-quantified candidate `js'`) — used directly for
+  `SubD.inter_mem`.
+* **Lean gotchas hit along the way** (for future reference): (1) `Set.Subset` (`⊆`) unfolds to `∀
+  ⦃a⦄, a∈s→a∈t` with a *strict-implicit* binder — writing `hsub _ proof` or a raw `fun hY => ...`
+  to build/apply such a term binds the wrong variable; prefer applying the proof term directly
+  (`hsub proof`, letting the strict implicit unify) or composing via `Set.Subset.trans`
+  (`.trans`) instead of manual lambdas. (2) `∀ i ∈ (a::l), p i` is *not* definitionally `p a ∧ ∀ i ∈
+  l, p i`; bridge with `List.forall_mem_cons` (an `Iff`, use via `rw`). (3) Dot notation `foo.mpr`
+  only works once `foo` is *fully applied down to* its `Iff`/`Eq` type — if `foo` has a leading
+  **explicit** section-variable argument (e.g. `P : ComputablePresentation D`) still needed, write
+  `(foo P).mpr`, not `foo.mpr` (which yields a spurious "unknown constant" error, not an arity
+  error!).
+* **Next:** Subgoal 3 (`SubD.Element ≃o {D' ∣ D' ◁ D}`, choice-free order isomorphism).
+
+## 2026-07-06 — Exercise 8.15: Subgoal 3 green (`subsystemIso`, fully choice-free)
+
+`Scott1980/Neighborhood/Exercise815.lean` (448 lines) still builds clean, zero `sorry`, no
+linter errors, and `#print axioms subsystemIso` gives `⊆ {propext, Quot.sound}` — **choice-free**,
+as promised, unlike `Proposition611.subsystemReprIso`.
+
+* **Forward `toSubsystem`** (`(SubD P).Element → {D' // D' ◁ D}`): `toSubsystemSys P x` has
+  neighbourhoods `Y` such that `∃js, x.mem(nbhdGen P js) ∧ Y ∈ finGen P js`; `inter_mem`/
+  `inter_closed` combine two witnessing `js₁,js₂` via **plain list `++`** (not `combineSub`!) using
+  the new general fact `interFrom_append_eq : interFrom P A (l1++l2) = interFrom P A l1 ∩ interFrom
+  P A l2` (pure `mem_interFrom` + `List.forall_mem_append`, no consistency needed) — simpler than
+  `finGenSys`'s own `combineSub`/filter trick, which is specific to combining two sub-selections of
+  the *same* list.
+* **Backward `ofSubsystem`** (`{D' // D' ◁ D} → (SubD P).Element`): filter `N ↦ ∃js, N=nbhd(js) ∧
+  ∀i∈js, D'.mem(P.Xi)`. Reusable bridge lemma `mem_ofSubsystem_nbhdGen : (ofSubsystem P D'
+  hD').mem(nbhd js) ↔ ∀i∈js,D'.mem(P.Xi)` (for *any* `D'◁D`) — proved via `nbhdGen_eq_iff` +
+  `finGen_le_iff_forall_mem` twice.
+* **Round trip 1** (`toSubsystem_ofSubsystem`): direct from `mem_ofSubsystem_nbhdGen` +
+  `NeighborhoodSystem.ext`.
+* **Round trip 2** (`ofSubsystem_toSubsystem`): needs the promised **finite-fold** lemma
+  `exists_common_witness` — given per-generator witnesses `js_i` (`i∈js`) with `x.mem(nbhd
+  js_i)`, induction on `js` concatenates them (`x.inter_mem` + `nbhdGen_inter` at each `cons`
+  step, monotonicity via `List.sublist_append_left/right`) into *one* `js₀` with `x.mem(nbhd js₀)`
+  and `Fin(js)⊆Fin(js₀)`; then `x.up_mem` finishes. Exactly the "no `Exercise222`/`Cl`" argument
+  from the plan.
+* **`mem_nbhdGen_iff`** bridges `x.mem(nbhd js) ↔ ∀i∈js,(toSubsystemSys P x).mem(P.Xi)` by
+  combining round trip 2 with `mem_ofSubsystem_nbhdGen` — the key lemma for `map_rel_iff'`.
+* **`subsystemIso`**: `map_rel_iff'` reduces via `Subsystem.subsystem_iff_subset_of_common`
+  (Scott's remark, already in `Definition610.lean`) to `mem_nbhdGen_iff` applied pointwise both
+  ways.
+* **Choice leak found and fixed** (important lesson): `finGen_sub_mem` was originally written as
+  `h.choose_spec.2.1` (`Exists.choose`/`choose_spec` are `Classical.choice`-based even when
+  eliminating a `Prop`-valued `Exists` to prove another `Prop` — pattern-matching (`rintro`/`obtain`
+  / anonymous-constructor `fun ⟨_,_,hD,_⟩ => hD`) is choice-free and should **always** be preferred
+  for `Prop` exists-elimination). Likewise `le_antisymm` on `Set α` (used in
+  `finGen_eq_of_nbhdGen_eq`) transitively pulls in `Classical.choice` through Mathlib's generic
+  lattice/order hierarchy — **use `Set.Subset.antisymm` instead of `le_antisymm` for `Set`
+  equalities** to stay choice-free. Run `#print axioms` on new theorems periodically (not just at
+  the end!) to catch these early — they don't show up as build errors.
+* **Next:** Subgoal 4 (`ComputablePresentation SubD` — `X n := nbhd(decodeList n)`, decidability of
+  `nbhd` intersection/consistency via `bitSelect`/`consChain_iff`/`idxchain_spec`).
+
+## 2026-07-06 — Exercise 8.15: Subgoal 4 plan (computability), sub-subgoals 4a–4g
+
+Investigated `Theorem75.lean`'s Milestone 3 apparatus (`bitSelect`/`exists_bitSelect_lt`/
+`consChain_iff`/`idxchain_spec`/`consCharAt`/`consFold_decidable`) and `Recursive.lean`'s list
+combinators (`RecDecidable₂.bForallList`/`bExistsList`, `appendListCode`/`appendListCode_eq`,
+`primrec_two_pow`). Key simplification found: **`cons_computable` and half of `inter`/`inter_spec`
+are free**, because `nbhdGen P js1 ∩ nbhdGen P js2 = nbhdGen P (js1++js2)` *exactly* (not just
+`⊆`) — so `appendListCode n m` is *always* a valid witness/index, no case-split needed. Only
+`interEq_computable` (deciding *equality* `finGen(A) = finGen(B)` for two different lists) needs
+real work, via a "is `P.X m` a member of `Fin(decodeList c)`" decider.
+
+**Sub-subgoals** (`ComputablePresentation V` needs: `X, mem_X, surj, interEq_computable,
+cons_computable, inter, inter_primrec, inter_spec, masterIdx, masterIdx_spec`):
+
+* **4a.** `SubDX n := nbhdGen P (decodeList n)`; `mem_X`/`surj` trivial via `encodeList`/
+  `decodeList_encodeList`.
+* **4b.** `idxCharAt`: reuse `Theorem75.consStp`'s fold (same one powering `consCharAt`) but
+  project the **index** component (`.unpair.2.unpair.1`) instead of the flag
+  (`.unpair.2.unpair.2`) — primitive recursive "for free" by the same `primrec_foldCode` call,
+  different final projection. New lemma `consUpd_foldl_idx`: the index-component update in
+  `consUpd`'s step is independent of the threaded flag, so by induction it equals
+  `(List.map projFn (bitSelect el b)).foldl (fun acc j => P.inter acc j) a` — hence (at
+  `projFn:=id`, `a:=P.masterIdx`) `idxCharAt` computes exactly `idxchain P (bitSelect (decodeList
+  c) b)` (`idxCharAt_eq_idxchain`).
+* **4c.** `mem_finGen_computable : RecDecidable₂ (fun m c => P.X m ∈ finGen P (decodeList c))`:
+  `P.X m ∈ finGen(decodeList c) ↔ ∃b<2^c, D.mem(interFrom(bitSelect(decodeList c)b)) ∧
+  P.X m = P.X(idxCharAt fc (pair b c))` (`idxchain_spec` converts the equality target once
+  consistency is known) — assembled via `RecDecidable.bExists` (bound `2^c`, `primrec_two_pow`)
+  over `consFold_decidable.and (P.eq_computable.comp ...)`.
+* **4d.** `finGen_subset_computable : RecDecidable₂ (fun c1 c2 => finGen P (decodeList c1) ⊆
+  finGen P (decodeList c2))`: rewrite via `finGen_le_iff_forall_mem` (`D' := finGenSys(decodeList
+  c2)`) to `∀i∈decodeList c1, P.Xi∈finGen(decodeList c2)`, which is exactly
+  `RecDecidable₂.bForallList` applied to 4c.
+* **4e.** `interEq_computable`: `X n∩X m=X k ↔ nbhdGen(decodeList n++decodeList m) =
+  nbhdGen(decodeList k) ↔ finGen(decodeList(appendListCode n m)) = finGen(decodeList k)`
+  (`nbhdGen_inter`, `appendListCode_eq`, `nbhdGen_eq_iff`) `↔` double inclusion via `Set.
+  Subset.antisymm_iff`, both directions from 4d (reindexed along `appendListCode`/`Nat.Primrec`).
+* **4f.** `cons_computable`, `inter`/`inter_primrec`/`inter_spec` are **free**: `inter n m :=
+  appendListCode n m` always satisfies `X(inter n m) = X n ∩ X m` **exactly** (no consistency
+  hypothesis needed, via `appendListCode_eq` + `nbhdGen_inter`), so `cons_computable` is
+  `recDecidable₂_of_forall` (witness `appendListCode n m` always ⊆, in fact =).
+* **4g.** `masterIdx := encodeList []`; `masterIdx_spec` via `decodeList_encodeList` +
+  `SubD_master`. Assemble `SubDPresentation : ComputablePresentation (SubD P)`, then Subgoal 5
+  (`D.IsEffectivelyGiven → SubD.IsEffectivelyGiven`, one line combining 4a–4g).
+
+Implementing 4a → 4g in order now; each gets a `lake build` checkpoint.
+
+## 2026-07-06 — Exercise 8.15: Subgoals 4c–5 green — main theorem done, fully choice-free
+
+`Scott1980/Neighborhood/Exercise815.lean` (now ~660 lines) builds clean, zero `sorry`, no linter
+errors. Every new theorem individually audited with `#print axioms` and confirmed `⊆ {propext,
+Quot.sound}` — **choice-free**, including the capstone `subsystem_isEffectivelyGiven_of_isEffectivelyGiven`.
+
+* **4c** (`mem_finGen_computable`): assembled as planned — `consFold_decidable` (consistency) `.and`
+  `P.eq_computable`-via-`idxCharAt` (index equality), bundled through `RecDecidable.bExists` (bound
+  `2^c`, `primrec_two_pow`). The `D.mem (P.X m)` conjunct in `finGen`'s definition drops out for free
+  (always true, `P.mem_X`). Bridging between the `bExists`-combinator's generic reindexing and the
+  concrete `idxCharAt`/`bitSelect` statements needs a `simp only [unpair_pair_fst, unpair_pair_snd]`
+  step **both before and after** each `rw [idxCharAt_eq_idxchain]` (the rewrite substitutes a fresh
+  `Nat.pair _ _` for `idxCharAt`'s argument `w`, re-introducing un-simplified `(pair _ _).unpair.1/2`
+  that must be cleaned up again downstream).
+* **4d** (`finGen_subset_computable`): one-line rewrite via `finGen_le_iff_forall_mem` (at
+  `D' := finGenSys (decodeList c2)`) to `mem_finGen_computable.bForallList`.
+* **4e** (`SubD_interEq_computable`, ternary): chain `nbhdGen_inter` / `appendListCode_eq` /
+  `nbhdGen_eq_iff` / `Set.Subset.antisymm_iff` reduces `X n∩X m=X k` to two `finGen_subset_computable`
+  instances reindexed along `appendListCode`, combined via `.and`.
+* **4f–4g**: `cons_computable`/`inter`/`inter_primrec`/`inter_spec` are genuinely free
+  (`SubDX_inter_eq`: `SubDX(appendListCode n m) = SubDX n ∩ SubDX m` *exactly*, no consistency
+  hypothesis ever used); `masterIdx := encodeList []` via `decodeList_encodeList`. Assembled into
+  `SubDPresentation : ComputablePresentation (SubD P)`.
+* **Subgoal 5** (`subsystem_isEffectivelyGiven_of_isEffectivelyGiven`): combines `SubDPresentation`
+  with Subgoal 3's `subsystemIso` — *the* headline result: `D.IsEffectivelyGiven → ∃ V, V.
+  IsEffectivelyGiven ∧ Nonempty (V.Element ≃o {D' ∣ D' ◁ D})`. This is Exercise 8.15's first half,
+  done directly and choice-free (unlike `Proposition611.subsystemReprIso`'s route through the
+  classical `Exercise222.reprIso`).
+
+* **Two important choice-leak lessons found via bisection** (`#print axioms`, then binary-search by
+  replacing tactic blocks with `sorry` until the leak disappears/reappears):
+  1. **`simp [foo]` (non-`only`) can pull `Classical.choice` even for goals that look purely
+     arithmetic** (`simp [bitSelect_nil]` on a `Nat` equation involving `List.foldl`/`unpair`/`pair`
+     did) — because `simp`'s *default* simp set (not just the cited lemma) is in play, and Mathlib's
+     default set includes classical-tainted lemmas. **Fix: spell out the rewrite explicitly** (`rw
+     [bitSelect_nil, List.foldl_nil, List.map_nil, List.foldl_nil, unpair_pair_snd,
+     unpair_pair_fst]`) instead of trusting `simp`/`simp [specific_lemma]` to land on a choice-free
+     path. `simp only [explicit, lemma, list]` (no defaults) is safe; bare `simp [...]` is not.
+  2. **`norm_num` itself is choice-tainted in this project's Mathlib version** — even a trivial goal
+     like `(1:ℕ) ≤ 2 := by norm_num` audits with `Classical.choice`. **Use `omega` instead** for
+     numeral-only arithmetic side goals (confirmed choice-free); `omega` cannot discharge genuinely
+     nonlinear goals (e.g. `b < 2^n` from `b < m ∧ m ≤ n`... needs the pow lemma), but the *numeral*
+     precondition of lemmas like `Nat.pow_le_pow_right` (`0 < 2`) is exactly `omega`'s sweet spot.
+  Both fixes leave zero residual `Classical.choice` in the final `#print axioms` for every downstream
+  theorem. **General moral reinforced: audit with `#print axioms` frequently (every few theorems, not
+  just at milestones), and when a leak appears, bisect by `sorry`-replacing tactic blocks top-down/
+  side-by-side rather than guessing — it is fast (`lake env lean` on a scratch file) and precise.**
+* **Also hit**: ascribing an explicit `Nat.Primrec (fun t => f t.unpair.1 t.unpair.2.unpair.1)` type
+  directly to a `.comp` composite (where the composed reindexing function is `Nat.pair`-built, so the
+  stated type is only *propositionally*, not *definitionally*, equal to the elaborated one) causes a
+  `(deterministic) timeout at whnf` — Lean tries to unfold `Nat.unpair (Nat.pair …)` via `Nat.sqrt`
+  arithmetic to check defeq, which is expensive/diverges practically. **Fix: use `Nat.Primrec.of_eq`
+  to bridge propositionally** (`(raw_comp).of_eq (fun t => by simp only [unpair_pair_fst,
+  unpair_pair_snd])`) instead of direct type ascription — mirrors the `RecDecidable.of_iff` pattern
+  already used throughout this file/`Recursive.lean`, but for `Nat.Primrec` goals specifically.
+
+**Remaining**: Subgoal 6, the `D = 𝒰` second half (computable elements of `SubD 𝒰`'s subsystem-domain
+↔ effectively presented domains up to effective isomorphism) — not yet started; see `arxiv.md`'s
+Exercise 8.15 entry for the planned approach.
+
+## 2026-07-06 — Exercise 8.15, Subgoal 6: plan written (7 sub-subgoals, 6a–6g)
+
+Before writing any Lean, spent real time on the mathematical content of "computable elements of
+`SubD 𝒰` correspond to effectively presented domains up to effective isomorphism", because a naive
+formalization (quantify over an *arbitrary* `Q : ComputablePresentation D'x`) turns out **not** to be
+provable with this project's tools, and I believe not provable at all without extra structure:
+
+* **Counterexample found**: fix `x : (SubD UP).Element` with `D'x := toSubsystemSys UP x`. Take
+  `js = [a, b]` where `UP.X a`, `UP.X b` are *disjoint* rational-interval unions (`𝒰`'s `mem` requires
+  `Nonempty`, so their intersection is not a `𝒰`-neighbourhood). Taking `D' := 𝒰` itself as the witness
+  subsystem, `x.mem (nbhdGen UP [a,b])` can hold (it only asserts `D'.mem (UP.X a) ∧ D'.mem (UP.X b)`,
+  both trivially true for `D' = 𝒰`) **without** `𝒰.mem (interFrom UP 𝒰.master [a,b]) = 𝒰.mem ∅` holding
+  (false). So "`x` confirms a list `js`" does **not** imply the raw intersection along `js` is even a
+  neighbourhood — consistency is not free, it must be *checked* (decidably, via `UP.cons_computable`/
+  `UP.inter` folded along the list — exactly `Theorem75.lean`'s `idxchain`/`consChain_iff` apparatus,
+  already built for a different purpose but directly reusable here).
+* This kills the naive "`Q'x.X n := interFrom UP D.master (map r (decodeList n))`" idea (fails
+  `mem_X` for "bad" `n`) — **fix**: guard with `consChain_iff`'s decidable consistency check
+  (`∀j∈L, UP.X(idxchain UP L) ⊆ UP.X j`, decidable by folding `UP.incl_computable`), `selectFn`-branch
+  to a `𝒰.master` fallback when inconsistent, matching the `{0,1}`-decider/`selectFn` idiom used
+  throughout `Recursive.lean` (never a classical `if`/`Decidable` instance, to stay choice-free).
+* This also confirmed the deeper point: for a **fully abstract** `Q` (not built relative to `UP`'s own
+  enumeration), deciding `Q.Xn ⊆ UP.Xm` needs a *cross-presentation* comparison that
+  `ComputablePresentation`'s axioms (`interEq_computable`, `cons_computable`, `inter`, all stated
+  purely in terms of `Q`'s own indices) do not supply, and I could not find a construction that
+  supplies it without assuming extra compatibility between `Q` and `UP` — this is a real instance of
+  the classical-recursion-theory fact that not all numberings of the same r.e./enumerable structure are
+  computably equivalent. **Decision**: formalize "effectively given, up to effective isomorphism"
+  *relative to `UP`'s enumeration* (fully provable, and I believe the intended, natural reading), and
+  explicitly log the general "arbitrary `Q`" converse as **not attempted** (Subgoal 6g) rather than
+  silently assume it.
+
+**The 7 sub-subgoals** (written out in full in `arxiv.md`'s Exercise 8.15 entry, to be worked in
+sequence and checked off here as each goes green):
+* 6a — `IsComputableElement (SubDPresentation UP) x ↔ REPred (fun i => D'x.mem (UP.X i))`
+  (`mem_nbhdGen_iff` + `REPred.forall_mem_decodeList`, both directions).
+* 6b — forward: computable `x` → `∃ r, Nat.Primrec r ∧ ∀ i, D'x.mem (UP.X i) ↔ ∃ n, r n = i`
+  (`Exercise714.repred_exists_primrec_range`, witness `UP.masterIdx`).
+* 6c — backward: the same `∃ r, …` ⟹ computable `x` (`Exercise714.repred_range_primrec`).
+* 6d — combine into the main biconditional `subsystemU_element_computable_iff`.
+* 6e — build `Q'x : ComputablePresentation D'x` from `r`, via the guarded `idxchain` construction.
+* 6f — capstone: `IsComputableElement (SubDPresentation UP) x → D'x.IsEffectivelyGiven`.
+* 6g — no new Lean; a documentation-only checkpoint recording the "arbitrary `Q`" limitation (already
+  written above and in `arxiv.md`) so a future session doesn't waste time re-discovering it.
+
+Next: implement 6a in `Scott1980/Neighborhood/Exercise815.lean`.
+
+## 2026-07-06 — Exercise 8.15, Subgoals 6a–6d green (choice-free)
+
+`Scott1980/Neighborhood/Exercise815.lean` now has (all `#print axioms ⊆ {propext, Quot.sound}`),
+generic in `D`/`P` (no `D = 𝒰` specialization needed for the argument itself):
+
+* **6a** (`subsystemU_computable_iff_index_set_re`): `IsComputableElement (SubDPresentation P) x ↔
+  REPred (fun i => (toSubsystemSys P x).mem (P.X i))`. `mem_nbhdGen_iff` reduces `x.mem (SubDX n)` to
+  `∀i∈decodeList n, D'x.mem(P.Xi)` pointwise; `→` reindexes down to a single index via the
+  primitive-recursive singleton-list code `i ↦ encodeList [i]` (`decodeList_encodeList` unwinds it
+  back to `[i]`); `←` is `REPred.forall_mem_decodeList` directly. No new mathematical content, pure
+  bookkeeping — the interesting part was getting the `REPred.of_iff` argument order right in both
+  directions (`of_iff (h : ∀n, q n ↔ p n) (hp : REPred p) : REPred q` — easy to flip by accident).
+* **6b–6d** (`subsystemU_element_computable_iff`): combined into one theorem — `x` computable ↔
+  `∃ r, Nat.Primrec r ∧ ∀i, D'x.mem(P.Xi) ↔ ∃n, r n = i`. `→` is `Exercise714.repred_exists_primrec_range`
+  seeded with the witness `P.masterIdx` (`D'x.mem(P.X masterIdx) = D'x.mem D.master`, always true via
+  `masterIdx_spec` + `(toSubsystemSys P x).master_mem`); `←` is `Exercise714.repred_range_primrec`
+  composed back through 6a via `REPred.of_iff`.
+
+**Next**: 6e — upgrade the bare `r` into an actual `Q'x : ComputablePresentation (toSubsystemSys P x)`,
+using the guarded `idxchain`/`consChain_iff` construction from `Theorem75.lean` (see the plan above);
+then 6f (capstone corollary to `IsEffectivelyGiven`); 6g is documentation-only (already written above).
+
+## 2026-07-06 — Exercise 8.15, Subgoal 6e: investigated, scoped out for this session
+
+Tried to build `Q'x.X n := UP.X (idxchain UP (map r (decodeList n)))` guarded by a decidable
+consistency check (per the 6e plan). Hit a **choice-introducing dead end**, distinct from (but related
+to) the 6g limitation already logged:
+
+* To define `Q'x.X` — a `Type`-valued (`ℕ → Set α`) *field of a structure*, hence genuine `Type`-level
+  data, not a `Prop` — the branch condition ("is `interFrom P D.master L` consistent?") must be an
+  **explicit, already-in-hand `ℕ → ℕ` function**, not merely something known to exist via a
+  `RecDecidable`/`Exists` proof. Every existing choice-free construction in this file/`Recursive.lean`
+  respects this: `SubDX`, `appendListCode`, `masterIdx := encodeList []`, etc. are all *directly
+  defined* closed-form functions; `RecDecidable`/`REPred` facts are used **only** to prove `Prop`-valued
+  structure fields (`interEq_computable`, `cons_computable`, …), never to manufacture the `X`/`inter`
+  data fields themselves. Extracting a witness function from `P.incl_computable : RecDecidable₂ …`
+  (a `Prop`) to use *as data* would need `Exists.elim`/`Exists.choose` into a `Type`-valued target —
+  exactly `Classical.choice`. For an **abstract** `P : ComputablePresentation D` (a bound variable, not
+  a concrete term), there is no way around this: `P`'s internal decider is only known to exist, never
+  named.
+* Also **re-derived (independently) that the naive guard doesn't even typecheck as "no branching
+  needed"**: I first hoped `x`'s own unconditional filter closure (`Element.inter_mem`, no witness
+  required) would make `D'x.mem (P.X (idxchain P L))` automatic for *any* `L` all of whose entries are
+  in `D'x`'s index set — but this is **false**: took `x :=` the "everything" element (`D'x = D`
+  itself) and `L = [a, b]` for disjoint-image indices `a, b` — `x` confirms both trivially (`D'x.mem`
+  is `True` on this `D'x`), yet `D.mem (interFrom P D.master [a,b]) = D.mem ∅` is false. So the branch
+  really is doing work, it's just that *defining* the branch flag choice-freely for abstract `P` is the
+  blocker, not the underlying math.
+* **The fix requires abandoning "generic `D`/`P`" for 6e** and working concretely with `P :=
+  UComputablePresentation` (`D := U`), whose `Uinter n m := combineCode (canonCode n) (canonCode m)`
+  has an *unconditional*, already-proved-adjacent dichotomy available in
+  `UComputablePresentation.lean`/`IntervalPrimrec.lean`: `canonList`'s `match` (`canonList_eq_of_filter_eq_nil`
+  / `_cons`) plus `presentedIntervals_map_qpClip`/`presentedIntervals_filter_qpPos` should combine to
+  give **`UX (Uinter n m) = U.master ∨ UX (Uinter n m) = UX n ∩ UX m`, unconditionally (no consistency
+  hypothesis needed)** — this is *not yet stated* as a lemma but looks provable from existing pieces.
+  With that dichotomy in hand, `UX (idxchain UComputablePresentation L) ∈ D'x.mem` should follow by a
+  straightforward list induction (each fold step is either the master, trivially `D'x.mem`, or the true
+  running intersection, which is `U.mem` "for free" via `UP.mem_X` applied to the fold's own output —
+  the subtlety is only that this doesn't obviously chain into `D'x.mem` via the *generic*
+  `NeighborhoodSystem.inter_mem` witness interface; likely needs unfolding `toSubsystemSys.mem`'s
+  `∃js,…` form directly rather than going through `inter_mem`). **This looked achievable but
+  comparably-sized to redoing much of Subgoal 4's 4b–4g apparatus specifically for `𝒰`**, so I stopped
+  here rather than open-endedly continuing — flagging for explicit user sign-off on whether to invest
+  that (session-sized) additional effort, treat 6a–6d as the delivered content of Exercise 8.15's
+  second half, or take a different approach entirely.
+
+**Status of Exercise 8.15 (as of the checkpoint above)**: first half (Subgoals 1–5) ✅ complete,
+choice-free. Second half's core biconditional (6a–6d, `subsystemU_element_computable_iff`) ✅
+complete, choice-free. 6e (upgrade to a genuine `ComputablePresentation` witness), 6f (capstone
+`IsEffectivelyGiven` corollary), and 6g (documentation of the general-`Q` limitation) are **not
+done** — see the recipe above if resuming.
+
+## 2026-07-06 (continued) — Exercise 8.15, Subgoal 6e: enumeration built, `inter`/`cons_computable` hit a sharper, newly-diagnosed obstacle
+
+Per explicit user sign-off ("invest the additional session-sized effort to build 6e/6f"), pushed the
+concrete `Uinter`/`canonList` recipe logged above through to a real result. What landed, all in
+`Exercise815.lean`, all choice-free (`#print axioms ⊆ {propext, Quot.sound}` — the `Classical.choice`
+`#print axioms` shows for anything touching `UX`/`presentedIntervals` is the **pre-existing, already-
+documented** Mathlib-`ℚ`-order-instance artifact from `Definition87.lean`'s "Axiom footprint" section,
+*not* anything new; confirmed by auditing `U_mem_UX` etc. directly — they already carry it):
+
+* **`UX_Uinter_dichotomy`** (proved as planned): `UX (Uinter n m) = U.master ∨ UX (Uinter n m) = UX n
+  ∩ UX m`, unconditionally. Key sub-fact used in the proof (not previously written down): the fallback
+  branch of `canonList`'s filter is triggered **exactly** when the raw pairwise intersection `UX n ∩
+  UX m` is empty (since both `UX n`, `UX m` are already `⊆ Set.Ico 0 1` via `U.sub_master`, clipping is
+  a no-op, so the filter-nonempty condition is literally `(UX n ∩ UX m).Nonempty`).
+* **`toSubsystemSys_mem_foldl_Uinter`** (the safe-fold invariant, proved as planned): folding `Uinter`
+  from an already-`D'x.mem` accumulator along a list of already-`D'x.mem` generators stays `D'x.mem` —
+  by induction, combining the two generators' `finGen` witness-lists via `interFrom_append_eq` when the
+  dichotomy takes the "true intersection" branch, and `D'x.master_mem` when it falls back. This is the
+  piece that makes `mem_X` provable **without ever branching on a `Prop`** — the branching happens only
+  in the *proof*, never in the *definition* of the data, exactly resolving the choice-obstacle flagged
+  in the previous checkpoint (that obstacle was about needing to branch inside the *data*; `Uinter`'s
+  arithmetic already "does the right thing" unconditionally, so no data-level branch is ever needed).
+* **`Q'X`, `Q'x_mem_X`, `Q'x_surj`** (the enumeration half of a `ComputablePresentation D'x`, complete):
+  given `r` from `subsystemU_element_computable_iff` (`x` computable relative to `UP`), `Q'X r n` folds
+  `Uinter ∘ r` over the list coded by `n` via the **existing, generic** `Recursive.lean` `foldCode`
+  engine (reused as-is — `Q'Xcode r := foldCode (QstepFn r) 0 UP.masterIdx`, primitive recursive via
+  `primrec_foldCode`, no new fold-primitive-recursiveness machinery needed). `Q'X_eq` identifies this
+  with the *generic* `Theorem75.idxchain UP (map r (decodeList n))`, so `Q'x_mem_X` follows from
+  `toSubsystemSys_mem_foldl_Uinter` and `Q'x_surj` follows from the *generic* `idxchain_spec` plus a
+  new choice-free "list-level preimage" lemma (`exists_preimage_of_forall_mem`, ordinary list induction,
+  `Exists.elim` inside a `Prop` goal at each step — **not** `Classical.choice`; the distinction that
+  matters is *eliminating* an existential to build another `Prop` is always fine, only *extracting data*
+  from one is the choice-introducing move, and this lemma only ever does the former).
+* **`inter`/`inter_spec`/`cons_computable`: a newly-identified, sharper obstacle (not attempted
+  further).** This is a *different* problem from the "extract data from a `Prop`" issue logged
+  previously (that one is fully avoided here — `Q'X`/`Q'Xcode` are directly-defined functions
+  throughout). The actual problem is purely arithmetic: **`Uinter`'s fallback is not "conservative"**.
+  The natural candidate `Q'inter r n m := encodeList (decodeList n ++ decodeList m)` (extend-and-refold)
+  fails `inter_spec`, because if `Q'X r m`'s own from-scratch fold happened to fall back internally
+  (discarding its true, empty partial intersection and reporting `U.master` instead) while the
+  *combined* n++m fold does not hit that same empty spot, `Q'X r n ∩ Q'X r m` (inflated by the stray
+  fallback) and `Q'X r (Q'inter r n m)` (computed honestly along the concatenated list) are genuinely
+  different sets. The alternative `Q'inter r n m := Uinter (Q'Xcode r n) (Q'Xcode r m)` (apply `Uinter`
+  once more on the *already-computed* indices) fixes `inter_spec` cleanly (via the existing, exact
+  `Uinter_spec`, no compounding at all — this part is a two-line proof), but then breaks
+  `cons_computable`: its witness `∃k, Q'X r k ⊆ Q'X r n ∩ Q'X r m` needs a `k` *in `Q'X`'s own index
+  type* landing on `Uinter (Q'Xcode r n) (Q'Xcode r m)`, and no such `k` is nameable without `Q'X`'s
+  index type itself being closed under "combine two previously-seen codes" — i.e. re-indexing `Q'X` by
+  a small term language `{base list, combine n₁ n₂}` via course-of-values recursion (the same general
+  technique as `Recursive.lean`'s `tabCode`, but a new instance of it). Building that term algebra is a
+  comparably-sized undertaking to Subgoal 4 itself and was **not attempted**.
+
+**Status of Exercise 8.15 (final for this session)**: first half (1–5) ✅, second half's core
+biconditional (6a–6d) ✅, second half's enumeration/onto-ness (`Q'X`/`Q'x_mem_X`/`Q'x_surj`) ✅ — all
+choice-free. The `inter`/`cons_computable` fields of a genuine `Q'x : ComputablePresentation D'x`
+(needed for capstone 6f, `D'x.IsEffectivelyGiven`) and the general-`Q` converse (6g) are **not done** —
+the term-algebra recipe above is the concrete next step if resumed.

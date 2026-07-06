@@ -2937,10 +2937,119 @@ Lecture VIII covers retractions, projections, and the construction of the univer
 * **Status:** Pass
 
 #### Exercise 8.15
-* **Mathematical Target:** `{X∣X◁D}` effectively presented if `D` is
-* **Lean File:** — (Formalization deferred)
-* **Proof Notes:** `{X∣X◁D}` effectively presented if `D` is
-* **Status:** Deferred
+* **Mathematical Target:** Give a *direct* proof that `{X ∣ X ◁ D}` is effectively presented if `D`
+  is. (Hint: the finite elements of the domain correspond exactly to the finite systems `X ◁ D`.)
+  For `D = 𝒰`, show the computable elements correspond exactly to the effectively presented domains
+  (up to effective isomorphism).
+* **Lean File:** `Scott1980/Neighborhood/Exercise815.lean` (first half done; second half's 6a–6e
+  enumeration done, `inter`/`cons_computable`/6f/6g deferred)
+* **Proof Notes:** direct (non-`Exercise222`) construction. Fix a `ComputablePresentation P` of `D`.
+  For a finite index list `js : List ℕ`, the *finitely generated subsystem* `Fin(js) := {Y ∣ ∃ sub
+  ⊑ js, D.mem Y ∧ Y = interFrom P D.master sub}` (reusing `Theorem75.lean`'s `interFrom`) is itself a
+  subsystem `finGenSys(js) ◁ D` (closure under consistent intersection: combine two sub-selections by
+  list-`filter`, no bitmask needed at this layer). The **key algebraic fact**
+  (`Fin_concat_le_iff`): for any `D' ◁ D`, `Fin(js₁ ++ js₂) ⊆ D'.mem ↔ Fin(js₁) ⊆ D'.mem ∧ Fin(js₂) ⊆
+  D'.mem` — proved via `interFrom_mem_of_witness` (any intermediate partial meet along a consistent
+  chain is itself consistent, using the *full* meet as the witness) + `D'.inter_closed`. Iterating
+  over singletons gives **`Fin_le_iff_forall_mem`**: `Fin(js) ⊆ D'.mem ↔ ∀ i ∈ js, D'.mem (P.X i)` —
+  the workhorse for everything downstream.
+
+  **The domain.** Token type `List ℕ`; `SubD.mem N := ∃ js, N = nbhd(js)` where `nbhd(js) := {js' ∣
+  Fin(js) ⊆ Fin(js')}` (anti-monotone principal up-set, mirroring `Exercise222.nbhd`).
+  `nbhd(js₁) ∩ nbhd(js₂) = nbhd(js₁ ++ js₂)` is exactly `Fin_concat_le_iff` instantiated at
+  `D' := finGenSys(js')`. `nbhd(a) = nbhd(b) ↔ Fin(a) = Fin(b)` (antisymmetry, `a ∈ nbhd(a)` reflexive).
+
+  **The isomorphism `SubD.Element ≃o {D' ∣ D' ◁ D}`** (fully choice-free — an improvement on
+  `Exercise222`'s classical route!): forward `D' ↦ (fun N ↦ ∃js, N=nbhd(js) ∧ ∀i∈js, D'.mem(P.X i))`;
+  backward `x ↦ (fun Y ↦ ∃js, x.mem(nbhd js) ∧ Y ∈ Fin(js))`. Round trips use `Fin_le_iff_forall_mem`
+  plus a finite fold combining witnesses over the (finite) list `js` via repeated `x.inter_mem`
+  (concatenating confirmed generators) — no need for `Exercise222`'s `Cl`/arbitrary-finite-subset
+  machinery or `Classical.choice`.
+
+  **Computability.** `X n := nbhd(decodeList n)`. `cons_computable`/`inter`/`inter_spec` are
+  **free**: `nbhd(js₁) ∩ nbhd(js₂) = nbhd(js₁++js₂)` *exactly* (not just `⊆`), so
+  `appendListCode n m` is always a valid (in fact exact) witness/index, no consistency case-split
+  needed. Only `interEq_computable` (deciding *equality* `Fin(A)=Fin(B)`) needs real content: a
+  "`P.X m ∈ Fin(decodeList c)`" decider via `Theorem75.lean`'s Milestone 3 apparatus (`bitSelect` +
+  a new `idxCharAt` device reusing `consCharAt`'s fold but projecting the index component instead
+  of the flag, since that component's update is independent of the flag) bundled through
+  `RecDecidable.bExists`/`RecDecidable₂.bForallList` (`Recursive.lean`) to reach `Fin(A)⊆Fin(B)`,
+  then both inclusions via `Set.Subset.antisymm_iff` give equality. `cons_computable`/`inter`/
+  `inter_spec` assembled from `SubDX_inter_eq` (exact, unconditional); `masterIdx := encodeList []`.
+  Capstone `subsystem_isEffectivelyGiven_of_isEffectivelyGiven`: `D.IsEffectivelyGiven → ∃ V,
+  V.IsEffectivelyGiven ∧ Nonempty (V.Element ≃o {D' ∣ D' ◁ D})`, combining `SubDPresentation` with
+  the `subsystemIso` order isomorphism — **the first half of Exercise 8.15, done directly and
+  choice-free** (`#print axioms` on every new theorem `⊆ {propext, Quot.sound}`).
+
+  **Second half (`D = 𝒰`), Subgoal 6 — plan (worked in sequence).** Fix `UP := UComputablePresentation`
+  and `x : (SubD UP).Element`; write `D'x := toSubsystemSys UP x` (`D'x ◁ 𝒰` via
+  `toSubsystemSys_subsystem`). A key mathematical subtlety, found while planning: for an *arbitrary*
+  abstract `Q : ComputablePresentation D'x` unrelated to `UP`, deciding `Q.Xn ⊆ UP.Xm` needs a
+  cross-presentation comparison that the `ComputablePresentation` axioms do **not** provide (two
+  numberings of the same set need not be effectively comparable without extra structure — a genuine
+  phenomenon, not a gap in this codebase; a disjoint-interval example shows `x.mem(nbhdGen UP js)` does
+  **not** imply `𝒰.mem(interFrom UP 𝒰.master js)` in general, e.g. `js` naming two disjoint rational
+  intervals). So the second half is formalized **relative to `UP`'s own enumeration** (the natural,
+  provable reading of "up to effective isomorphism"), in sub-subgoals:
+  * **6a** ✅ (index-set reduction, `subsystemU_computable_iff_index_set_re`): `IsComputableElement
+    (SubDPresentation P) x ↔ REPred (fun i => D'x.mem (P.X i))`, via `mem_nbhdGen_iff` +
+    `REPred.forall_mem_decodeList` (and its converse, reindexing along the primitive-recursive
+    singleton-list code `i ↦ encodeList [i]`).
+  * **6b–6d** ✅ (combined into one theorem, `subsystemU_element_computable_iff`): `x` computable ↔
+    `∃ r, Nat.Primrec r ∧ ∀ i, D'x.mem (P.X i) ↔ ∃ n, r n = i` — `→` via
+    `Exercise714.repred_exists_primrec_range` (witness `a := P.masterIdx`), `←` via
+    `Exercise714.repred_range_primrec`. Both choice-free (`#print axioms ⊆ {propext, Quot.sound}`),
+    and — like Subgoals 1–5 — stated generically in `D`/`P` (never needed `D = 𝒰` specifically).
+  * **6e (enumeration half) ✅.** Specializing to `P := UComputablePresentation` (`D := U`) as planned,
+    two `𝒰`-specific lemmas unlock the construction: **`UX_Uinter_dichotomy`** — `UX (Uinter n m) =
+    U.master ∨ UX (Uinter n m) = UX n ∩ UX m`, *unconditionally* (proved via `canonList`'s filter-`nil`/
+    `cons` cases; the fallback triggers exactly when the raw pairwise intersection is empty, since both
+    `UX n, UX m ⊆ Set.Ico 0 1` already, making the clip a no-op) — and **`toSubsystemSys_mem_foldl_Uinter`**
+    — folding `Uinter` from a `D'x.mem` accumulator along a `D'x.mem`-generator list stays `D'x.mem`, by
+    induction combining `finGen` witnesses via `interFrom_append_eq` (true-intersection branch) or
+    `D'x.master_mem` (fallback branch). Crucially, **the branch only ever appears inside the *proof*,
+    never inside the *definition* of the enumeration** — this is exactly what defeats the
+    Prop-to-data-extraction obstacle flagged for 6e in the previous checkpoint: `Uinter`'s arithmetic
+    unconditionally "does the right thing" (dichotomy), so no data-level case split on a `RecDecidable`
+    flag is ever needed. With these in hand: `Q'X r n` folds `Uinter ∘ r` over the list coded by `n`
+    via `Recursive.lean`'s **existing, generic** `foldCode` engine (`Q'Xcode r := foldCode (QstepFn r) 0
+    UP.masterIdx`, primitive recursive via the already-proved `primrec_foldCode` — no new
+    fold-primitive-recursiveness machinery needed). `Q'X_eq` identifies `Q'X r n` with the *generic*
+    `Theorem75.idxchain UP (map r (decodeList n))`, giving: **`Q'x_mem_X`** (every `Q'X r n` is
+    `D'x.mem`, via `toSubsystemSys_mem_foldl_Uinter`) and **`Q'x_surj`** (every `D'x`-neighbourhood is
+    some `Q'X r n`, via the *generic* `idxchain_spec` plus a new choice-free list-level preimage lemma
+    `exists_preimage_of_forall_mem`). All choice-free (the `Classical.choice` `#print axioms` shows for
+    anything touching `UX` is `Definition87.lean`'s already-documented, pre-existing Mathlib-`ℚ`-order
+    artifact, confirmed by auditing `U_mem_UX` directly — not anything new here).
+  * **6e (`inter`/`cons_computable`) — a newly-identified, sharper obstacle, not completed.** This is a
+    *different* problem from the Prop-extraction issue above (fully avoided by `Q'X`/`Q'Xcode` being
+    directly-defined functions throughout) — it is purely arithmetic: **`Uinter`'s fallback is not
+    "conservative"**. The natural `Q'inter r n m := encodeList (decodeList n ++ decodeList m)`
+    (extend-and-refold) fails `inter_spec`: if `Q'X r m`'s own from-scratch fold happens to fall back
+    internally (its true partial intersection was empty) while the *combined* `n++m` fold does not hit
+    that same empty spot, `Q'X r n ∩ Q'X r m` (inflated by the stray fallback) and `Q'X r (Q'inter r n
+    m)` (computed honestly along the concatenation) can genuinely differ. The fix `Q'inter r n m :=
+    Uinter (Q'Xcode r n) (Q'Xcode r m)` (apply `Uinter` once more atop the already-computed indices)
+    repairs `inter_spec` cleanly via the exact, unconditional `Uinter_spec` (no compounding), but then
+    `cons_computable`'s witness `∃k, Q'Xrk ⊆ Q'Xrn ∩ Q'Xrm` needs a `k` *in `Q'X`'s own index type*
+    landing on that value — impossible without re-indexing `Q'X` by a small term language `{base list,
+    combine n₁ n₂}` via course-of-values recursion (the same technique as `Recursive.lean`'s `tabCode`,
+    a new instance of it). Comparable in size to Subgoal 4 itself; **not attempted**. See `HANDOFF.md`'s
+    2026-07-06 (continued) checkpoint.
+  * **6f (capstone `IsEffectivelyGiven`)**: blocked on the above — not attempted.
+  * **6g**: record explicitly (here and in `HANDOFF.md`) that the fully general converse — *every*
+    abstract presentation of `D'x` is effectively isomorphic to the `P`-relative one 6e/6f would have
+    built — is **not attempted**: it is a deeper "uniqueness of computable numberings" fact, is
+    genuinely what Scott's "(up to effective isomorphism)" parenthetical is doing work for, and is out
+    of scope here.
+* **Status:** In Progress. First half (Subgoals 1–5) done, choice-free. Second half's core
+  biconditional (6a–6d, `subsystemU_element_computable_iff`) done, choice-free — the faithful, provable
+  generalization of Definition 7.2's "index set r.e." discussion to `{X ∣ X ◁ 𝒰}`. Second half's
+  enumeration/onto-ness (`Q'X`, `Q'x_mem_X`, `Q'x_surj`) done, choice-free. The `inter`/`cons_computable`
+  fields of a genuine `ComputablePresentation D'x` witness (needed for capstone 6f) hit a newly-diagnosed
+  "safe composition of `Uinter`" obstacle (term-algebra fix scoped, not attempted); the fully general
+  "arbitrary presentation" converse (6g) is deliberately not attempted. See dated checkpoints in
+  `HANDOFF.md`.
 
 #### Exercise 8.16
 * **Mathematical Target:** finitary projections `a:E→E`
