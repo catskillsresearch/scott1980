@@ -231,3 +231,4 @@ import Scott1980.Neighborhood.Exercise825Pow
 import Scott1980.Neighborhood.Exercise825Embed
 import Scott1980.Neighborhood.Exercise825FixedPoint
 import Scott1980.Neighborhood.Exercise825
+import Scott1980.Neighborhood.Exercise826
