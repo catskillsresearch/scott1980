@@ -12200,3 +12200,76 @@ choice-free `⊆ {propext, Quot.sound}`.
 8.21(c), the headline isomorphism `D_{a§} ≅ (D_a)§` (see `arxiv.md`'s 8.21(c) row for the planned
 (c)(1)–(4) breakdown, with (c)(3) further split into (c)(3)(i)–(v)) — or, if deprioritizing that,
 scan `arxiv.md` for the next `Deferred` row after Exercise 8.21 (Exercise 8.22).
+
+## 2026-07-06 (continued 10) — Exercise 8.21(c): Pass, `D_{a§} ≅ (D_a)§` — Exercise 8.21 COMPLETE
+
+**Exercise 8.21(c).** The headline isomorphism `D_{a§} ≅ (D_a)§` for `a` a finitary projection of
+`U`. **The originally-planned route (`arxiv.md`'s (c)(1)–(4), with (c)(3) needing a
+Theorem-6.14-style initial-algebra uniqueness argument on the sub-tree-algebra cut out by `a`'s
+fixed points) turned out to be entirely avoidable** — the key realization, found by re-reading
+`Proposition810b.lean`'s own `×`/`+`/`→` recipe closely: `D ↦ D§` is *functorial on morphisms*, not
+just on domains, and once that functor and its laws are in hand, 8.21(c) is a direct instance of
+`elementIsoOfProjectionPair` (the exact same tool `Proposition810b.lean` uses for
+`D_{a+b}≅D_a+D_b` etc.) — no new order-theoretic machinery needed at all.
+
+**`dsharpMap`** (the functor's action on morphisms, general `D₀`/`D₁`): precomposing `inSharpMap`
+with any `f : D₁ → D₀` and recursing via `gMap` extends `f` to
+`dsharpMap f : D₁§ → D₀§ := gMap ((inSharpMap hD₀).comp f) (pairSharpMap hD₀) hD₁`; `aSharpInner a`
+is literally the special case `D₀=D₁=U`, `f:=a` (`dsharpMap_self_eq_aSharpInner`, `rfl`).
+
+**Functor laws.** `dsharpMap_id` (`id§=id`) is literally `gMap_inSharp_pairSharp_eq_idMap` after
+`comp_idMap`. `dsharpMap_comp` (`(f'∘f)§=f'§∘f§`, for *any* `f,f'` between three systems `D₀,D₁,D₂`
+— no retraction hypothesis) applies 8.21(b)'s `gMap_eq_of_satisfies` to
+`k:=(dsharpMap f').comp(dsharpMap f)`: both defining equations reduce, via `gMap_in`/`gMap_pair`
+applied twice, to the equation for `dsharpMap (f'.comp f)` — verbatim
+`gMap_selfComp_eq_of_isRetraction`'s proof strategy, but *simpler*, since composing two *different*
+maps needs no idempotence step (that hypothesis was only ever needed for the *self*-composition
+case). One calc-chain hiccup: writing the `x`-equation proof as a 5-step calc with an intermediate
+`inSharp D₀ hD₀ ((f'.comp f).toElementMap x)` step produced a bizarre "pattern not found" error at
+the *next* step, apparently because Lean's `calc`/`Trans` elaboration doesn't literally substitute
+the previous step's written RHS text; collapsing the last two steps into one `rw` chain (going
+straight from `inSharp D₀ hD₀ (f'.toElementMap (f.toElementMap x))` to
+`((inSharpMap hD₀).comp (f'.comp f)).toElementMap x` via
+`rw [toElementMap_comp, toElementMap_comp, inSharpMap_toElementMap]`) sidestepped it entirely —
+worth remembering: prefer *fewer, denser* calc steps over many small ones when each step's
+justification is itself a multi-lemma `rw` chain.
+
+**The projection pair** (`ISharpComb`/`JSharpComb`). Transporting `iSharp`/`jSharp` through
+`dsharpMap`'s action on `(fixedNbhd_subsystem a).inj`/`.proj` (Proposition 6.12's canonical
+injection/projection pair for `D_a := fixedNbhd a ◁ U`) gives `I : (D_a)§ → U`, `J : U → (D_a)§`:
+```
+ISharpComb a := iSharp.comp (dsharpMap _ _ (fixedNbhd_subsystem a).inj)
+JSharpComb a := (dsharpMap _ _ (fixedNbhd_subsystem a).proj).comp jSharp
+```
+**`J∘I = I_{(D_a)§}`** (`JSharpComb_comp_ISharpComb`, *unconditional*, no finitary hypothesis): pure
+associativity + `jSharp_comp_iSharp` + the functor laws turn `j_a∘i_a=I_{D_a}`
+(`Subsystem.proj_comp_inj`) directly into `J∘I=I_{(D_a)§}`. **`I∘J = a§`**
+(`ISharpComb_comp_JSharpComb`, needs `IsFinitaryProjection a`): the same recipe, using Theorem 8.6's
+`inj_comp_proj_eq_self ha : i_a∘j_a = a` (already available from `Proposition810b.lean`), turns the
+merged `dsharpMap`-of-`(i_a∘j_a)` into `dsharpMap` applied to `a` itself, i.e. literally
+`aSharpInner a` (`dsharpMap_self_eq_aSharpInner`), giving exactly `aSharp`'s own defining equation
+(`aSharp_eq`).
+
+**Assembly** (`dsharp_fixedNbhd_elementIso`): `elementIsoOfProjectionPair I J (J∘I=id) (a§=I∘J)`
+hands us `(D_a)§.Element ≃o {y : U.Element // (aSharp a).toElementMap y = y}` directly — Scott's
+`D_{a§} ≅ (D_a)§`, stated in the same "domain of a projection = its `toElementMap`-fixed-point set"
+convention `Proposition810b.lean` already uses (rather than via `fixedNbhd (aSharp a)` itself,
+sidestepping any need to relate `fixedNbhd`'s `.Element` type back to the abstract `Fix` set — that
+identification is exactly Theorem 8.5's content and isn't needed here). This simultaneously
+reproves `IsFinitary (aSharp a)` (`isFinitary_aSharp`, via the pre-existing
+`isFinitary_of_projectionPair`), so combined with 8.21(a)/(b)'s `isProjection_aSharp`,
+**`isFinitaryProjection_aSharp`**: `a` a finitary projection of `U` `⟹` `a§` a finitary projection
+— **completing Exercise 8.21 in full.**
+
+`lake build` (whole project) green, zero `sorry`. Wired into `Scott1980.lean` (already imported;
+added `import Scott1980.Neighborhood.Proposition810b` to `Exercise821.lean`). `arxiv.md`'s Exercise
+8.21(c) row updated to `Pass` with full proof notes; umbrella 8.21 row updated to `Pass` (all of
+(a)/(b)/(c) complete). Axiom audit: `dsharpMap`/`dsharpMap_id` (mentioning no `U`) are choice-free
+`⊆ {propext, Quot.sound}`; `dsharpMap_comp`/`JSharpComb_comp_ISharpComb`/
+`ISharpComb_comp_JSharpComb`/`dsharp_fixedNbhd_elementIso`/`isFinitary_aSharp`/
+`isFinitaryProjection_aSharp ⊆ {propext, Classical.choice, Quot.sound}` (inherited from `U`/
+`gMap_eq_of_satisfies`, matching 8.21(a)/(b)'s own baseline, nothing new).
+
+**Status of Exercise 8.21: `Pass` — COMPLETE, all of (a)/(b)/(c).** **Next up:** scan `arxiv.md` for
+the next `Deferred`/not-yet-started row after Exercise 8.21 (Exercise 8.22: which of two relations
+holds, currently marked `Deferred`).
