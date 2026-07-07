@@ -33,9 +33,17 @@ an abstract `D≅D→V ∧ V×V≅V ⟹ D≅D→D` closing argument) COMPLETE, a
 (the self-hosted untyped `λ`-calculus equations `Uapply`/`Ulam` + `Uapply_Ulam` faithfulness, and
 the general "has the right type" sandwich-preservation lemmas `translateAbs_sandwich`/
 `translateApp_hasType` for the typed-retranslation recipe, citing Proposition 8.10(b)'s
-`arrowComb_elementIso` for the correspondence itself) **COMPLETE**, leaving only Exercise 8.27
-(Donahue's polymorphic/infinite products over `U` via `sub`, genuinely substantial and the very
-last exercise of the book) as the final `Deferred` row of the entire book
+`arrowComb_elementIso` for the correspondence itself) **COMPLETE**, and now **Exercise 8.27**
+(Donahue's polymorphic/infinite products over `U`, the very last exercise of the book) is
+**Partial**: `sub` regarded as a combinator on `U` itself (`subU`, conjugating Theorem 8.6(b)'s
+`subApprox` through Definition 8.9's `i_→,j_→`) is a finitary projection whose fixed points are
+exactly the finitary projections of `U` (Step 1, COMPLETE); polymorphic types and the `Π`
+combinator are built by literal transcription of Scott's formulas (Steps 2–3, COMPLETE); "`Π(d)`
+is a projection" (Scott's own "easy" half) is proved **unconditionally for every `d`** (Step 4,
+COMPLETE); "`Π(d)` is finitary" (Scott's own flagged-as-hard half, with **no hint given** — unique
+among the book's exercises) is the one deliberately unattempted piece, needing a genuinely new
+dependent-product domain construction with no template elsewhere in this project — **this is the
+book's last remaining open row**
 
 You are a Lean 4 proof engineer formalizing Dana Scott's 1981 *Lectures on a Mathematical Theory of
 Computation* (PRG-19) in:
@@ -12541,3 +12549,88 @@ the (hard) claim that `Π(d)` is itself finitary for `d` a polymorphic type — 
 **not** attempted this checkpoint; `arxiv.md`'s row should be re-transcribed from `PRG19.md`
 before starting it. **Next up:** Exercise 8.27, or scan for Lecture IX if one exists (unconfirmed
 — the source text appears to end at Lecture VIII/Exercise 8.27).
+
+## 2026-07-07 — Exercise 8.27 (Donahue, the *last* exercise in the book): Partial, exactly matching Scott's own hint's split
+
+`Scott1980/Neighborhood/Exercise827.lean`, new file, wired into `Scott1980.lean`. Full project
+`lake build` (3198 jobs) green, zero `sorry`, no new warnings (`ReadLints` clean on the file).
+Scott's hint splits the exercise into "easy" (projection) and "hard" (finitary) halves — this
+checkpoint **completes the easy half in full, unconditionally, and leaves the hard half
+deliberately unattempted** (see below for why).
+
+**(1) `sub` regarded as a combinator on `𝒰` itself** (the exercise's opening sentence, taken
+literally): `subU := i_→∘subApprox∘j_→`, conjugating Theorem 8.6(b)'s `subApprox:(𝒰→𝒰)→(𝒰→𝒰)`
+through the *fixed* projection pair `i_→,j_→` of Definition 8.9 — exactly the same recipe
+Definition 8.9 itself uses to build `a→b` from `λf.b∘f∘a`. New reusable gadget
+`isRetraction_conjArrow`/`le_idMap_conjArrow`/`isProjection_conjArrow`: conjugating *any* projection
+`H` of `(𝒰→𝒰)` through `i_→,j_→` gives a projection of `𝒰`, via pure `comp_assoc` algebra plus
+`j_→∘i_→=I` (`jArrow_comp_iArrow`) and `i_→∘j_→≤I` (`iArrow_comp_jArrow_le`) — no `funSpaceEquiv`
+element-chasing needed at all for this half. Gives `isProjection_subU` immediately, and is reused
+verbatim below for `piU d`. Separately, `subUFixIso : Fix(subU)≃oFix(subApprox)` is a genuinely new
+"conjugated-retract" order-isomorphism (forward `w↦j_→(w)`, backward `φ↦i_→(φ)`, round trips
+derived purely from `j_→∘i_→=I` — **no inequality on `i_→∘j_→` needed for this particular iso**,
+a mildly interesting fact in its own right since it's *weaker* than what `elementIsoOfProjectionPair`
+assumes). Composed with Theorem 8.6(b)(ii)'s own `subApproxFixIso`/`isFinitary_subApprox`, this
+gives `isFinitaryProjection_subU` and identifies `Fix(subU)` with `{f∣sub f=f}`, which by Theorem
+8.6(a)'s `sub_eq_self_iff_isFinitaryProjection` is exactly the finitary projections of `𝒰` —
+Exercise 8.27's opening sentence, proved in full.
+
+**(2) Polymorphic types**: `IsPolymorphicType d := subU.comp(d.comp subU)=d` (Scott's
+`d=sub∘d∘sub`). The exercise's own justification ("whenever `t` is a finitary projection, then so
+is `d(t)`") is `polymorphicType_apply_mem_fix`, derived from a clean new general lemma
+`toElementMap_mem_fix_of_isRetraction_sandwich`: *any* `a∘g∘a` for idempotent `a` automatically
+lands in `Fix(a)`, for *every* input, not just inputs already fixed by `a` — a strict
+generalization of Exercise 8.26's `translateApp_hasType` (which needed the fixedness of the input
+as a *hypothesis*; here it's derived for free from `a`'s own idempotency).
+
+**(3) The `Π` combinator**: transcribed literally from Scott's formula
+`Π(d)(x)(t)=sub(d(sub(t)))(x(sub(t)))` via raw `curry`/`evalMap`/`paired` composition — exactly
+`Exercise825FixedPoint.lean`'s `RMap` recipe, one layer deeper (`piDUncurried d : ((𝒰→𝒰)×𝒰)→𝒰`,
+`piD d := curry(piDUncurried d) : (𝒰→𝒰)→(𝒰→𝒰)`, closed-form `piDApply d f : 𝒰→𝒰` for `f` already a
+plain map, and the value lemma `toApproxMap_toElementMap_piD` connecting `piD` to `piDApply`
+exactly as `toApproxMap_toElementMap_lamComb`/`_expMap` do for `lamComb`/`expMap`). `piU d :=
+i_→∘(piD d)∘j_→` then regards `Π(d)` as living in `𝒰` itself (matching "type" = self-map *of* `𝒰`,
+not of `(𝒰→𝒰)`), via the *same* Step-1 conjugation gadget.
+
+**(4) "It is easy to check that `Π(d)` is a projection" (Scott's hint) — proved, and in fact proved
+*unconditionally for every `d:𝒰→𝒰`*, not only for `d` a polymorphic type.** The linchpin,
+`isFinitaryProjection_decode_subU`: for *any* `z`, `j_→(subU(z))` decodes to a genuine finitary
+projection of `𝒰` — because `subU(z)∈Fix(subU)` always (bare idempotency, no hypothesis on `z`),
+and `Fix(subU)` decodes to exactly the finitary projections (Step 1). This is exactly why Scott's
+formula re-wraps every occurrence of the bound variable `t` in an extra `sub(-)` (`sub(d(sub(t)))`,
+not bare `d(sub(t))`): it makes the "type at `t`" fed to the application step *automatically*
+legitimate, regardless of `d`. `isRetraction_piD`: an idempotence chase (`piDApply_toElementMap_eq`
+reduces `subU(subU(t))` to `subU(t)` throughout, collapsing the "type at `subU(t)`" to the *same*
+"type at `t`," call it `P`; the retraction goal then reduces to `P.toElementMap(P.toElementMap g) =
+P.toElementMap g`, exactly `P`'s own idempotency from `isFinitaryProjection_decode_subU`).
+`le_idMap_piD`: a monotonicity chase (`subU(t)⊑t` from `subU`'s own `≤I`, then `f`'s monotonicity,
+then `P≤I` from `isFinitaryProjection_decode_subU` again). `isProjection_piU` then drops out "for
+free" via the Step-1 conjugation gadget, needing no further element-level work.
+
+**(5) "The problem is to show it is finitary" (Scott's own hint) — deliberately NOT attempted.**
+Every finitary-closure result elsewhere in this project (`finitaryProjection_arrowComb`/
+`_prodComb`/`_sumComb` in `Proposition810b.lean`; Theorem 8.6(b)'s own `isFinitary_subApprox`)
+works by exhibiting `Fix` of the projection in question as order-isomorphic to an *already
+available* domain built from *fixed*, finitely many ingredient domains. `Fix(piD d)` has no such
+candidate: it is the dependent product `Π_{t:𝒰} Fix(D_{d(t)})` over a *continuum*-indexed,
+dependently-varying family, which needs a genuinely new piece of domain theory (closer to a
+logical-relations/parametricity argument for System-F-style polymorphism than to any algebraic
+closure fact), with zero template in Lectures I–VIII. Distinctively among essentially every
+exercise/theorem in this entire book, Scott gives **no hint at all** for this half (contrast: every
+other "(Hint: ...)" in the book names a specific construction). Also addressed, in the module's
+closing docstring (no separate lemma needed): Scott's own parenthetical "why does this equation
+mean `x` is in the product?" — `x(t)=d(t)(x(t))` unwinds via Exercise 8.26's `Uapply` machinery to
+`x(t)∈Fix(D_{d(t)})`, i.e. `x` is literally a dependent section.
+
+Axiom audit: `isFinitaryProjection_subU`/`subUFixIsoSubFixed`/`polymorphicType_apply_mem_fix`/
+`isFinitaryProjection_decode_subU`/`isProjection_piD`/`isProjection_piU` all `⊆ {propext,
+Classical.choice, Quot.sound}` — inherited from mentioning `𝒰` itself, no new source. `arxiv.md`'s
+Exercise 8.27 row updated to `Status: Partial` with full proof notes matching this checkpoint.
+
+**This closes out the book's exercise list**: every exercise/theorem from Lectures I–VIII now has
+an `arxiv.md` row that is either `Pass` or an honestly-scoped `Partial`/`Deferred` with a documented
+reason (not a stale placeholder) — Exercise 8.27 was the last such placeholder. There is no
+Lecture IX; the source text ends at Exercise 8.27 (`sources/PRG19.md`, ~line 5279) followed by the
+monograph-series back matter. **No further exercises remain to formalize** unless the user wants
+to revisit a `Partial`/`Deferred` row (e.g. this exercise's finitary half, or Proposition 8.10(b)'s
+own still-open second half, or the various documented effectiveness-clause deferrals).
