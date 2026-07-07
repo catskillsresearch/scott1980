@@ -12035,3 +12035,59 @@ into `Scott1980.lean`. `arxiv.md`'s Exercise 8.19 row updated to `Pass`.
 
 **Status of Exercise 8.19: DONE (Pass).** **Next up:** Exercise 8.20 (`D ⊴ D+D`; what about other
 constructs?) is the next `Deferred` row in `arxiv.md`.
+
+## 2026-07-06 (continued 7) — Exercise 8.20: Pass, `D⊴D×D` and `D⊴D→D` unconditionally, choice-free
+
+**Exercise 8.20.** "For any system we know `D ⊴ D+D`, but what about `D ⊴ D×D` and `D ⊴ D→D`? Would
+these projections be computable if `D` is effectively given? Are there more than one projection pair
+in each case?" New file `Scott1980/Neighborhood/Exercise820.lean`.
+
+**Key realization:** unlike Exercise 8.19 (which needed real hypotheses `T ⊴ E`/`E→E ⊴ E`), **both
+`D ⊴ D×D` and `D ⊴ (D→D)` hold unconditionally for every domain `D`** — via the simplest possible
+combinator recipes, formalized slightly generally over two domains `A`, `B`:
+
+* **Products** (`trianglelefteq_prod_fst`/`trianglelefteq_prod_snd`): embed `a ↦ ⟨a,⊥⟩` (resp.
+  `b ↦ ⟨⊥,b⟩`), retract with `proj₀` (resp. `proj₁`). The inequality half reduces via
+  `pair_le_pair_iff` to the trivial `⊥ ≤ z.snd`.
+* **Function spaces** (`trianglelefteq_funSpace_const`): embed `b ↦ (λ_. b)` (`constFunMap :=
+  curry (proj₀ B A)`), retract by evaluating at `⊥` (`evalBotMap := evalMap A B ∘ ⟨id, const ⊥⟩`).
+  The inequality half needs **monotonicity of approximable maps** (`toElementMap_mono`, Prop
+  2.2(iii)): `φ(⊥) ≤ φ(x)` for every `x`, since `⊥ ≤ x`.
+
+Specializing `A = B = D` gives `D_trianglelefteq_prod`/`D_trianglelefteq_funSpace`, bundled as
+`exercise_8_20`. `D ⊴ D+D` itself is Scott's *background* premise (not part of the question) and is
+not re-derived — the "easy half" (`outMap₀_comp_inMap₀`) is already in Exercise 3.18, but the second
+half (`inMap₀ ∘ outMap₀ ≤ id`, needing a case analysis on general sum elements) is real additional
+work the exercise doesn't ask for, so it's cited as background rather than proved.
+
+**Multiplicity:** for products, the two constructions above are already literally *different maps*
+whenever `D` has an element `≠ ⊥` — formalized as `embedFst_ne_embedSnd_of_ne_bot` (evaluate both at
+that element, read off the first coordinate via `fst_pair`). For `D→D`, the "evaluate at a fixed
+point `a`" half is *forced* to be `a = ⊥` (any other `a` would need `a ≤ x` for every `x`), but
+conjugating the one construction by any nontrivial automorphism of `D` gives further distinct pairs
+whenever `Aut(D)` is nontrivial — recorded as a discussion point in the module docstring rather than
+formalized (it depends on `D`'s own automorphism group, not fixed data for a "for any system" claim).
+
+**Computability:** every combinator used (`⊥`, `paired`, `proj₀`/`proj₁`, `curry`, `evalMap`,
+`constMap`) has (or trivially would have) an `IsComputableMap` closure lemma elsewhere in the project
+(`proj₀_isComputable`/`proj₁_isComputable`/`paired_isComputable`, `Theorem74.lean`;
+`curry_isComputable`/`evalMap_isComputable`, `Theorem75.lean`) — recorded as a citation-backed answer
+("yes, computable") rather than reformalized, since assembling the exact `ℕ → ℕ` encoding parameters
+those lemmas expect for this specific composite is bookkeeping proportional to a full
+computable-presentation transport, disproportionate to this exercise's mathematical content.
+
+**Choice-discipline win:** following the "prefer `le_iff_toElementMap_le` + `le_antisymm` over
+`ext_of_toElementMap`" lesson already on record in this file, even the map *equalities*
+(`proj₀_comp_embedFst`, `proj₁_comp_embedSnd`, `evalBotMap_comp_constFunMap`) were proved via
+`le_antisymm` on `le_iff_toElementMap_le`-unfolded goals instead of the choice-tainting
+`ApproximableMap.ext_of_toElementMap`, since both `≤`-directions are in fact literal equalities of
+`toElementMap`s (trivial once unfolded), not just comparisons. Result: **every theorem in this file
+is fully `⊆ {propext, Quot.sound}`, zero `Classical.choice`** — a strictly better footprint than most
+`D`-mentioning results elsewhere in the project (e.g. Exercise 8.19's analogous constructions, which
+inherit `Classical.choice` from `T`'s presentation).
+
+`lake build` (whole project) green, zero `sorry`, zero new warnings. Wired into `Scott1980.lean`.
+`arxiv.md`'s Exercise 8.20 row updated to `Pass`.
+
+**Status of Exercise 8.20: DONE (Pass).** **Next up:** scan `arxiv.md` for the next `Deferred` row
+after Exercise 8.20 (Exercise 8.21: "a computable operator `λa.a§` on finitary projections").
