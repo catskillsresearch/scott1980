@@ -12360,3 +12360,40 @@ full proof notes. Axiom audit: `isFinitaryProjection_fixOp`/`tOp_fixOp`/
 `fixedDomain_fixOp_iso_T`/`fixedNbhd_fixOp_subsystem` all `⊆ {propext, Quot.sound}` — **fully
 choice-free**. **Next up:** scan `arxiv.md` for the next `Deferred` row (Exercise 8.24: binary
 constructs `S,T` ⟹ a pair of effectively presented domains).
+
+**2026-07-07 (continued) — Exercise 8.24 PASS (mutual fixed points solve `D≅S(D,E)`,`E≅T(D,E)`,
+two claims in full, effectiveness in prose).** New `Scott1980/Neighborhood/Exercise824.lean`. The
+two-variable generalization of Exercise 8.23, reduced to a **single instance of 8.23's own
+machinery run on the product function space**: Scott's `s,t:(E→E)×(E→E)→(E→E)` are modelled as
+`s t : ApproximableMap PairSpace (funSpace E E)` out of `PairSpace := prod (funSpace E E)
+(funSpace E E)`, `binOp s a b := toApproxMap (s.toElementMap (pair (toFilter a)(toFilter b)))`
+Scott's `s(a,b)`. The two combine into **one** self-map `paired s t : ApproximableMap PairSpace
+PairSpace` (Definition 3.3's pairing), to which Theorem 4.1 applies exactly as in 8.23; its exact
+fixed point splits via `.fst`/`.snd` into `aStar s t`/`bStar s t` — Scott's `(‖s‖,‖t‖)`. **Claim 1**
+(`isFinitaryProjection_aStar_bStar`): given `hst` (pairs of projections stay pairs of projections
+under `binOp s`/`binOp t`), both `aStar s t`/`bStar s t` are finitary projections — induction over
+approximant pairs (`.fst`/`.snd` of `(paired s t).iterElem n`, mutual recursion `aOp_succ`/
+`bOp_succ`, base case the constant-bottom map reusing 8.23's `isFinitaryProjection_constMap_bot`),
+then Theorem 8.6's `subFilter`-commutes-with-directed-sups argument transported through `.fst`/
+`.snd` via a direct membership chase (`hEqA`/`hkeyA`, `mem_fst`+`mem_fixElement`+`mem_iterElem`+
+`Sub8_6.subFilter_iSupDirected`) — 8.23's Claim 1 argument, run twice (once per component). **Claim
+2** (`fixedDomain_aStar_bStar_iso`): `(aStar s t,bStar s t)` is a *genuine* simultaneous fixed point
+(`binOp_aStar_bStar_left/right`, bare substitution via `toElementMap_fixElement`+
+`toElementMap_paired`+`fst_pair`/`snd_pair`/`pair_fst_snd`, not a colimit argument); substituting
+into abstractly-packaged `hS a b : Fix(binOp s a b)≅S(a,b)`/`hT a b : Fix(binOp t a b)≅T(a,b)`
+gives `Fix(aStar s t)≅S(aStar s t,bStar s t)`, `Fix(bStar s t)≅T(aStar s t,bStar s t)`
+unconditionally. **Initiality** (`fixedNbhd_aStar_bStar_subsystem`): any other pre-fixed-point pair
+packaged as `pair(toFilter a)(toFilter b)` gives, via `pair_le_pair_iff`+Theorem 4.1's minimality+
+Exercise 8.16's `a≤b ↔ D_a◁D_b`, both `fixedNbhd(aStar s t)◁fixedNbhd a` and
+`fixedNbhd(bStar s t)◁fixedNbhd b` simultaneously. **One tactic pitfall**: `congrArg (·.fst) h`
+produces a beta-unreduced `(fun x => x.fst) _` term that `rw [fst_pair]` cannot syntactically match
+against (`Did not find an occurrence of the pattern (pair ?x ?y).fst`); fixed by using the named
+projection `congrArg NeighborhoodSystem.Element.fst h` instead of the anonymous-function form, so
+the resulting term is literally `(pair ...).fst` with no pending beta-reduction. **Effectiveness**:
+prose only (module docstring), matching 8.23's own deferred computability clause, doubled. `lake
+build` (whole project, 3189 jobs) green, zero `sorry`, no new warnings. Wired into `Scott1980.lean`.
+`arxiv.md`'s Exercise 8.24 row updated to `Pass` with full proof notes. Axiom audit:
+`isFinitaryProjection_aStar_bStar`/`fixedDomain_aStar_bStar_iso`/
+`fixedNbhd_aStar_bStar_subsystem` all `⊆ {propext, Quot.sound}` — **fully choice-free**. **Next
+up:** scan `arxiv.md` for the next `Deferred` row (Exercise 8.25: non-trivial solutions of
+`D ≅ D → D`).
