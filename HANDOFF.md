@@ -13170,5 +13170,28 @@ every other `ext`-based uniqueness proof in this project).
 `arxiv.md`'s Exercise 2.17 row rewritten and flipped to **Pass** (both halves now proved; the
 "missing equation?" question is answered: no, all four are exactly enough).
 
-**Remaining open work in the whole project:** Definition 7.9 and Exercise 7.19 (both `Partial`,
-power-domain material) — genuinely deferred, not touched this session.
+**Remaining open work at that point:** Definition 7.9 and Exercise 7.19 (both `Partial`,
+power-domain material) — genuinely deferred.
+
+---
+
+## 2026-07-07 continued (3) — Definition 7.9: status fix, no new Lean needed
+
+Definition 7.9's `Partial` status was **stale bookkeeping, not a real gap.** Its `Proof Notes`
+had said "that `ℙ𝒟` is a neighbourhood system, effectively given when `𝒟` is, is Prop 7.10
+(deferred)" — but Scott's Definition 7.9 itself only *defines* the family `ℙ𝒟` and its two
+displayed remarks (`↓X∩↓Y≠∅ ↔` consistent, and the intersection formula in that case); "`ℙ𝒟` is a
+neighbourhood system" is a separate, later claim — **Proposition 7.10** — which already has its
+own complete row and file (`Proposition710.lean`, green, zero `sorry`, both parts A/B done). The
+"(deferred)" note was written before `Proposition710.lean` existed and was never updated after it
+was proved.
+
+Re-read `Definition79.lean` line-by-line against the source (`sources/PRG19.md` lines 4490–4510):
+every obligation Definition 7.9 itself states (`PDmem`, `mem_PDunion`, `PDmem_empty`/`_upSet`/
+`_master`/`_union`, `PDmem_iff_fin`, `upSet_inter_nonempty_iff`, `dagger_upSet_inter`) is proved,
+zero `sorry`, `⊆{propext,Quot.sound}`. No new Lean was needed. Fixed the docstring's stale
+"(deferred)" phrasing to point at `Proposition710.lean` by name, and flipped `arxiv.md`'s
+Definition 7.9 row `Partial → Pass`.
+
+**Remaining open work in the whole project:** Exercise 7.19 (`Partial`) — genuinely deferred, not
+touched this session.

@@ -40,8 +40,9 @@ Scott's `↓X` of §7 is *exactly* the set `Exercise 1.20` already named `upSet`
   and, in the consistent case, `dagger_upSet_inter` (`↓X ∩ ↓Y = ↓(X∩Y) ∈ 𝒟†`); the
   unconditional set identity `↓X ∩ ↓Y = ↓(X∩Y)` is Exercise 1.20's `upSet_inter`.
 
-That `ℙ𝒟` is itself a neighbourhood system, effectively given when `𝒟` is, is **Proposition
-7.10** (deferred). Everything here is choice-free (`⊆ {propext, Quot.sound}`).
+This is everything Scott states as part of Definition 7.9 itself; that `ℙ𝒟` is *itself a
+neighbourhood system*, effectively given when `𝒟` is, is the separate **Proposition 7.10**
+(`Proposition710.lean`). Everything here is choice-free (`⊆ {propext, Quot.sound}`).
 -/
 
 namespace Scott1980.Neighborhood
