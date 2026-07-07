@@ -221,3 +221,4 @@ import Scott1980.Neighborhood.Exercise818
 import Scott1980.Neighborhood.Exercise819
 import Scott1980.Neighborhood.Exercise820
 import Scott1980.Neighborhood.Exercise821
+import Scott1980.Neighborhood.Exercise822

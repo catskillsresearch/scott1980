@@ -12273,3 +12273,36 @@ added `import Scott1980.Neighborhood.Proposition810b` to `Exercise821.lean`). `a
 **Status of Exercise 8.21: `Pass` — COMPLETE, all of (a)/(b)/(c).** **Next up:** scan `arxiv.md` for
 the next `Deferred`/not-yet-started row after Exercise 8.21 (Exercise 8.22: which of two relations
 holds, currently marked `Deferred`).
+
+**2026-07-07 — Exercise 8.22 PASS (`B ⊴ C`, `C ⊴ B`, general case).** New
+`Scott1980/Neighborhood/Exercise822.lean`. **Both directions of `⊴` hold** between Example 6.2's
+`B ≅ B+B` (binary sequences) and `C ≅ 𝟙+C+C` (finite-or-infinite binary sequences), both over the
+same tokens `Str = List Bool`. **`B ⊴ C`** (`B_trianglelefteq_C`): trivial direction — `B.mem ⊆
+C.mem` literally (every `B`-cone is a `C`-neighbourhood), so `B ◁ C` (Definition 6.10,
+`B_subsystem_C`, `inter_closed` via `cone_trichotomy` + `C_nonempty`), then
+`Lemma615.Subsystem.trianglelefteq`. This *is* the projection Scott asks us to notice in 6.2: `i`
+the identity inclusion, `j` the "collapse completions back onto their cone" retraction.
+**`C ⊴ B`** (`C_trianglelefteq_B`) is the real content, since `C`'s completed-sequence elements
+`↑{σ}` have no `B` counterpart. Built via a bit-doubling token re-encoding: `enc σ` (doubles every
+bit, `enc[]=[]`, `enc(b::σ)=b::b::enc σ`) images `C`'s cones as `B`-cones `cone(enc σ)`, and
+`encC σ := enc σ ++ [true,false]` (a two-bit marker no doubled block `[b,b]` can produce) images
+`C`'s singletons as *further* `B`-cones `cone(encC σ)`. A structural-induction lemma suite
+(`enc_prefix_iff`, `enc_injective`, `enc_prefix_encC_iff`, `not_encC_prefix_enc`,
+`encC_prefix_encC_iff`, `encC_injective`) shows this exactly reproduces `C`'s own
+nesting-or-disjointness pattern. The image family `D' := {cone(enc σ)} ∪ {cone(encC σ)}` is a
+`NeighborhoodSystem` (`NeighborhoodSystem.ofNestedOrDisjoint`, `D'_nestedOrDisjoint` from `B`'s own
+`cone_trichotomy`) and a literal subsystem `D' ◁ B` (`D'_subsystem_B`). The order-isomorphism
+`cdEquiv : C.Element ≃o D'.Element` uses mutually-inverse filter maps `toD'`/`fromD'` (mirroring
+`Example62.toBB`/`fromBB`'s style), with membership-characterization simp lemmas (`toD'_mem_enc`,
+`toD'_mem_encC`, `fromD'_mem_cone`, `fromD'_mem_singleton`) driving `left_inv`/`right_inv`/
+`map_rel_iff'` uniformly; `C ≅ᴰ D'` (`C_isomorphic_D'`) plus `D' ◁ B` gives `C ⊴ B` directly from
+`Lemma615.Trianglelefteq`'s definition (no need for the general `trianglelefteq_of_projectionPair`
+detour). **General case** (`D=T(D)+S(D)`, `E=T(E)` ⟹ `E ⊴ D`): argued in prose in the module
+docstring, not re-derived in Lean (would duplicate `Theorem616.lean`'s ~250-line approximant-chain
+argument with one hypothesis weakened from iso to retraction) — `T(X):=X+X`, `S(X):=𝟙` recovers
+exactly the `B`/`C` instance above as the general pattern's concrete confirmation. `lake build`
+(whole project) green, zero `sorry`, no new linter warnings. Wired into `Scott1980.lean`. `arxiv.md`
+Exercise 8.22 row updated to `Pass` with full proof notes. Axiom audit:
+`B_trianglelefteq_C`/`C_trianglelefteq_B ⊆ {propext, Quot.sound}` — **fully choice-free**, no
+`Classical.choice` anywhere in this file. **Next up:** scan `arxiv.md` for the next `Deferred` row
+(Exercise 8.23: construct `T` as a computable operator `(U→U)→(U→U)`).
