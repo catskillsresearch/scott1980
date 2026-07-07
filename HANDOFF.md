@@ -12306,3 +12306,57 @@ Exercise 8.22 row updated to `Pass` with full proof notes. Axiom audit:
 `B_trianglelefteq_C`/`C_trianglelefteq_B ⊆ {propext, Quot.sound}` — **fully choice-free**, no
 `Classical.choice` anywhere in this file. **Next up:** scan `arxiv.md` for the next `Deferred` row
 (Exercise 8.23: construct `T` as a computable operator `(U→U)→(U→U)`).
+
+**2026-07-07 — Exercise 8.23 PASS (fixed-point method genuinely solves `D≅T(D)`, two claims in
+full, effectiveness in prose).** New `Scott1980/Neighborhood/Exercise823.lean`. Models Scott's
+computable `t:(U→U)→(U→U)` as an approximable self-map `t : ApproximableMap (funSpace E E)
+(funSpace E E)` (proved for arbitrary `E`, not just `U`), with `tOp t a := toApproxMap
+(t.toElementMap (toFilter a))` the induced operator on actual maps and `fixOp t := toApproxMap
+t.fixElement` (Theorem 4.1) Scott's `‖t‖ = fix(t)`. **Claim 1** (`isFinitaryProjection_fixOp`):
+given `ht : ∀a, IsFinitaryProjection a → IsFinitaryProjection (tOp t a)`, `‖t‖` is itself a
+finitary projection. Proved via **Theorem 8.6's `sub` combinator** — a genuinely nice shortcut
+avoiding any re-derivation of Theorem 6.16's colimit-of-domains machinery: `sub f=f ↔
+IsFinitaryProjection f` (8.6(a)) reduces the goal to an equation; induction shows every approximant
+`t.iterElem n` is (under `toApproxMap`) a finitary projection (base case `n=0`: the constant-bottom
+map `constMap E E.bot`, shown finitary directly — idempotent/`≤I` by bare unfolding of `comp`/`≤`;
+finitary because `Fix(⊥)={⊥}` is a singleton, order-iso to the terminal system `unitSys` via a
+`Unique`-to-`Unique` `OrderIso`; step case is exactly hypothesis `ht`, chased through `tOp`'s
+round-trip lemma `tOp_toApproxMap`); hence every `t.iterElem n` is a fixed point of `subFilter`
+(`sub` transported to `funSpace E E`'s elements). **The key fact, already on hand**: `subFilter`
+commutes with directed unions (`Theorem86.lean`'s `Sub8_6.subFilter_iSupDirected`, since `sub`'s
+defining formula is a positive existential in the map's relation — no new continuity argument
+needed). Since `t.fixElement = ⊔ₙ t.iterElem n` (Theorem 4.2(iii)/`fixElement_eq_iSupDirected`) and
+`subFilter` fixes every term of the chain, it fixes the union too: `sub ‖t‖ = ‖t‖`. (One
+implementation wrinkle: `rw` cannot match `subFilter (iSupDirected φ hdir)` against a goal
+containing a *different* proof term for the same directedness fact, even though propositionally/
+definitionally equal by proof irrelevance — worked around by first proving `t.fixElement =
+iSupDirected t.iterElem hdir` for *my own* explicit `hdir`, via `Element.ext` + `mem_fixElement` +
+`mem_iterElem`, so the subsequent `subFilter_iSupDirected` rewrite has a syntactically-matching
+target.) **Claim 2, the equation** (`fixedDomain_fixOp_iso_T`): the nice realization is that `‖t‖`
+is a *genuine*, not merely approximate, fixed point — `tOp t (fixOp t) = fixOp t` (`tOp_fixOp`,
+bare consequence of `toElementMap_fixElement`). Packaging Scott's "`D_{t(a)} ≅ T(D_a)`" hypothesis
+abstractly as `hT a : Fix(tOp t a) ≅ T(a)` (`T : ApproximableMap E E → Σ β, NeighborhoodSystem β`,
+`Fix a := {y // a.toElementMap y = y}`) and substituting `a := ‖t‖`, then rewriting `tOp t (fixOp
+t) = fixOp t`, gives `Fix(‖t‖) ≅ T(‖t‖)` **unconditionally** — a one-line substitution, not a
+colimit/continuity argument, precisely because `‖t‖` solves the equation exactly rather than in the
+limit. **Claim 2, initiality w.r.t. projections** (`fixedNbhd_fixOp_subsystem`): for any *other*
+finitary projection `a` with `tOp t a ≤ a` (covering every alternative *exact* solution `tOp t a =
+a`), Theorem 4.1's minimality (`fixElement_le_of_toElementMap_le`) gives `t.fixElement ≤ toFilter
+a`, hence `‖t‖ ≤ a` (transported through `funSpaceEquiv`'s `OrderIso.le_iff_le`, with care taken to
+build the intermediate inequality via `show`/targeted `rw` rather than blindly rewriting `a` in a
+hypothesis whose type contains `a` nested inside `tOp t a` too — naive `rw [← toApproxMap_toFilter
+a] at hpre` corrupts the term by also rewriting the `a` hidden inside `tOp`'s unfolding). Exercise
+8.16's order-isomorphism `a≤b ↔ D_a◁D_b` (`isFinitaryProjection_le_iff_fixedNbhd_subsystem`) then
+upgrades `‖t‖ ≤ a` to `fixedNbhd(‖t‖) ◁ fixedNbhd a` (hence `⊴`, Lemma 6.15) — literally "the
+initial solution... with respect to projections". **Claim 3, effectiveness**: left in prose only
+(module docstring), matching this codebase's own precedent of deferring Theorem 8.6's own
+computability clause (`sub` computable when `E` effectively given) — needs Definition 7.1's
+`ComputablePresentation` machinery threaded through a directed *union* of presentations, the same
+style of argument `Theorem88b.lean`–`Theorem88m.lean` already carry out for the *other* effective
+limiting construction in this book (Theorem 8.8's back-and-forth `Yₙ`-chain), not repeated here.
+`lake build` (whole project, 3188 jobs) green, zero `sorry`, no new linter warnings beyond
+pre-existing ones. Wired into `Scott1980.lean`. `arxiv.md` Exercise 8.23 row updated to `Pass` with
+full proof notes. Axiom audit: `isFinitaryProjection_fixOp`/`tOp_fixOp`/
+`fixedDomain_fixOp_iso_T`/`fixedNbhd_fixOp_subsystem` all `⊆ {propext, Quot.sound}` — **fully
+choice-free**. **Next up:** scan `arxiv.md` for the next `Deferred` row (Exercise 8.24: binary
+constructs `S,T` ⟹ a pair of effectively presented domains).
