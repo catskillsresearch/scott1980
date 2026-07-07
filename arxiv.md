@@ -1857,6 +1857,7 @@ flowchart TD
   L3core -.-> Theorem75
   L3core -.-> Proposition712
   L3core -.-> Exercise715
+  L3core -.-> Exercise719
   L3core -.-> Exercise721
   L4core -.-> Theorem76
   L4core -.-> Exercise722
