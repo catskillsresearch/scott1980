@@ -1,5 +1,7 @@
 # Formalizing Dana Scott's 1980 Theory of Computation in Lean 4
 
+---
+
 ## Abstract
 
 In November 1969, Dana Scott formulated a mathematical program to construct the first non-degenerate, purely mathematical model ($D_\infty$) for Alonzo Church's untyped $\lambda$-calculus. He formally detailed this in his landmark 1972 paper *Continuous Lattices*, providing the foundational justification for denotational semantics. However, Scott's initial 1972 framework relied on dense, abstract point-set topology, which remained an intimidating barrier for computer scientists seeking a practical tool for representing programming language semantics.
@@ -189,64 +191,69 @@ Below is the chronological narrative of the formalization, organized step-by-ste
 
 ```mermaid
 flowchart TD
-  D11["Definition 1.1"]
-  F11a["Factoid 1.1a"]
-  F11b["Factoid 1.1b"]
-  T11c["Theorem 1.1c"]
-  E12["Example 1.2"]
-  E13["Example 1.3"]
-  E14["Example 1.4"]
-  F14a["Factoid 1.4a"]
-  E15["Example 1.5"]
-  F15a["Factoid 1.5a"]
-  F15b["Factoid 1.5b"]
-  D16["Definition 1.6"]
-  D18o["Definition 1.8 (order)"]
-  D17["Definition 1.7"]
-  F17a["Factoid 1.7a"]
-  F17b["Factoid 1.7b"]
-  D18b["Definition 1.8 (⊥, total)"]
-  EB["Example 1.B"]
-  E122["Exercise 1.22"]
-  D19["Definition 1.9"]
-  T110["Theorem 1.10"]
-  T111["Theorem 1.11"]
-
-  D11 --> F11a
-  D11 --> F11b
-  F11a --> T11c
-  F11b --> T11c
-  D11 --> D16
-  D11 --> F14a
-  F14a --> E12
-  F14a --> E13
-  F14a --> E14
-  D16 --> D18o
-  D16 --> E12
-  D18o --> E12
-  D16 --> E13
-  D18o --> E13
-  D16 --> E14
-  D18o --> E14
-  D11 --> E15
-  E15 --> F15a
-  T11c --> F15a
-  D16 --> F15b
-  D16 --> D17
-  D17 --> F17a
-  D17 --> F17b
-  D16 --> D18b
-  D17 --> D18b
-  F14a --> EB
-  D17 --> EB
-  D18b --> EB
-  F17b --> EB
-  D16 --> E122
-  D18o --> E122
-  D18o --> D19
-  D19 --> T110
-  D17 --> T110
-  D16 --> T111
+  Basic["Definition 1.1<br/>(+6 items)<br/><i>Basic.lean</i>"]
+  Example12["Example 1.2<br/><i>Example12.lean</i>"]
+  Example13["Example 1.3<br/><i>Example13.lean</i>"]
+  Example14["Example 1.4<br/><i>Example14.lean</i>"]
+  Example15["Example 1.5<br/><i>Example15.lean</i>"]
+  ExampleB["Exercise 1.13<br/><i>ExampleB.lean</i>"]
+  Theorem110["Theorem 1.10<br/><i>Theorem110.lean</i>"]
+  Theorem111["Theorem 1.11<br/><i>Theorem111.lean</i>"]
+  Exercise112["Exercise 1.12<br/><i>Exercise112.lean</i>"]
+  Exercise113["Exercise 1.13<br/><i>Exercise113.lean</i>"]
+  Exercise114["Exercise 1.14<br/><i>Exercise114.lean</i>"]
+  Exercise115["Exercise 1.15<br/><i>Exercise115.lean</i>"]
+  Exercise116["Exercise 1.16<br/><i>Exercise116.lean</i>"]
+  Exercise117["Exercise 1.17<br/><i>Exercise117.lean</i>"]
+  Exercise118["Exercise 1.18<br/><i>Exercise118.lean</i>"]
+  Exercise119["Exercise 1.19<br/><i>Exercise119.lean</i>"]
+  Exercise120["Exercise 1.20<br/><i>Exercise120.lean</i>"]
+  Exercise121["Exercise 1.21<br/><i>Exercise121.lean</i>"]
+  Exercise122["Exercise 1.22<br/><i>Exercise122.lean</i>"]
+  Exercise123["Exercise 1.23<br/><i>Exercise123.lean</i>"]
+  Exercise124["Exercise 1.24<br/><i>Exercise124.lean</i>"]
+  Exercise125["Exercise 1.25<br/><i>Exercise125.lean</i>"]
+  Exercise126["Exercise 1.26<br/><i>Exercise126.lean</i>"]
+  Exercise127["Exercise 1.27<br/><i>Exercise127.lean</i>"]
+  Basic --> Example12
+  Basic --> Example13
+  Basic --> Example14
+  Basic --> Example15
+  Basic --> ExampleB
+  Basic --> Exercise112
+  Basic --> Exercise114
+  Basic --> Exercise115
+  Basic --> Exercise116
+  Basic --> Exercise117
+  Basic --> Exercise118
+  Basic --> Exercise119
+  Basic --> Exercise120
+  Basic --> Exercise122
+  Basic --> Exercise123
+  Basic --> Exercise124
+  Basic --> Exercise125
+  Basic --> Exercise126
+  Basic --> Theorem110
+  Basic --> Theorem111
+  ExampleB --> Exercise113
+  Exercise118 --> Exercise127
+  Theorem110 --> Exercise121
+  Theorem111 --> Exercise113
+  Basic_concept_D11["Def 1.1<br/><i>in Basic.lean</i>"]
+  Basic_concept_D16["Def 1.6 · filters<br/><i>in Basic.lean</i>"]
+  Basic_concept_D17["Def 1.7 · principal<br/><i>in Basic.lean</i>"]
+  Basic_concept_D19["Def 1.9 · tokens<br/><i>in Basic.lean</i>"]
+  Basic_concept_T11c["Thm 1.1c<br/><i>in Basic.lean</i>"]
+  Basic_concept_F14a["Factoid 1.4a<br/><i>in Basic.lean</i>"]
+  Basic --> Basic_concept_D11
+  Basic_concept_D11 --> Basic_concept_T11c
+  Basic_concept_D11 --> Basic_concept_F14a
+  Basic_concept_D11 --> Basic_concept_D16
+  Basic_concept_D16 --> Basic_concept_D17
+  Basic_concept_D17 --> Basic_concept_D19
+  Basic_concept_F14a -.-> Example12
+  Basic_concept_F14a -.-> Example13
+  Basic_concept_F14a -.-> Example14
 ```
 
 #### Definition 1.1
@@ -737,6 +744,41 @@ to `[propext, Quot.sound]`. All four new declarations are constructive.
 
 ### Lecture II: Approximable Mappings
 
+```mermaid
+flowchart TD
+  L1core["Lect I imports<br/><i>Basic, Example12, ExampleB, Exercise122</i>"]
+  Approximable["Definition 2.1<br/>(+4 items)<br/><i>Approximable.lean</i>"]
+  ApproximableExercises["Exercise 2.8<br/>(+5 items)<br/><i>ApproximableExercises.lean</i>"]
+  Example23["Example 2.3<br/><i>Example23.lean</i>"]
+  Example24["Example 2.4<br/>Exercise 2.17<br/><i>Example24.lean</i>"]
+  Exercise213["Exercise 2.13<br/><i>Exercise213.lean</i>"]
+  Exercise214["Exercise 2.14<br/><i>Exercise214.lean</i>"]
+  Exercise215["Exercise 2.15<br/><i>Exercise215.lean</i>"]
+  Exercise216["Exercise 2.16<br/><i>Exercise216.lean</i>"]
+  Exercise218["Exercise 2.18<br/><i>Exercise218.lean</i>"]
+  Exercise220["Exercise 2.20<br/><i>Exercise220.lean</i>"]
+  Exercise221["Exercise 2.21<br/><i>Exercise221.lean</i>"]
+  Exercise222["Exercise 2.22<br/><i>Exercise222.lean</i>"]
+  L1core -.-> Approximable
+  L1core -.-> Example23
+  L1core -.-> Example24
+  L1core -.-> Exercise213
+  L1core -.-> Exercise216
+  L1core -.-> Exercise221
+  Approximable --> ApproximableExercises
+  Approximable --> Example23
+  Approximable --> Example24
+  Approximable --> Exercise214
+  Approximable --> Exercise216
+  Approximable --> Exercise222
+  ApproximableExercises --> Exercise213
+  ApproximableExercises --> Exercise218
+  ApproximableExercises --> Exercise220
+  ApproximableExercises --> Exercise221
+  Example24 --> Exercise218
+  Exercise213 --> Exercise215
+```
+
 #### Definition 2.1
 * **Mathematical Target:** `ApproximableMap`: relation `rel⊆𝒟₀×𝒟₁` (`rel_dom`/`rel_cod`) with (i) `master_rel`, (ii) `inter_right`, (iii) `mono`; relation-extensionality `ext` (`Approximable.lean`)
 * **Lean File:** `Scott1980/Neighborhood/Approximable.lean`
@@ -878,6 +920,64 @@ characteristic-map data), so the footprint is `[propext, Classical.choice, Quot.
 ---
 
 ### Lecture III: Domain Constructs
+
+```mermaid
+flowchart TD
+  L1core["Lect I imports<br/><i>Exercise122, Exercise127</i>"]
+  L2core["Lect II imports<br/><i>Approximable, ApproximableExercises, Example23, Exercise222</i>"]
+  Product["Definition 3.1<br/>(+6 items)<br/><i>Product.lean</i>"]
+  FunctionSpace["Definition 3.8<br/>(+7 items)<br/><i>FunctionSpace.lean</i>"]
+  Exercise314["Exercise 3.14<br/><i>Exercise314.lean</i>"]
+  Exercise315["Exercise 3.15<br/><i>Exercise315.lean</i>"]
+  Exercise318["Exercise 3.18<br/><i>Exercise318.lean</i>"]
+  Exercise319["Exercise 3.19<br/>Exercise 3.20<br/><i>Exercise319.lean</i>"]
+  Exercise319Sum["Exercise 3.19<br/><i>Exercise319Sum.lean</i>"]
+  Exercise321["Exercise 3.21<br/><i>Exercise321.lean</i>"]
+  Exercise322["Exercise 3.22<br/><i>Exercise322.lean</i>"]
+  Exercise323["Exercise 3.23<br/><i>Exercise323.lean</i>"]
+  Exercise324["Exercise 3.24<br/><i>Exercise324.lean</i>"]
+  Exercise316["Exercise 3.16<br/><i>Exercise316.lean</i>"]
+  Exercise317["Exercise 3.17<br/><i>Exercise317.lean</i>"]
+  Exercise324Iter["Exercise 3.24(ii)<br/><i>Exercise324Iter.lean</i>"]
+  Exercise324Distrib["Exercise 3.24(iii)(iv)<br/><i>Exercise324Distrib.lean</i>"]
+  Exercise325["Exercise 3.25<br/><i>Exercise325.lean</i>"]
+  Exercise327["Exercise 3.27<br/><i>Exercise327.lean</i>"]
+  Exercise326["Exercise 3.26<br/><i>Exercise326.lean</i>"]
+  Exercise326Sum["Exercise 3.26, continued<br/><i>Exercise326Sum.lean</i>"]
+  Exercise328["Exercise 3.28<br/><i>Exercise328.lean</i>"]
+  L1core -.-> FunctionSpace
+  L1core -.-> Exercise325
+  L1core -.-> Exercise328
+  L2core -.-> Product
+  L2core -.-> Exercise318
+  L2core -.-> Exercise317
+  L2core -.-> Exercise327
+  L2core -.-> Exercise326
+  Exercise315 --> Exercise316
+  Exercise315 --> Exercise323
+  Exercise315 --> Exercise324
+  Exercise316 --> Exercise317
+  Exercise316 --> Exercise324Iter
+  Exercise318 --> Exercise319Sum
+  Exercise319Sum --> Exercise324Distrib
+  Exercise319Sum --> Exercise326Sum
+  Exercise326 --> Exercise326Sum
+  FunctionSpace --> Exercise317
+  FunctionSpace --> Exercise321
+  FunctionSpace --> Exercise322
+  FunctionSpace --> Exercise323
+  FunctionSpace --> Exercise324
+  FunctionSpace --> Exercise324Iter
+  FunctionSpace --> Exercise325
+  FunctionSpace --> Exercise327
+  FunctionSpace --> Exercise328
+  Product --> Exercise314
+  Product --> Exercise315
+  Product --> Exercise319
+  Product --> Exercise324Distrib
+  Product --> Exercise326
+  Product --> FunctionSpace
+```
 
 #### Definition 3.1
 * **Mathematical Target:** `prod`, `prodNbhd` (`Sum.inl '' X ∪ Sum.inr '' Y`), element pairing `pair`, `Element.fst/snd` (`Product.lean`)
@@ -1063,6 +1163,69 @@ characteristic-map data), so the footprint is `[propext, Classical.choice, Quot.
 
 ### Lecture IV: Fixed Points and Recursion
 
+```mermaid
+flowchart TD
+  L1core["Lect I imports<br/><i>Example12, Exercise118, Exercise124</i>"]
+  L2core["Lect II imports<br/><i>Approximable, ApproximableExercises, Example23</i>"]
+  L3core["Lect III imports<br/><i>Exercise326, FunctionSpace</i>"]
+  Theorem41["Theorem 4.1<br/>Theorem 4.2<br/><i>Theorem41.lean</i>"]
+  Example43["Example 4.3<br/><i>Example43.lean</i>"]
+  Example44["Example 4.4<br/><i>Example44.lean</i>"]
+  Theorem46["Definition 4.5<br/>Theorem 4.6<br/><i>Theorem46.lean</i>"]
+  Exercise407["Exercise 4.7<br/><i>Exercise407.lean</i>"]
+  Exercise408["Exercise 4.8<br/><i>Exercise408.lean</i>"]
+  Exercise409["Exercise 4.9<br/><i>Exercise409.lean</i>"]
+  Exercise410["Exercise 4.10<br/><i>Exercise410.lean</i>"]
+  Exercise411["Exercise 4.11<br/><i>Exercise411.lean</i>"]
+  Exercise412["Exercise 4.12<br/><i>Exercise412.lean</i>"]
+  Exercise413["Exercise 4.13<br/><i>Exercise413.lean</i>"]
+  Exercise414["Exercise 4.14<br/><i>Exercise414.lean</i>"]
+  Exercise415["Exercise 4.15<br/><i>Exercise415.lean</i>"]
+  Exercise416["Exercise 4.16<br/><i>Exercise416.lean</i>"]
+  Exercise417["Exercise 4.17<br/><i>Exercise417.lean</i>"]
+  Exercise418["Exercise 4.18<br/><i>Exercise418.lean</i>"]
+  Exercise419["Exercise 4.19<br/><i>Exercise419.lean</i>"]
+  Exercise420["Exercise 4.20<br/><i>Exercise420.lean</i>"]
+  Exercise421["Exercise 4.21<br/><i>Exercise421.lean</i>"]
+  Exercise422["Exercise 4.22<br/><i>Exercise422.lean</i>"]
+  Exercise423["Exercise 4.23<br/><i>Exercise423.lean</i>"]
+  Exercise424["Exercise 4.24<br/><i>Exercise424.lean</i>"]
+  Exercise425["Exercise 4.25<br/><i>Exercise425.lean</i>"]
+  L1core -.-> Exercise412
+  L1core -.-> Exercise413
+  L1core -.-> Exercise415
+  L2core -.-> Theorem41
+  L2core -.-> Example43
+  L2core -.-> Example44
+  L2core -.-> Exercise407
+  L2core -.-> Exercise408
+  L2core -.-> Exercise412
+  L3core -.-> Theorem41
+  L3core -.-> Exercise419
+  Example43 --> Exercise418
+  Example43 --> Exercise425
+  Example44 --> Exercise419
+  Exercise407 --> Exercise411
+  Exercise410 --> Exercise411
+  Exercise413 --> Exercise415
+  Exercise413 --> Exercise416
+  Exercise414 --> Exercise417
+  Exercise414 --> Exercise421
+  Exercise414 --> Exercise422
+  Exercise414 --> Exercise424
+  Exercise415 --> Exercise416
+  Theorem41 --> Example43
+  Theorem41 --> Example44
+  Theorem41 --> Exercise407
+  Theorem41 --> Exercise408
+  Theorem41 --> Exercise409
+  Theorem41 --> Exercise410
+  Theorem41 --> Exercise413
+  Theorem41 --> Exercise420
+  Theorem41 --> Exercise423
+  Theorem46 --> Exercise422
+```
+
 #### Theorem 4.1
 * **Mathematical Target:** every approximable `f:D→D` has a **least** fixed point `fix(f)=⊔ₙ fⁿ(⊥)`
 * **Lean File:** `Scott1980/Neighborhood/Theorem41.lean`
@@ -1217,6 +1380,57 @@ characteristic-map data), so the footprint is `[propext, Classical.choice, Quot.
 
 ### Lecture V: Typed λ-Calculus
 
+```mermaid
+flowchart TD
+  L2core["Lect II imports<br/><i>ApproximableExercises</i>"]
+  L3core["Lect III imports<br/><i>Exercise316, Exercise326, FunctionSpace, Product</i>"]
+  L4core["Lect IV imports<br/><i>Example43, Exercise407, Exercise414, Exercise419, Theorem41</i>"]
+  Table55["Table 5.5<br/><i>Table55.lean</i>"]
+  Theorem51["Theorem 5.1<br/><i>Theorem51.lean</i>"]
+  Theorem52["Theorem 5.2<br/><i>Theorem52.lean</i>"]
+  Proposition53["Proposition 5.3<br/><i>Proposition53.lean</i>"]
+  Proposition54["Proposition 5.4<br/><i>Proposition54.lean</i>"]
+  Theorem56["Theorem 5.6<br/><i>Theorem56.lean</i>"]
+  Theorem56Full["Theorem 5.6<br/><i>Theorem56Full.lean</i>"]
+  Exercise507["Exercise 5.7<br/><i>Exercise507.lean</i>"]
+  Exercise508["Exercise 5.8<br/><i>Exercise508.lean</i>"]
+  Exercise509["Exercise 5.9<br/><i>Exercise509.lean</i>"]
+  Exercise510["Exercise 5.10<br/><i>Exercise510.lean</i>"]
+  Exercise511["Exercise 5.11<br/><i>Exercise511.lean</i>"]
+  Exercise512["Exercise 5.12<br/><i>Exercise512.lean</i>"]
+  Exercise513["Exercise 5.13<br/><i>Exercise513.lean</i>"]
+  Exercise514["Exercise 5.14<br/><i>Exercise514.lean</i>"]
+  Exercise515["Exercise 5.15<br/><i>Exercise515.lean</i>"]
+  Exercise516["Exercise 5.16<br/><i>Exercise516.lean</i>"]
+  Exercise516ThueMorse["Exercise 5.16 follow-up<br/><i>Exercise516ThueMorse.lean</i>"]
+  Exercise516Overlap["Exercise 5.16 follow-up<br/><i>Exercise516Overlap.lean</i>"]
+  L2core -.-> Theorem56Full
+  L3core -.-> Theorem56
+  L3core -.-> Theorem56Full
+  L3core -.-> Exercise507
+  L3core -.-> Exercise508
+  L3core -.-> Exercise510
+  L3core -.-> Exercise511
+  L3core -.-> Exercise512
+  L3core -.-> Exercise516
+  L4core -.-> Table55
+  L4core -.-> Proposition54
+  L4core -.-> Theorem56
+  L4core -.-> Theorem56Full
+  L4core -.-> Exercise509
+  L4core -.-> Exercise511
+  L4core -.-> Exercise512
+  L4core -.-> Exercise515
+  L4core -.-> Exercise516
+  Exercise511 --> Theorem56Full
+  Exercise513 --> Exercise514
+  Exercise516 --> Exercise516ThueMorse
+  Exercise516ThueMorse --> Exercise516Overlap
+  Table55 --> Proposition53
+  Table55 --> Theorem51
+  Table55 --> Theorem52
+```
+
 #### Theorem 5.1
 * **Mathematical Target:** every typed `λ`-term defines an approximable function of its free variables
 * **Lean File:** `Scott1980/Neighborhood/Theorem51.lean`
@@ -1316,6 +1530,103 @@ characteristic-map data), so the footprint is `[propext, Classical.choice, Quot.
 ---
 
 ### Lecture VI: Domain Equations
+
+```mermaid
+flowchart TD
+  L1core["Lect I imports<br/><i>Basic, ExampleB</i>"]
+  L2core["Lect II imports<br/><i>Approximable, ApproximableExercises, Exercise213, Exercise222</i>"]
+  L3core["Lect III imports<br/><i>Exercise315, Exercise316, Exercise319, Exercise319Sum, FunctionSpace, …</i>"]
+  L4core["Lect IV imports<br/><i>Example44, Exercise408, Theorem41</i>"]
+  L5core["Lect V imports<br/><i>Exercise510, Exercise516</i>"]
+  Example61["Example 6.1<br/><i>Example61.lean</i>"]
+  Example62["Example 6.2<br/><i>Example62.lean</i>"]
+  Example62C["Example 6.2<br/><i>Example62C.lean</i>"]
+  Example62A["Example 6.2<br/><i>Example62A.lean</i>"]
+  Example62Regular["Example 6.2<br/><i>Example62Regular.lean</i>"]
+  Definition63["Definition 6.3<br/>Definition 6.4<br/>Definition 6.5<br/><i>Definition63.lean</i>"]
+  Proposition66["Proposition 6.6<br/><i>Proposition66.lean</i>"]
+  Proposition67["Proposition 6.7<br/><i>Proposition67.lean</i>"]
+  Definition68["Definition 6.8<br/><i>Definition68.lean</i>"]
+  Theorem69["Theorem 6.9<br/><i>Theorem69.lean</i>"]
+  Definition610["Definition 6.10<br/><i>Definition610.lean</i>"]
+  Proposition611["Proposition 6.11<br/><i>Proposition611.lean</i>"]
+  Proposition612["Proposition 6.12<br/><i>Proposition612.lean</i>"]
+  Definition613["Definition 6.13<br/><i>Definition613.lean</i>"]
+  Theorem614["Theorem 6.14<br/><i>Theorem614.lean</i>"]
+  Lemma615["Lemma 6.15<br/><i>Lemma615.lean</i>"]
+  Theorem616["Theorem 6.16<br/><i>Theorem616.lean</i>"]
+  Exercise617["Exercise 6.17<br/><i>Exercise617.lean</i>"]
+  Exercise617Gen["Exercise 6.17 part 2<br/><i>Exercise617Gen.lean</i>"]
+  Exercise618["Exercise 6.18<br/><i>Exercise618.lean</i>"]
+  Exercise619["Exercise 6.19<br/><i>Exercise619.lean</i>"]
+  Exercise619PartB["Exercise 6.20<br/><i>Exercise619PartB.lean</i>"]
+  Exercise621["Exercise 6.21<br/><i>Exercise621.lean</i>"]
+  Exercise622["Exercise 6.22<br/><i>Exercise622.lean</i>"]
+  Exercise623["Exercise 6.23<br/><i>Exercise623.lean</i>"]
+  Exercise624["Exercise 6.24<br/><i>Exercise624.lean</i>"]
+  Exercise625["Exercise 6.25<br/><i>Exercise625.lean</i>"]
+  Exercise626["Exercise 6.26<br/><i>Exercise626.lean</i>"]
+  Exercise627["Exercise 6.27<br/><i>Exercise627.lean</i>"]
+  Exercise628["Exercise 6.28<br/><i>Exercise628.lean</i>"]
+  Exercise629["Exercise 6.29<br/><i>Exercise629.lean</i>"]
+  L1core -.-> Example62
+  L1core -.-> Example62A
+  L1core -.-> Definition610
+  L2core -.-> Definition63
+  L2core -.-> Proposition611
+  L2core -.-> Theorem614
+  L2core -.-> Exercise619PartB
+  L3core -.-> Example61
+  L3core -.-> Example62
+  L3core -.-> Example62C
+  L3core -.-> Example62A
+  L3core -.-> Proposition612
+  L3core -.-> Lemma615
+  L3core -.-> Exercise618
+  L3core -.-> Exercise619
+  L3core -.-> Exercise619PartB
+  L3core -.-> Exercise629
+  L4core -.-> Example62C
+  L4core -.-> Theorem69
+  L4core -.-> Theorem616
+  L5core -.-> Definition68
+  L5core -.-> Exercise617
+  Definition610 --> Lemma615
+  Definition610 --> Proposition611
+  Definition610 --> Proposition612
+  Definition613 --> Exercise619PartB
+  Definition613 --> Theorem614
+  Definition63 --> Definition68
+  Definition63 --> Exercise617
+  Definition63 --> Proposition66
+  Definition63 --> Proposition67
+  Definition68 --> Definition613
+  Definition68 --> Theorem69
+  Example62 --> Example62C
+  Example62 --> Exercise619
+  Example62C --> Exercise617
+  Exercise617 --> Exercise617Gen
+  Exercise617 --> Exercise618
+  Exercise619 --> Exercise619PartB
+  Exercise619PartB --> Exercise621
+  Exercise619PartB --> Exercise624
+  Exercise621 --> Exercise622
+  Exercise621 --> Exercise623
+  Exercise621 --> Exercise626
+  Exercise621 --> Exercise627
+  Lemma615 --> Exercise627
+  Lemma615 --> Exercise628
+  Lemma615 --> Theorem616
+  Proposition611 --> Definition613
+  Proposition612 --> Definition613
+  Proposition612 --> Exercise625
+  Proposition612 --> Exercise628
+  Proposition67 --> Theorem616
+  Theorem69 --> Exercise617
+  Theorem69 --> Exercise623
+  Theorem69 --> Theorem614
+  Theorem69 --> Theorem616
+```
 
 #### Example 6.1
 * **Mathematical Target:** iterating `D×D` indefinitely into a single domain (`D`<sup>∞</sup>-style construct)
@@ -1494,6 +1805,119 @@ characteristic-map data), so the footprint is `[propext, Classical.choice, Quot.
 ---
 
 ### Lecture VII: Computability in Effectively Given Domains
+
+```mermaid
+flowchart TD
+  L1core["Lect I imports<br/><i>Basic, ExampleB, Exercise120</i>"]
+  L2core["Lect II imports<br/><i>Approximable, ApproximableExercises, Example23</i>"]
+  L3core["Lect III imports<br/><i>Exercise315, Exercise316, Exercise319, Exercise319Sum, FunctionSpace, …</i>"]
+  L4core["Lect IV imports<br/><i>Theorem41</i>"]
+  L5core["Lect V imports<br/><i>Exercise510, Exercise514, Table55</i>"]
+  L6core["Lect VI imports<br/><i>Example61, Lemma615</i>"]
+  Recursive["Exercise 7.22i(a)<br/>(+9 items)<br/><i>Recursive.lean</i>"]
+  Definition71["Definition 7.1<br/><i>Definition71.lean</i>"]
+  Definition72["Definition 7.2<br/>Proposition 7.3<br/><i>Definition72.lean</i>"]
+  Theorem74["Theorem 7.4<br/><i>Theorem74.lean</i>"]
+  Theorem75["Theorem 7.5<br/><i>Theorem75.lean</i>"]
+  Theorem76["Theorem 7.6<br/><i>Theorem76.lean</i>"]
+  Proposition77["Proposition 7.7<br/><i>Proposition77.lean</i>"]
+  Combinators77["Combinators77<br/><i>Combinators77.lean</i>"]
+  Example78["Example 7.8<br/><i>Example78.lean</i>"]
+  Definition79["Definition 7.9<br/><i>Definition79.lean</i>"]
+  Proposition710["Proposition 7.10<br/><i>Proposition710.lean</i>"]
+  Definition711["Definition 7.11<br/><i>Definition711.lean</i>"]
+  Proposition712["Proposition 7.12<br/><i>Proposition712.lean</i>"]
+  Exercise713["Exercise 7.13<br/><i>Exercise713.lean</i>"]
+  Exercise714["Exercise 7.14<br/><i>Exercise714.lean</i>"]
+  Exercise715["Exercise 7.15<br/><i>Exercise715.lean</i>"]
+  Exercise716["Exercise 7.16<br/><i>Exercise716.lean</i>"]
+  Exercise717["Exercise 7.17<br/><i>Exercise717.lean</i>"]
+  Exercise717Part2["Exercise 7.17<br/><i>Exercise717Part2.lean</i>"]
+  Exercise718["Exercise 7.18<br/><i>Exercise718.lean</i>"]
+  Exercise719["Exercise 7.19<br/><i>Exercise719.lean</i>"]
+  Exercise720["Exercise 7.20<br/><i>Exercise720.lean</i>"]
+  Exercise721["Exercise 7.21<br/><i>Exercise721.lean</i>"]
+  Exercise722["Exercise 7.22a<br/>(+4 items)<br/><i>Exercise722.lean</i>"]
+  Exercise722Regular["Exercise 7.22d<br/><i>Exercise722Regular.lean</i>"]
+  Exercise722DFA["Exercise 7.22e<br/><i>Exercise722DFA.lean</i>"]
+  Exercise722Cat["Exercise722Cat<br/><i>Exercise722Cat.lean</i>"]
+  Exercise722Decide["Exercise 7.22f<br/><i>Exercise722Decide.lean</i>"]
+  Exercise722Words["Exercise722Words<br/><i>Exercise722Words.lean</i>"]
+  Exercise722Equiv["Exercise 7.22k<br/><i>Exercise722Equiv.lean</i>"]
+  Exercise722Presentation["Exercise 7.22g<br/>(+6 items)<br/><i>Exercise722Presentation.lean</i>"]
+  Exercise723["Exercise 7.23<br/><i>Exercise723.lean</i>"]
+  Exercise724["Exercise 7.24<br/><i>Exercise724.lean</i>"]
+  L1core -.-> Definition71
+  L1core -.-> Definition79
+  L1core -.-> Exercise722
+  L1core -.-> Exercise724
+  L2core -.-> Definition72
+  L2core -.-> Proposition712
+  L2core -.-> Exercise724
+  L3core -.-> Definition71
+  L3core -.-> Theorem74
+  L3core -.-> Theorem75
+  L3core -.-> Proposition712
+  L3core -.-> Exercise715
+  L3core -.-> Exercise721
+  L4core -.-> Theorem76
+  L4core -.-> Exercise722
+  L5core -.-> Exercise715
+  L5core -.-> Exercise716
+  L5core -.-> Exercise717Part2
+  L5core -.-> Exercise723
+  L6core -.-> Proposition77
+  L6core -.-> Proposition712
+  Combinators77 --> Exercise717
+  Definition71 --> Definition72
+  Definition71 --> Example78
+  Definition71 --> Exercise713
+  Definition71 --> Exercise722Presentation
+  Definition71 --> Exercise724
+  Definition71 --> Proposition710
+  Definition711 --> Proposition712
+  Definition72 --> Exercise714
+  Definition72 --> Exercise719
+  Definition72 --> Exercise720
+  Definition72 --> Proposition712
+  Definition72 --> Proposition77
+  Definition72 --> Theorem74
+  Definition72 --> Theorem75
+  Definition79 --> Proposition710
+  Example78 --> Exercise723
+  Exercise715 --> Exercise718
+  Exercise717 --> Exercise717Part2
+  Exercise719 --> Exercise720
+  Exercise719 --> Exercise721
+  Exercise722 --> Exercise722Regular
+  Exercise722Cat --> Exercise722Decide
+  Exercise722DFA --> Exercise722Decide
+  Exercise722Decide --> Exercise722Equiv
+  Exercise722Decide --> Exercise722Presentation
+  Exercise722Decide --> Recursive
+  Exercise722Equiv --> Recursive
+  Exercise722Regular --> Exercise722Cat
+  Exercise722Regular --> Exercise722DFA
+  Exercise722Regular --> Exercise722Words
+  Exercise722Regular --> Recursive
+  Exercise722Words --> Exercise722Decide
+  Proposition710 --> Definition711
+  Proposition710 --> Exercise719
+  Proposition710 --> Exercise720
+  Proposition710 --> Proposition712
+  Proposition77 --> Combinators77
+  Proposition77 --> Exercise717Part2
+  Recursive --> Definition71
+  Theorem74 --> Exercise715
+  Theorem74 --> Exercise717
+  Theorem74 --> Exercise723
+  Theorem74 --> Proposition712
+  Theorem74 --> Theorem75
+  Theorem75 --> Exercise716
+  Theorem75 --> Exercise723
+  Theorem75 --> Exercise724
+  Theorem75 --> Theorem76
+```
 
 
 Lecture VII establishes the recursion-theoretic foundations of domain theory.
@@ -1808,6 +2232,134 @@ also now **Pass**, closing the inventory.
 ---
 
 ### Lecture VIII: Retracts of the Universal Domain
+
+```mermaid
+flowchart TD
+  L1core["Lect I imports<br/><i>Basic, Exercise127</i>"]
+  L2core["Lect II imports<br/><i>ApproximableExercises, Exercise213</i>"]
+  L3core["Lect III imports<br/><i>Exercise315, Exercise316, Exercise319, Exercise324, Exercise326Sum, …</i>"]
+  L4core["Lect IV imports<br/><i>Example44, Theorem41</i>"]
+  L5core["Lect V imports<br/><i>Exercise510, Exercise511, Table55</i>"]
+  L6core["Lect VI imports<br/><i>Definition610, Example62, Exercise618, Lemma615, Proposition611, …</i>"]
+  L7core["Lect VII imports<br/><i>Definition71, Definition72, Exercise714, Exercise715, Exercise717Part2, …</i>"]
+  Definition81["Definition 8.1<br/><i>Definition81.lean</i>"]
+  Proposition82["Proposition 8.2<br/><i>Proposition82.lean</i>"]
+  Definition83["Definition 8.3<br/><i>Definition83.lean</i>"]
+  Theorem85["Theorem 8.5<br/><i>Theorem85.lean</i>"]
+  Theorem86["Theorem 8.6(a)<br/>Theorem 8.6(b)(i)<br/>Theorem 8.6(b)(ii)<br/><i>Theorem86.lean</i>"]
+  Theorem86c["Theorem 8.6(c)<br/><i>Theorem86c.lean</i>"]
+  Example84["Example 8.4(a)<br/><i>Example84.lean</i>"]
+  Example84b["Example 8.4(b)<br/><i>Example84b.lean</i>"]
+  Definition87["Definition 8.7<br/><i>Definition87.lean</i>"]
+  Theorem88["Theorem 8.8(a)<br/>Theorem 8.8(b)(vi)<br/><i>Theorem88.lean</i>"]
+  Definition89["Definition 8.9<br/><i>Definition89.lean</i>"]
+  Proposition810["Proposition 8.10(a)<br/><i>Proposition810.lean</i>"]
+  Proposition810b["Proposition 8.10(b)<br/><i>Proposition810b.lean</i>"]
+  Exercise811["Exercise 8.11<br/><i>Exercise811.lean</i>"]
+  Exercise813a["Exercise 8.13(a)<br/><i>Exercise813a.lean</i>"]
+  Exercise813b["Exercise 8.13(b)<br/><i>Exercise813b.lean</i>"]
+  Exercise813c["Exercise 8.13(c)<br/>(+4 items)<br/><i>Exercise813c.lean</i>"]
+  Exercise814["Exercise 8.14<br/><i>Exercise814.lean</i>"]
+  Exercise815["Exercise 8.15<br/><i>Exercise815.lean</i>"]
+  Exercise816["Exercise 8.16<br/><i>Exercise816.lean</i>"]
+  Exercise817["Exercise 8.17<br/><i>Exercise817.lean</i>"]
+  Exercise818["Exercise 8.18<br/><i>Exercise818.lean</i>"]
+  Exercise819["Exercise 8.19<br/><i>Exercise819.lean</i>"]
+  Exercise820["Exercise 8.20<br/><i>Exercise820.lean</i>"]
+  Exercise821["Exercise 8.21(a)<br/>Exercise 8.21(b)<br/>Exercise 8.21(c)<br/><i>Exercise821.lean</i>"]
+  Exercise822["Exercise 8.22<br/><i>Exercise822.lean</i>"]
+  Exercise823["Exercise 8.23<br/><i>Exercise823.lean</i>"]
+  Exercise824["Exercise 8.24<br/><i>Exercise824.lean</i>"]
+  Exercise826["Exercise 8.26<br/><i>Exercise826.lean</i>"]
+  Exercise827["Exercise 8.27<br/><i>Exercise827.lean</i>"]
+  Ex812["Exercise 8.12 cluster<br/><i>11 modules</i>"]
+  Ex825["Exercise 8.25 cluster<br/><i>7 modules</i>"]
+  Lect8helpers["Presentation helpers<br/><i>11 modules</i>"]
+  Thm88chain["Theorem 8.8 pipeline<br/><i>14 modules</i>"]
+  L1core -.-> Definition87
+  L1core -.-> Exercise814
+  L2core -.-> Theorem85
+  L2core -.-> Theorem86
+  L3core -.-> Definition81
+  L3core -.-> Theorem86
+  L3core -.-> Example84
+  L3core -.-> Definition89
+  L3core -.-> Exercise819
+  L3core -.-> Exercise820
+  L3core -.-> Exercise823
+  L3core -.-> Ex825
+  L4core -.-> Exercise822
+  L4core -.-> Exercise823
+  L5core -.-> Example84b
+  L5core -.-> Ex825
+  L6core -.-> Proposition82
+  L6core -.-> Theorem86
+  L6core -.-> Thm88chain
+  L6core -.-> Proposition810
+  L6core -.-> Exercise815
+  L6core -.-> Exercise817
+  L6core -.-> Exercise821
+  L6core -.-> Exercise822
+  L6core -.-> Ex825
+  L7core -.-> Theorem86c
+  L7core -.-> Lect8helpers
+  L7core -.-> Thm88chain
+  L7core -.-> Definition89
+  L7core -.-> Ex812
+  L7core -.-> Exercise815
+  L7core -.-> Exercise821
+  L7core -.-> Ex825
+  Definition81 --> Proposition82
+  Definition83 --> Example84
+  Definition83 --> Example84b
+  Definition83 --> Proposition810
+  Definition83 --> Theorem85
+  Definition87 --> Ex812
+  Definition87 --> Lect8helpers
+  Definition87 --> Theorem88
+  Definition89 --> Exercise817
+  Definition89 --> Exercise821
+  Definition89 --> Proposition810
+  Ex812 --> Exercise813a
+  Ex812 --> Exercise817
+  Ex812 --> Lect8helpers
+  Example84 --> Example84b
+  Exercise813a --> Exercise813b
+  Exercise813b --> Exercise813c
+  Exercise816 --> Exercise823
+  Exercise817 --> Exercise819
+  Exercise817 --> Exercise820
+  Exercise820 --> Ex825
+  Exercise823 --> Ex825
+  Exercise823 --> Exercise824
+  Exercise826 --> Exercise827
+  Lect8helpers --> Ex812
+  Lect8helpers --> Exercise815
+  Lect8helpers --> Thm88chain
+  Proposition810 --> Exercise821
+  Proposition810 --> Proposition810b
+  Proposition810b --> Ex825
+  Proposition810b --> Exercise818
+  Proposition810b --> Exercise819
+  Proposition810b --> Exercise821
+  Proposition810b --> Exercise826
+  Proposition82 --> Definition83
+  Theorem85 --> Ex812
+  Theorem85 --> Exercise811
+  Theorem85 --> Exercise814
+  Theorem85 --> Theorem86
+  Theorem85 --> Thm88chain
+  Theorem86 --> Exercise816
+  Theorem86 --> Exercise823
+  Theorem86 --> Proposition810b
+  Theorem86 --> Theorem86c
+  Theorem88 --> Ex812
+  Theorem88 --> Thm88chain
+  Thm88chain --> Definition89
+  Thm88chain --> Exercise816
+  Thm88chain --> Exercise817
+  Thm88chain --> Lect8helpers
+```
 
 
 Lecture VIII covers retractions, projections, and the construction of the universal domain $U$. The retraction/projection spine (Definitions 8.1/8.3, Proposition 8.2, Example 8.4(a)/(b), Theorem 8.5 in full, **Theorem 8.6 in full — (a)/(b)(i)/(b)(ii)/(c) all Pass**) is formalized below, **Definition 8.7's `U` itself is now built and verified as a genuine `NeighborhoodSystem ℚ`, Pass**, and **Theorem 8.8(a) (`U`'s general/non-effective universality) is now Pass**; **Theorem 8.8(b) (the effective refinement) is now fully Pass, all sub-items (i)–(viii) done**; **Theorem 8.8(c) is now fully Pass, all 6 of 6 parts** (the diagonal fixed-point predicate `DiagFixed` is r.e. given a computable map — `Theorem88h.lean`; a `qChar`-gated primitive-recursive fold whose output is always `DiagFixed` — `Theorem88i.lean`; the induced enumeration `D_X` covers `fixedNbhd a` exactly — `Theorem88j.lean`; `D_X`'s `interEq`/`cons` relations are recursively decidable — `Theorem88k.lean`; a primitive-recursive `.inter` for `D_X` with its `inter_spec` — `Theorem88l.lean`; and the final assembly `fixedNbhd_isEffectivelyGiven`/`theorem_8_8_c` — `Theorem88m.lean`); a few other hard/large items remain deferred.
@@ -3205,16 +3757,55 @@ Lecture VIII covers retractions, projections, and the construction of the univer
 ```bash
 lake exe cache get
 lake build Scott1980
+python3 scripts/generate_lecture_mermaid.py --write   # sync ### Lecture … mermaid blocks in arxiv.md
+bash scripts/generate_arxiv_with_code.sh   # -> arxiv_with_code.md (gitignored)
+bash scripts/build_arxiv_tex.sh            # -> arxiv.tex + lean-listings/ + figures/ (gitignored)
+bash scripts/build_arxiv_pdf.sh            # -> arxiv.pdf (LuaLaTeX; tracked) + dist/arxiv_submit.zip
+bash scripts/package_arxiv_submit.sh       # -> dist/arxiv_submit.zip only (skips PDF)
 ```
+
+---
+
+## Acknowledgments
+
+- **Dana Scott** — *Lectures on a Mathematical Theory of Computation* (PRG-19) **[Sco81]**, the
+  monograph this development formalizes in full, including every exercise.
+
+### AI-assisted development
+
+The human author retains sole responsibility for the mathematical content, the choice of
+formalization route, and every formal claim in this work. Following standard publisher practice
+(e.g., COPE guidance on authorship and AI tools **[COPE24]**), **no large language model is listed
+as a co-author** — authorship implies an accountability that automated systems cannot bear.
+
+We gratefully acknowledge assistance from the following tools (auto-generated from
+`scripts/ai_model_cards.py` when building `arxiv.tex`):
+
+<!-- AI_MODEL_TOOL_BULLETS -->
+<!-- /AI_MODEL_TOOL_BULLETS -->
+
+All definitions, constructivity audits, and final prose were reviewed by the human author, who takes
+full responsibility for them.
+
+### Artifact availability
+
+The development **[ER80]** is at
+[`github.com/catskillsresearch/scott1980`](https://github.com/catskillsresearch/scott1980).
+Run `lake build Scott1980` for the sorry-free formalization; `scripts/generate_arxiv_with_code.sh`
+builds `arxiv_with_code.md` from this file plus the complete Lean source.
 
 ---
 
 ## References
 
-* Scott, D. S. (1969). *Lattice-theoretic models for the $\lambda$-calculus* (Unpublished manuscript). University of Oxford.
-* Scott, D. S. (1972). Continuous lattices. In F. W. Lawvere (Ed.), *Toposes, Algebraic Geometry and Logic* (Lecture Notes in Mathematics, Vol. 274, pp. 97–136). Springer, Berlin, Heidelberg.
-* Scott, D. S. (1980). *Lectures on a mathematical theory of computation* (Technical Report no. PRG-19). Oxford University Computing Laboratory.
-* Winskel, G. (1993). *The Formal Semantics of Programming Languages*. MIT Press.
+* **[Sco69]** D. S. Scott. *Lattice-theoretic models for the $\lambda$-calculus* (Unpublished manuscript). University of Oxford, 1969.
+* **[Sco72]** D. S. Scott. Continuous lattices. In F. W. Lawvere (Ed.), *Toposes, Algebraic Geometry and Logic* (Lecture Notes in Mathematics, Vol. 274, pp. 97–136). Springer, Berlin, Heidelberg, 1972.
+* **[Sco81]** D. S. Scott. *Lectures on a mathematical theory of computation* (Technical Report no. PRG-19). Oxford University Computing Laboratory, 1980.
+* **[Win93]** G. Winskel. *The Formal Semantics of Programming Languages*. MIT Press, 1993.
+* **[ER80]** Catskills Research. *scott1980* (this work). <https://github.com/catskillsresearch/scott1980>.
+* **[COPE24]** Committee on Publication Ethics (COPE). *Authorship and AI tools: COPE position statement*. 2024. <https://publicationethics.org/guidance/cope-position/authorship-and-ai-tools>
+<!-- AI_MODEL_REFERENCES -->
+<!-- /AI_MODEL_REFERENCES -->
 
 ---
 
