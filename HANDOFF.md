@@ -12634,3 +12634,40 @@ Lecture IX; the source text ends at Exercise 8.27 (`sources/PRG19.md`, ~line 527
 monograph-series back matter. **No further exercises remain to formalize** unless the user wants
 to revisit a `Partial`/`Deferred` row (e.g. this exercise's finitary half, or Proposition 8.10(b)'s
 own still-open second half, or the various documented effectiveness-clause deferrals).
+
+## 2026-07-07: `arxiv.md`'s "Lean Code" appendix was stale — 73 of 236 modules missing, now fixed
+
+**Trigger:** user asked "So we're all set with this paper, right?" after the 8.27 checkpoint above.
+Before answering, audited `arxiv.md` end-to-end rather than trusting the exercise-inventory status
+alone: tallied every `**Status:**` row (204 `Pass`, plus `2.16`/`7.9`(subsumed by `7.10`, itself
+`Pass`)/`7.19`/`8.27` `Partial`, each with a documented reason — no bare/stale placeholders) — the
+inventory itself was in fact fully in order. But a `find Scott1980 -name '*.lean' | wc -l` vs. the
+"## Lean Code" appendix's own file-link count turned up a real gap: the appendix's **"Package" /
+"Core infrastructure" / "Examples" / "Definitions" / "Theorems & Lemmas" / "Propositions" /
+"Exercises"** lists had never been updated past roughly Exercise 7.24 — **all of Lecture VIII**
+(`Definition81/83/87/89`, `Theorem85/86/86c/88/88a`–`88n`, `Proposition82/810/810b`,
+`Exercise811`–`827` incl. all `812*`/`813*`/`825*` sub-files) plus 11 recursion-theory/presentation
+helper modules (`DAtomDecidable`, `IntervalPrimrec`, `LevelSetPrimrec`, `MinLevel`,
+`RationalPrimrec`, `RecursiveCross`, `SplitU`, `SplitV`, `UBisection2`, `UComputablePresentation`,
+`VDiff`) were simply absent — 73 files, i.e. the entire second half of the formalization's code was
+undocumented in the paper's own appendix. Also the header's module count ("All **163** Lean 4
+modules...") was stale against the true `find`-count.
+
+**Fix:** wrote a one-off script (`/tmp/patch_arxiv.py`, not checked in) that diffed
+`find Scott1980 -name '*.lean'` against the appendix's existing `[Name.lean](...)` links, natural-
+sorted the 73 missing names by category prefix, and spliced them into the correct existing
+subsection at the correct sort position (`Definition79`→`81`→`83`→`87`→`89`; `Theorem76`→`85`→`86`→
+`86c`→`88`→`88a`…`88n`; `Proposition77`→`82`→`810`→`810b`; `Example78`→`84`→`84b`;
+`Exercise724`→`811`→…→`827`), plus a **new** `### Lecture VIII support modules` subsection (with
+one-line "which Theorem/Exercise this backs" notes, read straight off each file's own `/-! # ... -/`
+header) for the 11 helper files, placed right before the pre-existing `### Lecture V (misc)` stray-
+file section. Header count corrected `163→236` (`find . -name '*.lean' -not -path './.lake/*' | wc
+-l`, i.e. including the root `Scott1980.lean` itself). Verified by re-diffing: appendix-listed
+filenames now exactly equal the on-disk file set (`0` missing, `0` extra). No `.lean` files touched,
+so no rebuild needed; this is a pure documentation fix to keep the paper's own appendix honest.
+
+**Answer to the user's question, precisely:** yes for the mathematics — the exercise/theorem
+inventory (`arxiv.md`'s actual content, which is what "solving the book" means) was already fully
+current and honestly scoped before this fix. The gap was purely bibliographic: the paper's own
+"here is all the code" appendix wasn't listing roughly half the code it was supposed to be an index
+of. That's now closed too.

@@ -3220,7 +3220,7 @@ lake build Scott1980
 
 ## Lean Code
 
-All **163** Lean 4 modules in the [scott1980](https://github.com/catskillsresearch/scott1980)
+All **236** Lean 4 modules in the [scott1980](https://github.com/catskillsresearch/scott1980)
 repository, grouped by role. Links point to the current `main` branch on GitHub. The import order
 matches [`Scott1980.lean`](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980.lean).
 
@@ -3254,6 +3254,8 @@ matches [`Scott1980.lean`](https://github.com/catskillsresearch/scott1980/blob/m
 * [Example62C.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/Example62C.lean)
 * [Example62Regular.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/Example62Regular.lean)
 * [Example78.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/Example78.lean)
+* [Example84.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/Example84.lean)
+* [Example84b.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/Example84b.lean)
 * [ExampleB.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/ExampleB.lean)
 
 ### Definitions
@@ -3266,6 +3268,10 @@ matches [`Scott1980.lean`](https://github.com/catskillsresearch/scott1980/blob/m
 * [Definition711.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/Definition711.lean)
 * [Definition72.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/Definition72.lean)
 * [Definition79.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/Definition79.lean)
+* [Definition81.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/Definition81.lean)
+* [Definition83.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/Definition83.lean)
+* [Definition87.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/Definition87.lean)
+* [Definition89.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/Definition89.lean)
 
 ### Theorems & Lemmas
 
@@ -3284,6 +3290,24 @@ matches [`Scott1980.lean`](https://github.com/catskillsresearch/scott1980/blob/m
 * [Theorem74.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/Theorem74.lean)
 * [Theorem75.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/Theorem75.lean)
 * [Theorem76.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/Theorem76.lean)
+* [Theorem85.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/Theorem85.lean)
+* [Theorem86.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/Theorem86.lean)
+* [Theorem86c.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/Theorem86c.lean)
+* [Theorem88.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/Theorem88.lean)
+* [Theorem88a.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/Theorem88a.lean)
+* [Theorem88b.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/Theorem88b.lean)
+* [Theorem88c.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/Theorem88c.lean)
+* [Theorem88d.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/Theorem88d.lean)
+* [Theorem88e.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/Theorem88e.lean)
+* [Theorem88f.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/Theorem88f.lean)
+* [Theorem88g.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/Theorem88g.lean)
+* [Theorem88h.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/Theorem88h.lean)
+* [Theorem88i.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/Theorem88i.lean)
+* [Theorem88j.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/Theorem88j.lean)
+* [Theorem88k.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/Theorem88k.lean)
+* [Theorem88l.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/Theorem88l.lean)
+* [Theorem88m.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/Theorem88m.lean)
+* [Theorem88n.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/Theorem88n.lean)
 
 ### Propositions
 
@@ -3296,6 +3320,9 @@ matches [`Scott1980.lean`](https://github.com/catskillsresearch/scott1980/blob/m
 * [Proposition710.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/Proposition710.lean)
 * [Proposition712.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/Proposition712.lean)
 * [Proposition77.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/Proposition77.lean)
+* [Proposition82.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/Proposition82.lean)
+* [Proposition810.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/Proposition810.lean)
+* [Proposition810b.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/Proposition810b.lean)
 
 ### Exercises
 
@@ -3407,6 +3434,55 @@ matches [`Scott1980.lean`](https://github.com/catskillsresearch/scott1980/blob/m
 * [Exercise722Presentation.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/Exercise722Presentation.lean) — `SsysX` enumeration, `ssysConsChar`, C9 `RecDecidable₂` bridge (partial; **`Ssys_cons_computable`** open — **7.22i(b)1–8**)
 * [Exercise723.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/Exercise723.lean) — `PN`'s `∩`/`∪`/`+`/`fun`/`graph` computable, computable elements = r.e. sets
 * [Exercise724.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/Exercise724.lean) — `Γ`/`L` effectively given, `\|L\|≃Γ`, `B⊴L`, LUCID combinators computable
+* [Exercise811.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/Exercise811.lean)
+* [Exercise812.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/Exercise812.lean)
+* [Exercise812c.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/Exercise812c.lean)
+* [Exercise812cYseq.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/Exercise812cYseq.lean)
+* [Exercise812d.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/Exercise812d.lean)
+* [Exercise812e.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/Exercise812e.lean)
+* [Exercise812eD.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/Exercise812eD.lean)
+* [Exercise812f.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/Exercise812f.lean)
+* [Exercise812g1a.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/Exercise812g1a.lean)
+* [Exercise812g1b.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/Exercise812g1b.lean)
+* [Exercise812g2.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/Exercise812g2.lean)
+* [Exercise812g4.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/Exercise812g4.lean)
+* [Exercise813a.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/Exercise813a.lean)
+* [Exercise813b.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/Exercise813b.lean)
+* [Exercise813c.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/Exercise813c.lean)
+* [Exercise814.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/Exercise814.lean)
+* [Exercise815.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/Exercise815.lean)
+* [Exercise816.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/Exercise816.lean)
+* [Exercise817.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/Exercise817.lean)
+* [Exercise818.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/Exercise818.lean)
+* [Exercise819.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/Exercise819.lean)
+* [Exercise820.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/Exercise820.lean)
+* [Exercise821.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/Exercise821.lean)
+* [Exercise822.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/Exercise822.lean)
+* [Exercise823.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/Exercise823.lean)
+* [Exercise824.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/Exercise824.lean)
+* [Exercise825.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/Exercise825.lean)
+* [Exercise825Closing.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/Exercise825Closing.lean)
+* [Exercise825Congr.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/Exercise825Congr.lean)
+* [Exercise825Embed.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/Exercise825Embed.lean)
+* [Exercise825FixedPoint.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/Exercise825FixedPoint.lean)
+* [Exercise825Pow.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/Exercise825Pow.lean)
+* [Exercise825Unit.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/Exercise825Unit.lean)
+* [Exercise826.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/Exercise826.lean)
+* [Exercise827.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/Exercise827.lean)
+
+### Lecture VIII support modules (recursion-theory / presentation helpers)
+
+* [DAtomDecidable.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/DAtomDecidable.lean) — Theorem 8.8(b) Part 5 — decidable `D`-side atom emptiness
+* [IntervalPrimrec.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/IntervalPrimrec.lean) — Theorem 8.8(b) — primitive-recursive interval-code arithmetic for `𝒰`
+* [LevelSetPrimrec.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/LevelSetPrimrec.lean) — Exercise 8.12(b) — `V`'s computable presentation
+* [MinLevel.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/MinLevel.lean) — Exercise 8.12(e)(d)(i) — minimal-level canonicalization
+* [RationalPrimrec.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/RationalPrimrec.lean) — a choice-free Gödel numbering of `ℚ`, primitive-recursive comparison/max/min
+* [RecursiveCross.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/RecursiveCross.lean) — a choice-free primitive-recursive "cross-combine" of two coded lists
+* [SplitU.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/SplitU.lean) — Theorem 8.8(b) Part 4 — an explicit, deterministic `splitU`
+* [SplitV.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/SplitV.lean) — Exercise 8.12(e)(b)/(e)(d)(ii) — a computable canonical bisection of `V`
+* [UBisection2.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/UBisection2.lean) — Exercise 8.12(f) prerequisite — a presentation-independent canonical bisection of `𝒰`
+* [UComputablePresentation.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/UComputablePresentation.lean) — Theorem 8.8(b) Part 3 — `𝒰` (Definition 8.7) has a genuine `ComputablePresentation`
+* [VDiff.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/VDiff.lean) — Exercise 8.12(c)/(d) support — a computable `V`-side set-difference
 
 ### Lecture V (misc)
 
