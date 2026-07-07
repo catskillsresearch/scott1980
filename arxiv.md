@@ -3128,9 +3128,9 @@ Lecture VIII covers retractions, projections, and the construction of the univer
 
 #### Exercise 8.19
 * **Mathematical Target:** consequences of two known facts
-* **Lean File:** — (Formalization deferred)
-* **Proof Notes:** consequences of two known facts
-* **Status:** Deferred
+* **Lean File:** `Scott1980/Neighborhood/Exercise819.lean`
+* **Proof Notes:** Reading "we know `T`" as "`T ⊴ E`" (the natural companion to `E→E ⊴ E`), the answer is **yes**, both `E+E ⊴ E` and `E×E ⊴ E` follow. **Products:** `T ⊴ E` gives `E×E ⊴ (T→E)` via pairing-up-as-a-`T`-indexed-function (`pairToFun`/`funToPair`, using Exercise 3.26's `cond`), and `T ⊴ E` gives `(T→E) ⊴ (E→E)` via `expMap`'s new contravariant monotonicity lemma `expMap_mono_left` (`funSpace_dom_trianglelefteq`); chaining with `E→E ⊴ E` and `⊴`'s transitivity (Exercise 8.17) gives `E×E ⊴ E` (`prod_trianglelefteq_of`). **Sums:** `T ⊴ E` gives `E+E ⊴ T×(E×E)` (tag-and-split via `whichMap`/`outMap₀`/`outMap₁`, inverse `condSum`; two new "cross" round-trips `outMap₁_comp_inMap₀`/`outMap₀_comp_inMap₁` companion Exercise 3.18's own-side round-trips) and `T×(E×E) ⊴ E×(E×E)` (new covariant-in-both-arguments functoriality lemmas `prod_left_trianglelefteq`/`prod_right_trianglelefteq`, the latter via `prod`'s commutativity isomorphism, Exercise 3.15); composing with `E×E ⊴ E` (applied twice, to peel off each product layer) and transitivity gives `E+E ⊴ E` (`sum_trianglelefteq_of`). One genuine subtlety: `TD.bot` (`Exercise326.TD`, i.e. `Example12.neighborhoodSystem`) and `Example23.botElt` are the *same* element but not `rfl`-unifiable through the `abbrev` chain (dot-notation field projection doesn't delta-reduce transparently); proved instead by antisymmetry (`TD_bot_eq_botElt`). `lake build` (whole project) green, zero `sorry`, zero new warnings. Axiom audit: `exercise_8_19 ⊆ {propext, Classical.choice, Quot.sound}`, the same pre-existing footprint as every other `T`/`cond`-mentioning theorem (from `ext_of_toElementMap` inside `expMap`'s defining lemmas and from `T`'s concrete presentation, Example 1.2), not something new.
+* **Status:** Pass
 
 #### Exercise 8.20
 * **Mathematical Target:** `D ⊴ D+D`; what about other constructs?

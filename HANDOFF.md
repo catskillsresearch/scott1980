@@ -11977,3 +11977,61 @@ too.
 **Status of Exercise 8.18: DONE (Pass).** **Next up:** Exercise 8.19 ("consequences of two known
 facts") — check the source text first for which two facts before starting, since it may be another
 citation-style exercise; or Exercise 8.20 (`D ⊴ D+D`).
+
+## 2026-07-06 (continued 6) — Exercise 8.19: Pass, `T⊴E` + `E→E⊴E` ⟹ `E+E⊴E` and `E×E⊴E`
+
+**Exercise 8.19.** "Suppose we know both `T` and `E→E ⊴ E`. Does it follow that `E+E` and `E×E ⊴
+E`?" Read "we know `T`" as "`T ⊴ E`" (the natural companion hypothesis to `E→E ⊴ E`) — the answer is
+**yes**, both follow, via two general-purpose `⊴` constructions, new file
+`Scott1980/Neighborhood/Exercise819.lean`:
+
+* **Products** (`prod_trianglelefteq_of`): `T ⊴ E` gives `E×E ⊴ (T→E)` — pair `(x,y)` up as the
+  function `t ↦ cond(t,x,y)` (`pairToFun`/`funToPair`, Exercise 3.26's `cond`) — and `T ⊴ E` gives
+  `(T→E) ⊴ (E→E)` via a new general lemma `expMap_mono_left` (`expMap` is monotone in its
+  *contravariant* argument, proved via `funSpaceEquiv` + `comp_mono_gen`) packaged as
+  `funSpace_dom_trianglelefteq`. Chain with the hypothesis `E→E ⊴ E` and transitivity (Exercise 8.17).
+* **Sums** (`sum_trianglelefteq_of`): `T ⊴ E` gives `E+E ⊴ T×(E×E)` — tag a summand by `which : E+E →
+  T` together with `out₀`/`out₁` (Exercise 3.26's sum machinery), inverse `condSum` — needing two new
+  "cross" round-trip lemmas `outMap₁_comp_inMap₀`/`outMap₀_comp_inMap₁` (companions of Exercise 3.18's
+  own-side `outMap₀_comp_inMap₀`/`outMap₁_comp_inMap₁`) plus tag bounds
+  `which_inMap₀_le_trueElt`/`which_inMap₁_le_falseElt` and bottom-preservation lemmas
+  `which_bot_le`/`outMap₀_bot_le`/`outMap₁_bot_le` (all via a new general helper
+  `toElementMap_bot_le`: a map sending master input only to master output sends `⊥ ↦ ⊥`). Then `T ⊴ E`
+  gives `T×(E×E) ⊴ E×(E×E)` via new **covariant** functoriality lemmas
+  `prod_left_trianglelefteq`/`prod_right_trianglelefteq` (the latter by conjugating the former with
+  `prod`'s commutativity isomorphism, Exercise 3.15's `prod_comm_isomorphic`). Composing with `E×E ⊴
+  E` (the Products result, applied twice to peel off each product layer) and transitivity closes the
+  case.
+
+**Debugging notes** (all resolved, none reflect genuine mathematical difficulty):
+* `bot_le`/`cond_true`/`cond_false`/`cond_bot` are all **ambiguous identifiers** once
+  `Exercise326`/`NeighborhoodSystem` are both open (Mathlib's `OrderBot.bot_le` and
+  `_root_.cond_true` etc. collide with the project's own same-named lemmas) — always fully qualify
+  (`NeighborhoodSystem.bot_le`, `Exercise326.cond_true`, etc.) in files that open both namespaces.
+  Crucially, `NeighborhoodSystem.bot_le` takes `V` **explicit** (`variable (V : NeighborhoodSystem
+  α)` in `Basic.lean`), so it needs *two* underscores (`NeighborhoodSystem.bot_le _ _`), not one.
+* **Genuine surprise:** `TD.bot` (`Exercise326.TD`) and `Example23.botElt` are the *same*
+  mathematical element (`TD` and `Example23.T` are both literally `abbrev _ :=
+  Example12.neighborhoodSystem`) but **not `rfl`-unifiable** — `V.bot`'s dot-notation field
+  projection doesn't delta-reduce transparently through the `abbrev` chain for reasons not fully
+  diagnosed (confirmed even `NeighborhoodSystem.bot T =?= NeighborhoodSystem.bot
+  Example12.neighborhoodSystem` fails `rfl`/`isDefEq` despite `T = Example12.neighborhoodSystem`
+  itself being `rfl`). Worked around by proving the equality by antisymmetry instead
+  (`TD_bot_eq_botElt`, via `NeighborhoodSystem.bot_le` and `Example23.botElt_le`). **Lesson:** don't
+  assume `rfl` will bridge two `abbrev`-equal `NeighborhoodSystem`s' derived `Element`s; prove
+  bridging identities by `le_antisymm`/extensionality instead, and expect this pattern to recur
+  wherever `TD`/`T`/`Example12.neighborhoodSystem` are used interchangeably.
+* `set t := z.fst` followed by `rcases (TD_trichotomy t) with rfl | rfl | rfl` fails (`t` is a
+  local-definition/let, not a free variable, so the implicit `subst` inside the `rfl` pattern has no
+  variable to substitute) — fixed with `clear_value t x y` right after the `set`s, converting them to
+  ordinary opaque local hypotheses that `rcases ... rfl` can substitute normally.
+
+`lake build` (whole project) green, zero `sorry`, zero new warnings from `Exercise819.lean`. Axiom
+audit: `exercise_8_19`/`prod_trianglelefteq_of`/`sum_trianglelefteq_of` all `⊆ {propext,
+Classical.choice, Quot.sound}` — the same pre-existing footprint as every other `T`/`cond`-mentioning
+theorem in the project (inherited from `ext_of_toElementMap` inside `expMap`'s defining lemmas,
+`Proposition810b.lean`, and from `T`'s concrete presentation, `Example12.lean`), nothing new. Wired
+into `Scott1980.lean`. `arxiv.md`'s Exercise 8.19 row updated to `Pass`.
+
+**Status of Exercise 8.19: DONE (Pass).** **Next up:** Exercise 8.20 (`D ⊴ D+D`; what about other
+constructs?) is the next `Deferred` row in `arxiv.md`.
