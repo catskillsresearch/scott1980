@@ -45,8 +45,9 @@ compactness-descent argument (`exists_X_of_mem_step`, mirroring `Theorem85.lean`
 hard direction) that sidesteps the genuinely-new dependent-product domain construction entirely by
 pivoting onto Theorem 8.5's step-closure formula (ii). `isFinitaryProjection_piU` closes the
 exercise's own statement in full. (**Correction, same day:** this was premature — three `Partial`
-rows had been missed; **Exercise 2.16** is now also closed, see the dated checkpoint at the end of
-this file; **Definition 7.9** and **Exercise 7.19** remain genuinely open.)
+rows had been missed; **Exercise 2.16**, **Definition 7.9**, and now **Exercise 7.19** are all
+closed too, see the dated checkpoints at the end of this file. **Every row in `arxiv.md` is now
+`Pass` — the entire book is formalized.**)
 
 You are a Lean 4 proof engineer formalizing Dana Scott's 1981 *Lectures on a Mathematical Theory of
 Computation* (PRG-19) in:
@@ -13195,3 +13196,59 @@ Definition 7.9 row `Partial → Pass`.
 
 **Remaining open work in the whole project:** Exercise 7.19 (`Partial`) — genuinely deferred, not
 touched this session.
+
+---
+
+## 2026-07-07 continued (4) — Exercise 7.19: the combinator `λf. ℙf`, built in full — **last `Partial` row in the whole project closed**
+
+Exercise 7.19's only open obligation was Scott's third question, "Is there a combinator `λf. ℙf`?",
+previously answered only "yes in spirit" (monotone/continuous) with construction deferred. Built it
+in full, in `Exercise719.lean` (no new file needed):
+
+* **`PFmapComb : ApproximableMap (funSpace V W) (funSpace V.PowerDomain W.PowerDomain)`** — the type
+  Scott asks for, `(D → E) → (ℙD → ℙE)`, via Theorem 3.10's `funSpace`. Relation: the flat
+  Smyth-style lift `rel Φ Ψ := mem Φ ∧ mem Ψ ∧ ∀ f ∈ Φ, ℙf ∈ Ψ` — exactly Exercise 7.16's
+  `curryComb`/Exercise 7.21's `papplyEval` recipe, one level up. Approximability is easier than
+  `PFmap` itself: the body is a bare membership check, no witness-gathering needed in `mono`/
+  `rel_dom`/`rel_cod`; `inter_right` needs one witness (`Φ.Nonempty`'s point `f₀`) to certify
+  `mem(Ψ∩Ψ')` via `stepFun_append`, built directly rather than through the generic `inter_mem`
+  field (which wants a *pre-existing* sub-witness `Z`, circular here).
+* **Faithfulness — the real content — `PFmapComb_toElementMap`:**
+  `(PFmapComb).toElementMap (toFilter f) = toFilter (ℙf)` for **every** `f : D → E`, not just
+  finite/principal ones (`toFilter`/`funSpaceEquiv` are Theorem 3.10's correspondence). The forward
+  direction is immediate; the backward direction is genuine continuity-of-`f↦ℙf` unwound to finite
+  data: given `ℙf ∈ Ψ` for an arbitrary target neighbourhood `Ψ = stepFun L₂` (a finite list of
+  `(A_j, B_j)` pairs), need a **single** finite neighbourhood `stepFun M ∋ f` all of whose members
+  `g` already satisfy `ℙg ∈ Ψ`. Built by two nested choice-free list recursions:
+  - **`gather_witnesses`** (new) — from `∀X∈L₁∃Y∈L₂,f.rel X Y` (Scott's display, one `(A,B)` pair
+    unpacked via `PFmap_rel_fin`), gather a single list `M₀` of `(X,Y)` pairs covering every `X∈L₁`
+    with an `f`-related `Y∈L₂` — the one-map analogue of Exercise 7.19's own `comp_witness`.
+  - **`exists_stepFun_forall_PFmap_rel`** (new) — outer induction over `L₂`'s list of `(A,B)` pairs,
+    applying `gather_witnesses` to each and concatenating (`M₀ ++ M_tail`) via `List.mem_append`;
+    yields the `M` with the three needed properties (`𝒟`/`ℰ`-membership, `f`-relatedness, and "every
+    `g` agreeing with `f` on `M` satisfies `(ℙg).rel A_j B_j` for every `j`").
+  - `PFmapComb_toElementMap`'s backward direction then just repackages `stepFun M` as the witnessing
+    `Φ`, using `mem_stepFun`/`funSpace_mem_iff` to unfold both sides.
+* Axiom audit: `gather_witnesses` is fully choice-free (`⊆{propext,Quot.sound}`); everything else
+  (`exists_stepFun_forall_PFmap_rel`, `PFmapComb`, `PFmapComb_toElementMap`) carries
+  `Classical.choice` **only inherited** from `PDmem`'s own `∩`-closure (Prop 7.10's `by_cases`), as
+  documented — checked directly with `#print axioms`, matches the file's existing footprint exactly.
+* `Exercise719.lean`'s docstring rewritten (the "is there a combinator" bullet); `arxiv.md`'s
+  Exercise 7.19 row rewritten in full and its `Status: Partial` line **removed** (matching the
+  project convention that `Pass` rows carry no `Status:` line — confirmed by grep, only this one row
+  in the whole file still had an explicit `Status:` line before this edit).
+* `lake build` (whole project, 3198 jobs) green; zero `sorry` in `Exercise719.lean`; `ReadLints`
+  clean.
+
+**This was the last `Partial` (and last non-`Pass`) row in `arxiv.md`.** `grep -n "Status:" arxiv.md`
+now returns **zero** matches — every one of the ~370 items in the book (Lectures I–VIII, all
+Definitions/Theorems/Propositions/Examples/Exercises through 8.27) is `Pass`, fully wired into
+`Scott1980.lean`, and (apart from the documented, upstream, unavoidable `Classical.choice` uses —
+`Rat`-order taint from `U`'s construction, and `PDmem`'s `∩`-closure `by_cases`) choice-free. **The
+formalization of Scott 1981 (PRG-19) is complete.**
+
+**Next up (only if new work is requested):** there is no open item left in `arxiv.md`. Any further
+session should either (a) polish/refactor existing green material, (b) extend into material Scott's
+text does not cover (his own open questions, e.g. Exercise 7.20/7.21's un-mechanized discussion
+items), or (c) work on the arXiv writeup pipeline (`scripts/`, `arxiv.md`/`arxiv_with_code.md`,
+`build_arxiv_tex.py`) rather than new Lean content.
