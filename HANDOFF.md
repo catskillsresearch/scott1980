@@ -33,17 +33,18 @@ an abstract `D≅D→V ∧ V×V≅V ⟹ D≅D→D` closing argument) COMPLETE, a
 (the self-hosted untyped `λ`-calculus equations `Uapply`/`Ulam` + `Uapply_Ulam` faithfulness, and
 the general "has the right type" sandwich-preservation lemmas `translateAbs_sandwich`/
 `translateApp_hasType` for the typed-retranslation recipe, citing Proposition 8.10(b)'s
-`arrowComb_elementIso` for the correspondence itself) **COMPLETE**, and now **Exercise 8.27**
-(Donahue's polymorphic/infinite products over `U`, the very last exercise of the book) is
-**Partial**: `sub` regarded as a combinator on `U` itself (`subU`, conjugating Theorem 8.6(b)'s
-`subApprox` through Definition 8.9's `i_→,j_→`) is a finitary projection whose fixed points are
-exactly the finitary projections of `U` (Step 1, COMPLETE); polymorphic types and the `Π`
-combinator are built by literal transcription of Scott's formulas (Steps 2–3, COMPLETE); "`Π(d)`
-is a projection" (Scott's own "easy" half) is proved **unconditionally for every `d`** (Step 4,
-COMPLETE); "`Π(d)` is finitary" (Scott's own flagged-as-hard half, with **no hint given** — unique
-among the book's exercises) is the one deliberately unattempted piece, needing a genuinely new
-dependent-product domain construction with no template elsewhere in this project — **this is the
-book's last remaining open row**
+`arrowComb_elementIso` for the correspondence itself) **COMPLETE**, and now **Exercise 8.27 — THE
+LAST EXERCISE IN THE ENTIRE BOOK — IS FULLY COMPLETE**: `sub` regarded as a combinator on `U`
+itself (`subU`, conjugating Theorem 8.6(b)'s `subApprox` through Definition 8.9's `i_→,j_→`) is a
+finitary projection whose fixed points are exactly the finitary projections of `U` (Step 1); the
+`Π` combinator is built by literal transcription of Scott's formula (Steps 2–3); "`Π(d)` is a
+projection" (Scott's "easy" half) holds **unconditionally for every `d`** (Step 4); and "`Π(d)` is
+finitary" (Scott's own flagged-as-hard half, with **no hint given** — unique among the book's
+exercises) is now **also proved, for *every* `d`, not only polymorphic `d`** — via a
+compactness-descent argument (`exists_X_of_mem_step`, mirroring `Theorem85.lean`'s own `(i)⟹(ii)`
+hard direction) that sidesteps the genuinely-new dependent-product domain construction entirely by
+pivoting onto Theorem 8.5's step-closure formula (ii). `isFinitaryProjection_piU` closes the
+exercise's own statement in full. **The formalization of Dana Scott's PRG-19 is complete.**
 
 You are a Lean 4 proof engineer formalizing Dana Scott's 1981 *Lectures on a Mathematical Theory of
 Computation* (PRG-19) in:
@@ -12947,3 +12948,85 @@ matching the `(b)(0)`–`(b)(5)` convention: `(b)(3)` is now an umbrella row poi
 (the genuinely hard `⟹` half, left **Open**, carrying the full obstruction diagnosis from above).
 Stopping here for this session per explicit instruction — not attempting the compactness-descent
 lemma now.
+
+## 2026-07-07 (continued): Exercise 8.27(b)(3)(b) — the compactness-descent lemma, closed. **Exercise 8.27, and with it the entire book, is now COMPLETE.**
+
+Resumed exactly where the prior checkpoint stopped (per explicit user instruction to attempt
+`(b)(3)(b)` next). The obstruction diagnosed above — a single round of formula (ii) forces `T_i`
+in two incompatible directions (continuity wants `T_i ⊇ Y_i`, which weakens the type-projection fed
+to `d`, breaking the self-relation test) — is resolved, **not** by an ad hoc iterative descent, but
+by recognizing that `t_i` is *already* the directed sup of a *specific, tractable* family: its own
+`subU`-self-consistent approximants.
+
+**The key new fact.** If `subU.rel T T`, then `subU.toElementMap (U.principal hT) = U.principal hT`
+*exactly* (`subU_principal_eq_of_rel_self`) — antisymmetry of `subU(↑T) ≤ ↑T` (projection property)
+against `↑T ≤ subU(↑T)` (from `subU.rel T T` itself, via `rel_iff_mem_principal` +
+`principal_le_of_mem`). Consequently, for `t` already `subU`-fixed, the self-consistent nbhds
+already in `t`'s own filter (`scFamily t := {T // subU.rel T T ∧ t.mem T}`) form a **directed**
+family (`scFamily_directed`, via formula (ii) for `subU` — Exercise 8.27(a) — descending to a
+common self-consistent refinement) whose principal images sup to `t` itself
+(`eq_iSupDirected_scPrincipal`, by a cofinality argument: *every* `T` in `t`'s filter dominates down
+to *some* self-consistent member, so the restricted family has the same sup as the full
+algebraicity family).
+
+**Why this closes the gap.** Package `s ↦ decode(subU(d(s)))` as `piDType d s` (always a finitary
+projection, *any* `s`, by Step 4's `isFinitaryProjection_decode_subU` — no polymorphism needed).
+Both `d`, `subU`, `jArrow` are continuous, so `piDType d` is monotone in `s`, and — crucially —
+`piDType d t` (`t := subU(↑Y₀)`) is literally the directed sup, in the `ApproximableMap` order, of
+`piDType d (scPrincipal i)` over `i : scFamily t`. Formula (ii) for `piDType d t` hands us a witness
+`W` with `(piDType d t).rel W W`; by directed-sup compactness (`mem_iSupDirected`/
+`Sub8_6.toApproxMap_rel_iSupDirected`, applied through `toElementMap_iSupDirected`), **this
+self-relation is already witnessed at some single self-consistent approximant** `i₁ ∈ scFamily t` —
+no limiting process needed, one compactness step suffices. The *same* trick, applied to the
+continuity witness for `x`, produces `i₀ ∈ scFamily t` with `(toApproxMap x).rel i₀.1 W`. A single
+common refinement `k` of `i₀, i₁` (directedness of `scFamily t`) then satisfies *both* facts
+simultaneously — and, being itself self-consistent, its own `scPrincipal k` is *exactly*
+`subU`-fixed, so `piDType d (scPrincipal k)` is *exactly* the type-projection that `X := step k.1 W`'s
+own self-test at `T := k.1` will use. No mismatch, because both roles are now discharged by the
+*same* refinement rather than two independently-chosen witnesses.
+
+**What this means for `d`'s polymorphism.** It is never used. The whole argument only needs:
+(1) `subU`'s own finitary-projection-ness (Exercise 8.27(a), unconditional), and (2) Step 4's
+unconditional `isFinitaryProjection_decode_subU`. So `isFinitaryProjection_piD`/
+`isFinitaryProjection_piU` hold for **every** `d : 𝒰 → 𝒰`, polymorphic or not — a strictly stronger
+statement than Scott's exercise asks for. (`IsPolymorphicType`/`polymorphicType_apply_mem_fix` remain
+in the file, formalizing Scott's own justification for the exercise's *setup*, but are not needed by
+the finitary-ness proof itself.)
+
+**Lean structure** (`Scott1980/Neighborhood/Exercise827.lean`, appended, no other file touched except
+none — everything needed was already in place from the prior session's `mem_of_exists_rel_self`
+extraction in `Theorem85.lean`):
+- `subU_principal_eq_of_rel_self`, `exists_rel_self_subset_of_mem`, `scFamily`/`scPrincipal`/
+  `scFamily_directed`/`eq_iSupDirected_scPrincipal` — the self-consistent-approximant machinery
+  above, general enough it could be reused for any idempotent-projection combinator, not just `subU`.
+- `piDTypeMap`/`piDType`/`isFinitaryProjection_piDType`/`piDType_monotone`/`toElementMap_piDApply'` —
+  repackage `piDApply`'s inner formula as a function of the element argument, to state
+  continuity/monotonicity directly.
+- `exists_X_of_mem_step` — the single-pair case, the genuine mathematical content (the argument
+  above, fully spelled out).
+- `exists_X_of_mem_stepFun` — list induction assembling a general `stepFun` witness from per-pair
+  witnesses, via `x.inter_mem` (ambient validity "for free" from `x.sub`) and `(piD d).mono`/
+  `.inter_right` (self-relation of an intersection of two self-related nbhds — no extra consistency
+  witness needed, unlike the general `NeighborhoodSystem.inter_mem` axiom).
+- `hii_hard_direction` — destructures a general `Y` via `funSpace_mem_iff`, applies the above.
+- `hii_piD` — assembles (b)(3)(a)'s easy half with (b)(3)(b)'s hard half into the full formula-(ii)
+  iff.
+- `isFinitaryProjection_piD`, `isFinitaryProjection_piU` — Exercise 8.27(b)(4), the full statement of
+  the exercise, for every `d`.
+
+`lake build` (whole project) green, zero `sorry`. Axiom audit (`#print axioms` on
+`exists_X_of_mem_step`, `hii_hard_direction`, `hii_piD`, `isFinitaryProjection_piD`,
+`isFinitaryProjection_piU`): all `⊆ {propext, Classical.choice, Quot.sound}`, matching every other
+`𝒰`-mentioning result in this file (inherited from `𝒰`'s own upstream `Rat`-order taint, confirmed
+not a new source in the prior session — not re-audited from scratch here since the composite proof
+only calls already-audited `𝒰`-material plus the newly-added, manifestly non-choice-invoking
+combinatorics above).
+
+`arxiv.md` updated: Exercise 8.27(b)(3)(b), (b)(3), (b)(4), (b)(5), (b), and the umbrella Exercise
+8.27 row all flipped to **Pass**. The dependent-product-`NeighborhoodSystem` fallback documented in
+the prior checkpoints was **not needed**.
+
+**This closes the last open row in the entire formalization project** (Exercise 8.27 was already
+identified, in this file's own header, as "the book's last remaining open row"). Every exercise,
+definition, theorem, and proposition transcribed from Scott's *Lectures on a Mathematical Theory of
+Computation* (PRG-19, 1981) that this project set out to formalize now has status **Pass**.
