@@ -25,7 +25,13 @@ combinators (`cond`/`whichMap`/`paired`/`proj₀,₁`/`inMap₀,₁`/`outMap₀,
 Proposition 8.10's first half (projection-closure) is now COMPLETE** (`Proposition810.lean`, new
 file): `isProjection_sumComb`/`isProjection_prodComb`/`isProjection_arrowComb` — `a,b` projections ⟹
 `a+b`,`a×b`,`a→b` projections — assembled into `isProjection_combinators`; the second half
-(finitary-closure, `D_a*D_b≅D_{a*b}`) is a **documented deferred follow-up**, not attempted
+(finitary-closure, `D_a*D_b≅D_{a*b}`) is a **documented deferred follow-up**, not attempted**;
+and Lecture VIII now runs all the way through **Exercise 8.25 (a non-trivial `D ≅ D → D`,
+Scott's full six-step hint chain: `𝟙→𝟙=𝟙` trivial, `𝒰^∞×𝒰^∞≅𝒰^∞`, `D≅D→𝒰^∞` via the Exercise
+8.23 fixed-point method conjugated through Definition 8.9's `arrowComb`, `𝒰⊴D` universality, and
+an abstract `D≅D→V ∧ V×V≅V ⟹ D≅D→D` closing argument) COMPLETE**, leaving only Exercise 8.26
+(λ-calculus into `U`) and 8.27 (Donahue, no stated content) as the final two `Deferred` rows of
+the entire book
 
 You are a Lean 4 proof engineer formalizing Dana Scott's 1981 *Lectures on a Mathematical Theory of
 Computation* (PRG-19) in:
@@ -12397,3 +12403,77 @@ build` (whole project, 3189 jobs) green, zero `sorry`, no new warnings. Wired in
 `fixedNbhd_aStar_bStar_subsystem` all `⊆ {propext, Quot.sound}` — **fully choice-free**. **Next
 up:** scan `arxiv.md` for the next `Deferred` row (Exercise 8.25: non-trivial solutions of
 `D ≅ D → D`).
+
+**2026-07-07 (continued) — Exercise 8.25 PASS (non-trivial `D ≅ D → D`, Scott's full hint chain,
+effectiveness in prose).** Six new files: `Exercise825Unit.lean`, `Exercise825Pow.lean`,
+`Exercise825Embed.lean`, `Exercise825Congr.lean`, `Exercise825Closing.lean`,
+`Exercise825FixedPoint.lean`, assembled in `Exercise825.lean`. Follows Scott's own hint literally.
+**(1) obstruction** (`Exercise825Unit.lean`, pre-existing from before this checkpoint):
+`funSpace_unitSys_isomorphic : (𝟙→𝟙) ≅ 𝟙` — the naive "solve `D≅D→V` from `V=𝟙`" is stuck forever.
+**(2) `𝒰^∞×𝒰^∞≅𝒰^∞`** (`Exercise825Pow.lean`, `V:=iterSys U`, pre-existing): `powProdOrderIso`
+chains `prodEquiv`/`iterSeqEquiv` (Ex 3.16) through a new "interleaving" order-isomorphism
+`interleaveOrderIso:(ℕ→E)×(ℕ→E)≃o(ℕ→E)` (built from `sumArrowOrderIso:((α⊕β)→E)≃o(α→E)×(β→E)` and
+a reindexing-along-a-bijection gadget, renamed `arrowReindexOrderIso` this checkpoint after a
+genuine name clash surfaced at full-project-build time against `Exercise324Iter.lean`'s
+*dependent*-`Pi` `piCongrOrderIso` — same name, different signature, only caught once
+`Scott1980.lean` imported both files together; **lesson: `lake build Scott1980.<File>` alone does
+not catch cross-file name clashes, only the umbrella `Scott1980.lean` import does — always finish
+with a whole-project `lake build` before declaring a multi-file exercise done**). **(3) `D≅D→𝒰^∞`
+by the fixed-point method** (`Exercise825FixedPoint.lean`, the technical core, new this checkpoint):
+`𝒰^∞` effectively given (Ex 7.15) `⟹` Theorem 8.8(b)'s `theorem_8_8_b_strong` gives a projection
+pair `𝒰^∞⇄𝒰` (`cInj`/`cProj`); `c:=cInj∘cProj` is a finitary projection with `Fix(c)≅𝒰^∞`
+(`cElementIso`, Prop 8.10(b)'s generic `elementIsoOfProjectionPair`) and `fixedNbhd c≅𝒰^∞`
+(`fixedNbhd_elementIso_fix`, a new general lemma transporting Prop 8.2's `elementIso` through
+Theorem 8.6(a)'s `inj_comp_proj_eq_self` bridge — **must be a `def` not a `theorem`**, since an
+`OrderIso` is data, not a `Prop`; hit "type of theorem ... is not a proposition" once before fixing
+this). The genuinely hard part: making `t(a):=a→c` (`arrowComb(-) c`) A CONTINUOUS SELF-MAP of
+`funSpace 𝒰 𝒰`, not just an indexed family. Solution: a joint 3-variable evaluator
+`R(ψ,φ,x):=c(φ(ψ(x)))` built purely from `evalMap`/`proj`/`paired` (`RMap`, manifestly jointly
+continuous since `evalMap` is), curried *twice* (`curryOnceC` then Table 5.5's `curryC`, giving
+`lamOp c : (𝒰→𝒰)→((𝒰→𝒰)→(𝒰→𝒰))`, a 4th-order function-space element) to recover
+`expMap(-) c = lamComb(-) c` at every fixed `a` (`toApproxMap_lamOp` — the key elementwise lemma,
+checked by unwinding both curry layers via `curryC_toApproxMap`/`toElementMap_curry_apply` twice
+against `Proposition810b.toApproxMap_toElementMap_expMap`), then conjugated by the *fixed*
+projection pair `𝒰⇄(𝒰→𝒰)` (`jArrow`/`iArrow`, Definition 8.9) via `expMap jArrow iArrow` to land
+exactly on `arrowComb a c` at every `a` (`tOpMap`/`tOp_tOpMap`, unfolds via `arrowComb`'s own literal
+definition after `expMap_eq_lamComb`). `ht_tOpMap` (Prop 8.10(b)'s `finitaryProjection_arrowComb`,
+note: its section variables `a b` are *explicit*, so calls need `finitaryProjection_arrowComb a c ha
+hc`, not just `ha hc`) plus Exercise 8.23's abstract machinery (`isFinitaryProjection_fixOp`,
+`fixedDomain_fixOp_iso_T` at `T(a):=funSpace(fixedNbhd a)(fixedNbhd c)`, via `arrowComb_elementIso`)
+hand us `D≅D→𝒰^∞` for `D:=fixedNbhd(fixOp(tOpMap c))` (`Dsol_isomorphic_funSpace_cCombinator`).
+**(4) `𝒰⊴D`, non-trivial/universal** (`U_trianglelefteq_Dsol`): chains `𝒰⊴𝒰^∞`
+(`Exercise825Embed.lean`'s `trianglelefteq_iterSys`, pre-existing — the "singleton stack"
+`x↦⟨x,⊥,⊥,…⟩` embedding with `head` as retraction), `𝒰^∞≅fixedNbhd c`, the *general*
+constant-function embedding `V⊴(D→V)` for **any** `D,V` (`Exercise820.lean`'s
+`trianglelefteq_funSpace_const`, already on hand from Exercise 8.20 — `b↦(λ_.b)`/evaluation-at-`⊥`),
+and `D→𝒰^∞≅D` reversed. **(5)/(6) `D×D≅D`, `D≅D→D`** (`Exercise825Closing.lean`, new this
+checkpoint, a fully *abstract* closing argument taking `hDV:D≅D→V`, `hVV:V×V≅V` for arbitrary
+`D,V` — reusable for any future "solve `D≅D→D`" exercise with a different `V`): `prod_self_isomorphic`
+chains `D×D ≅(D→V)×(D→V) ≅D→(V×V) ≅D→V ≅D` (needs a new `funSpace_congr`/`curry_isomorphic`
+toolkit, `Exercise825Congr.lean`, new this checkpoint — built via a standalone
+`orderIsoOfMutualInverse` gadget: two approximable maps that are *exact* (not just `≤`) mutual
+inverses give a genuine `OrderIso` of element types, choice-free by itself, applied to
+`Proposition810b.expMap`'s functor laws `expMap_comp`/`expMap_id`; `funSpace_congr` itself must use
+`Isomorphic.elim`/`Nonempty.elim` rather than `.some`/`Nonempty.some` to stay choice-minimal — `.some`
+on a `Prop`-valued `Isomorphic` needlessly invokes `Classical.choice` where `Nonempty.elim` into
+another `Prop` goal doesn't, mirroring the pre-existing `prod_isomorphic`/`Isomorphic.prod` pattern
+in `Exercise315.lean`); `funSpace_self_isomorphic` then chains `D→D ≅D→(D→V) ≅(D×D)→V ≅D→V ≅D`,
+reusing `prod_self_isomorphic`; both use `.trans`-chaining rather than `calc`, since there is no
+generic `Trans` instance for `Isomorphic` across the differing token types in each step (`calc`
+failed with "failed to synthesize `Trans Isomorphic Isomorphic ?m`"). Instantiating at
+`V:=fixedNbhd c` (`hVV_cCombinator`, step (2) transported along `fixedNbhd c≅𝒰^∞`) gives
+`exercise_8_25_main`. **Effectiveness**: prose only (`Exercise825.lean`'s module docstring),
+matching Theorem 8.6/Exercise 8.23's own deferred computability clauses for the identical reason
+(needs Definition 7.1's `ComputablePresentation` machinery threaded through a directed union, one
+layer beyond any single presentation currently built in this codebase). `lake build` (whole
+project, 3196 jobs) green, zero `sorry`, no new warnings. Wired into `Scott1980.lean` (7 new
+imports). `arxiv.md`'s Exercise 8.25 row updated to `Pass` with full proof notes. Axiom audit:
+`exercise_8_25`/`exercise_8_25_universal` `⊆ {propext, Classical.choice, Quot.sound}` (mostly
+inherited from `U`'s own `Rat`-order taint, not new); `curry_isomorphic`/`orderIsoOfMutualInverse`/
+`pow_prod_isomorphic` fully choice-free `⊆ {propext, Quot.sound}`; two pre-existing lemmas reused
+here (`trianglelefteq_iterSys`, `funSpace_unitSys_isomorphic`) also carry `Classical.choice`, traced
+to `ApproximableMap.ext_of_toElementMap` (a general choice source already in the codebase, unrelated
+to `U` — noted here since their own module docstrings claim "choice-free" without qualification,
+slightly imprecise but pre-existing, not touched). **This closes Lecture VIII exercises 8.17–8.25
+in full.** **Next up:** scan `arxiv.md` for the next `Deferred` row (Exercise 8.26: untyped/typed
+`λ`-calculus translated into `U` via projections).

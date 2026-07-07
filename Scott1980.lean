@@ -224,3 +224,10 @@ import Scott1980.Neighborhood.Exercise821
 import Scott1980.Neighborhood.Exercise822
 import Scott1980.Neighborhood.Exercise823
 import Scott1980.Neighborhood.Exercise824
+import Scott1980.Neighborhood.Exercise825Unit
+import Scott1980.Neighborhood.Exercise825Congr
+import Scott1980.Neighborhood.Exercise825Closing
+import Scott1980.Neighborhood.Exercise825Pow
+import Scott1980.Neighborhood.Exercise825Embed
+import Scott1980.Neighborhood.Exercise825FixedPoint
+import Scott1980.Neighborhood.Exercise825
