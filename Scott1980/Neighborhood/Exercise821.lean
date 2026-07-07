@@ -1,0 +1,245 @@
+import Scott1980.Neighborhood.Exercise717Part2
+import Scott1980.Neighborhood.Definition89
+import Scott1980.Neighborhood.Proposition810
+import Scott1980.Neighborhood.Lemma615
+
+/-!
+# Exercise 8.21 (Scott 1981, PRG-19)
+
+> **Exercise 8.21.** Using the fixed-point construction, show that there is a continuous and
+> computable operator `λa. a§`, such that if `a` is a finitary projection of `U`, then
+> `D_{a§} ≅ (D_a)§`.
+
+Here `D§` is Scott's tree algebra of Example 6.1 (`Dsharp`, already fully formalized with computable
+combinators `in`/`pair`/`proj₀`/`proj₁` in `Example61.lean`/`Combinators77.lean`/`Exercise717.lean`,
+and the universal catamorphism `g : D§ → E` of Exercise 7.17 Part 2, `gMap`).
+
+## What is formalized here
+
+**The construction of `a§`, and the properties that are tractable without new "uniqueness of
+catamorphism" infrastructure.**
+
+* **`U§ ⊴ U`** (`dsharpU_trianglelefteq_U`): since `dsharpPresentation` (Prop 7.7) makes `U§`
+  effectively given, `theorem_8_8_b_strong` (Theorem 8.8(b)) hands it a *computable* projection
+  pair `iSharp : U§ → U`, `jSharp : U → U§` into `U`, exactly as Definition 8.9 fixes `i₊/j₊`,
+  `i_×/j_×`, `i_→/j_→` for `U+U`, `U×U`, `U→U`.
+
+* **The operator itself** (`aSharp`). Scott's recipe for `a§`, read off Example 6.1's own
+  defining equations `out(x§) = x`, `pair(x,y)`, is: recurse `a` on the `D`-summand and leave the
+  pairing structure alone, i.e. `a§` should satisfy `a§(x§) = (a x)§` and
+  `a§(⟨y,z⟩) = ⟨a§(y), a§(z)⟩`. But these are *exactly* the two defining equations
+  (`gMap_in`/`gMap_pair`) of Exercise 7.17 Part 2's catamorphism `gMap u v` specialized to
+  `u := in ∘ a` and `v := pair` (the tree algebra's own pairing) — so the "fixed-point
+  construction" the exercise asks for is already on hand as `gMap`, and no new recursion needs to
+  be built:
+  ```
+  aSharpInner a := gMap (inSharpMap.comp a) pairSharpMap hU : U§ → U§
+  aSharp a      := iSharp ∘ aSharpInner a ∘ jSharp : U → U
+  ```
+  This mirrors Definition 8.9's own conjugation-through-a-projection-pair pattern for `+`, `×`, `→`.
+
+* **Computable** (`aSharp_isComputable`): `gMap_isComputable` (the heart of Exercise 7.17 Part 2)
+  applies directly, since `in`/`pair` are computable (`inSharp_isComputable`/
+  `pairSharp_isComputable`) and composition of computable maps is computable
+  (`comp_isComputable`); chaining through `iSharp`/`jSharp`'s own computability
+  (`theorem_8_8_b_strong`) gives computability of `aSharp a` whenever `a` is computable.
+
+* **`a ≤ I ⟹ a§ ≤ I`** (`aSharp_le_idMap_of_le`, half of "`a` a projection ⟹ `a§` a projection",
+  Proposition 8.10's proof recipe `a ⊑ I ⟹ a+b ⊑ I+I = i∘j ⊑ I` transcribed to `§`): the new general
+  tool is **`gMap_mono`** — monotonicity of the catamorphism in `u`, `v` — proved by a direct
+  structural induction on the `GRel` derivation exactly parallel to `gRel_mono` (Exercise 7.17
+  Part 2), using that `≤` on `ApproximableMap` unfolds to pointwise relation inclusion
+  (`ApproximableMap.le_iff`). Combined with the new characterization
+  **`gMap_inSharp_pairSharp_eq_idMap`** (`gMap in pair = I_{D§}`, proved by two structural
+  inductions — on `GRel` and on `MemS` — mirroring `gMap_in`/`gMap_pair`'s own style) and
+  `comp_mono_gen`, monotonicity of `a§` in `a` gives `a ≤ I → a§ ≤ I` cleanly.
+
+## What is *not* attempted here
+
+Exactly analogous to `Proposition810.lean`'s own documented omission ("the second half of
+Proposition 8.10 ... needs substantially more infrastructure ... left as a documented follow-up"),
+**two genuinely deeper pieces are left open**:
+
+1. **Idempotence** (`a = a∘a ⟹ a§ = a§∘a§`, the other half of "`a` a projection ⟹ `a§` a
+   projection"). Unlike `×`/`→`/`+` in `Proposition810.lean`, there is no elementwise closed form
+   for `gMap`'s action on a *general* element of `D§` (its elements are potentially *infinite*
+   trees, unlike `pair`/`fst`/`snd` or `curry`/`eval` which have one-step defining equations valid
+   everywhere). Proving idempotence rigorously needs a genuine **uniqueness-of-catamorphism**
+   lemma (`k` strict, satisfying the two `g`-equations for `(u, v) ⟹ k = gMap u v`) — Scott asserts
+   this in the Example 6.1 discussion ("`g` is unique because the values on finite elements are
+   fixed") but it is not yet formalized, and is comparable in size to `gMap`'s own construction.
+
+2. **The isomorphism `D_{a§} ≅ (D_a)§`** — the exercise's actual headline claim. This needs (a) a
+   general "conjugate a fixed-point-set across a projection pair" lemma transporting
+   `fixedNbhd (a§)` to the fixed points of `aSharpInner a` on `U§` (cf. `Exercise816.lean`'s
+   `isFinitaryProjection_le_iff_fixedNbhd_subsystem`, but for `≅ᴰ` rather than `◁`-comparison), and
+   (b) the deeper fact that the fixed points of `aSharpInner a` on `U§` are *exactly* the tree
+   algebra generated by `D_a = fixedNbhd a` — i.e. `Dsharp (fixedNbhd a) _ ≅ᴰ fixedNbhd (aSharpInner a)`,
+   Scott's initial-algebra uniqueness argument specialized to the sub-tree-algebra cut out by `a`'s
+   own fixed points. This is a substantial independent development left as a documented follow-up.
+
+Axiom footprint: everything here mentions `U`, so (as with `Definition89.lean`/`Proposition810.lean`)
+it inherits `U`'s own `Classical.choice` footprint — `⊆ {propext, Classical.choice, Quot.sound}`,
+confirmed not new.
+-/
+
+namespace Scott1980.Neighborhood
+
+open NeighborhoodSystem ApproximableMap Example61 Proposition77 Exercise717
+
+variable {α β : Type*} {D : NeighborhoodSystem α} {E : NeighborhoodSystem β}
+
+/-! ## `gMap` is monotone in `u`, `v` -/
+
+/-- **`GRel` is monotone in `u`, `v`.** Direct structural induction on the `GRel` derivation,
+parallel to `gRel_mono`'s induction on shape. -/
+theorem GRel.mono_uv (_hD : ∀ X, D.mem X → X.Nonempty)
+    {u u' : ApproximableMap D E} {v v' : ApproximableMap (prod E E) E}
+    (hu : u ≤ u') (hv : v ≤ v') :
+    ∀ {W Z}, GRel u v W Z → GRel u' v' W Z := by
+  intro W Z h
+  induction h with
+  | gamma hZ => exact GRel.gamma hZ
+  | leaf hrel => exact GRel.leaf (hu _ _ hrel)
+  | node hP hQ hvrel ihP ihQ => exact GRel.node ihP ihQ (hv _ _ hvrel)
+
+/-- **`gMap` is monotone in `u`, `v`.** -/
+theorem gMap_mono (hD : ∀ X, D.mem X → X.Nonempty)
+    {u u' : ApproximableMap D E} {v v' : ApproximableMap (prod E E) E}
+    (hu : u ≤ u') (hv : v ≤ v') : gMap u v hD ≤ gMap u' v' hD := by
+  rw [ApproximableMap.le_iff]
+  intro W Z h
+  exact GRel.mono_uv hD hu hv h
+
+/-! ## `gMap in pair = I_{D§}` -/
+
+variable {hD : ∀ X, D.mem X → X.Nonempty}
+
+/-- Forward direction: every `GRel (inSharpMap) (pairSharpMap)`-related pair is an `idMap`-related
+pair (`MemS`-membership on both sides plus `⊆`). -/
+theorem grel_inSharp_pairSharp_imp_idMap_rel :
+    ∀ {W Z}, GRel (inSharpMap hD) (pairSharpMap hD) W Z → MemS D W ∧ MemS D Z ∧ W ⊆ Z := by
+  intro W Z h
+  induction h with
+  | gamma hZ => exact ⟨MemS.gamma, hZ ▸ MemS.gamma, hZ ▸ subset_rfl⟩
+  | leaf hrel => exact ⟨MemS.zero hrel.1, hrel.2.1, hrel.2.2⟩
+  | @node P Q Z₁ Z₂ Z hP hQ hvrel ihP ihQ =>
+      obtain ⟨hPmem, hZ1mem, hPZ1⟩ := ihP
+      obtain ⟨hQmem, hZ2mem, hQZ2⟩ := ihQ
+      obtain ⟨-, hZmem, A, B, hAmem, hBmem, heq, hsub⟩ := hvrel
+      obtain ⟨rfl, rfl⟩ := prodNbhd_injective heq
+      exact ⟨MemS.pair hPmem hQmem, hZmem, (embPair_subset.mpr ⟨hPZ1, hQZ2⟩).trans hsub⟩
+
+/-- Backward direction: every `idMap`-related pair is `GRel (inSharpMap) (pairSharpMap)`-related,
+by structural induction on `W`'s `MemS`-derivation (generalizing over `Z`). -/
+theorem idMap_rel_imp_grel_inSharp_pairSharp :
+    ∀ {W}, MemS D W → ∀ {Z}, MemS D Z → W ⊆ Z → GRel (inSharpMap hD) (pairSharpMap hD) W Z := by
+  intro W hW
+  induction hW with
+  | gamma =>
+      intro Z hZ hsub
+      have hZeq : Z = Gamma D := Set.Subset.antisymm (memS_subset_gamma hZ) hsub
+      subst hZeq
+      exact GRel.gamma rfl
+  | @zero X hX =>
+      intro Z hZ hsub
+      exact GRel.leaf ⟨hX, hZ, hsub⟩
+  | @pair P Q hP hQ ihP ihQ =>
+      intro Z hZ hsub
+      exact GRel.node (ihP hP subset_rfl) (ihQ hQ subset_rfl)
+        ⟨prod_mem_prodNbhd hP hQ, hZ, P, Q, hP, hQ, rfl, hsub⟩
+
+/-- **`gMap in pair = I_{D§}`**: the catamorphism instantiated at `u := in`, `v := pair` (the tree
+algebra's own structure maps) is the identity on `D§`. -/
+theorem gMap_inSharp_pairSharp_eq_idMap :
+    gMap (inSharpMap hD) (pairSharpMap hD) hD = idMap (Dsharp D hD) := by
+  apply le_antisymm
+  · rw [ApproximableMap.le_iff]
+    intro W Z h
+    exact grel_inSharp_pairSharp_imp_idMap_rel h
+  · rw [ApproximableMap.le_iff]
+    intro W Z h
+    exact idMap_rel_imp_grel_inSharp_pairSharp h.1 h.2.1 h.2.2
+
+/-! ## `U§ ⊴ U` -/
+
+/-- **`i§ : U§ → U`** (Definition-8.9-style fixed computable projection pair for `U§`). -/
+noncomputable def iSharp : ApproximableMap (Dsharp U U_mem_nonempty) U :=
+  (theorem_8_8_b_strong (dsharpPresentation UComputablePresentation U_mem_nonempty)).choose
+
+/-- **`j§ : U → U§`**. -/
+noncomputable def jSharp : ApproximableMap U (Dsharp U U_mem_nonempty) :=
+  (theorem_8_8_b_strong (dsharpPresentation UComputablePresentation U_mem_nonempty)).choose_spec.choose
+
+theorem jSharp_comp_iSharp : jSharp.comp iSharp = idMap _ :=
+  (theorem_8_8_b_strong (dsharpPresentation UComputablePresentation U_mem_nonempty)).choose_spec.choose_spec.1
+
+theorem iSharp_comp_jSharp_le : iSharp.comp jSharp ≤ idMap U :=
+  (theorem_8_8_b_strong (dsharpPresentation UComputablePresentation U_mem_nonempty)).choose_spec.choose_spec.2.1
+
+theorem iSharp_isComputableMap :
+    IsComputableMap (dsharpPresentation UComputablePresentation U_mem_nonempty)
+      UComputablePresentation iSharp :=
+  (theorem_8_8_b_strong (dsharpPresentation UComputablePresentation U_mem_nonempty)).choose_spec.choose_spec.2.2.1
+
+theorem jSharp_isComputableMap :
+    IsComputableMap UComputablePresentation
+      (dsharpPresentation UComputablePresentation U_mem_nonempty) jSharp :=
+  (theorem_8_8_b_strong (dsharpPresentation UComputablePresentation U_mem_nonempty)).choose_spec.choose_spec.2.2.2
+
+/-- **`U§ ⊴ U`.** -/
+theorem dsharpU_trianglelefteq_U : Dsharp U U_mem_nonempty ⊴ U :=
+  trianglelefteq_of_projectionPair iSharp jSharp jSharp_comp_iSharp iSharp_comp_jSharp_le
+
+/-! ## The operator `λa. a§` -/
+
+/-- **The "inner" recursive extension of `a : U → U` to `U§ → U§`**, satisfying `a§(x§) = (a x)§`
+and `a§(⟨y,z⟩) = ⟨a§(y), a§(z)⟩` by `gMap_in`/`gMap_pair` — Scott's fixed-point construction for
+`a§`, realized directly by Exercise 7.17 Part 2's catamorphism `gMap`. -/
+noncomputable def aSharpInner (a : ApproximableMap U U) :
+    ApproximableMap (Dsharp U U_mem_nonempty) (Dsharp U U_mem_nonempty) :=
+  gMap ((inSharpMap U_mem_nonempty).comp a) (pairSharpMap U_mem_nonempty) U_mem_nonempty
+
+/-- **Scott's operator `a§ : U → U`** (Exercise 8.21), conjugating `aSharpInner a` through the
+`U§ ⊴ U` projection pair, exactly as Definition 8.9 builds `a+b`, `a×b`, `a→b`. -/
+noncomputable def aSharp (a : ApproximableMap U U) : ApproximableMap U U :=
+  iSharp.comp ((aSharpInner a).comp jSharp)
+
+theorem aSharp_eq (a : ApproximableMap U U) :
+    aSharp a = iSharp.comp ((aSharpInner a).comp jSharp) := rfl
+
+/-- **`a§` is computable whenever `a` is.** -/
+theorem aSharp_isComputable {a : ApproximableMap U U}
+    (ha : IsComputableMap UComputablePresentation UComputablePresentation a) :
+    IsComputableMap UComputablePresentation UComputablePresentation (aSharp a) := by
+  have hu : IsComputableMap UComputablePresentation
+      (dsharpPresentation UComputablePresentation U_mem_nonempty)
+      ((inSharpMap U_mem_nonempty).comp a) :=
+    comp_isComputable ha (inSharp_isComputable U_mem_nonempty UComputablePresentation)
+  have hInner : IsComputableMap (dsharpPresentation UComputablePresentation U_mem_nonempty)
+      (dsharpPresentation UComputablePresentation U_mem_nonempty) (aSharpInner a) :=
+    gMap_isComputable U_mem_nonempty UComputablePresentation
+      (dsharpPresentation UComputablePresentation U_mem_nonempty) hu
+      (pairSharp_isComputable U_mem_nonempty UComputablePresentation)
+  exact comp_isComputable (comp_isComputable jSharp_isComputableMap hInner) iSharp_isComputableMap
+
+/-- **`a ≤ I ⟹ a§ ≤ I`** (half of "`a` a projection ⟹ `a§` a projection", Proposition 8.10's
+proof recipe transcribed to `§`). -/
+theorem aSharp_le_idMap_of_le {a : ApproximableMap U U} (ha : a ≤ idMap U) :
+    aSharp a ≤ idMap U := by
+  have h1 : (inSharpMap U_mem_nonempty).comp a ≤ inSharpMap U_mem_nonempty := by
+    calc (inSharpMap U_mem_nonempty).comp a
+        ≤ (inSharpMap U_mem_nonempty).comp (idMap U) := comp_mono_gen le_rfl ha
+      _ = inSharpMap U_mem_nonempty := comp_idMap _
+  have h2 : aSharpInner a ≤ idMap (Dsharp U U_mem_nonempty) := by
+    calc aSharpInner a
+        ≤ gMap (inSharpMap U_mem_nonempty) (pairSharpMap U_mem_nonempty) U_mem_nonempty :=
+          gMap_mono U_mem_nonempty h1 le_rfl
+      _ = idMap (Dsharp U U_mem_nonempty) := gMap_inSharp_pairSharp_eq_idMap
+  calc aSharp a = iSharp.comp ((aSharpInner a).comp jSharp) := aSharp_eq a
+    _ ≤ iSharp.comp ((idMap (Dsharp U U_mem_nonempty)).comp jSharp) :=
+        comp_mono_gen le_rfl (comp_mono_gen h2 le_rfl)
+    _ = iSharp.comp jSharp := by rw [idMap_comp]
+    _ ≤ idMap U := iSharp_comp_jSharp_le
+
+end Scott1980.Neighborhood
