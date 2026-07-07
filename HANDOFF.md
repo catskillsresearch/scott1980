@@ -12807,3 +12807,51 @@ whole rest of Exercise 8.27 reduces to discharging one `∀ x {Y}, ((piD d).toEl
 relation down to a formula in `subU`'s/`d`'s relations plus `evalMap`'s abstract relation — pure
 unwinding, should quickly reveal whether the formula route is viable before committing to (b3)'s
 full proof.
+
+## 2026-07-07 — Exercise 8.27(b)(2): Pass
+
+Closed. The formula route is confirmed viable: `curry`'s abstract `.rel` lemma already existed
+(`curry_rel`, `FunctionSpace.lean`) and unwinds cleanly all the way to the already-proven closed
+form, via a short chain of pre-existing general bridge lemmas — no new mathematical content, just
+plumbing, exactly as hoped.
+
+Three new declarations in `Exercise827.lean`: **`piD_rel_iff`** (`(piD d).rel X W ↔ ∃ hX,
+mem W ∧ gSection (piDUncurried d) hX ∈ W` — the direct specialization of `curry_rel`, free).
+**`gSection_piDUncurried_rel_iff`** (the real content): `gSection (piDUncurried d) hX .rel Y Z`
+reduces via `gSection_rel` to `(piDUncurried d).rel (prodNbhd X Y) Z`, then via
+`rel_iff_mem_principal` (`Approximable.lean`) + `pair_principal_eq_principal_prodNbhd`
+(`Exercise821.lean` — general, reused via a fresh import; confirmed non-cyclic since `Exercise821`
+only imports `Exercise717Part2`/`Definition89`/`Proposition810`/`Proposition810b`/`Lemma615`, none
+of which depend on `Exercise826`/`827`) to the *element*-level pair `pair (principal hX)
+(principal hY)`, landing (via `toElementMap_piDUncurried` rewritten through
+`toElementMap_piDApply`) on the closed form `((piDApply d (toApproxMap (principal hX))).toElementMap
+(principal hY)).mem Z`. **`piD_rel_self_iff`** packages this at the `X (piD d) X` self-relation
+shape formula (ii) actually tests.
+
+One implementation snag worth recording: writing the closed-form RHS by manually re-nesting
+`toApproxMap (jArrow.toElementMap (subU.toElementMap (d.toElementMap (subU.toElementMap ...))))`
+inline in the theorem statement is a parenthesis-counting minefield (an off-by-one open-paren
+silently absorbed the subsequent `.toElementMap` as a further argument, producing a confusing
+"Function expected" error far from the real bug). Fix: state the RHS via the already-named
+`piDApply` combinator (`(piDApply d f).toElementMap t`, matching `toElementMap_piDApply`'s LHS
+exactly) instead of hand-unrolling the nested closed form — cleaner and safer. General lesson for
+(b)(3): prefer composing named combinators/lemmas over re-deriving nested closed-form terms by
+hand.
+
+`lake build Scott1980.Neighborhood.Exercise827` green, zero `sorry`; `#print axioms` on all three
+new declarations `⊆ {propext, Classical.choice, Quot.sound}`, matching `toElementMap_piDUncurried`
+(confirmed by direct axiom-check — inherited from `𝒰`, not a new source). Mermaid diagrams
+regenerated (`scripts/generate_lecture_mermaid.py --write`) to reflect the new `Exercise827 →
+Exercise821` import edge. `arxiv.md`'s `Exercise 8.27(b)(2)` row flipped to `Pass`.
+
+**Next up for 8.27(b):** (b3)–(b5) remain `Planned`. (b3) is the mathematical heart: prove Scott's
+formula (ii) for `piD d` itself, i.e. discharge `isFinitary_piU_of_formula`'s `hii` hypothesis
+(`∀ x {Y}, ((piD d).toElementMap x).mem Y ↔ (funSpace U U).mem Y ∧ ∃ X, x.mem X ∧ X ⊆ Y ∧
+(piD d).rel X X`), using `piD_rel_self_iff` to unfold the `(piD d).rel X X` conjunct into
+`gSection (piDUncurried d) hX ∈ X`, then `funSpace`'s `mem_stepFun` (`f ∈ stepFun L ↔ ∀ p ∈ L,
+f.rel p.1 p.2`) to reduce membership in `X`'s own generating list to finitely many instances of
+`gSection_piDUncurried_rel_iff`'s closed form — combined with `d`'s polymorphism
+(`polymorphicType_apply_mem_fix`) and the two already-free formula-(ii) facts for `subU`
+(`isFinitaryProjection_subU` + `formula_of_isFinitaryProjection`) and each `D'_s :=
+toApproxMap(jArrow.toElementMap(d.toElementMap s))` (`isFinitaryProjection_decode_subU`), per the
+(3a)/(3b)/(3c) breakdown in the plan above.

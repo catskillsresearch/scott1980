@@ -2243,7 +2243,7 @@ flowchart TD
   Exercise823["Exercise 8.23<br/><i>Exercise823.lean</i>"]
   Exercise824["Exercise 8.24<br/><i>Exercise824.lean</i>"]
   Exercise826["Exercise 8.26<br/><i>Exercise826.lean</i>"]
-  Exercise827["Exercise 8.27<br/><i>Exercise827.lean</i>"]
+  Exercise827["Exercise 8.27(a)<br/>(+3 items)<br/><i>Exercise827.lean</i>"]
   Ex812["Exercise 8.12 cluster<br/><i>11 modules</i>"]
   Ex825["Exercise 8.25 cluster<br/><i>7 modules</i>"]
   Lect8helpers["Presentation helpers<br/><i>11 modules</i>"]
@@ -2302,6 +2302,7 @@ flowchart TD
   Exercise817 --> Exercise819
   Exercise817 --> Exercise820
   Exercise820 --> Ex825
+  Exercise821 --> Exercise827
   Exercise823 --> Ex825
   Exercise823 --> Exercise824
   Exercise826 --> Exercise827
@@ -3562,9 +3563,9 @@ Lecture VIII covers retractions, projections, and the construction of the univer
 
 #### Exercise 8.27(b)(2)
 * **Mathematical Target:** Unwind `piD d = curry (piDUncurried d)`'s neighbourhood-level relation `X (piD d) Y` between `funSpace U U`-nbhds, down to a formula in terms of `subU`'s and `d`'s own relations plus `evalMap`'s abstract defining relation.
-* **Lean File:** — (not yet started)
-* **Proof Notes:** *(2a)* Locate the general lemma describing `(curry g).rel X Y` for an uncurried `g : ApproximableMap (prod V0 V1) V2` (the *abstract* `FunctionSpace.lean`/`Table55.lean` layer, **not** the Ex 7.16/Theorem 7.5 recursion-theoretic coded layer) — should already exist backing `curry`'s own `ApproximableMap` axioms; reuse, don't re-derive. *(2b)* Specialize to `g := piDUncurried d`, and unwind its own `.rel` (built from `evalMap`/`paired`/`proj₀`/`proj₁`/`subU`/`d`), landing on a formula purely in terms of `subU`'s and `d`'s relations plus `evalMap`'s abstract (order-theoretic, non-coded) defining relation (Theorem 3.11). This subgoal is pure unwinding and should surface quickly whether the formula-(ii) route is viable at all.
-* **Status:** Planned
+* **Lean File:** `Scott1980/Neighborhood/Exercise827.lean`
+* **Proof Notes:** *(2a)* `curry_rel` (`FunctionSpace.lean`, pre-existing — the abstract layer, not the Ex 7.16 coded one) already reduces `(piD d).rel X W` to a literal set-membership test `gSection (piDUncurried d) hX ∈ W`; **`piD_rel_iff`** is the free direct specialization, no new proof. *(2b)* **`gSection_piDUncurried_rel_iff`** unwinds `gSection`'s own relation the rest of the way: `gSection_rel` reduces it to `(piDUncurried d).rel (prodNbhd X Y) Z`; the general bridge `rel_iff_mem_principal` (`Approximable.lean`) plus the general `pair_principal_eq_principal_prodNbhd` (`Exercise821.lean`, reused via a fresh, non-cyclic import — pairing two principal elements is the principal element of the product nbhd) convert this to the *element*-level pair `pair (principal hX) (principal hY)`; `toElementMap_piDUncurried`/`toElementMap_piDApply` (both pre-existing, built from `subU`'s and `d`'s `toElementMap` actions plus `evalMap_apply`) then read off the closed form `((piDApply d (toApproxMap (principal hX))).toElementMap (principal hY)).mem Z` — exactly "a formula in terms of `subU`'s and `d`'s own relations plus `evalMap`'s abstract defining relation," routed through the already-proven closed form rather than re-derived from scratch. **`piD_rel_self_iff`** packages (2a)+(2b) at the self-relation shape (`X (piD d) X`) that Theorem 8.5's formula (ii) actually tests — the form 8.27(b)(3) will consume. `lake build Scott1980.Neighborhood.Exercise827` green, zero `sorry`. Axiom audit: `⊆{propext,Classical.choice,Quot.sound}` (inherited from `toElementMap_piDUncurried`/`𝒰`, not a new source).
+* **Status:** Pass
 
 #### Exercise 8.27(b)(3)
 * **Mathematical Target:** Prove Scott's formula (ii) for `piD d` (per (b)(1)), using (b)(2)'s `.rel` formula and `d`'s polymorphism.

@@ -1,4 +1,5 @@
 import Scott1980.Neighborhood.Exercise826
+import Scott1980.Neighborhood.Exercise821
 
 /-!
 # Exercise 8.27 (Scott 1981, PRG-19) — Donahue's polymorphic/infinite products over `𝒰`
@@ -459,6 +460,56 @@ theorem isFinitary_piU_of_formula {d : ApproximableMap U U}
       (funSpace U U).mem Y ∧ ∃ X, x.mem X ∧ X ⊆ Y ∧ (piD d).rel X X) :
     IsFinitary (piU d) :=
   isFinitary_piU_of_isFinitary_piD (isFinitaryProjection_piD_of_formula d hii).2
+
+/-! ## Exercise 8.27(b)(2): unwind `piD d`'s neighbourhood relation
+
+`piD d = curry (piDUncurried d)` uses `FunctionSpace.lean`'s *abstract* `curry` (not the Ex 7.16/
+Table 5.5 recursion-theoretic coded layer). Its general relation lemma **`curry_rel`** already
+exists there:
+
+  `(curry g).rel X W ↔ ∃ hX : V₀.mem X, (funSpace V₁ V₂).mem W ∧ gSection g hX ∈ W`
+
+reducing `(piD d).rel X W` to a literal *set membership* test `gSection (piDUncurried d) hX ∈ W`
+of an actual map into the funSpace-nbhd `W` (no new proof needed — `piD_rel_iff` below is the
+direct specialization). The remaining unwinding is `gSection (piDUncurried d) hX`'s own relation:
+`gSection_rel` reduces it to `(piDUncurried d).rel (prodNbhd X Y) Z`, and **`rel_iff_mem_principal`**
+(`Approximable.lean`) plus **`pair_principal_eq_principal_prodNbhd`** (`Exercise821.lean`, general —
+pairing two principal elements is the principal element of the product nbhd) convert *that* into an
+*element*-level statement, which the already-proven **`toElementMap_piDUncurried`** evaluates in
+closed form purely in terms of `subU`'s and `d`'s own `toElementMap` actions (built, in its own
+proof, from `evalMap_apply`, `FunctionSpace.lean`'s abstract defining relation for `eval`). This is
+`gSection_piDUncurried_rel_iff` below — the genuine content of this subgoal. -/
+
+/-- **Exercise 8.27(b)(2)(a).** `(piD d).rel X W` reduces to a literal membership test — the direct
+specialization of `curry_rel` (`FunctionSpace.lean`), no new proof needed. -/
+theorem piD_rel_iff (d : ApproximableMap U U) {X W : Set (ApproximableMap U U)} :
+    (piD d).rel X W ↔ ∃ hX : (funSpace U U).mem X, (funSpace U U).mem W ∧
+      gSection (piDUncurried d) hX ∈ W :=
+  curry_rel
+
+/-- **Exercise 8.27(b)(2)(b).** `gSection (piDUncurried d) hX`'s own relation, fully unwound to a
+closed elementwise formula in terms of the already-proven closed form `piDApply` (built, in its
+own proof, purely from `subU`'s and `d`'s `toElementMap` actions plus `evalMap_apply`): reduce via
+`gSection_rel` to `(piDUncurried d).rel (prodNbhd X Y) Z`, then via `rel_iff_mem_principal` +
+`pair_principal_eq_principal_prodNbhd` to the element pair `pair (principal hX) (principal hY)`,
+then read off `toElementMap_piDUncurried`/`toElementMap_piDApply`. This is the "unwind `piD d`'s
+neighbourhood relation" content of Exercise 8.27(b)(2). -/
+theorem gSection_piDUncurried_rel_iff (d : ApproximableMap U U)
+    {X : Set (ApproximableMap U U)} (hX : (funSpace U U).mem X) {Y Z : Set ℚ} (hY : U.mem Y) :
+    (gSection (piDUncurried d) hX).rel Y Z ↔
+      ((piDApply d (toApproxMap ((funSpace U U).principal hX))).toElementMap
+        (U.principal hY)).mem Z := by
+  rw [gSection_rel, rel_iff_mem_principal (piDUncurried d) (prod_mem_prodNbhd hX hY),
+    ← pair_principal_eq_principal_prodNbhd hX hY, toElementMap_piDUncurried,
+    ← toElementMap_piDApply]
+
+/-- **Exercise 8.27(b)(2), specialized to self-relation** (the shape Theorem 8.5's formula (ii)
+actually tests, `a.rel X X`): combines (a) and (b) into the single membership-test formula that
+Exercise 8.27(b)(3) will chain through `subU`'s and each `D'_s`'s own formula (ii). -/
+theorem piD_rel_self_iff (d : ApproximableMap U U) {X : Set (ApproximableMap U U)} :
+    (piD d).rel X X ↔ ∃ hX : (funSpace U U).mem X, gSection (piDUncurried d) hX ∈ X := by
+  rw [piD_rel_iff]
+  exact ⟨fun ⟨hX, _, hmem⟩ => ⟨hX, hmem⟩, fun ⟨hX, hmem⟩ => ⟨hX, hX, hmem⟩⟩
 
 /-! ## Discussion: "why does this equation mean that `x` is in the product?"
 
