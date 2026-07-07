@@ -12671,3 +12671,139 @@ inventory (`arxiv.md`'s actual content, which is what "solving the book" means) 
 current and honestly scoped before this fix. The gap was purely bibliographic: the paper's own
 "here is all the code" appendix wasn't listing roughly half the code it was supposed to be an index
 of. That's now closed too.
+
+## 2026-07-07: Exercise 8.27(b) (the finitary half) — plan and subgoals, not yet attempted
+
+**Trigger:** user asked to plan closing Exercise 8.27's still-open "hard" half and to split the
+`arxiv.md` row into labeled sub-parts. **Done this checkpoint:** `arxiv.md`'s Exercise 8.27 row now
+reads **(a) Pass** (the projection half, Steps 1–4 of `Exercise827.lean` — unconditional, holds for
+every `d`) / **(b) Open** (the finitary half — Scott's own "the problem", no hint given). No Lean
+changed. This section records the plan for (b), so it survives a context reset.
+
+### Key strategic insight (the reason this looks tractable, not just "hard")
+
+Do **not** try to build a fresh dependent-product `NeighborhoodSystem` from scratch (an externally
+witnessed `∃ β F, Fix(piD d) ≃o F.Element`). Instead pivot on **Theorem 8.5** (`Theorem85.lean`),
+which is already proved *in full as a genuine iff* (`finitaryProjection_iff_formula`, both
+directions, despite the file's own docstring header claiming the hard direction is unformalized —
+that comment is stale; `formula_of_isFinitaryProjection` is present and complete):
+
+> `IsFinitaryProjection a ↔ ∀ x {Y}, a(x).mem Y ↔ E.mem Y ∧ ∃ X, x.mem X ∧ X ⊆ Y ∧ a.rel X X`
+
+The `(ii)⟹(i)` direction (`isFinitaryProjection_of_formula`) needs **only** the formula — no
+existential witness system required up front — and its proof literally sets the witness to
+`fixedNbhd a := {X ∈ E.mem | a.rel X X}` (choice-free *data*, built from `a` alone, same token type
+as `E`). So: **prove Scott's step-closure formula (ii) directly for `a := piD d`, and finitariness
+drops out for free**, with `fixedNbhd (piD d)` as the (automatically correct) witness domain. This
+turns "invent a new piece of domain theory" into "compute with `piD d`'s own `.rel`" — a
+qualitatively smaller task, and the same shape as every other finitary-closure proof in the project
+(`Proposition810b.lean`'s `_arrowComb`/`_prodComb`/`_sumComb`, Thm 8.6(b)'s `isFinitary_subApprox`),
+none of which build an external witness either.
+
+### Subgoals
+
+- **(b0) — cheap, mechanical.** `Fix(piU d) ≃o Fix(piD d)`: copy Step 1's `subUFixIso` recipe
+  verbatim, substituting `isRetraction_piD d`/`isProjection_piD d` for
+  `Sub8_6.isProjection_subApprox`. Reduces "`piU d` finitary" to "`piD d` finitary" (matches how
+  `isFinitary_subU` was obtained from `isFinitary_subApprox`). Do this first — it's essentially free
+  and de-risks nothing else, but keeps `piU`/`piD` in lockstep with Step 1's pattern.
+
+- **(b1) — the pivot.** Target Scott's formula (ii) for `a := piD d` directly:
+  `(piD d).toElementMap x = {Y ∈ (funSpace U U).mem | ∃ X, x.mem X ∧ X ⊆ Y ∧ X (piD d) X}`.
+  Once proved, `isFinitaryProjection_of_formula (piD d) this : IsFinitaryProjection (piD d)` finishes
+  (b) outright (combined with (b0), gives `IsFinitaryProjection (piU d)`, i.e. the *entire* exercise:
+  a polymorphic `d`'s `Π(d)` is a type).
+
+- **(b2) — unwind `piD d`'s neighbourhood relation.** `piD d = curry (piDUncurried d)`
+  (`FunctionSpace.lean`'s abstract `curry`, *not* the Ex 7.16/Table 5.5 recursion-theoretic coded
+  layer). Need:
+  - (b2a) The general lemma describing `(curry g).rel X Y` for an uncurried
+    `g : ApproximableMap (prod V0 V1) V2` (should already exist somewhere backing `curry`'s own
+    `ApproximableMap` axioms in `FunctionSpace.lean`/`Table55.lean` — locate it, don't re-derive).
+  - (b2b) Specialize to `g := piDUncurried d`, and unwind *its* `.rel` (built from
+    `evalMap`/`paired`/`proj₀`/`proj₁`/`subU`/`d`), landing on a formula purely in terms of `subU`'s
+    and `d`'s own relations plus `evalMap`'s abstract (non-coded) defining relation
+    (`FunctionSpace.lean`/Theorem 3.11, *not* Theorem 7.5's recursive-decidability layer — this is
+    the order-theoretic level, no recursion theory needed here).
+
+- **(b3) — the mathematical heart.** Prove formula (ii) for `piD d` using (b2)'s formula, by
+  chaining through **two already-finitary, already-formula-(ii)-satisfying** pieces:
+  - (b3a) `subU` already satisfies formula (ii) for free (`isFinitaryProjection_subU` +
+    `formula_of_isFinitaryProjection`, both already proved — no new work).
+  - (b3b) For every `s` arising as a `subU`-fixed "type" nbhd along the way, `D'_s :=
+    toApproxMap (jArrow.toElementMap (d.toElementMap s))` is *already* a finitary projection
+    (`isFinitaryProjection_decode_subU`, already proved for any `z`, in particular useable at
+    `d`-images of `subU`-fixed points), hence also *already* satisfies formula (ii) for free (same
+    two lemmas as (b3a)).
+  - (b3c) Assemble (b3a)+(b3b) through (b2)'s `.rel` formula for `piD d` into the target formula
+    (ii) for `piD d` itself. This is the one genuinely novel lemma — expect it to be comparable in
+    size/shape to Theorem 8.6(b)'s `isFinitary_subApprox` or Proposition 8.10(b)'s
+    `finitary_arrowComb` (read those first as the closest structural templates: both chain a
+    per-component formula-(ii)/finitary fact through a combinator's own `.rel` unfolding). Uses
+    `IsPolymorphicType d` (i.e. `polymorphicType_apply_mem_fix`) to guarantee every `d(s)` met along
+    the way is itself `subU`-fixed, which is what makes (b3b) applicable at exactly the right points.
+
+- **(b4) — assemble.** `isFinitaryProjection_of_formula (piD d) (b3c)` then `(b0)` gives
+  `IsFinitaryProjection (piU d)` for `d` polymorphic — the full statement of Exercise 8.27, combining
+  with the already-Pass (a) half (`isProjection_piU`, itself a special case).
+
+- **(b5) — bookkeeping.** `lake build`, `#print axioms` (expect `⊆ {propext, Classical.choice,
+  Quot.sound}`, matching the rest of `𝒰`-based material — not a new choice source). Flip `arxiv.md`'s
+  Exercise 8.27(b) row to **Pass**, merge the two sub-rows back into one `Pass` `**Status:**` if
+  Scott's overall exercise statement (finitary+projection combined) is what's being marked, dated
+  checkpoint here.
+
+### Fallback (only if (b2)/(b3) hit a genuine wall)
+
+If `curry`'s abstract `.rel` doesn't unwind cleanly enough to make (b3c) tractable, or if formula
+(ii) turns out not to literally hold for `piD d` as stated (possible — Scott's own silence on
+technique for this half could also mean the *formula* route doesn't directly apply and a genuinely
+new witness domain is unavoidable), fall back to an explicit dependent-product construction:
+token type = finite lists of `(type-nbhd-code, fiber-nbhd-code)` pairs, `type-nbhd-code` ranging over
+`subU`'s own generating basis (via (b3a)'s witness `fixedNbhd subU`) and `fiber-nbhd-code` over each
+`D'_s`'s basis (`fixedNbhd D'_s`), mirroring `Definition79`/`Proposition710`'s power-domain recipe
+(coded finite unions) or `Exercise715`'s `D^∞` recipe (coded finite fiber-index lists) but *dependent*
+rather than uniform. This is a strictly larger undertaking — roughly a fresh Definition+Proposition
+pair — and should only be attempted after the formula-(ii) route is confirmed to fail, not before.
+
+**Recommended order of attack:** (b0) → skim `Theorem86.lean`'s `isFinitary_subApprox` and
+`Proposition810b.lean`'s `finitary_arrowComb` as templates → (b2a)/(b2b) (pure unwinding, should
+surface quickly whether the formula route is viable) → only then commit to (b3c)'s full proof.
+
+## 2026-07-07 — Exercise 8.27(b)(0): Pass
+
+Closed exactly as planned above: `piUFixIso : Fix(piU d) ≃o Fix(piD d)` added to
+`Exercise827.lean`, a verbatim copy of Step 1's `subUFixIso` (`toElementMap_piU`/
+`piD_fix_of_piU_fix`/`piU_fix_of_piD_fix` mirror `toElementMap_subU`/`subApprox_fix_of_subU_fix`/
+`subU_fix_of_subApprox_fix` line-for-line, since `piU d = i_→∘(piD d)∘j_→` has the identical shape
+to `subU = i_→∘subApprox∘j_→`), packaged as `isFinitary_piU_of_isFinitary_piD`. `lake build
+Scott1980.Neighborhood.Exercise827` green, zero `sorry`; `#print axioms` on all 5 new declarations
+`⊆ {propext, Classical.choice, Quot.sound}` (inherited from `𝒰`, not new). `arxiv.md`'s
+`Exercise 8.27(b)(0)` row flipped to `Pass`.
+
+**Next up for 8.27(b):** (b1)–(b5) remain `Planned` — establish `IsFinitary (piD d)` for `d`
+polymorphic via Theorem 8.5's step-closure formula (ii), per the plan above. Start with (b2):
+locate `curry`'s abstract `.rel` lemma in `FunctionSpace.lean`/`Table55.lean` and unwind
+`piDUncurried d`'s own relation — this is pure unwinding and should quickly reveal whether the
+formula route is viable before committing to (b3)'s full proof.
+
+## 2026-07-07 — Exercise 8.27(b)(1): Pass
+
+Closed exactly as planned: added `isFinitaryProjection_piD_of_formula` (direct specialization of
+`Theorem85.lean`'s `isFinitaryProjection_of_formula` to `E := funSpace U U`, `a := piD d` — no new
+proof, just the specialization) and `isFinitary_piU_of_formula` (assembles the above with (b)(0)'s
+`isFinitary_piU_of_isFinitary_piD`, so a single `hii : ∀x{Y}, ...` hypothesis — Scott's formula
+(ii) for `piD d` — now suffices to conclude `IsFinitary (piU d)`, the *entire* remaining exercise
+for `d` polymorphic). `lake build Scott1980.Neighborhood.Exercise827` green, zero `sorry`;
+`#print axioms` on both `⊆ {propext, Classical.choice, Quot.sound}` (inherited from `𝒰`, not new).
+`arxiv.md`'s `Exercise 8.27(b)(1)` row flipped to `Pass`.
+
+**Next up for 8.27(b):** (b2)–(b5) remain `Planned`. (b1) has now pinned down *exactly* the
+remaining proof obligation as a single hypothesis, `isFinitary_piU_of_formula`'s `hii` — i.e. the
+whole rest of Exercise 8.27 reduces to discharging one `∀ x {Y}, ((piD d).toElementMap x).mem Y ↔
+(funSpace U U).mem Y ∧ ∃ X, x.mem X ∧ X ⊆ Y ∧ (piD d).rel X X` statement. Start with (b2): locate
+`curry`'s abstract `.rel` lemma in `FunctionSpace.lean`/`Table55.lean` and unwind
+`piDUncurried d = (evalMap U U).comp (paired (...) (evalMap-of-proj₀-and-subU-comp-proj₁))`'s own
+relation down to a formula in `subU`'s/`d`'s relations plus `evalMap`'s abstract relation — pure
+unwinding, should quickly reveal whether the formula route is viable before committing to (b3)'s
+full proof.

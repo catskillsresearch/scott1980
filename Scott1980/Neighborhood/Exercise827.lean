@@ -49,8 +49,16 @@ formula *already* re-projects through `sub` at every occurrence of the bound typ
 (`isFinitaryProjection_decode_subU`), which is exactly what both halves of the projection proof
 need.
 
-**Step 5 — "the problem is to show it is finitary" (Scott's own hint) — deliberately NOT
-attempted.** See the discussion at the bottom of this file for why.
+**Step 5 (Exercise 8.27(b)(0)) — reduce "`piU d` is finitary" to "`piD d` is finitary."**
+`piUFixIso : Fix(piU d) ≃o Fix(piD d)`, built by literally copying Step 1's `subUFixIso` recipe
+(`piU d = i_→∘(piD d)∘j_→` has the same shape as `subU = i_→∘subApprox∘j_→`). Packaged as
+`isFinitary_piU_of_isFinitary_piD`, so the remaining work (Exercise 8.27(b)(1)–(b)(4), **not**
+attempted here) is exactly to prove `IsFinitary (piD d)` for `d` polymorphic.
+
+**"The problem is to show it is finitary" (Scott's own hint) — the core content, deliberately NOT
+attempted.** See the discussion at the bottom of this file for why, and `HANDOFF.md`'s 2026-07-07
+checkpoint for the planned proof route (Exercise 8.27(b)(1)–(b)(5), pivoting on Theorem 8.5's
+step-closure formula rather than an ad hoc dependent-product construction).
 
 Axiom audit: everything here mentions `𝒰`, hence inherits `𝒰`'s own `Classical.choice` footprint
 (`⊆ {propext, Classical.choice, Quot.sound}`, not new).
@@ -347,6 +355,110 @@ gadget (`isProjection_conjArrow`) used for `subU` in Step 1. Note this does not 
 be a polymorphic type. -/
 theorem isProjection_piU (d : ApproximableMap U U) : IsProjection (piU d) :=
   isProjection_conjArrow (isProjection_piD d)
+
+/-! ## Exercise 8.27(b)(0): `Fix(piU d) ≃o Fix(piD d)`
+
+Mirrors Step 1's `subUFixIso` verbatim, substituting `piD d`/`piU d` for `subApprox`/`subU`
+(both are built by the identical `i_→∘(-)∘j_→` conjugation recipe, so every step transfers
+unchanged). Reduces "`piU d` is finitary" to "`piD d` is finitary" — the target of Exercise
+8.27(b)(1) onward — exactly as `isFinitary_subU` was obtained from `isFinitary_subApprox`. -/
+
+/-- `piU d`'s defining formula unfolded at the element level (mirrors `toElementMap_subU`). -/
+theorem toElementMap_piU (d : ApproximableMap U U) (w : U.Element) :
+    (piU d).toElementMap w =
+      iArrow.toElementMap ((piD d).toElementMap (jArrow.toElementMap w)) := by
+  unfold piU
+  rw [toElementMap_comp, toElementMap_comp]
+
+/-- Unfolds `(piU d).toElementMap w = w` into the statement that `j_→(w)` is already a fixed
+point of `piD d` (mirrors `subApprox_fix_of_subU_fix`). -/
+theorem piD_fix_of_piU_fix {d : ApproximableMap U U} {w : U.Element}
+    (hw : (piU d).toElementMap w = w) :
+    (piD d).toElementMap (jArrow.toElementMap w) = jArrow.toElementMap w := by
+  rw [toElementMap_piU] at hw
+  have hstep := congrArg jArrow.toElementMap hw
+  rwa [jArrow_comp_iArrow_apply] at hstep
+
+/-- Mirrors `subU_fix_of_subApprox_fix`. -/
+theorem piU_fix_of_piD_fix {d : ApproximableMap U U} {φ : (funSpace U U).Element}
+    (hφ : (piD d).toElementMap φ = φ) :
+    (piU d).toElementMap (iArrow.toElementMap φ) = iArrow.toElementMap φ := by
+  rw [toElementMap_piU, jArrow_comp_iArrow_apply, hφ]
+
+/-- **Exercise 8.27(b)(0): `Fix(piU d) ≃o Fix(piD d)`.** Forward: `w ↦ j_→(w)`; backward:
+`φ ↦ i_→(φ)`. Needs only `j_→∘i_→ = I` (no inequality on `i_→∘j_→`) — mirrors `subUFixIso`
+verbatim, with `piD d`/`piU d` in place of `subApprox`/`subU`. -/
+noncomputable def piUFixIso (d : ApproximableMap U U) :
+    {w : U.Element // (piU d).toElementMap w = w} ≃o
+      {φ : (funSpace U U).Element // (piD d).toElementMap φ = φ} where
+  toFun w := ⟨jArrow.toElementMap w.1, piD_fix_of_piU_fix w.2⟩
+  invFun φ := ⟨iArrow.toElementMap φ.1, piU_fix_of_piD_fix φ.2⟩
+  left_inv w := by
+    apply Subtype.ext
+    show iArrow.toElementMap (jArrow.toElementMap w.1) = w.1
+    have hw := toElementMap_piU d w.1
+    rw [w.2] at hw
+    rw [piD_fix_of_piU_fix w.2] at hw
+    exact hw.symm
+  right_inv φ := by
+    apply Subtype.ext
+    exact jArrow_comp_iArrow_apply φ.1
+  map_rel_iff' := by
+    intro w w'
+    show jArrow.toElementMap w.1 ≤ jArrow.toElementMap w'.1 ↔ w.1 ≤ w'.1
+    constructor
+    · intro hle
+      have h2 := iArrow.toElementMap_mono hle
+      have e1 : iArrow.toElementMap (jArrow.toElementMap w.1) = w.1 := by
+        have hw := toElementMap_piU d w.1
+        rw [w.2, piD_fix_of_piU_fix w.2] at hw
+        exact hw.symm
+      have e2 : iArrow.toElementMap (jArrow.toElementMap w'.1) = w'.1 := by
+        have hw' := toElementMap_piU d w'.1
+        rw [w'.2, piD_fix_of_piU_fix w'.2] at hw'
+        exact hw'.symm
+      rwa [e1, e2] at h2
+    · intro hle
+      exact jArrow.toElementMap_mono hle
+
+/-- **Exercise 8.27(b)(0), corollary: if `piD d` is finitary then so is `piU d`.** Mirrors
+`isFinitary_subU`'s use of `subUFixIso`. This is the reduction Exercise 8.27(b)(1)–(b)(4) will
+target: it suffices to prove `IsFinitary (piD d)` for `d` polymorphic. -/
+theorem isFinitary_piU_of_isFinitary_piD {d : ApproximableMap U U} (h : IsFinitary (piD d)) :
+    IsFinitary (piU d) := by
+  obtain ⟨β, F, ⟨iso⟩⟩ := h
+  exact ⟨β, F, ⟨(piUFixIso d).trans iso⟩⟩
+
+/-! ## Exercise 8.27(b)(1): reduce finitariness of `piD d` to Theorem 8.5's step-closure formula
+
+`Theorem85.lean`'s `isFinitaryProjection_of_formula` proves, for *any* approximable map `a : E → E`
+on *any* neighbourhood system `E`, that Scott's step-closure formula (ii) —
+
+  `a(x) = {Y ∈ E ∣ ∃X∈x, X⊆Y ∧ X a X}`, for every `x ∈ |E|`
+
+— by itself (no other hypothesis on `a`) implies `IsFinitaryProjection a`, with the witness domain
+`fixedNbhd a` built automatically from `a`'s own relation. Specializing `E := funSpace U U`,
+`a := piD d` turns "prove `piD d` is finitary" into "prove `piD d` satisfies formula (ii)" — no
+external witness system to invent. This is exactly the reduction Exercise 8.27(b)(2)–(b)(3) target;
+what remains here is only to record the specialization and its corollary via Exercise 8.27(b)(0). -/
+
+/-- **Exercise 8.27(b)(1).** If `piD d` satisfies Scott's step-closure formula (ii), it is a
+finitary projection — a direct specialization of `Theorem85.lean`'s general
+`isFinitaryProjection_of_formula`, no new proof needed beyond the specialization itself. -/
+theorem isFinitaryProjection_piD_of_formula (d : ApproximableMap U U)
+    (hii : ∀ (x : (funSpace U U).Element) {Y}, ((piD d).toElementMap x).mem Y ↔
+      (funSpace U U).mem Y ∧ ∃ X, x.mem X ∧ X ⊆ Y ∧ (piD d).rel X X) :
+    IsFinitaryProjection (piD d) :=
+  isFinitaryProjection_of_formula (piD d) hii
+
+/-- **Exercise 8.27(b)(1), assembled with (b)(0):** formula (ii) for `piD d` alone gives
+`IsFinitary (piU d)`, i.e. (combined with the already-Pass 8.27(a)) the *entire* exercise for `d`
+polymorphic. This pins down exactly what Exercise 8.27(b)(2)–(b)(3) need to supply: `hii`. -/
+theorem isFinitary_piU_of_formula {d : ApproximableMap U U}
+    (hii : ∀ (x : (funSpace U U).Element) {Y}, ((piD d).toElementMap x).mem Y ↔
+      (funSpace U U).mem Y ∧ ∃ X, x.mem X ∧ X ⊆ Y ∧ (piD d).rel X X) :
+    IsFinitary (piU d) :=
+  isFinitary_piU_of_isFinitary_piD (isFinitaryProjection_piD_of_formula d hii).2
 
 /-! ## Discussion: "why does this equation mean that `x` is in the product?"
 
