@@ -12141,3 +12141,62 @@ choice-free (`⊆ {propext, Quot.sound}`).
 
 **Status of Exercise 8.21: Partial.** **Next up:** scan `arxiv.md` for the next `Deferred` row after
 Exercise 8.21 (Exercise 8.22: which of `B ⊴ C`/`C ⊴ B` hold? domain-equation `E ⊴ D` question).
+
+## 2026-07-06 (continued 9) — Exercise 8.21(b): Pass, idempotence of `a§` via catamorphism uniqueness
+
+**Exercise 8.21(b).** The other half of "`a` a projection ⟹ `a§` a projection": idempotence
+`a=a∘a ⟹ a§=a§∘a§`. All four planned sub-steps closed in `Exercise821.lean`.
+
+**8.21(b)(1) — `gMap_eq_of_satisfies` (uniqueness-of-catamorphism).** Any *strict*
+`k : ApproximableMap (Dsharp D hD) E` satisfying `gMap`'s two defining equations at the *element*
+level (`k(x§) = u(x)`, `k⟨y,z⟩ = v⟨k y,k z⟩`) equals `gMap u v hD` outright. The anticipated
+heavyweight order-theoretic argument (à la `Theorem614.lean`'s initial-algebra uniqueness) turned
+out to be unnecessary: a direct induction on the `MemS`-derivation of the input neighbourhood `W`
+suffices, proving `k.rel W Z ↔ GRel u v W Z` by cases mirroring `gMap_in`/`gMap_pair`'s own proof
+style. The key trick is evaluating the assumed *element*-level hypothesis at the **principal
+element** of each `MemS`-shape and bridging back to `k`'s relation via `rel_iff_mem_principal`.
+Two new bridge identities do this: `inSharp_principal : inSharp D hD (D.principal hX) =
+(Dsharp D hD).principal (MemS.zero hX)` and `pairSharp_principal` (analogous, for `embPair`),
+the latter resting on a new general (non-`Dsharp`-specific) identity
+`pair_principal_eq_principal_prodNbhd : pair (V₀.principal hP) (V₁.principal hQ) =
+(prod V₀ V₁).principal (prod_mem_prodNbhd hP hQ)`.
+
+**8.21(b)(2) — `gMap_selfComp_eq_of_isRetraction` (general form).** For any retraction
+`a : D → D`, `(gMap u v hD).comp (gMap u v hD) = gMap u v hD` where `u := (inSharpMap hD).comp a`,
+`v := pairSharpMap hD`. Applies (b)(1) to `k := g.comp g`: both defining equations of `k` reduce,
+via `gMap_in`/`gMap_pair` applied twice, to the corresponding equation for `g` composed with `a`'s
+own idempotence. `aSharpInner_idem_of_isRetraction` specializes this at `D := U` (`aSharpInner_eq`
+unfolds `aSharpInner` to the literal `gMap` expression by `rfl`).
+
+**8.21(b)(3) — `isRetraction_aSharp`.** Transports idempotence of `aSharpInner a` through the `U§ ⊴ U`
+projection pair to `(aSharp a).comp (aSharp a) = aSharp a`, via a one-step unfolding lemma
+`toElementMap_aSharp` (mirroring `Proposition810.lean`'s `toElementMap_prodComb`/
+`toElementMap_arrowComb`) plus the *exact same* `toElementMap_of_comp_eq_idMap` +
+`toElementMap_idem_of_isRetraction` recipe `isRetraction_prodComb`/`isRetraction_arrowComb` already
+use, conjugated through `jSharp_comp_iSharp` (proved in the 8.21(a) session) instead of
+`jTimes_comp_iTimes`/`jArrow_comp_iArrow`.
+
+**8.21(b)(4) — `isProjection_aSharp`.** Packages 8.21(a)'s `aSharp_le_idMap_of_le` with (b)(3)'s
+`isRetraction_aSharp` into `IsProjection a → IsProjection (aSharp a)`, completing "`a` a projection
+⟹ `a§` a projection" in full — matching `Proposition810.lean`'s `isProjection_sumComb`/
+`isProjection_prodComb`/`isProjection_arrowComb`.
+
+**One build hiccup:** `IsStrict`/`isStrict_comp` live in the `Scott1980.Neighborhood.Exercise510`
+sub-namespace (not the top `Scott1980.Neighborhood` namespace where `IsRetraction`/`IsProjection`
+live), and `Exercise821.lean`'s `open` line didn't have it — first build attempt failed with
+"Function expected at IsStrict" (autoImplicit mis-parsing the unknown identifier). Fixed by adding
+`Exercise510` to the file's `open` line (same fix `Theorem69.lean` already uses).
+
+`lake build` (whole project) green, zero `sorry`, zero new warnings. Wired into `Scott1980.lean`
+(already imported from the 8.21(a) session). `arxiv.md`'s Exercise 8.21(b) row updated to `Pass`;
+umbrella 8.21 row updated to reflect (a)/(b) `Pass`, only (c) remaining. Axiom audit:
+`gMap_eq_of_satisfies`/`gMap_selfComp_eq_of_isRetraction`/`aSharpInner_idem_of_isRetraction`/
+`isRetraction_aSharp`/`isProjection_aSharp ⊆ {propext, Classical.choice, Quot.sound}` (inherited
+from `U`, matching 8.21(a)'s own baseline, nothing new); the three bridge identities
+(`inSharp_principal`/`pairSharp_principal`/`pair_principal_eq_principal_prodNbhd`) are fully
+choice-free `⊆ {propext, Quot.sound}`.
+
+**Status of Exercise 8.21: Partial — (a)/(b) Pass, (c) not yet started.** **Next up:** Exercise
+8.21(c), the headline isomorphism `D_{a§} ≅ (D_a)§` (see `arxiv.md`'s 8.21(c) row for the planned
+(c)(1)–(4) breakdown, with (c)(3) further split into (c)(3)(i)–(v)) — or, if deprioritizing that,
+scan `arxiv.md` for the next `Deferred` row after Exercise 8.21 (Exercise 8.22).
