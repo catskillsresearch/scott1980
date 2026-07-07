@@ -283,6 +283,39 @@ theorem bot_is_unique_partial (x : neighborhoodSystem.Element) :
   · exact (hne0 hx).elim
   · exact (hne1 hx).elim
 
+private theorem zero_ne_one : zero ≠ (one : Set Token) := by
+  intro h
+  have h0 : (0 : Token) ∈ zero := by simp [zero]
+  rw [h] at h0
+  simp [one] at h0
+
+/-- **`elemZero` and `elemOne` are incomparable.** Neither total element approximates the other:
+if it did, its finite neighbourhood `{i}` would have to belong to the other's filter too, which
+is neither `Δ` nor its own singleton `{1-i}`. Used to show `⊥` is the *only* common lower bound
+of `elemZero` and `elemOne` (Exercise 2.16's uniqueness argument for the parity map). -/
+theorem not_elemZero_le_elemOne : ¬ elemZero ≤ elemOne := by
+  intro h
+  rcases h zero (Or.inr rfl) with h' | h'
+  · exact zero_ne_master h'
+  · exact zero_ne_one h'
+
+theorem not_elemOne_le_elemZero : ¬ elemOne ≤ elemZero := by
+  intro h
+  rcases h one (Or.inr rfl) with h' | h'
+  · exact one_ne_master h'
+  · exact zero_ne_one h'.symm
+
+/-- **`⊥` is the unique common lower bound of `elemZero` and `elemOne`.** Any element approximated
+by *both* total elements is exactly `⊥`: `element_classification` puts it at `bot`, `elemZero`, or
+`elemOne`, and the latter two are excluded by incomparability. This is the order-theoretic
+ingredient (continuity/flatness of `𝒯`) behind the uniqueness half of Exercise 2.16. -/
+theorem eq_bot_of_le_elemZero_of_le_elemOne {a : neighborhoodSystem.Element}
+    (h0 : a ≤ elemZero) (h1 : a ≤ elemOne) : a = bot := by
+  rcases element_classification a with rfl | rfl | rfl
+  · rfl
+  · exact absurd h1 not_elemZero_le_elemOne
+  · exact absurd h0 not_elemOne_le_elemZero
+
 end neighborhoodSystem
 
 end Scott1980.Neighborhood.Example12

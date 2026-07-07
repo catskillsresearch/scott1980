@@ -119,6 +119,12 @@ theorem prepend_cone (σ ρ : Str) : prepend σ (cone ρ) = cone (σ ++ ρ) := b
   · rintro ⟨t, ht⟩
     exact ⟨ρ ++ t, List.prefix_append ρ t, by rw [← ht, List.append_assoc]⟩
 
+/-- **Prepending is monotone.** `X' ⊆ X → σX' ⊆ σX` (Exercise 2.16's `sigmaMap` uses this for
+its `mono` clause; `sigmaElt_append` uses it to transport the up-closure through composition). -/
+theorem prepend_mono (σ : Str) {X X' : Set Str} (h : X' ⊆ X) : prepend σ X' ⊆ prepend σ X := by
+  rintro w ⟨τ, hτ, rfl⟩
+  exact ⟨τ, h hτ, rfl⟩
+
 /-- `σΣ* = σ·Σ*`: prepending `σ` to the whole space recovers the cone of `σ`. -/
 theorem prepend_univ (σ : Str) : prepend σ Set.univ = cone σ := by
   ext w
@@ -134,6 +140,22 @@ theorem memB_prepend (σ : Str) {X : Set Str} (hX : B.mem X) : B.mem (prepend σ
   obtain ⟨ρ, rfl⟩ := hX
   exact ⟨σ ++ ρ, prepend_cone σ ρ⟩
 
+/-- Prepending the empty prefix does nothing: `ΛX = X`. -/
+@[simp] theorem prepend_nil (X : Set Str) : prepend [] X = X := by
+  ext w; simp [mem_prepend]
+
+/-- **Prepending is associative.** `σ(τX) = (στ)X`: prepending `σ` after `τ` is the same as
+prepending the concatenation `σ ++ τ` in one step (used to compose `sigmaElt`, `Exercise216`). -/
+theorem prepend_append (σ τ : Str) (X : Set Str) :
+    prepend σ (prepend τ X) = prepend (σ ++ τ) X := by
+  ext w
+  simp only [mem_prepend]
+  constructor
+  · rintro ⟨ρ, ⟨ρ', hρ', rfl⟩, rfl⟩
+    exact ⟨ρ', hρ', by rw [List.append_assoc]⟩
+  · rintro ⟨ρ, hρ, rfl⟩
+    exact ⟨τ ++ ρ, ⟨ρ, hρ, rfl⟩, by rw [List.append_assoc]⟩
+
 /-! ### The finite elements `σ⊥` and the initial-segment factoid. -/
 
 /-- **`σ⊥`, a finite element of `|B|`.** The principal filter `↑(σΣ*)` of the cone of `σ`; its
@@ -147,6 +169,15 @@ reversal again — which cancel to give the prefix order directly.) -/
 theorem sigmaBot_le_iff (σ₀ σ₁ : Str) :
     sigmaBot σ₀ ≤ sigmaBot σ₁ ↔ σ₀ <+: σ₁ := by
   rw [sigmaBot, sigmaBot, B.principal_le_iff, cone_subset_cone]
+
+/-- **`⊥` sits only in the cone of the empty prefix.** `⊥.mem(σΣ*) ↔ σ = Λ`: `⊥`'s only
+neighbourhood is `Δ = ΛΣ*` (`cone_nil`), and a cone determines its prefix (`cone_injective`).
+(Used by Exercise 2.17's base case, where `g(1)=⊥` is stated only at the input `⊥`.) -/
+theorem bot_mem_cone_iff {σ : Str} : B.bot.mem (cone σ) ↔ σ = [] := by
+  rw [mem_bot, B_master, ← cone_nil]
+  constructor
+  · exact cone_injective
+  · intro h; rw [h]
 
 /-! ### The operation `σx` (Scott's left-multiplication on elements). -/
 
@@ -190,6 +221,34 @@ theorem sigmaElt_bot (σ : Str) : sigmaElt σ B.bot = sigmaBot σ := by
     refine ⟨hY, B.master, B.mem_bot.mpr rfl, ?_⟩
     rw [B_master, prepend_univ]
     exact hcone
+
+/-- **Prepending the empty prefix fixes every element.** `Λx = x` — the identity case of
+`sigmaElt`, matching `prepend_nil` on neighbourhoods. -/
+theorem sigmaElt_nil (x : B.Element) : sigmaElt [] x = x := by
+  apply Element.ext
+  intro Y
+  constructor
+  · rintro ⟨hY, X, hX, hsub⟩
+    rw [prepend_nil] at hsub
+    exact x.up_mem hX hY hsub
+  · intro hY
+    exact ⟨x.sub hY, Y, hY, by rw [prepend_nil]⟩
+
+/-- **`σ` and `τ` prepend in sequence, like concatenation.** `(στ)x = σ(τx)`: applying the
+prefix `σ ++ τ` in one step agrees with applying `τ` first and then `σ`. (Used in Exercise 2.16's
+second half — the uniqueness of the parity map — to unfold `f(σ₁σ₂ … σₙx)` one token at a time.) -/
+theorem sigmaElt_append (σ τ : Str) (x : B.Element) :
+    sigmaElt (σ ++ τ) x = sigmaElt σ (sigmaElt τ x) := by
+  apply Element.ext
+  intro Y
+  constructor
+  · rintro ⟨hY, X, hX, hsub⟩
+    refine ⟨hY, prepend τ X, ⟨memB_prepend τ (x.sub hX), X, hX, subset_rfl⟩, ?_⟩
+    rw [prepend_append]; exact hsub
+  · rintro ⟨hY, X, ⟨_, X', hX', hsub'⟩, hsub⟩
+    refine ⟨hY, X', hX', ?_⟩
+    rw [← prepend_append]
+    exact (prepend_mono σ hsub').trans hsub
 
 /-! ### Every element is a union of its finite approximations `σ⊥`. -/
 

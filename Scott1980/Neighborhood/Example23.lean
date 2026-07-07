@@ -60,6 +60,12 @@ theorem botElt_le (x : T.Element) : botElt ≤ x := by
   subst this
   exact x.master_mem
 
+/-- **`⊥` is the unique common lower bound of `true` and `false`.** Any `a : |𝒯|` approximated by
+*both* total elements is `⊥` — `𝒯`'s flatness. (Exercise 2.16's uniqueness argument: reading no
+tokens yet is the only state consistent with committing to either verdict.) -/
+theorem eq_botElt_of_le {a : T.Element} (h0 : a ≤ trueElt) (h1 : a ≤ falseElt) : a = botElt :=
+  Example12.neighborhoodSystem.eq_bot_of_le_elemZero_of_le_elemOne h0 h1
+
 /-- **The parity scanner.** `scan σ = none` while `σ` is an unbroken run of `0`'s; once a `1`
 appears, `scan σ = some b` with `b = true` iff an even number of `0`'s preceded it. A leading `0`
 flips the parity of the rest; a leading `1` fixes parity `true` (zero preceding zeros). -/
@@ -71,6 +77,26 @@ def scan : Str → Option Bool
 @[simp] theorem scan_nil : scan [] = none := rfl
 @[simp] theorem scan_true (t : Str) : scan (true :: t) = some true := rfl
 @[simp] theorem scan_false (t : Str) : scan (false :: t) = (scan t).map (!·) := rfl
+
+/-- **A leading `1` always commits to `true`, whatever follows.** `scan([1]++τ) = true`, for
+*every* tail `τ`. (Exercise 2.16's first equation, at the token level.) -/
+theorem scan_append_true (τ : Str) : scan ([true] ++ τ) = some true :=
+  scan_true τ
+
+/-- **A leading `01` always commits to `false`, whatever follows.** `scan([0,1]++τ) = false`, for
+*every* tail `τ`. (Exercise 2.16's second equation, at the token level.) -/
+theorem scan_append_falseTrue (τ : Str) : scan ([false, true] ++ τ) = some false := by
+  show scan (false :: true :: τ) = some false
+  simp [scan_false, scan_true]
+
+/-- **Two leading `0`'s cancel.** `scan([0,0]++τ) = scan τ`: reading two extra zeros flips the
+parity twice, i.e. not at all (`Bool.not_not`). (Exercise 2.16's third equation, at the token
+level — the recursive step behind the uniqueness argument for the parity map.) -/
+theorem scan_append_falseFalse (τ : Str) : scan ([false, false] ++ τ) = scan τ := by
+  show scan (false :: false :: τ) = scan τ
+  cases h : scan τ with
+  | none => simp [scan_false, h]
+  | some b => simp [scan_false, h, Bool.not_not]
 
 /-- **Stability of the scan under extension.** Once `scan σ` has committed to a parity `some b`,
 every extension `σ ++ t` keeps that value. This is the engine of monotonicity for `parityMap`. -/
@@ -124,5 +150,45 @@ def parityMap : ApproximableMap B T where
       rw [← hX'cone, ← hX]; exact hX'X
     have hYmem' : (valElt (scan σ)).mem Y' := (valElt (scan σ)).up_mem hY hY'mem hYY'
     exact ⟨σ', hX'cone, valElt_scan_mono hpre Y' hYmem'⟩
+
+/-- **`parityMap`'s relation on a cone, read off.** `cone σ f Y ↔ Y ∈ valElt(scan σ)` — the
+defining existential collapses since a cone has a *unique* generating prefix (`cone_injective`).
+(Used throughout Exercise 2.16's uniqueness argument.) -/
+theorem parityMap_rel_cone (σ : Str) (Y : Set Example12.Token) :
+    parityMap.rel (cone σ) Y ↔ (valElt (scan σ)).mem Y := by
+  constructor
+  · rintro ⟨ρ, hρ, hval⟩
+    rw [cone_injective hρ]
+    exact hval
+  · intro hval
+    exact ⟨σ, rfl, hval⟩
+
+/-- **`parityMap`'s elementwise value, read off cone-by-cone.** `f(x).mem Y` iff *some* cone
+`σΣ* ∈ x` already witnesses `Y ∈ valElt(scan σ)` — every neighbourhood of `x` is a cone
+(`Element.sub`), and `parityMap`'s relation is exactly `parityMap_rel_cone`. -/
+theorem parityMap_toElementMap_mem (x : B.Element) (Y : Set Example12.Token) :
+    (parityMap.toElementMap x).mem Y ↔ ∃ τ, x.mem (cone τ) ∧ (valElt (scan τ)).mem Y := by
+  constructor
+  · rintro ⟨X, hX, hrel⟩
+    obtain ⟨τ, rfl⟩ := x.sub hX
+    exact ⟨τ, hX, (parityMap_rel_cone τ Y).mp hrel⟩
+  · rintro ⟨τ, hτ, hval⟩
+    exact ⟨cone τ, hτ, (parityMap_rel_cone τ Y).mpr hval⟩
+
+/-- **The "shift formula" for `parityMap`.** Reading off the parity of `σx` depends on `x` only
+through *some* cone `cone τ ∈ x`, via the scan of the concatenation `σ ++ τ`: any deeper cone in
+`sigmaElt`'s built-in up-closure is subsumed by monotonicity (`valElt_scan_mono`), so the longest
+one — `σ ++ τ` itself — already witnesses the answer. This is the key computation behind Exercise
+2.16's second half: `parityMap` genuinely satisfies its own defining equations. -/
+theorem parityMap_toElementMap_sigmaElt (σ : Str) (x : B.Element) (Y : Set Example12.Token) :
+    (parityMap.toElementMap (sigmaElt σ x)).mem Y ↔
+      ∃ τ, x.mem (cone τ) ∧ (valElt (scan (σ ++ τ))).mem Y := by
+  constructor
+  · rintro ⟨Z, ⟨_, X, hX, hsub⟩, ρ, rfl, hval⟩
+    obtain ⟨τ, rfl⟩ := x.sub hX
+    rw [prepend_cone] at hsub
+    exact ⟨τ, hX, valElt_scan_mono (cone_subset_cone.mp hsub) Y hval⟩
+  · rintro ⟨τ, hτ, hval⟩
+    exact ⟨cone (σ ++ τ), ⟨memB_cone _, cone τ, hτ, (prepend_cone σ τ).le⟩, σ ++ τ, rfl, hval⟩
 
 end Scott1980.Neighborhood.Example23

@@ -44,7 +44,9 @@ exercises) is now **also proved, for *every* `d`, not only polymorphic `d`** —
 compactness-descent argument (`exists_X_of_mem_step`, mirroring `Theorem85.lean`'s own `(i)⟹(ii)`
 hard direction) that sidesteps the genuinely-new dependent-product domain construction entirely by
 pivoting onto Theorem 8.5's step-closure formula (ii). `isFinitaryProjection_piU` closes the
-exercise's own statement in full. **The formalization of Dana Scott's PRG-19 is complete.**
+exercise's own statement in full. (**Correction, same day:** this was premature — three `Partial`
+rows had been missed; **Exercise 2.16** is now also closed, see the dated checkpoint at the end of
+this file; **Definition 7.9** and **Exercise 7.19** remain genuinely open.)
 
 You are a Lean 4 proof engineer formalizing Dana Scott's 1981 *Lectures on a Mathematical Theory of
 Computation* (PRG-19) in:
@@ -13030,3 +13032,143 @@ the prior checkpoints was **not needed**.
 identified, in this file's own header, as "the book's last remaining open row"). Every exercise,
 definition, theorem, and proposition transcribed from Scott's *Lectures on a Mathematical Theory of
 Computation* (PRG-19, 1981) that this project set out to formalize now has status **Pass**.
+
+---
+
+## 2026-07-07 (continued, correction) — Exercise 2.16's second half was still open; now closed
+
+The previous checkpoint's claim that "every exercise… now has status Pass" was **premature**: a
+user query ("Exercise 2.16 is showing Partial status, why") surfaced that `arxiv.md` still had
+**three** `Partial` rows — Exercise 2.16, Definition 7.9, Exercise 7.19 — that the sweep which
+closed Exercise 8.27 never re-checked. This checkpoint closes **Exercise 2.16**; Definition 7.9
+and Exercise 7.19 (both power-domain items) remain genuinely open/deferred.
+
+**Exercise 2.16, second half** (Scott: the parity map `f:B→T` of Ex 2.3 is *uniquely* determined
+among approximable maps by `f(1x)=true`, `f(01x)=false`, `f(00x)=f(x)`) is now **Pass**, in
+`Scott1980/Neighborhood/Exercise216.lean`:
+
+- `SatisfiesParityEquations g` packages the three equations for an arbitrary `g : ApproximableMap
+  B T`, universally quantified over `x : |B|` (not just `x=⊥`) — matching Scott's statement
+  literally.
+- **Existence half** (`parityMap_satisfies : SatisfiesParityEquations Example23.parityMap`): added
+  a general "shift formula" to `Example23.lean`, `parityMap_toElementMap_sigmaElt` — `f(σx)`'s
+  membership depends on `x` only through *some* cone `cone τ ∈ x`, at `valElt(scan(σ++τ))`; any
+  deeper cone in `sigmaElt`'s built-in up-closure is subsumed by `valElt_scan_mono`, so the longest
+  available prefix `σ++τ` already witnesses the answer. Each equation then reduces to a fact about
+  `scan` alone (`scan_append_true`/`scan_append_falseTrue`/`scan_append_falseFalse`, also added to
+  `Example23.lean`), true for *every* tail `τ` — including the third equation, which holds
+  token-for-token, not merely at `x=⊥`.
+- **Uniqueness half** (`eq_parityMap_of_satisfies`): `ApproximableMap.ext` reduces `g=parityMap` to
+  matching relations on cones (every neighbourhood of `B` is a cone, `memB_cone`), which is exactly
+  pinning `g` on every principal element `σ⊥` (`key`). `key` recurses on `σ`, peeling **two**
+  tokens at a time — mirroring `scan`'s own recursion `scan(00τ)=scanτ` — via a genuine
+  Lean 4 equation-compiler pattern match on 5 cases (`[]`, `[false]`, `true::t`, `false::true::t`,
+  `false::false::t`; exhaustive, and the equation compiler finds the depth-2 structural recursion
+  for `key g hg t` in the last case automatically):
+  - `true::t`, `false::true::t`: pinned **directly** by `hg.one`/`hg.zeroOne` at `x := sigmaElt t
+    B.bot`, for *any* tail `t` — no recursion needed, since the equations are universally
+    quantified over `x`.
+  - `false::false::t`: reduces to `t` via `hg.zeroZero`, a genuine structural decrease.
+  - `σ = []` (the base case): the one place order theory enters. `⊥ ≤ 1⊥` and `⊥ ≤ 01⊥` (trivial,
+    `bot_le`) push through monotonicity and `hg.one`/`hg.zeroOne` to give `g(⊥) ≤ true` and
+    `g(⊥) ≤ false`; a new lemma chain (`Example12.not_elemZero_le_elemOne`/
+    `not_elemOne_le_elemZero`/`eq_bot_of_le_elemZero_of_le_elemOne`, lifted to `T` as
+    `Example23.eq_botElt_of_le`) shows `⊥` is the *only* common lower bound of `true`,`false` in
+    the flat 3-element domain `T` — so `g(⊥)=⊥`.
+  - `σ = [false]` (the leftover odd trailing zero, never reached by the two-at-a-time step): squeezed
+    between `⊥` (`botElt_le`) and `g(00⊥) = g(⊥) = ⊥` (via `hg.zeroZero` + the base case, transported
+    across `sigmaBot[false] ≤ sigmaBot[false,false]` — `ExampleB.sigmaBot_le_iff` — by
+    `toElementMap_mono`).
+- New reusable lemmas added to `ExampleB.lean`: `prepend_nil`/`prepend_append` (prepending composes
+  like string concatenation), `sigmaElt_nil`/`sigmaElt_append` (`sigmaElt`'s functorial-in-the-string
+  structure, `sigmaElt(σ++τ)x = sigmaElt σ (sigmaElt τ x)`); `prepend_mono` was relocated here from
+  `Exercise216.lean` (more natural home, no behavior change).
+- New lemmas in `Example23.lean`: `parityMap_rel_cone`, `parityMap_toElementMap_mem`,
+  `parityMap_toElementMap_sigmaElt`, `scan_append_true`/`scan_append_falseTrue`/
+  `scan_append_falseFalse`, `eq_botElt_of_le`.
+- New lemmas in `Example12.lean`: `zero_ne_one` (private), `not_elemZero_le_elemOne`,
+  `not_elemOne_le_elemZero`, `eq_bot_of_le_elemZero_of_le_elemOne`.
+
+`lake build` (whole project, 3198 jobs) green, zero `sorry`. Axiom audit on the three new
+top-level theorems (`parityMap_satisfies`, `key`, `eq_parityMap_of_satisfies`):
+`#print axioms ⊆ {propext, Classical.choice, Quot.sound}` — the choice comes from
+`ApproximableMap.ext`'s `by_cases`/`Classical.em`, matching the rest of Lecture II.
+
+`arxiv.md`'s Exercise 2.16 row rewritten (was garbled from an old table→bullet conversion, with a
+stray mid-sentence line break and a dangling `| **Pass**` fragment left over from the source table;
+now clean prose) and flipped to **Pass**.
+
+**Remaining open work at that point:** Definition 7.9 and Exercise 7.19 (both `Partial`,
+power-domain material) — genuinely deferred.
+
+---
+
+## 2026-07-07 continued (2) — Exercise 2.17, second half: `runMap` uniquely determined
+
+Scott's "clause deferred" note on Exercise 2.17 referred to the same pattern as 2.16: the
+existence half (`g:B→B` of Ex 2.4 **is** approximable, `runMap`) was already `Pass`, but the
+*uniqueness* half — is `runMap` the only approximable map satisfying `g(0x)=0g(x)`, `g(11x)=g(1x)`,
+`g(10x)=0x`, `g(1)=⊥`, or is some equation missing? — was untouched. It is now **Pass**, in
+`Scott1980/Neighborhood/Example24.lean` (no new file needed; Exercise 2.17 already shares this
+file with Example 2.4).
+
+- `SatisfiesRunEquations g` packages the four equations. The first three (`zero`, `oneOne`,
+  `oneZero`) are universally quantified over `x : |B|`, matching Scott's literal statement; the
+  fourth (`one`) is a bare *value* equation `g(sigmaElt[true] B.bot) = B.bot` — Scott's `g(1)=⊥`
+  genuinely has no free `x` (unlike 2.16's three equations, which all did), so it is **not**
+  quantified.
+- **Existence half** (`runMap_satisfies`): needed *two* general "shift formulas" this time (2.16
+  only needed one, since its codomain `T` isn't prefix-structured):
+  - `runMap_toElementMap_sigmaElt` (input side, mirrors `Example23.parityMap_toElementMap_sigmaElt`):
+    `g(σx)`'s membership depends on `x` only through some cone `cone τ ∈ x`, at `out(σ++τ)`; deeper
+    cones in `sigmaElt`'s up-closure are subsumed by `out_mono`.
+  - `sigmaElt_runMap_toElementMap` (output side, genuinely new — needed because here the *codomain*
+    is `B` too, so equations like `g(0x)=0·g(x)` prepend on the *output*): since `g(x)`'s own
+    membership predicate (`runMap_toElementMap_mem`) is already a cone-monotone family, prepending
+    `τ₀` to it collapses the same way, by the same "deepest witness is weakest sufficient" argument.
+  - Each equation then reduces to a fact about `out` alone, true for *every* tail: `out_append_false`
+    (`out([0]++τ)=0::outτ`), `out_append_trueTrue` (`out([1,1]++τ)=out([1]++τ)`),
+    `out_append_trueFalse` (`out([1,0]++τ)=0::τ`) — all three provable by `rfl` (pure iota-reduction
+    through `out`/`del`'s equation compiler). The `one` equation unfolds via `runMap_toElementMap_sigmaElt`
+    and the new `ExampleB.bot_mem_cone_iff` (`⊥`'s only neighbourhood is the cone of `Λ`) to pin the
+    existential's witness to `τ=[]`, then `out[true]=[]` (rfl) plus `cone_nil`/`Set.eq_univ_of_univ_subset`
+    close it.
+- **Uniqueness half** (`eq_runMap_of_satisfies`): `ApproximableMap.ext` + `runMap_rel_cone` reduces
+  `g=runMap` to pinning `g` on every `σ⊥` (`key`). Unlike 2.16's *two-tokens-at-a-time* recursion
+  (forced by `scan`'s own `00τ→τ` step), here the recursion peels **one** token at a time, exactly
+  mirroring `out`'s/`del`'s own case split — a genuine 5-case equation-compiler pattern match
+  (`[]`, `[true]`, `true::false::t`, `true::true::t`, `false::t`; exhaustive: an input starting
+  `true` either stops there, or is followed by `false` or `true`):
+  - `false::t`: recurses to `t` via `hg.zero`, structurally decreasing.
+  - `true::true::t`: recurses to the *constructed* term `true::t` via `hg.oneOne` — one token
+    shorter but not a literal subterm, so Lean falls back to well-founded (`sizeOf`) recursion
+    automatically; no `termination_by` needed.
+  - `true::false::t`, `[true]`: pinned **directly** by `hg.oneZero`/`hg.one`, no recursion (for
+    `[true]`, note `hg.one` is stated *only* at `x=⊥`, so this case doesn't even need "for any
+    tail" — the pattern match's `[true]` case *is* exactly `x=⊥`).
+  - `σ=[]` (base case, the *only* order-theoretic step): `⊥ ≤ 1⊥` (`B.bot_le`) plus monotonicity
+    and `hg.one` give `g(⊥) ≤ g(1⊥) = ⊥` directly (`⊥` already being the codomain's least element,
+    unlike 2.16 where the target `T` needed a flatness lemma to identify the *unique* common lower
+    bound of two incomparable elements) — so `le_antisymm` closes it with no extra machinery.
+- One nuance worth recording: `rw`'s automatic trailing-`rfl` check does **not** always close a
+  goal of the form `sigmaElt ([false] ++ t) B.bot = sigmaElt (false :: t) B.bot` even though the
+  two sides are fully defeq (pure list-append unfolding) — needed an explicit trailing `rfl` tactic
+  in the `true::false::t` case of `key`. Elsewhere (the `false::t` and `true::true::t` cases) the
+  automatic check *did* fire, so this is inconsistent/version-sensitive; when in doubt, add the
+  explicit `rfl`.
+- New reusable lemma in `ExampleB.lean`: `bot_mem_cone_iff`.
+- New lemmas in `Example24.lean`: `out_append_false`, `out_append_trueTrue`, `out_append_trueFalse`,
+  `out_true_true`/`out_true_false` (cons-form restatements for `key`'s pattern match),
+  `runMap_rel_cone`, `runMap_toElementMap_mem`, `runMap_toElementMap_sigmaElt`,
+  `sigmaElt_runMap_toElementMap`.
+
+`lake build` (whole project, 3198 jobs) green, zero `sorry`. Axiom audit:
+`runMap_satisfies`/`key` : `[propext, Quot.sound]` (fully constructive); `eq_runMap_of_satisfies` :
+`[propext, Classical.choice, Quot.sound]` (choice from `ApproximableMap.ext`'s `by_cases`, same as
+every other `ext`-based uniqueness proof in this project).
+
+`arxiv.md`'s Exercise 2.17 row rewritten and flipped to **Pass** (both halves now proved; the
+"missing equation?" question is answered: no, all four are exactly enough).
+
+**Remaining open work in the whole project:** Definition 7.9 and Exercise 7.19 (both `Partial`,
+power-domain material) — genuinely deferred, not touched this session.
