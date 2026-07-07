@@ -2243,7 +2243,7 @@ flowchart TD
   Exercise823["Exercise 8.23<br/><i>Exercise823.lean</i>"]
   Exercise824["Exercise 8.24<br/><i>Exercise824.lean</i>"]
   Exercise826["Exercise 8.26<br/><i>Exercise826.lean</i>"]
-  Exercise827["Exercise 8.27(a)<br/>(+3 items)<br/><i>Exercise827.lean</i>"]
+  Exercise827["Exercise 8.27(a)<br/>(+5 items)<br/><i>Exercise827.lean</i>"]
   Ex812["Exercise 8.12 cluster<br/><i>11 modules</i>"]
   Ex825["Exercise 8.25 cluster<br/><i>7 modules</i>"]
   Lect8helpers["Presentation helpers<br/><i>11 modules</i>"]
@@ -3569,9 +3569,21 @@ Lecture VIII covers retractions, projections, and the construction of the univer
 
 #### Exercise 8.27(b)(3)
 * **Mathematical Target:** Prove Scott's formula (ii) for `piD d` (per (b)(1)), using (b)(2)'s `.rel` formula and `d`'s polymorphism.
+* **Lean File:** — umbrella; see sub-rows **8.27(b)(3)(a)–(b)(3)(b)** below
+* **Proof Notes:** Split into (a) the reduction + the unconditional `⟸` half (done) and (b) the genuinely hard `⟹` half (blocked, fully diagnosed). See sub-rows.
+* **Status:** Open (partial)
+
+#### Exercise 8.27(b)(3)(a)
+* **Mathematical Target:** Reduce `hii`'s LHS to a literal membership test, and close the `⟸` half of formula (ii) for `piD d` unconditionally (for any `d`, not just polymorphic).
+* **Lean File:** `Scott1980/Neighborhood/Exercise827.lean`, `Scott1980/Neighborhood/Theorem85.lean` (one new general lemma)
+* **Proof Notes:** **`piD_toElementMap_mem_iff`** reduces `hii`'s LHS to a literal membership test `piDApply d (toApproxMap x) ∈ Y`, no abstract element-reasoning left, via `Sub8_6.toFilter_toApproxMap`/`mem_toFilter` + the already-proven `toApproxMap_toElementMap_piD`. **`mem_of_exists_rel_self`** (`Theorem85.lean`, new, genuinely general): isolated out of `isFinitaryProjection_of_formula`'s own proof — its `⟸`-branch never actually used the finitary-projection hypothesis, only `rel_iff_mem_principal`/`principal_le_of_mem`/`toElementMap_mono`/`up_mem`; now a standalone fact for *any* `a : E → E`, no hypothesis at all (`x.mem X → X⊆Y → a.rel X X → (a.toElementMap x).mem Y`), and reused to simplify `isFinitaryProjection_of_formula`'s own proof (DRY). **`hii_easy_direction`** specializes it to `a := piD d`: the entire `⟸` half of `hii` closes unconditionally, for any `d`. `lake build` green, zero `sorry`. Axiom audit: `mem_of_exists_rel_self` is **choice-free** (`⊆{propext,Quot.sound}`); the `𝒰`-specific corollaries `⊆{propext,Classical.choice,Quot.sound}` as usual.
+* **Status:** Pass
+
+#### Exercise 8.27(b)(3)(b)
+* **Mathematical Target:** Close the `⟹` half of formula (ii) for `piD d`: given `piDApply d (toApproxMap x) ∈ Y`, construct `X` with `x.mem X`, `X⊆Y`, `(piD d).rel X X`.
 * **Lean File:** — (not yet started)
-* **Proof Notes:** The mathematical heart of the exercise. Chain two already-established formula-(ii) facts through (b)(2)'s formula: *(3a)* `subU` already satisfies formula (ii) for free (`isFinitaryProjection_subU`, 8.27(a), + `formula_of_isFinitaryProjection`, `Theorem85.lean` — no new work). *(3b)* for every `s` arising as a `subU`-fixed "type" nbhd along the way, `D'_s := toApproxMap(jArrow.toElementMap(d.toElementMap s))` is already a finitary projection (`isFinitaryProjection_decode_subU`, 8.27(a)), hence also already satisfies formula (ii) for free (same two lemmas as (3a)). *(3c)* assemble (3a)+(3b) through (b)(2)'s `.rel` formula into the target formula (ii) for `piD d` itself — the one genuinely novel lemma, expected comparable in size/shape to Thm 8.6(b)'s `isFinitary_subApprox` or Prop 8.10(b)'s `finitary_arrowComb` (closest structural templates: both chain a per-component formula-(ii)/finitary fact through a combinator's own `.rel` unfolding). Uses `IsPolymorphicType d` (`polymorphicType_apply_mem_fix`) to guarantee every `d(s)` met along the way is itself `subU`-fixed, making (3b) applicable at exactly the right points.
-* **Status:** Planned
+* **Proof Notes:** **This is the actual mathematical content of "the problem" — attempted, blocked, precisely diagnosed, not yet closed.** Chaining `subU`'s and each type-projection `P_i`'s own already-free formula-(ii) facts through (b)(2)'s `.rel` formula to build a witness `X` hits a precise obstruction (full derivation in `HANDOFF.md`'s 2026-07-07 checkpoint): the domain-side nbhd `T_i ⊇ Y_i` needed for `X ⊆ Y` forces `s_i := subU(↑T_i) ≤ t_i := subU(↑Y_i)` (monotonicity), so the "type at `T_i`" projection `P_i'` used when testing `(piD d).rel X X` is a genuinely *different*, *weaker* map than the `P_i` whose self-relation formula (ii) actually handed us — `P_i.rel W_i W_i` does not transfer to `P_i'.rel W_i W_i` for free. Choosing `T_i := Y_i` exactly (killing the mismatch) breaks the symmetric requirement instead (`t_i.mem Y_i` is false in general). A single round of formula (ii) is provably not enough. **Likely resolution (not attempted, comparably sized to `Theorem85.lean`'s own hard direction, ~200 lines there):** build `T_i` as a directed limit of an iterative self-consistency refinement, using algebraicity (`eq_iSupDirected_principal`) plus a compactness argument (the target test is finite, so the descent should stabilize at a genuine principal nbhd after finitely many steps) — mirroring `exists_principal_eq_of_isRetraction_le_idMap`'s technique rather than being a quick corollary of it. `d`'s polymorphism (`IsPolymorphicType`, `polymorphicType_apply_mem_fix`) is unused so far and expected to matter for the descent to terminate; exactly how is open. Dead ends ruled out (documented in `HANDOFF.md` so they aren't re-derived): `X`'s pairs `:=(Y_i,W_i)` directly (kills continuity); comparing `P_i'` to `P_i` via `≤`-monotonicity alone (wrong direction); forcing `↑T_i` to be exactly `subU`-fixed (implausible — `Fix(subU)` is generically non-principal).
+* **Status:** Open
 
 #### Exercise 8.27(b)(4)
 * **Mathematical Target:** Assemble (b)(0)–(b)(3) into `IsFinitaryProjection (piU d)` for `d` polymorphic — the full statement of Exercise 8.27.

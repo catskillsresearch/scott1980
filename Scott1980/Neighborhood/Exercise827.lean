@@ -511,6 +511,63 @@ theorem piD_rel_self_iff (d : ApproximableMap U U) {X : Set (ApproximableMap U U
   rw [piD_rel_iff]
   exact ⟨fun ⟨hX, _, hmem⟩ => ⟨hX, hmem⟩, fun ⟨hX, hmem⟩ => ⟨hX, hX, hmem⟩⟩
 
+/-! ## Exercise 8.27(b)(3): formula (ii) for `piD d` — substantial partial progress, not closed
+
+**The reduction is complete and clean.** Via `Sub8_6.toFilter_toApproxMap`/`mem_toFilter`
+(`mem_iff_mem_toApproxMap`) plus the already-proven `toApproxMap_toElementMap_piD`, `hii`'s LHS
+`((piD d).toElementMap x).mem Y` reduces *exactly* to a literal membership test
+`piDApply d (toApproxMap x) ∈ Y` (`piD_toElementMap_mem_iff`) — no abstract "element" reasoning
+left, purely a statement about the actual map `piDApply d (toApproxMap x) : ApproximableMap U U`
+and the actual set `Y`.
+
+**The `⟸` half closes unconditionally**, via `Theorem85.lean`'s newly-extracted
+`mem_of_exists_rel_self` (isolated from `isFinitaryProjection_of_formula`'s own proof, valid for
+*any* `a : E → E` with no hypothesis) — `hii_easy_direction` below.
+
+**The `⟹` half (the genuine mathematical content) is *not* closed here.** Attempting it exposed a
+precise, previously-undocumented obstruction, recorded in full in `HANDOFF.md`'s 2026-07-07
+checkpoint: given `f := piDApply d (toApproxMap x) ∈ Y` (`Y = stepFun [(Y_i,Z_i)]_i`), unwinding
+each `f.rel Y_i Z_i` via `gSection_piDUncurried_rel_iff`/`toElementMap_piDApply` and Theorem 8.5's
+*already-proven* formula (ii) for `subU` (Exercise 8.27(a)) and for each per-`i` "type" projection
+`P_i := toApproxMap(jArrow.toElementMap(subU.toElementMap(d.toElementMap t_i)))`
+(`isFinitaryProjection_decode_subU`, `t_i := subU.toElementMap (U.principal hY_i)`) produces
+per-component witnesses `W_i` (`W_i ⊆ Z_i`, `P_i.rel W_i W_i`) — the natural next step is to
+assemble `X := stepFun [(T_i,W_i)]_i` for domain-side nbhds `T_i ⊇ Y_i` with `t_i.mem T_i`
+(continuity), to get `x.mem X` and `X ⊆ Y`. But testing `(piD d).rel X X` itself re-runs the same
+unwinding *at `X`'s own `T_i`*, which feeds `s_i := subU.toElementMap (U.principal hT_i)` — **not**
+`t_i` — into `d`, landing on a *different* type-projection `P_i' := toApproxMap(jArrow.toElementMap
+(subU.toElementMap (d.toElementMap s_i)))`. Since `T_i ⊇ Y_i` is unavoidable (needed for `X ⊆ Y`
+by `mono`), `s_i ≤ t_i` is forced (monotonicity), so `P_i' ≤ P_i` is generally a *strictly weaker*
+map, and `P_i.rel W_i W_i` does not transfer to `P_i'.rel W_i W_i` for free — the self-relation
+witness and the continuity witness pull `T_i` in incompatible directions with a single round of
+formula (ii). The likely resolution (not attempted) mirrors `Theorem85.lean`'s *own* `(i) ⟹ (ii)`
+hard direction (`exists_principal_eq_of_isRetraction_le_idMap`'s compactness-reflection argument,
+~200 lines) rather than a single formula(ii)-chase: an iterative/compactness "descent" building
+`T_i` as a directed limit that becomes self-consistent *in the limit*, using algebraicity
+(`eq_iSupDirected_principal`) to show the descent stabilizes at a genuine finite/principal nbhd —
+a comparably-sized undertaking to Theorem 8.5's hard direction, not a quick corollary of it. `d`'s
+polymorphism (`IsPolymorphicType`, unused so far) is expected to enter here, but exactly how is not
+yet worked out. -/
+
+/-- **Exercise 8.27(b)(3)(a).** `hii`'s LHS, reduced to a literal membership test: no abstract
+"funSpace element" reasoning left, purely `piDApply d (toApproxMap x) ∈ Y` as an actual map/set. -/
+theorem piD_toElementMap_mem_iff (d : ApproximableMap U U) (x : (funSpace U U).Element)
+    {Y : Set (ApproximableMap U U)} :
+    ((piD d).toElementMap x).mem Y ↔
+      (funSpace U U).mem Y ∧ piDApply d (toApproxMap x) ∈ Y := by
+  conv_lhs => rw [← Sub8_6.toFilter_toApproxMap ((piD d).toElementMap x)]
+  rw [mem_toFilter, toApproxMap_toElementMap_piD]
+
+/-- **Exercise 8.27(b)(3), the `⟸` half — closes unconditionally, for any `d` at all.** Direct
+specialization of `Theorem85.lean`'s newly-extracted `mem_of_exists_rel_self` (no hypothesis on
+`a` needed) to `a := piD d`. The remaining, genuinely hard direction is documented above and in
+`HANDOFF.md`; **not** attempted here. -/
+theorem hii_easy_direction (d : ApproximableMap U U) (x : (funSpace U U).Element)
+    {Y : Set (ApproximableMap U U)} (hYE : (funSpace U U).mem Y)
+    {X : Set (ApproximableMap U U)} (hXx : x.mem X) (hXY : X ⊆ Y) (hXX : (piD d).rel X X) :
+    ((piD d).toElementMap x).mem Y :=
+  mem_of_exists_rel_self x hYE hXx hXY hXX
+
 /-! ## Discussion: "why does this equation mean that `x` is in the product?"
 
 Scott's parenthetical question, about `x(t) = d(t)(x(t))` (all `t`): unwind the right-hand side

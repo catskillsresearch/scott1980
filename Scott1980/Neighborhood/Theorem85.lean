@@ -153,6 +153,22 @@ theorem eq_principal_of_isCompactElt {x : V.Element} (hx : IsCompactElt x) :
 
 end Algebraic
 
+/-- **The "easy" (`⟸`) half of formula (ii), isolated.** Valid for **any** approximable map
+`a : E → E` with **no hypothesis on `a` at all** — not even that `a` satisfies the rest of formula
+(ii), let alone that it is a finitary projection. Pure monotonicity + up-closure: `↑X ≤ x`
+(`principal_le_of_mem`) pushes `a`'s self-relation at `X` up to `x` (`toElementMap_mono`), and
+`X ⊆ Y` finishes by up-closure. Isolated from `isFinitaryProjection_of_formula`'s own proof (where
+it was the `←` branch of the `constructor`) because Exercise 8.27(b)(3) needs exactly this half,
+unconditionally, for `a := piD d` — independently of whether the *rest* of formula (ii) holds. -/
+theorem mem_of_exists_rel_self {a : ApproximableMap E E} (x : E.Element) {Y : Set α}
+    (hYE : E.mem Y) {X : Set α} (hXx : x.mem X) (hXY : X ⊆ Y) (hXaX : a.rel X X) :
+    (a.toElementMap x).mem Y := by
+  have hX : E.mem X := a.rel_dom hXaX
+  have hmem : (a.toElementMap (E.principal hX)).mem X := (a.rel_iff_mem_principal hX).mp hXaX
+  have hle : E.principal hX ≤ x := principal_le_of_mem hXx
+  have hXmem : (a.toElementMap x).mem X := (a.toElementMap_mono hle) X hmem
+  exact (a.toElementMap x).up_mem hXmem hYE hXY
+
 /-- **Theorem 8.5, `(ii) ⟹ (i)` (Scott 1981, PRG-19).** If `a` satisfies Scott's step-closure
 formula `a(x) = {Y ∈ E ∣ ∃X∈x, X⊆Y ∧ XaX}` for every `x ∈ |E|`, then `a` is a finitary projection.
 
@@ -175,9 +191,9 @@ theorem isFinitaryProjection_of_formula (a : ApproximableMap E E)
       obtain ⟨hZE, Y, hXY, hYZ, hYa⟩ := hii (E.principal hX) |>.mp hmem
       exact ⟨hX, hZE, Y, ⟨a.rel_dom hYa, hYa⟩, (E.mem_principal hX).mp hXY |>.2, hYZ⟩
     · rintro ⟨hX, hZ, Y, ⟨_, hYa⟩, hXY, hYZ⟩
-      have hmem : (a.toElementMap (E.principal hX)).mem Z :=
-        hii (E.principal hX) |>.mpr ⟨hZ, Y, (E.mem_principal hX).mpr ⟨a.rel_dom hYa, hXY⟩, hYZ, hYa⟩
-      exact (a.rel_iff_mem_principal hX).mpr hmem
+      exact (a.rel_iff_mem_principal hX).mpr
+        (mem_of_exists_rel_self (E.principal hX) hZ (E.mem_principal hX |>.mpr ⟨a.rel_dom hYa, hXY⟩)
+          hYZ hYa)
   rw [heq]
   exact Subsystem.isFinitaryProjection_retractionOfSubsystem (fixedNbhd_subsystem a)
 
@@ -399,11 +415,7 @@ theorem formula_of_isFinitaryProjection {a : ApproximableMap E E} (h : IsFinitar
     have hXx : x.mem X := hprincipal_le_w.trans hw_le_x X ((E.mem_principal hX).mpr ⟨hX, subset_rfl⟩)
     exact ⟨hYE, X, hXx, hXY, haXX⟩
   · rintro ⟨hYE, X, hXx, hXY, hXaX⟩
-    have hX : E.mem X := a.rel_dom hXaX
-    have hmem : (a.toElementMap (E.principal hX)).mem X := (a.rel_iff_mem_principal hX).mp hXaX
-    have hle : E.principal hX ≤ x := principal_le_of_mem hXx
-    have hXmem : (a.toElementMap x).mem X := (a.toElementMap_mono hle) X hmem
-    exact (a.toElementMap x).up_mem hXmem hYE hXY
+    exact mem_of_exists_rel_self x hYE hXx hXY hXaX
 
 end HardDirection
 

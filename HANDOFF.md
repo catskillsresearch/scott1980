@@ -12855,3 +12855,95 @@ f.rel p.1 p.2`) to reduce membership in `X`'s own generating list to finitely ma
 (`isFinitaryProjection_subU` + `formula_of_isFinitaryProjection`) and each `D'_s :=
 toApproxMap(jArrow.toElementMap(d.toElementMap s))` (`isFinitaryProjection_decode_subU`), per the
 (3a)/(3b)/(3c) breakdown in the plan above.
+
+## 2026-07-07 — Exercise 8.27(b)(3): substantial partial progress, genuinely blocked on the hard half
+
+Attempted the full proof of formula (ii) for `piD d`. Landed real, checked-in progress (the
+reduction of `hii`'s LHS, and the *entire* `⟸` half, unconditionally), but the `⟹` half — "the
+problem" itself — resisted closure this session, and the precise obstruction is now fully
+diagnosed. Recording it in detail here so the next attempt doesn't have to rediscover it.
+
+**What's proved (green, zero `sorry`):**
+- **`piD_toElementMap_mem_iff`** (`Exercise827.lean`): `((piD d).toElementMap x).mem Y ↔
+  (funSpace U U).mem Y ∧ piDApply d (toApproxMap x) ∈ Y`. Via `Sub8_6.toFilter_toApproxMap`
+  (already existed, generic in `E` from `Theorem86.lean`'s `Sub8_6` namespace, works for `E:=U`
+  unchanged) + `mem_toFilter` + the already-proven `toApproxMap_toElementMap_piD`. Collapses `hii`'s
+  LHS from an abstract "funSpace element" statement to a literal set-membership test on the actual
+  map `piDApply d (toApproxMap x)` — no `Element`/filter reasoning left at all.
+- **`mem_of_exists_rel_self`** (`Theorem85.lean`, general, choice-free): isolated out of
+  `isFinitaryProjection_of_formula`'s own proof — its `⟸`-branch *never actually used* the
+  finitary-projection hypothesis, only `rel_iff_mem_principal`/`principal_le_of_mem`/
+  `toElementMap_mono`/`up_mem`. Now a standalone, fully general fact for **any** `a : E → E`, no
+  hypothesis at all: `x.mem X → X⊆Y → a.rel X X → (a.toElementMap x).mem Y`. Both the original
+  in-proof use site and the new use site (`hii_easy_direction`) now call this one lemma (DRY).
+- **`hii_easy_direction`** (`Exercise827.lean`): direct specialization of the above to `a := piD d`
+  — the *entire* `⟸` half of `hii` closes, **unconditionally, for any `d`** (not just polymorphic).
+
+**Why the `⟹` half is genuinely hard — the precise obstruction.** Given `f := piDApply d
+(toApproxMap x) ∈ Y` with `Y = stepFun [(Y_i,Z_i)]_i`, unwind each `f.rel Y_i Z_i` via
+`rel_iff_mem_principal` + `toElementMap_piDApply`: `t_i := subU.toElementMap (U.principal hY_i)`,
+`w_i := (toApproxMap x).toElementMap t_i`, `P_i := toApproxMap (jArrow.toElementMap (subU.
+toElementMap (d.toElementMap t_i)))` (a finitary projection **unconditionally**, via
+`isFinitaryProjection_decode_subU`). Theorem 8.5's *already-proven* `formula_of_isFinitaryProjection`
+applied to `P_i` at `w_i`, target `Z_i`, hands back `W_i` with `w_i.mem W_i`, `W_i ⊆ Z_i`,
+`P_i.rel W_i W_i`. The natural next move: pick, by continuity, `T_i ⊇ Y_i` with `t_i.mem T_i` and
+`(toApproxMap x).rel T_i W_i` (`T_i ⊇ Y_i` is *forced* — needed for `X ⊆ Y` via `mono`, since
+shrinking a map's domain-nbhd preserves its relation but not the reverse), and set
+`X := stepFun [(T_i,W_i)]_i`. Then `x.mem X` and `X ⊆ Y` both check out cleanly (the latter using
+`W_i⊆Z_i` and `Y_i⊆T_i`, the second obtained "for free" from `t_i ≤ U.principal hY_i` — `subU` is
+a *projection*, `≤ idMap` — combined with `t_i.mem T_i`, since `≤` on elements means
+`mem`-inclusion, `t_i.mem ⊆ (U.principal hY_i).mem`, so `t_i.mem T_i ⟹ (U.principal hY_i).mem T_i
+⟹ Y_i ⊆ T_i`). **But testing `(piD d).rel X X` itself re-runs the *same* unwinding at `X`'s own
+`T_i`**, which feeds `s_i := subU.toElementMap (U.principal hT_i)` — **not `t_i`** — into `d`,
+landing on `P_i' := toApproxMap (jArrow.toElementMap (subU.toElementMap (d.toElementMap s_i)))`.
+Since `T_i ⊇ Y_i` forces `U.principal hT_i ≤ U.principal hY_i` (`principal_le_iff`: bigger set ↦
+lower/coarser element) and `subU` is monotone, `s_i ≤ t_i` — `P_i'` is a genuinely *different*,
+generally *strictly weaker* map than `P_i`. `P_i.rel W_i W_i` (which formula (ii) handed us for
+`P_i`) does **not** transfer to `P_i'.rel W_i W_i` for free (weaker maps can relate strictly less;
+there is no general monotonicity fact turning "`P` self-relates `W`" into "any `P' ≤ P` self-relates
+`W`" — the inclusion goes the wrong way). Symmetrically, choosing `T_i := Y_i` exactly (no
+enlargement, killing the `s_i` vs `t_i` mismatch) breaks the *other* leg: `t_i.mem Y_i` is not true
+in general (continuity witnesses for `t_i` are generally *coarser* than `Y_i`, i.e. genuinely
+require `T_i ⊋ Y_i`). **A single round of formula (ii) is provably not enough**; the self-relation
+test and the continuity/subset test pull `T_i` in incompatible directions.
+
+**Likely resolution path (not attempted — comparably sized to `Theorem85.lean`'s own hard
+direction).** The natural fix mirrors `Theorem85.lean`'s *own* `(i) ⟹ (ii)` direction
+(`exists_principal_eq_of_isRetraction_le_idMap`'s compactness-reflection argument, ~200 lines):
+build `T_i` not in one shot but as a **directed limit** of an iterative refinement (shrink
+repeatedly, each round re-testing self-consistency at the *new* `s_i`), then use algebraicity
+(`eq_iSupDirected_principal`) plus a compactness argument (the target `Z_i`/`W_i` is a *fixed*
+finite test, so by continuity of the whole `subU∘d∘subU∘(-)` composite the descent should
+stabilize at a genuine finite/principal nbhd after finitely many steps) to show the limit is
+already attained by *some* principal `T_i`. This is a **new, standalone technical lemma**, not a
+quick corollary of anything already in the codebase — realistically a full session's work on its
+own. `d`'s polymorphism (`IsPolymorphicType`, `polymorphicType_apply_mem_fix`) has **not yet been
+used anywhere** in this attempt; it is expected to matter for the descent to actually terminate
+(without it, `d` could vary wildly enough between `s_i` and `t_i` that no finite descent
+stabilizes), but exactly how is not yet worked out.
+
+**Other things ruled out this session** (to save the next attempt from re-deriving them):
+choosing `X`'s pairs as `(Y_i, W_i)` directly (kills continuity, not just the self-test);
+comparing `P_i'` to `P_i` via `≤`-monotonicity alone (wrong direction, gains nothing); trying to
+force `U.principal hT_i` to be *exactly* `subU`-fixed (implausible — `Fix(subU)` corresponds to
+genuine encoded projections, generically non-principal/infinite elements, not finite nbhds).
+
+`lake build` green project-wide, zero `sorry` anywhere. Axiom audit: `mem_of_exists_rel_self`
+`⊆ {propext, Quot.sound}` (fully general, no `𝒰` mentioned — genuinely choice-free); the two
+`Exercise827.lean` corollaries `⊆ {propext, Classical.choice, Quot.sound}` as usual (inherited from
+`𝒰`). `arxiv.md`'s `Exercise 8.27(b)(3)` row updated to **Open (partial)** — explicitly *not*
+`Pass`, honestly reflecting that the mathematical heart remains open.
+
+**Next up for 8.27(b):** either (i) invest a dedicated session in the compactness-descent lemma
+sketched above (start by trying to state it as cleanly as possible as a standalone `Theorem85.lean`
+-style general fact, parametrized abstractly enough to reuse for `subU` itself first as a sanity
+check, since `subU`'s own `IsFinitaryProjection` is already known — a good testbed before attempting
+`piD d`), or (ii) fall back to the explicit dependent-product `NeighborhoodSystem` construction
+documented in Exercise 8.27(b)(5)'s `arxiv.md` row. (b)(4)–(b)(5) remain blocked on (b)(3).
+
+**Per-user-request, split `Exercise 8.27(b)(3)` into explicit labeled sub-rows in `arxiv.md`**,
+matching the `(b)(0)`–`(b)(5)` convention: `(b)(3)` is now an umbrella row pointing at
+**`(b)(3)(a)`** (the reduction + unconditional `⟸` half, flipped to **Pass**) and **`(b)(3)(b)`**
+(the genuinely hard `⟹` half, left **Open**, carrying the full obstruction diagnosis from above).
+Stopping here for this session per explicit instruction — not attempting the compactness-descent
+lemma now.
