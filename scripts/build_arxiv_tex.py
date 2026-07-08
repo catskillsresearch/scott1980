@@ -167,8 +167,14 @@ def demote_inventory_headings(text: str) -> str:
 
     The chronological narrative has 300+ such headings; pdfLaTeX's subsubsection counter
     overflows at 255.
+
+    A blank line must follow the bold text: pandoc's markdown reader (unlike CommonMark)
+    does not let a bullet list interrupt a paragraph, so without it every immediately
+    following `* **Mathematical Target:**` / `* **Lean File:**` / `* **Proof Notes:**`
+    block renders as a run-on paragraph with literal `*` characters instead of a proper
+    itemized list.
     """
-    return re.sub(r"^#### (.+)$", r"**\1**", text, flags=re.MULTILINE)
+    return re.sub(r"^#### (.+)$", r"**\1**\n", text, flags=re.MULTILINE)
 
 
 def drop_composer_appendices(text: str) -> str:

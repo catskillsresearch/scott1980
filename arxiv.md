@@ -6,7 +6,7 @@
 
 In November 1969, Dana Scott formulated a mathematical program to construct the first non-degenerate, purely mathematical model ($D_\infty$) for Alonzo Church's untyped $\lambda$-calculus. He formally detailed this in his landmark 1972 paper *Continuous Lattices*, providing the foundational justification for denotational semantics. However, Scott's initial 1972 framework relied on dense, abstract point-set topology, which remained an intimidating barrier for computer scientists seeking a practical tool for representing programming language semantics.
 
-When Scott delivered his lectures at Oxford in 1980—subsequently published as *Lectures on a Mathematical Theory of Computation* (Technical Report PRG-19)—he made an intentional, systematic pivot. His 1972 paper was a text on a model of $\lambda$-calculus, readable only by specialists in lattice theory and topology. The 1980 lectures used far less topology, focusing instead on discrete information presented as *domains*. This more discrete presentation was intended to be more accessible to computer scientists without training in topology.
+When Scott delivered his lectures at Oxford in 1980—subsequently published as *Lectures on a Mathematical Theory of Computation* (Technical Report PRG-19)—he made an intentional, systematic pivot. The 1980 lectures focused on discrete information presented as *domains*. This more discrete presentation was intended to be more accessible to computer scientists without training in point-set topology and lattice theory.
 
 This Lean 4 formalization covers every element of PRG-19, including all exercises.  We strive to avoid law of the excluded middle.  We check axioms throughout, so if a proof seems to unavoidably require law of the excluded middle, that will be shown in the axiom check.
 
@@ -208,7 +208,7 @@ Below is the chronological narrative of the formalization, organized step-by-ste
 ### Lecture I: Domains by Neighbourhoods
 
 ```mermaid
-flowchart TD
+flowchart LR
   Basic["Definition 1.1<br/>(+6 items)<br/><i>Basic.lean</i>"]
   Example12["Example 1.2<br/><i>Example12.lean</i>"]
   Example13["Example 1.3<br/><i>Example13.lean</i>"]
@@ -720,7 +720,7 @@ to `[propext, Quot.sound]`. All four new declarations are constructive.
 ### Lecture II: Approximable Mappings
 
 ```mermaid
-flowchart TD
+flowchart LR
   L1core["Lect I imports<br/><i>Basic, Example12, ExampleB, Exercise122</i>"]
   Approximable["Definition 2.1<br/>(+4 items)<br/><i>Approximable.lean</i>"]
   ApproximableExercises["Exercise 2.8<br/>(+5 items)<br/><i>ApproximableExercises.lean</i>"]
@@ -750,6 +750,7 @@ flowchart TD
   ApproximableExercises --> Exercise218
   ApproximableExercises --> Exercise220
   ApproximableExercises --> Exercise221
+  Example23 --> Exercise216
   Example24 --> Exercise218
   Exercise213 --> Exercise215
 ```
@@ -875,7 +876,7 @@ characteristic-map data), so the footprint is `[propext, Classical.choice, Quot.
 ### Lecture III: Domain Constructs
 
 ```mermaid
-flowchart TD
+flowchart LR
   L1core["Lect I imports<br/><i>Exercise122, Exercise127</i>"]
   L2core["Lect II imports<br/><i>Approximable, ApproximableExercises, Example23, Exercise222</i>"]
   Product["Definition 3.1<br/>(+6 items)<br/><i>Product.lean</i>"]
@@ -1087,7 +1088,7 @@ flowchart TD
 ### Lecture IV: Fixed Points and Recursion
 
 ```mermaid
-flowchart TD
+flowchart LR
   L1core["Lect I imports<br/><i>Example12, Exercise118, Exercise124</i>"]
   L2core["Lect II imports<br/><i>Approximable, ApproximableExercises, Example23</i>"]
   L3core["Lect III imports<br/><i>Exercise326, FunctionSpace</i>"]
@@ -1291,7 +1292,7 @@ flowchart TD
 ### Lecture V: Typed λ-Calculus
 
 ```mermaid
-flowchart TD
+flowchart LR
   L2core["Lect II imports<br/><i>ApproximableExercises</i>"]
   L3core["Lect III imports<br/><i>Exercise316, Exercise326, FunctionSpace, Product</i>"]
   L4core["Lect IV imports<br/><i>Example43, Exercise407, Exercise414, Exercise419, Theorem41</i>"]
@@ -1431,7 +1432,7 @@ flowchart TD
 ### Lecture VI: Domain Equations
 
 ```mermaid
-flowchart TD
+flowchart LR
   L1core["Lect I imports<br/><i>Basic, ExampleB</i>"]
   L2core["Lect II imports<br/><i>Approximable, ApproximableExercises, Exercise213, Exercise222</i>"]
   L3core["Lect III imports<br/><i>Exercise315, Exercise316, Exercise319, Exercise319Sum, FunctionSpace, …</i>"]
@@ -1706,7 +1707,7 @@ flowchart TD
 ### Lecture VII: Computability in Effectively Given Domains
 
 ```mermaid
-flowchart TD
+flowchart LR
   L1core["Lect I imports<br/><i>Basic, ExampleB, Exercise120</i>"]
   L2core["Lect II imports<br/><i>Approximable, ApproximableExercises, Example23</i>"]
   L3core["Lect III imports<br/><i>Exercise315, Exercise316, Exercise319, Exercise319Sum, FunctionSpace, …</i>"]
@@ -2104,7 +2105,7 @@ also now **Pass**, closing the inventory.
 ### Lecture VIII: Retracts of the Universal Domain
 
 ```mermaid
-flowchart TD
+flowchart LR
   L1core["Lect I imports<br/><i>Basic, Exercise127</i>"]
   L2core["Lect II imports<br/><i>ApproximableExercises, Exercise213</i>"]
   L3core["Lect III imports<br/><i>Exercise315, Exercise316, Exercise319, Exercise324, Exercise326Sum, …</i>"]
@@ -2141,7 +2142,7 @@ flowchart TD
   Exercise823["Exercise 8.23<br/><i>Exercise823.lean</i>"]
   Exercise824["Exercise 8.24<br/><i>Exercise824.lean</i>"]
   Exercise826["Exercise 8.26<br/><i>Exercise826.lean</i>"]
-  Exercise827["Exercise 8.27(a)<br/>(+5 items)<br/><i>Exercise827.lean</i>"]
+  Exercise827["Exercise 8.27(a)<br/>(+9 items)<br/><i>Exercise827.lean</i>"]
   Ex812["Exercise 8.12 cluster<br/><i>11 modules</i>"]
   Ex825["Exercise 8.25 cluster<br/><i>7 modules</i>"]
   Lect8helpers["Presentation helpers<br/><i>11 modules</i>"]

@@ -165,7 +165,7 @@ def build_lecture_diagram(
             elif dep in mod_to_lecture and mod_to_lecture[dep] < lecture_idx:
                 external[lecture_idx].add(dep)
 
-    lines = ["flowchart TD"]
+    lines = ["flowchart LR"]
 
     # Prior-lecture stubs.
     by_prior: dict[int, list[str]] = defaultdict(list)
