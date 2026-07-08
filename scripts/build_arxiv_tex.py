@@ -110,6 +110,7 @@ COMPOSER_APPENDIX_START = re.compile(
     r"(?:Exercise 7\.22 Composer (?:autorun|playbook)|Appendix\s+[AB]\s*[-\u2013\u2014])",
     re.MULTILINE,
 )
+MERMAID_CAPTION_RE = re.compile(r"^### (Lecture [^\n]+)\n\n```mermaid", re.MULTILINE)
 
 # ASCII fallbacks for combining-mark sequences and emoji that `\newunicodechar` cannot
 # handle cleanly (accents stack backwards in LaTeX; emoji have no single-glyph textcomp
@@ -198,6 +199,26 @@ def extract_abstract(text: str) -> tuple[str, str]:
     return abstract_md, body
 
 
+def extract_mermaid_captions(text: str) -> list[str]:
+    """One caption per lecture dependency diagram (mermaid block under ``### Lecture …``)."""
+    return [
+        f"{title} --- module dependency diagram"
+        for title in MERMAID_CAPTION_RE.findall(text)
+    ]
+
+
+def figure_latex(rel_path: str, caption: str, label: str) -> str:
+    return (
+        "\\begin{figure}[htbp]\n"
+        "\\centering\n"
+        f"\\includegraphics[max width=\\linewidth,"
+        f"max totalheight=0.85\\textheight,keepaspectratio]{{{rel_path}}}\n"
+        f"\\caption{{{caption}}}\n"
+        f"\\label{{{label}}}\n"
+        "\\end{figure}\n"
+    )
+
+
 def write_listing(code: str, listing_name: str) -> tuple[str, int]:
     LISTINGS_DIR.mkdir(parents=True, exist_ok=True)
     source = sanitize_lean_for_arxiv(code.rstrip("\n"))
@@ -251,12 +272,14 @@ def extract_lean_titles(text: str) -> dict[str, str]:
 
 def replace_fences(text: str) -> tuple[str, dict[str, str]]:
     lean_titles = extract_lean_titles(text)
+    mermaid_captions = extract_mermaid_captions(text)
     placeholders: dict[str, str] = {}
     lean_idx = 0
     other_idx = 0
+    mermaid_idx = 0
 
     def repl(match: re.Match[str]) -> str:
-        nonlocal lean_idx, other_idx
+        nonlocal lean_idx, other_idx, mermaid_idx
         lang = match.group(1).strip().lower()
         body = match.group(2)
         if lang == "lean":
@@ -275,14 +298,16 @@ def replace_fences(text: str) -> tuple[str, dict[str, str]]:
             return f"\n\n{key}\n\n"
         if lang == "mermaid":
             key = f"FIGINCLUDE{other_idx:03d}"
-            rel_path = render_mermaid(body, other_idx)
-            other_idx += 1
-            placeholders[key] = (
-                "\\begin{center}\n"
-                f"\\includegraphics[max width=\\linewidth,"
-                f"max totalheight=0.85\\textheight,keepaspectratio]{{{rel_path}}}\n"
-                "\\end{center}\n"
+            rel_path = render_mermaid(body, mermaid_idx)
+            caption = (
+                mermaid_captions[mermaid_idx]
+                if mermaid_idx < len(mermaid_captions)
+                else f"Module dependency diagram {mermaid_idx + 1}"
             )
+            label = f"fig:lecture-{mermaid_idx + 1}"
+            mermaid_idx += 1
+            other_idx += 1
+            placeholders[key] = figure_latex(rel_path, caption, label)
             return f"\n\n{key}\n\n"
         key = f"CODEINCLUDE{other_idx:03d}"
         rel_path, _ = write_listing(body, f"snippet-{other_idx:03d}.txt")
@@ -348,6 +373,13 @@ def insert_appendix_command(latex: str) -> str:
     if marker not in latex:
         raise RuntimeError(f"missing {marker!r} in LaTeX output")
     return latex.replace(marker, r"\appendix" + "\n" + marker, 1)
+
+
+def insert_list_of_figures(latex: str) -> str:
+    marker = r"\hypertarget{references}{%"
+    if marker not in latex:
+        raise RuntimeError(f"missing {marker!r} in LaTeX output")
+    return latex.replace(marker, r"\listoffigures" + "\n\n" + marker, 1)
 
 
 def cleanup_abstract_latex(latex: str) -> str:
@@ -421,6 +453,7 @@ def main() -> int:
     latex_body = pandoc_to_latex(body, shift=True)
     latex_body = inject_placeholders(latex_body, placeholders)
     latex_body = cleanup_pandoc_latex(latex_body)
+    latex_body = insert_list_of_figures(latex_body)
     latex_body = insert_appendix_command(latex_body)
 
     abstract_latex = pandoc_to_latex(github_math_to_tex(abstract_md), shift=False) if abstract_md else ""

@@ -3496,22 +3496,6 @@ Lecture VIII covers retractions, projections, and the construction of the univer
 * **Proof Notes:** `lake build` (whole project) green, zero `sorry`. `#print axioms` on `exists_X_of_mem_step`, `hii_hard_direction`, `hii_piD`, `isFinitaryProjection_piD`, `isFinitaryProjection_piU`: all `⊆{propext,Classical.choice,Quot.sound}`, matching the rest of `𝒰`-based material (not a new choice source). `Exercise827` already wired into `Domain.lean`/`Scott1980.lean`'s import graph. 8.27(b) and the umbrella 8.27 both flipped to `Pass`; dated `HANDOFF.md` checkpoint recording the resolution. The dependent-product-`NeighborhoodSystem` fallback was **not needed** — the formula-(ii) route closed cleanly.
 
 
----
-
-## Build
-
-```bash
-lake exe cache get
-lake build Scott1980
-python3 scripts/generate_lecture_mermaid.py --write   # sync ### Lecture … mermaid blocks in arxiv.md
-bash scripts/generate_arxiv_with_code.sh   # -> arxiv_with_code.md (gitignored)
-bash scripts/build_arxiv_tex.sh            # -> arxiv.tex + lean-listings/ + figures/ (gitignored)
-bash scripts/build_arxiv_pdf.sh            # -> arxiv.pdf (LuaLaTeX; tracked) + dist/arxiv_submit.zip
-bash scripts/package_arxiv_submit.sh       # -> dist/arxiv_submit.zip only (skips PDF)
-```
-
----
-
 ## Acknowledgments
 
 - **Dana Scott** — *Lectures on a Mathematical Theory of Computation* (PRG-19) **[Sco81]**, the
@@ -3537,8 +3521,17 @@ full responsibility for them.
 
 The development **[ER80]** is at
 [`github.com/catskillsresearch/scott1980`](https://github.com/catskillsresearch/scott1980).
-Run `lake build Scott1980` for the sorry-free formalization; `scripts/generate_arxiv_with_code.sh`
-builds `arxiv_with_code.md` from this file plus the complete Lean source.
+Rebuild the formalization, this document, and the arXiv submission bundle with:
+
+```bash
+lake exe cache get
+lake build Scott1980
+python3 scripts/generate_lecture_mermaid.py --write   # sync ### Lecture … mermaid blocks in arxiv.md
+bash scripts/generate_arxiv_with_code.sh   # -> arxiv_with_code.md (gitignored)
+bash scripts/build_arxiv_tex.sh            # -> arxiv.tex + lean-listings/ + figures/ (gitignored)
+bash scripts/build_arxiv_pdf.sh            # -> arxiv.pdf (LuaLaTeX; tracked) + dist/arxiv_submit.zip
+bash scripts/package_arxiv_submit.sh       # -> dist/arxiv_submit.zip only (skips PDF)
+```
 
 ---
 
