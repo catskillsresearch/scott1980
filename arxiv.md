@@ -19,8 +19,8 @@ To make domain theory accessible, the 1980 monograph introduces three key concep
 ### 1. The Information-Theoretic Ordering
 In contrast to the topological open sets of 1972, the 1980 lectures treat domains strictly as partially ordered sets (posets) representing states of incomplete information. An element within a domain is framed as a "partial description" of a computation. The ordering relation ($\sqsubseteq$) is explicitly interpreted as approximation: $x \sqsubseteq y$ means $x$ contains less information than, or approximates, $y$.
 
-### 2. Neighborhood Systems and Finite Approximations
-To bypass the complexities of continuous geometric spaces, Scott introduced **Neighborhood Systems**. He recognized that real-world computing machines only ever interact with finite, checkable tokens of data. In this framework, an infinite computational process (such as an infinite stream or a complex recursive function) is defined as the limit of an ever-tightening sequence of these finite neighborhoods. This shifted the underlying mathematics away from general topology and toward formal logic and order theory.
+### 2. Neighbourhood Systems and Finite Approximations
+To bypass the complexities of continuous geometric spaces, Scott introduced **Neighbourhood Systems**. He recognized that real-world computing machines only ever interact with finite, checkable tokens of data. In this framework, an infinite computational process (such as an infinite stream or a complex recursive function) is defined as the limit of an ever-tightening sequence of these finite neighbourhoods. This shifted the underlying mathematics away from general topology and toward formal logic and order theory.
 
 ### 3. Solving Universal Recursive Domain Equations
 While Scott's 1969 discovery was a specialized solution to the specific self-referential equation $D \cong [D \to D]$, the 1980 monograph provides a universal factory blueprint. Scott uses inverse limits over Directed-Complete Partial Orders (CPOs) to solve arbitrary recursive domain equations. This generalized framework allowed computer scientists to give rigorous mathematical meaning to standard recursive computer data structures, such as lists, trees, and stream types.
@@ -85,7 +85,7 @@ numbering and cross-linked to its Lean module. Status values distinguish **Pass*
 green, zero `sorry`), **Partial** (substantial core done; documented gaps remain), **Not Yet**, and
 **Deferred** (Lecture VIII and items beyond the current formalization frontier).
 
-### Neighborhood systems as the uniform substrate
+### Neighbourhood systems as the uniform substrate
 
 Following Scott's 1980 pivot away from point-set topology, domains are encoded uniformly as
 **neighbourhood systems**: a master set Δ, a family 𝒟 of neighbourhoods (filters on Δ), and domain
@@ -170,6 +170,24 @@ primrec closure lemmas in `Recursive.lean` (fuel-bounded decode, structural fold
 | `Exercise722.lean` | C11 (`streamElem`, `streamElem_idempotent`, `example` checks) |
 | `Recursive.lean` | C9a generic primrec lemmas; C9b bridge |
 
+### Controlling proof-decomposition depth
+
+The inventory's granularity — how far a single numbered item is split into lettered or numbered
+sub-goals before being discharged — was set by hand, session by session, rather than by a fixed
+rule. Some exercises (Exercise 7.22's fifteen-plus sub-items above are the extreme case) were
+deliberately drilled down into small, independently provable pieces *before* any Lean was written,
+because the informal statement was large enough that a single monolithic proof attempt would have
+wasted effort on a failing whole-proof search. Others were left as a single inventory row even
+though the underlying Lean proof has considerable internal structure, because the statement was
+small enough that further decomposition would only add bookkeeping without changing how the proof
+was actually attacked. The deciding factors were pragmatic and varied by session: the size and
+combinatorial shape of the informal statement, the point at which further upfront planning showed
+diminishing returns, and how much compute budget seemed prudent to spend on decomposition versus a
+direct proof attempt. Consequently, the depth of decomposition visible in the inventory does not
+track a formal complexity metric of Scott's original exercises; it is an artefact of session-by-
+session engineering judgment and should be read as such, not as a claim about which parts of
+PRG-19 are intrinsically harder to formalize.
+
 ### Build and artifact hygiene
 
 * **Build command:** `lake build Scott1980` (full package; filter CI noise with
@@ -187,7 +205,7 @@ primrec closure lemmas in `Recursive.lean` (fuel-bounded decode, structural fold
 
 Below is the chronological narrative of the formalization, organized step-by-step using Dana Scott's original numbering system from the PRG-19 monograph.
 
-### Lecture I: Domains by Neighborhoods
+### Lecture I: Domains by Neighbourhoods
 
 ```mermaid
 flowchart TD
@@ -259,7 +277,6 @@ flowchart TD
 #### Definition 1.1
 * **Mathematical Target:** `NeighborhoodSystem` (`mem`, `master`, `master_mem`, `inter_mem`, `sub_master`)
 * **Lean File:** `Scott1980/Neighborhood/Basic.lean`
-* **Proof Notes:** `NeighborhoodSystem` (`mem`, `master`, `master_mem`, `inter_mem`, `sub_master`)
 
 `NeighborhoodSystem α` bundles a membership predicate `mem : Set α → Prop` (Scott's `X ∈ 𝒟`),
 the master neighbourhood `master` (Scott's `Δ`, kept as a field rather than hard-wired to
@@ -276,25 +293,21 @@ are its two defining equations, both `rfl`.
 #### Factoid 1.1a
 * **Mathematical Target:** `interUpTo`, `interUpTo_zero` (`⋂_{i<0} Xᵢ = Δ`)
 * **Lean File:** `Scott1980/Neighborhood/Basic.lean`
-* **Proof Notes:** `interUpTo`, `interUpTo_zero` (`⋂_{i<0} Xᵢ = Δ`)
 
 
 #### Factoid 1.1b
 * **Mathematical Target:** `interUpTo_succ` (`⋂_{i<n+1} Xᵢ = (⋂_{i<n} Xᵢ) ∩ Xₙ`)
 * **Lean File:** `Scott1980/Neighborhood/Basic.lean`
-* **Proof Notes:** `interUpTo_succ` (`⋂_{i<n+1} Xᵢ = (⋂_{i<n} Xᵢ) ∩ Xₙ`)
 
 
 #### Theorem 1.1c
 * **Mathematical Target:** `interUpTo_mem` (extend (ii) to finite seqs) + `consistent_iff_interUpTo_mem` (consistency ⟺ `⋂ ∈ 𝒟`); aux `Consistent`, `interUpTo_subset`
 * **Lean File:** `Scott1980/Neighborhood/Basic.lean`
-* **Proof Notes:** `interUpTo_mem` (extend (ii) to finite seqs) + `consistent_iff_interUpTo_mem` (consistency ⟺ `⋂ ∈ 𝒟`); aux `Consistent`, `interUpTo_subset`
 
 
 #### Example 1.2
 * **Mathematical Target:** `Δ={0,1}`, `𝒟={{0,1},{0},{1}}`; `neighborhoodSystem`, `element_classification` (exactly 3 filters), `bot_is_unique_partial` (one partial element)
 * **Lean File:** — (see proof notes)
-* **Proof Notes:** `Δ={0,1}`, `𝒟={{0,1},{0},{1}}`; `neighborhoodSystem`, `element_classification` (exactly 3 filters), `bot_is_unique_partial` (one partial element)
 
 Scott's first worked example: `Δ = {0,1}` (`Token := Fin 2`, `master := Set.univ`),
 `𝒟 = {Δ, {0}, {1}}`. We build `neighborhoodSystem : NeighborhoodSystem Token` — the only real
@@ -316,7 +329,6 @@ the constructive guarantee is reserved for the §1 *core* in `Basic.lean`.
 #### Example 1.3
 * **Mathematical Target:** `Δ={0,1,2}`, `𝒟={{0,1,2},{1,2},{2}}` (linear); `neighborhoodSystem`, `element_classification` (exactly 3 filters), `bot_lt_elemTwelve`, `elemTwelve_lt_elemTwo`, `elemTwo_maximal` (linear chain; token `2` total)
 * **Lean File:** — (see proof notes)
-* **Proof Notes:** `Δ={0,1,2}`, `𝒟={{0,1,2},{1,2},{2}}` (linear); `neighborhoodSystem`, `element_classification` (exactly 3 filters), `bot_lt_elemTwelve`, `elemTwelve_lt_elemTwo`, `elemTwo_maximal` (linear chain; token `2` total)
 
 Scott's second worked example: `Δ = {0,1,2}` (`Token := Fin 3`, `master := Set.univ`),
 `𝒟 = {Δ, {1,2}, {2}}` — a **linear chain** under reverse inclusion (more information =
@@ -339,7 +351,6 @@ partial** elements and **one total**. Footprint `[propext, Classical.choice, Quo
 #### Example 1.4
 * **Mathematical Target:** depth-2 binary tree `Δ={Λ,0,1,00,01,10,11}`; subtrees as neighbourhoods; `neighborhoodSystem`, `element_classification` (exactly 7 filters), branch `bot_lt_elemZero/elemOne`, `elemZero_lt_elem00/01`, `elemOne_lt_elem10/11`, four leaf `elemXY_maximal` (first branching; 4 total elements)
 * **Lean File:** — (see proof notes)
-* **Proof Notes:** depth-2 binary tree `Δ={Λ,0,1,00,01,10,11}`; subtrees as neighbourhoods; `neighborhoodSystem`, `element_classification` (exactly 7 filters), branch `bot_lt_elemZero/elemOne`, `elemZero_lt_elem00/01`, `elemOne_lt_elem10/11`, four leaf `elemXY_maximal` (first branching; 4 total elements)
 
 Scott's third worked example and the first with **branching**: the depth-2 binary tree
 `Δ = {Λ,0,1,00,01,10,11}` (`Token := Fin 7`, with `Λ=0,…,11=6`), neighbourhoods the subtrees
@@ -368,7 +379,6 @@ the choice in extending a partial sequence. Footprint `[propext, Classical.choic
 #### Factoid 1.4a
 * **Mathematical Target:** `NestedOrDisjoint` + `NeighborhoodSystem.ofNestedOrDisjoint`: "*nested-or-disjoint*" ⟹ neighbourhood system (the "very special circumstance" of 1.2–1.4); choice-free
 * **Lean File:** `Scott1980/Neighborhood/Basic.lean`
-* **Proof Notes:** `NestedOrDisjoint` + `NeighborhoodSystem.ofNestedOrDisjoint`: "*nested-or-disjoint*" ⟹ neighbourhood system (the "very special circumstance" of 1.2–1.4); choice-free
 
 Scott's "very special circumstance" after Examples 1.2–1.4 is the predicate `NestedOrDisjoint mem
 := ∀ X Y, mem X → mem Y → X ⊆ Y ∨ Y ⊆ X ∨ X ∩ Y = ∅`. The constructor
@@ -383,7 +393,6 @@ Footprint `[propext, Quot.sound]`.
 #### Example 1.5
 * **Mathematical Target:** `Δ={0,1,2,3}`, `𝒟 =` all non-empty subsets; `Example15.neighborhoodSystem` (`mem X := X.Nonempty`), `mem_iff_nonempty`
 * **Lean File:** — (see proof notes)
-* **Proof Notes:** `Δ={0,1,2,3}`, `𝒟 =` all non-empty subsets; `Example15.neighborhoodSystem` (`mem X := X.Nonempty`), `mem_iff_nonempty`
 
 `Δ = {0,1,2,3}` (`Token := Fin 4`) with `𝒟` = all **non-empty** subsets (`mem X := X.Nonempty`,
 `master := Set.univ`). Condition (ii) is immediate and choice-free: a non-empty witness `Z ⊆ X ∩ Y`
@@ -399,7 +408,6 @@ contrast to the finite Examples 1.2–1.4.
 #### Factoid 1.5a
 * **Mathematical Target:** in 1.5: `consistent_iff_inter_nonempty` (consistent ⟺ non-empty intersection); `𝒟` is a system
 * **Lean File:** — (see proof notes)
-* **Proof Notes:** in 1.5: `consistent_iff_inter_nonempty` (consistent ⟺ non-empty intersection); `𝒟` is a system
 
 `Δ = {0,1,2,3}` (`Token := Fin 4`) with `𝒟` = all **non-empty** subsets (`mem X := X.Nonempty`,
 `master := Set.univ`). Condition (ii) is immediate and choice-free: a non-empty witness `Z ⊆ X ∩ Y`
@@ -415,7 +423,6 @@ contrast to the finite Examples 1.2–1.4.
 #### Factoid 1.5b
 * **Mathematical Target:** `limitFamily`, `SeqEquiv`, `limitFamily_eq_iff`: limit-family `x = {Z∈𝒟 ∣ ∃n, Xₙ⊆Z}` equal ⟺ sequences equivalent; choice-free
 * **Lean File:** — (see proof notes)
-* **Proof Notes:** `limitFamily`, `SeqEquiv`, `limitFamily_eq_iff`: limit-family `x = {Z∈𝒟 ∣ ∃n, Xₙ⊆Z}` equal ⟺ sequences equivalent; choice-free
 
 The prose motivating Definition 1.6: a descending sequence `⟨Xₙ⟩` of neighbourhoods determines the
 limit family `limitFamily X = {Z ∈ 𝒟 ∣ ∃ n, Xₙ ⊆ Z}`, and two sequences are `SeqEquiv` ("equally
@@ -427,9 +434,8 @@ needed for the criterion itself. Footprint `[propext, Quot.sound]`.
 
 
 #### Definition 1.6
-* **Mathematical Target:** `Element` (filter: `sub`, `master_mem`, `inter_mem`, `up_mem`) + `Element.ext`; domain `\
+* **Mathematical Target:** `Element` (filter: `sub`, `master_mem`, `inter_mem`, `up_mem`) + `Element.ext`; domain `|𝒟|`
 * **Lean File:** — (see proof notes)
-* **Proof Notes:** 𝒟\|` | **Pass**
 
 `Element V` is Scott's filter (Def 1.6): a membership predicate `mem : Set α → Prop` with `sub`
 (`x ⊆ 𝒟`), `master_mem` (`Δ ∈ x`), `inter_mem` (closed under `∩`), and `up_mem` (upward closed in
@@ -442,7 +448,6 @@ is just `Element.ext fun X => ⟨h1 X, h2 X⟩`. Footprint `[propext, Quot.sound
 #### Definition 1.7
 * **Mathematical Target:** `principal` `↑X = {Y∈𝒟 ∣ X⊆Y}` (`mem_principal`); the finite elements
 * **Lean File:** — (see proof notes)
-* **Proof Notes:** `principal` `↑X = {Y∈𝒟 ∣ X⊆Y}` (`mem_principal`); the finite elements
 
 Scott's *principal filter* `↑X = {Y ∈ 𝒟 ∣ X ⊆ Y}` is `principal (hX : V.mem X) : V.Element`,
 with `mem Y := V.mem Y ∧ X ⊆ Y`. The four filter laws: `sub` is the first projection;
@@ -468,7 +473,6 @@ application of upward closure `x.up_mem` (`X ⊆ Z` with `Z ∈ 𝒟`). All five
 #### Factoid 1.7a
 * **Mathematical Target:** "*obvious*": `X↦↑X` one-one & inclusion-**reversing** — `principal_le_iff` (`↑X⊑↑Y ⟺ Y⊆X`) + `principal_injective`
 * **Lean File:** — (see proof notes)
-* **Proof Notes:** "*obvious*": `X↦↑X` one-one & inclusion-**reversing** — `principal_le_iff` (`↑X⊑↑Y ⟺ Y⊆X`) + `principal_injective`
 
 Scott's *principal filter* `↑X = {Y ∈ 𝒟 ∣ X ⊆ Y}` is `principal (hX : V.mem X) : V.Element`,
 with `mem Y := V.mem Y ∧ X ⊆ Y`. The four filter laws: `sub` is the first projection;
@@ -492,9 +496,8 @@ application of upward closure `x.up_mem` (`X ⊆ Z` with `Z ∈ 𝒟`). All five
 
 
 #### Factoid 1.7b
-* **Mathematical Target:** "*also obvious*": `x = ⋃ {↑X ∣ X∈x}` for every `x∈\
+* **Mathematical Target:** "*also obvious*": `x = ⋃ {↑X ∣ X∈x}` for every `x∈|𝒟|` — `eq_iUnion_principal`
 * **Lean File:** — (see proof notes)
-* **Proof Notes:** 𝒟\|` — `eq_iUnion_principal` | **Pass**
 
 Scott's *principal filter* `↑X = {Y ∈ 𝒟 ∣ X ⊆ Y}` is `principal (hX : V.mem X) : V.Element`,
 with `mem Y := V.mem Y ∧ X ⊆ Y`. The four filter laws: `sub` is the first projection;
@@ -520,7 +523,6 @@ application of upward closure `x.up_mem` (`X ⊆ Z` with `Z ∈ 𝒟`). All five
 #### Definition 1.8 (order)
 * **Mathematical Target:** approximation `x⊑y ⟺ x⊆y` — `instance : PartialOrder Element` (choice-free `le_antisymm` via `Element.ext`)
 * **Lean File:** — (see proof notes)
-* **Proof Notes:** approximation `x⊑y ⟺ x⊆y` — `instance : PartialOrder Element` (choice-free `le_antisymm` via `Element.ext`)
 
 `Element V` is Scott's filter (Def 1.6): a membership predicate `mem : Set α → Prop` with `sub`
 (`x ⊆ 𝒟`), `master_mem` (`Δ ∈ x`), `inter_mem` (closed under `∩`), and `up_mem` (upward closed in
@@ -533,13 +535,11 @@ is just `Element.ext fun X => ⟨h1 X, h2 X⟩`. Footprint `[propext, Quot.sound
 #### Definition 1.8 (⊥, total)
 * **Mathematical Target:** `bot := principal master_mem` (`⊥={Δ}=↑Δ`), `mem_bot` (`Y∈⊥ ⟺ Y=Δ`); `IsTotal x := ∀ y, x⊑y→y⊑x` (predicate only, existence = Ex 1.24, out of scope)
 * **Lean File:** — (see proof notes)
-* **Proof Notes:** `bot := principal master_mem` (`⊥={Δ}=↑Δ`), `mem_bot` (`Y∈⊥ ⟺ Y=Δ`); `IsTotal x := ∀ y, x⊑y→y⊑x` (predicate only, existence = Ex 1.24, out of scope)
 
 
 #### Factoid 1.8a
 * **Mathematical Target:** `bot_le` (`⊥⊑x` for all `x`) + `instance OrderBot Element`; constructive
 * **Lean File:** — (see proof notes)
-* **Proof Notes:** `bot_le` (`⊥⊑x` for all `x`) + `instance OrderBot Element`; constructive
 
 Scott's bottom element `⊥ = {Δ}` is simply the principal filter of the master neighbourhood:
 `bot := principal master_mem`, i.e. `⊥ = ↑Δ`. `mem_bot` shows it really is the *singleton* `{Δ}`:
@@ -569,7 +569,6 @@ to `[propext, Quot.sound]`. All four new declarations are constructive.
 #### Factoid 1.8b
 * **Mathematical Target:** `eq_principal_of_isMin` (filter with `⊆`-minimum member `X` is `↑X`) — constructive core of "finite ⟹ principal"; the finiteness⟹min step left implicit
 * **Lean File:** — (see proof notes)
-* **Proof Notes:** `eq_principal_of_isMin` (filter with `⊆`-minimum member `X` is `↑X`) — constructive core of "finite ⟹ principal"; the finiteness⟹min step left implicit
 
 Scott's bottom element `⊥ = {Δ}` is simply the principal filter of the master neighbourhood:
 `bot := principal master_mem`, i.e. `⊥ = ↑Δ`. `mem_bot` shows it really is the *singleton* `{Δ}`:
@@ -599,145 +598,121 @@ to `[propext, Quot.sound]`. All four new declarations are constructive.
 #### Example 1.B
 * **Mathematical Target:** `B = {σΣ* ∣ σ∈Σ*}` (binary), generalizing 1.4 — `Str := List Bool`, `cone σ = σΣ*`, `B` via `ofNestedOrDisjoint` from prefix `cone_trichotomy`
 * **Lean File:** — (see proof notes)
-* **Proof Notes:** `B = {σΣ* ∣ σ∈Σ*}` (binary), generalizing 1.4 — `Str := List Bool`, `cone σ = σΣ*`, `B` via `ofNestedOrDisjoint` from prefix `cone_trichotomy`
 
 
 #### Exercise 1.B-sys
 * **Mathematical Target:** "*should be done as an exercise*": `B` is a neighbourhood system — `nestedOrDisjoint` (cones pairwise nested-or-disjoint)
 * **Lean File:** — (see proof notes)
-* **Proof Notes:** "*should be done as an exercise*": `B` is a neighbourhood system — `nestedOrDisjoint` (cones pairwise nested-or-disjoint)
 
 
 #### Exercise 1.B-elt
-* **Mathematical Target:** "*an exercise here*": `σx ∈ \
+* **Mathematical Target:** "*an exercise here*": `σx ∈ |B|` for `x∈|B|` — `sigmaElt σ x` (witness `σ(X₁∩X₂)` is a cone); `sigmaElt σ ⊥ = σ⊥` (`sigmaElt_bot`)
 * **Lean File:** — (see proof notes)
-* **Proof Notes:** B\|` for `x∈\|B\|` — `sigmaElt σ x` (witness `σ(X₁∩X₂)` is a cone); `sigmaElt σ ⊥ = σ⊥` (`sigmaElt_bot`) | **Pass**
 
 
 #### Factoid 1.B-mono
 * **Mathematical Target:** `σ₀⊥ ⊆ σ₁⊥ ⟺ σ₀` is an initial segment of `σ₁` — `sigmaBot_le_iff` (`σ₀⊥⊑σ₁⊥ ⟺ σ₀<+:σ₁`)
 * **Lean File:** — (see proof notes)
-* **Proof Notes:** `σ₀⊥ ⊆ σ₁⊥ ⟺ σ₀` is an initial segment of `σ₁` — `sigmaBot_le_iff` (`σ₀⊥⊑σ₁⊥ ⟺ σ₀<+:σ₁`)
 
 
 #### Factoid 1.B-lim
 * **Mathematical Target:** `x = ⋃ₙ σₙ⊥` (element = limit of finite approx.) — `mem_iff_exists_sigmaBot` (union-of-`σ⊥` form; chain enumeration left to prose / choice)
 * **Lean File:** — (see proof notes)
-* **Proof Notes:** `x = ⋃ₙ σₙ⊥` (element = limit of finite approx.) — `mem_iff_exists_sigmaBot` (union-of-`σ⊥` form; chain enumeration left to prose / choice)
 
 
 #### Definition 1.9
-* **Mathematical Target:** `𝒟₀ ≅ 𝒟₁`: order-iso of `\
+* **Mathematical Target:** `𝒟₀ ≅ 𝒟₁`: order-iso of `|𝒟₀|` and `|𝒟₁|` — `DomainIso := V₀.Element ≃o V₁.Element`, `Isomorphic`/`≅ᴰ := Nonempty DomainIso` with `refl`/`symm`/`trans`; `≃o` *reflects* `⊑` (`map_rel_iff`) = Scott's two-way inclusion-preservation
 * **Lean File:** `Scott1980/Neighborhood/Basic.lean`
-* **Proof Notes:** 𝒟₀\|` and `\|𝒟₁\|` — `DomainIso := V₀.Element ≃o V₁.Element`, `Isomorphic`/`≅ᴰ := Nonempty DomainIso` with `refl`/`symm`/`trans` (`Basic.lean`); `≃o` *reflects* `⊑` (`map_rel_iff`) = Scott's two-way inclusion-preservation | **Pass**
 
 
 #### Theorem 1.10
-* **Mathematical Target:** element-token system: `[X]={x ∣ X∈x}` (`bracket`); `tokenSystem : NeighborhoodSystem \
+* **Mathematical Target:** element-token system: `[X]={x ∣ X∈x}` (`bracket`); `tokenSystem : NeighborhoodSystem |𝒟|`; `𝒟 ≅ᴰ tokenSystem` via `tokenIso`/`isomorphic_tokenSystem` (mutually-inverse `toToken`/`ofToken`). Facts: `bracket_master` (1), `bracket_inter_nonempty_iff` (2), `bracket_inter` (3), `principal_mem_bracket` (4); one-one `bracket_injective`, preserving `bracket_subset_iff`
 * **Lean File:** `Scott1980/Neighborhood/Theorem110.lean`
-* **Proof Notes:** 𝒟\|`; `𝒟 ≅ᴰ tokenSystem` via `tokenIso`/`isomorphic_tokenSystem` (mutually-inverse `toToken`/`ofToken`). Facts: `bracket_master` (1), `bracket_inter_nonempty_iff` (2), `bracket_inter` (3), `principal_mem_bracket` (4); one-one `bracket_injective`, preserving `bracket_subset_iff` (`Theorem110.lean`) | **Pass**
 
 
 #### Theorem 1.11
-* **Mathematical Target:** `\
+* **Mathematical Target:** `|𝒟|` closed under countable `⋂` (`iInter`, no proviso) and ascending `⋃` (`iUnion`, `Monotone x`) — each again a filter; GLB `iInter_le`/`le_iInter`, LUB `le_iUnion`/`iUnion_le`; `mem_iInter`/`mem_iUnion`
 * **Lean File:** `Scott1980/Neighborhood/Theorem111.lean`
-* **Proof Notes:** 𝒟\|` closed under countable `⋂` (`iInter`, no proviso) and ascending `⋃` (`iUnion`, `Monotone x`) — each again a filter; GLB `iInter_le`/`le_iInter`, LUB `le_iUnion`/`iUnion_le`; `mem_iInter`/`mem_iUnion` (`Theorem111.lean`) | **Pass**
 
 
 #### Exercise 1.12
 * **Mathematical Target:** `Δ=ℕ`, final-segment `tail n={m ∣ n≤m}`; `neighborhoodSystem` (chain via `ofNestedOrDisjoint`); finite elts `fin n=↑(tail n)` (`fin_strictMono`); unique limit/total `top` (`le_top`, `top_isTotal`, `isTotal_iff_top`); `element_eq` (every elt `fin n` or `top`, classical) (`Exercise112.lean`)
 * **Lean File:** `Scott1980/Neighborhood/Exercise112.lean`
-* **Proof Notes:** `Δ=ℕ`, final-segment `tail n={m ∣ n≤m}`; `neighborhoodSystem` (chain via `ofNestedOrDisjoint`); finite elts `fin n=↑(tail n)` (`fin_strictMono`); unique limit/total `top` (`le_top`, `top_isTotal`, `isTotal_iff_top`); `element_eq` (every elt `fin n` or `top`, classical) (`Exercise112.lean`)
 
 
 #### Exercise 1.13
 * **Mathematical Target:** assertions about `B` = `ExampleB.lean`; this file adds the **limit nodes**: `branch p = ⋃ₙ (p↾n)⊥` (via Thm 1.11 `iUnion`), `branch_mem_iff`, `branchSeq_le_branch`, and `branch_isTotal` (each infinite path is a total/maximal element) (`Exercise113.lean`)
 * **Lean File:** `Scott1980/Neighborhood/ExampleB.lean`
-* **Proof Notes:** assertions about `B` = `ExampleB.lean`; this file adds the **limit nodes**: `branch p = ⋃ₙ (p↾n)⊥` (via Thm 1.11 `iUnion`), `branch_mem_iff`, `branchSeq_le_branch`, and `branch_isTotal` (each infinite path is a total/maximal element) (`Exercise113.lean`)
 
 
 #### Exercise 1.14
 * **Mathematical Target:** `Δ=ℕ`, `𝒟 =` finite non-empty subsets `∪ {Δ}`; `neighborhoodSystem` (manual `inter_mem`, not nested-or-disjoint); finite elts `fin h=↑X`; total elts = singletons `singleton_isTotal` (`↑{n}` maximal) (`Exercise114.lean`)
 * **Lean File:** `Scott1980/Neighborhood/Exercise114.lean`
-* **Proof Notes:** `Δ=ℕ`, `𝒟 =` finite non-empty subsets `∪ {Δ}`; `neighborhoodSystem` (manual `inter_mem`, not nested-or-disjoint); finite elts `fin h=↑X`; total elts = singletons `singleton_isTotal` (`↑{n}` maximal) (`Exercise114.lean`)
 
 
 #### Exercise 1.15
 * **Mathematical Target:** two infinite finite-element domains: `flat` (`{ℕ}∪{{n}}`, fully classified: `flat_classify`, `flat_atom_maximal`, `flat_no_three_chain`, `flat_no_infinite_chain`, `flat_all_finite`) and `stem` (`{ℕ,{0,1}}∪{{n}}`, `stem_three_chain`); `not_isomorphic` (3-chain transports under `≃o`) (`Exercise115.lean`)
 * **Lean File:** `Scott1980/Neighborhood/Exercise115.lean`
-* **Proof Notes:** two infinite finite-element domains: `flat` (`{ℕ}∪{{n}}`, fully classified: `flat_classify`, `flat_atom_maximal`, `flat_no_three_chain`, `flat_no_infinite_chain`, `flat_all_finite`) and `stem` (`{ℕ,{0,1}}∪{{n}}`, `stem_three_chain`); `not_isomorphic` (3-chain transports under `≃o`) (`Exercise115.lean`)
 
 
 #### Exercise 1.16
-* **Mathematical Target:** `Δ=ℕ`, `𝒟 =` cofinite subsets; `\
+* **Mathematical Target:** `Δ=ℕ`, `𝒟 =` cofinite subsets; `|𝒟| ≅ 𝒫(ℕ)` under `⊆` — `cofiniteSystem`, `ofExcluded`/`toExcluded`, `cofiniteIso` (excluded-point set), `mem_compl_of_finite` (`⋂_{n∈F}{n}ᶜ=Fᶜ`); total elt `ofExcluded ℕ` (`ofExcluded_univ_isTotal`); second `∩`-closed `fullSystem` (`Cofinite` ns)
 * **Lean File:** `Scott1980/Neighborhood/Exercise116.lean`
-* **Proof Notes:** 𝒟\| ≅ 𝒫(ℕ)` under `⊆` — `cofiniteSystem`, `ofExcluded`/`toExcluded`, `cofiniteIso` (excluded-point set), `mem_compl_of_finite` (`⋂_{n∈F}{n}ᶜ=Fᶜ`); total elt `ofExcluded ℕ` (`ofExcluded_univ_isTotal`); second `∩`-closed `fullSystem` (`Exercise116.lean`, `Cofinite` ns) | **Pass**
 
 
 #### Exercise 1.17
-* **Mathematical Target:** `Δ=ℝ`, `𝒟 =` rational open intervals `∪ {Δ}`; `ratIntervalSystem` (`inter_mem'` via `Ioo_inter_Ioo`+`max`/`min`), `filterAt t={X∣t∈X}` is a filter, `filterAt_injective` (`ℝ ↪ \
+* **Mathematical Target:** `Δ=ℝ`, `𝒟 =` rational open intervals `∪ {Δ}`; `ratIntervalSystem` (`inter_mem'` via `Ioo_inter_Ioo`+`max`/`min`), `filterAt t={X∣t∈X}` is a filter, `filterAt_injective` (`ℝ ↪ |𝒟|`); full total-elt classification documented as out-of-scope (`RatInterval` ns)
 * **Lean File:** `Scott1980/Neighborhood/Exercise117.lean`
-* **Proof Notes:** 𝒟\|`); full total-elt classification documented as out-of-scope (`Exercise117.lean`, `RatInterval` ns) | **Pass**
 
 
 #### Exercise 1.18
 * **Mathematical Target:** consistent `C⊆𝒟` (`FinitelyConsistent`); pairwise-but-not-jointly `triSys`/`family` (`family_pairwise_nonempty`, `not_finitelyConsistent`); `leastFilter` `⊇C` (`subset_leastFilter`/`leastFilter_le`, via `interUpTo_appendSeq`); `sInf` of a non-empty family of filters is a filter (`sInf_le`/`le_sInf`) (`Exercise118.lean`)
 * **Lean File:** `Scott1980/Neighborhood/Exercise118.lean`
-* **Proof Notes:** consistent `C⊆𝒟` (`FinitelyConsistent`); pairwise-but-not-jointly `triSys`/`family` (`family_pairwise_nonempty`, `not_finitelyConsistent`); `leastFilter` `⊇C` (`subset_leastFilter`/`leastFilter_le`, via `interUpTo_appendSeq`); `sInf` of a non-empty family of filters is a filter (`sInf_le`/`le_sInf`) (`Exercise118.lean`)
 
 
 #### Exercise 1.19
 * **Mathematical Target:** *positive* nbhd system (ii′: `X∩Y≠∅ ⟺ X∩Y∈𝒟`) — `IsPositive`, `ofPositive` (positive ⟹ system, in `Basic.lean`); positive `positiveExample`; non-positive `notPositiveSystem` (`{Δ,{0,1},{1,2}}`, intersection `{1}∉𝒟`; smaller than Hoare's `ℕ×ℕ`) `not_isPositive` (`Exercise119.lean`)
 * **Lean File:** `Scott1980/Neighborhood/Exercise119.lean`
-* **Proof Notes:** *positive* nbhd system (ii′: `X∩Y≠∅ ⟺ X∩Y∈𝒟`) — `IsPositive`, `ofPositive` (positive ⟹ system, in `Basic.lean`); positive `positiveExample`; non-positive `notPositiveSystem` (`{Δ,{0,1},{1,2}}`, intersection `{1}∉𝒟`; smaller than Hoare's `ℕ×ℕ`) `not_isPositive` (`Exercise119.lean`)
 
 
 #### Exercise 1.20
-* **Mathematical Target:** `Δ'=𝒟`, `𝒟'={↑X}` with `↑X={Y∈𝒟 ∣ Y⊆X}` (`upSet`, ≠ `principal`); `powerSystem`, `powerSystem_isPositive`; `\
+* **Mathematical Target:** `Δ'=𝒟`, `𝒟'={↑X}` with `↑X={Y∈𝒟 ∣ Y⊆X}` (`upSet`, ≠ `principal`); `powerSystem`, `powerSystem_isPositive`; `|𝒟|≅|𝒟'|` via `toPower`/`ofPower`/`powerIso`, `isomorphic_powerSystem`; tokens ↔ finite elements one-one (`toPower_principal`)
 * **Lean File:** `Scott1980/Neighborhood/Exercise120.lean`
-* **Proof Notes:** 𝒟\|≅\|𝒟'\|` via `toPower`/`ofPower`/`powerIso`, `isomorphic_powerSystem`; tokens ↔ finite elements one-one (`toPower_principal`) (`Exercise120.lean`) | **Pass**
 
 
 #### Exercise 1.21
-* **Mathematical Target:** (detail Thm 1.10) `{[X]}` over `\
+* **Mathematical Target:** (detail Thm 1.10) `{[X]}` over `|𝒟|` is *positive* (`tokenSystem_isPositive`) and *complete* (`IsComplete`, `tokenSystem_complete`: every filter fixed by a unique point `ofToken y`; `tokenSystem_toToken_bijective`); consistency `{Xᵢ∣i<n}` ⟺ `⋂_{i<n}[Xᵢ]≠∅` (`consistent_iff_iInter_bracket_nonempty`)
 * **Lean File:** `Scott1980/Neighborhood/Exercise121.lean`
-* **Proof Notes:** 𝒟\|` is *positive* (`tokenSystem_isPositive`) and *complete* (`IsComplete`, `tokenSystem_complete`: every filter fixed by a unique point `ofToken y`; `tokenSystem_toToken_bijective`); consistency `{Xᵢ∣i<n}` ⟺ `⋂_{i<n}[Xᵢ]≠∅` (`consistent_iff_iInter_bracket_nonempty`) (`Exercise121.lean`) | **Pass**
 
 
 #### Exercise 1.22
-* **Mathematical Target:** (for topologists) the `[X]` topologize `\
+* **Mathematical Target:** (for topologists) the `[X]` topologize `|𝒟|`; open sets `=` (i) `⊑`-upper `∧` (ii) basic-nbhd; `⊑` `=` specialization order — `basicOpen`, `instTopologicalSpaceElement`, `isOpen_basicOpen`, `isOpen_iff_upper_basic`, `le_iff_isOpen_imp`, `specializes_iff_le`
 * **Lean File:** — (see proof notes)
-* **Proof Notes:** 𝒟\|`; open sets `=` (i) `⊑`-upper `∧` (ii) basic-nbhd; `⊑` `=` specialization order — `basicOpen`, `instTopologicalSpaceElement`, `isOpen_basicOpen`, `isOpen_iff_upper_basic`, `le_iff_isOpen_imp`, `specializes_iff_le` | **Pass**
 
 
 #### Exercise 1.23
 * **Mathematical Target:** countable system (`enum`/`henum`/`hsurj`) + `[DecidablePred V.mem]` ⟹ greedy sequence `Yₙ`/`acc` gives a **total** element: `greedyElement`, `greedyElement_isTotal` (choice-free, `Y_prefix_consistent`); every filter is sequence-determined `filters_sequence_determined` (classical) (`Exercise123.lean`)
 * **Lean File:** `Scott1980/Neighborhood/Exercise123.lean`
-* **Proof Notes:** countable system (`enum`/`henum`/`hsurj`) + `[DecidablePred V.mem]` ⟹ greedy sequence `Yₙ`/`acc` gives a **total** element: `greedyElement`, `greedyElement_isTotal` (choice-free, `Y_prefix_consistent`); every filter is sequence-determined `filters_sequence_determined` (classical) (`Exercise123.lean`)
 
 
 #### Exercise 1.24
 * **Mathematical Target:** (set theorists) the union of a non-empty **chain** of filters is a filter — `chainUnion` (`inter_mem` via `IsChain.total`), `le_chainUnion`; **with Zorn** every element extends to a total one `exists_total_ge` (`zorn_le_nonempty_Ici₀`, `IsMax = IsTotal`) — **classical** (`Exercise124.lean`)
 * **Lean File:** `Scott1980/Neighborhood/Exercise124.lean`
-* **Proof Notes:** (set theorists) the union of a non-empty **chain** of filters is a filter — `chainUnion` (`inter_mem` via `IsChain.total`), `le_chainUnion`; **with Zorn** every element extends to a total one `exists_total_ge` (`zorn_le_nonempty_Ici₀`, `IsMax = IsTotal`) — **classical** (`Exercise124.lean`)
 
 
 #### Exercise 1.25
-* **Mathematical Target:** (set theorists) `Δ` linearly+well-ordered, `𝒟 =` non-empty upper sets (`finalSegmentSystem`); `\
+* **Mathematical Target:** (set theorists) `Δ` linearly+well-ordered, `𝒟 =` non-empty upper sets (`finalSegmentSystem`); `|𝒟| ≅ {non-empty lower sets}` under `⊆` — `finalSegmentClassify` (`lowerSetOf`/`ofLowerSet`); top element `topElement` is the unique total element (`topElement_isTotal`, `eq_topElement_of_isTotal`); with no maximum it is *not* finite/principal (`topElement_not_principal_of_noMax`)
 * **Lean File:** `Scott1980/Neighborhood/Exercise125.lean`
-* **Proof Notes:** 𝒟\| ≅ {non-empty lower sets}` under `⊆` — `finalSegmentClassify` (`lowerSetOf`/`ofLowerSet`); top element `topElement` is the unique total element (`topElement_isTotal`, `eq_topElement_of_isTotal`); with no maximum it is *not* finite/principal (`topElement_not_principal_of_noMax`) (`Exercise125.lean`) | **Pass**
 
 
 #### Exercise 1.26
-* **Mathematical Target:** (algebraists) commutative ring `A` (`[DecidableEq A]`), `Δ =` finite `F⊆A`, `I(F)={G ∣ F⊆⟨G⟩}` (`IFamily`, `IFamily_inter`); `ringSystem`; `\
+* **Mathematical Target:** (algebraists) commutative ring `A` (`[DecidableEq A]`), `Δ =` finite `F⊆A`, `I(F)={G ∣ F⊆⟨G⟩}` (`IFamily`, `IFamily_inter`); `ringSystem`; `|𝒟| ≅` ideals of `A` under `⊆` — `ringIso` (`idealOf`/`ofIdeal` mutually inverse)
 * **Lean File:** `Scott1980/Neighborhood/Exercise126.lean`
-* **Proof Notes:** 𝒟\| ≅` ideals of `A` under `⊆` — `ringIso` (`idealOf`/`ofIdeal` mutually inverse) (`Exercise126.lean`) | **Pass**
 
 
 #### Exercise 1.27
-* **Mathematical Target:** *bounded* `X⊆\
+* **Mathematical Target:** *bounded* `X⊆|𝒟|` (`Bounded`, `sSup` = `sInf` of `upperBounds`, `le_sSup`/`sSup_le`); `{U,W}` consistent in `𝒟` ⟺ `{↑U,↑W}` bounded `consistent_pair_iff_bounded` (choice-free); `X` bounded ⟺ every finite subset bounded `bounded_iff_finite_bounded` (uses 1.18)
 * **Lean File:** `Scott1980/Neighborhood/Exercise127.lean`
-* **Proof Notes:** 𝒟\|` (`Bounded`, `sSup` = `sInf` of `upperBounds`, `le_sSup`/`sSup_le`); `{U,W}` consistent in `𝒟` ⟺ `{↑U,↑W}` bounded `consistent_pair_iff_bounded` (choice-free); `X` bounded ⟺ every finite subset bounded `bounded_iff_finite_bounded` (uses 1.18) (`Exercise127.lean`) | **Pass**
 
 
 ---
@@ -782,91 +757,76 @@ flowchart TD
 #### Definition 2.1
 * **Mathematical Target:** `ApproximableMap`: relation `rel⊆𝒟₀×𝒟₁` (`rel_dom`/`rel_cod`) with (i) `master_rel`, (ii) `inter_right`, (iii) `mono`; relation-extensionality `ext` (`Approximable.lean`)
 * **Lean File:** `Scott1980/Neighborhood/Approximable.lean`
-* **Proof Notes:** `ApproximableMap`: relation `rel⊆𝒟₀×𝒟₁` (`rel_dom`/`rel_cod`) with (i) `master_rel`, (ii) `inter_right`, (iii) `mono`; relation-extensionality `ext` (`Approximable.lean`)
 
 
 #### Proposition 2.2
 * **Mathematical Target:** `toElementMap` (`f(x)={Y∣∃X∈x, X f Y}`, all of 2.1 used), `mem_toElementMap`, `rel_iff_mem_principal` (`X f Y ⟺ Y∈f(↑X)`), `toElementMap_mono`, `ext_of_toElementMap` (2.2(iv)) (`Approximable.lean`)
 * **Lean File:** `Scott1980/Neighborhood/Approximable.lean`
-* **Proof Notes:** `toElementMap` (`f(x)={Y∣∃X∈x, X f Y}`, all of 2.1 used), `mem_toElementMap`, `rel_iff_mem_principal` (`X f Y ⟺ Y∈f(↑X)`), `toElementMap_mono`, `ext_of_toElementMap` (2.2(iv)) (`Approximable.lean`)
 
 
 #### Example 2.3
 * **Mathematical Target:** `parityMap : B → T`: parity of 0's before first 1 via scanner `scan`/`valElt` (`scan_append` stability ⟹ `mono`); `T`=two-token domain of Ex 1.2 (`Example23.lean`)
 * **Lean File:** `Scott1980/Neighborhood/Example23.lean`
-* **Proof Notes:** `parityMap : B → T`: parity of 0's before first 1 via scanner `scan`/`valElt` (`scan_append` stability ⟹ `mono`); `T`=two-token domain of Ex 1.2 (`Example23.lean`)
 
 
 #### Example 2.4
 * **Mathematical Target:** `runMap : B → B`: eliminate first run of 1's via state machine `out`/`del`; `out_mono` (prefix-monotone) ⟹ `mono`; total `1`<sup>∞</sup> → partial `⊥` (`Example24.lean`, choice-free)
 * **Lean File:** `Scott1980/Neighborhood/Example24.lean`
-* **Proof Notes:** `runMap : B → B`: eliminate first run of 1's via state machine `out`/`del`; `out_mono` (prefix-monotone) ⟹ `mono`; total `1`<sup>∞</sup> → partial `⊥` (`Example24.lean`, choice-free)
 
 
 #### Theorem 2.5
 * **Mathematical Target:** category of nbhd systems + approximable maps: identity `idMap` (`X I_D Y ⟺ X⊆Y`), composition `comp g f` (`X g∘f Z ⟺ ∃Y, X f Y ∧ Y g Z`), laws `idMap_comp`/`comp_idMap`/`comp_assoc` (`Approximable.lean`)
 * **Lean File:** `Scott1980/Neighborhood/Approximable.lean`
-* **Proof Notes:** category of nbhd systems + approximable maps: identity `idMap` (`X I_D Y ⟺ X⊆Y`), composition `comp g f` (`X g∘f Z ⟺ ∃Y, X f Y ∧ Y g Z`), laws `idMap_comp`/`comp_idMap`/`comp_assoc` (`Approximable.lean`)
 
 
 #### Proposition 2.6
 * **Mathematical Target:** elementwise functor: `toElementMap_idMap` (`I_D(x)=x`), `toElementMap_comp` (`(g∘f)(x)=g(f(x))`) — concrete category of sets & functions (`Approximable.lean`)
 * **Lean File:** `Scott1980/Neighborhood/Approximable.lean`
-* **Proof Notes:** elementwise functor: `toElementMap_idMap` (`I_D(x)=x`), `toElementMap_comp` (`(g∘f)(x)=g(f(x))`) — concrete category of sets & functions (`Approximable.lean`)
 
 
 #### Theorem 2.7
-* **Mathematical Target:** every domain iso `e:\
+* **Mathematical Target:** every domain iso `e:|𝒟₀|≃o|𝒟₁|` comes from an approximable map `ofIso e` (`toElementMap_ofIso`: `(ofIso e)(x)=e(x)`; `exists_approximable_of_iso`); finite→finite `exists_principal_eq_apply_principal` via directed union `sSupDirected` (choice-free)
 * **Lean File:** `Scott1980/Neighborhood/Approximable.lean`
-* **Proof Notes:** 𝒟₀\|≃o\|𝒟₁\|` comes from an approximable map `ofIso e` (`toElementMap_ofIso`: `(ofIso e)(x)=e(x)`; `exists_approximable_of_iso`); finite→finite `exists_principal_eq_apply_principal` via directed union `sSupDirected` (`Approximable.lean`, choice-free) | **Pass**
 
 
 #### Exercise 2.8
 * **Mathematical Target:** determined by finite elements `eq_of_toElementMap_principal`; any monotone fn on finite elements extends: `ofMono`, `toElementMap_ofMono_principal` (`ApproximableExercises.lean`)
 * **Lean File:** `Scott1980/Neighborhood/ApproximableExercises.lean`
-* **Proof Notes:** determined by finite elements `eq_of_toElementMap_principal`; any monotone fn on finite elements extends: `ofMono`, `toElementMap_ofMono_principal` (`ApproximableExercises.lean`)
 
 
 #### Exercise 2.9
 * **Mathematical Target:** approximable `f` satisfies `f(x)=⋃{f(↑X)∣X∈x}` — `toElementMap_mem_iff_principal` (`ApproximableExercises.lean`)
 * **Lean File:** `Scott1980/Neighborhood/ApproximableExercises.lean`
-* **Proof Notes:** approximable `f` satisfies `f(x)=⋃{f(↑X)∣X∈x}` — `toElementMap_mem_iff_principal` (`ApproximableExercises.lean`)
 
 
 #### Exercise 2.10
 * **Mathematical Target:** Prop 2.6 (done in `Approximable.lean`); pointwise **meet** `h(x)=f(x)∩g(x)` — `interMap`, `mem_toElementMap_interMap` (`ApproximableExercises.lean`)
 * **Lean File:** `Scott1980/Neighborhood/ApproximableExercises.lean`
-* **Proof Notes:** Prop 2.6 (done in `Approximable.lean`); pointwise **meet** `h(x)=f(x)∩g(x)` — `interMap`, `mem_toElementMap_interMap` (`ApproximableExercises.lean`)
 
 
 #### Exercise 2.11
-* **Mathematical Target:** directed `a:I→\
+* **Mathematical Target:** directed `a:I→|D|` ⟹ `⋃ᵢ a(i)` is a filter (`iSupDirected`, `mem`/`le`/`le_`); approximable maps preserve directed `⋃` — `toElementMap_iSupDirected`
 * **Lean File:** `Scott1980/Neighborhood/ApproximableExercises.lean`
-* **Proof Notes:** D\|` ⟹ `⋃ᵢ a(i)` is a filter (`iSupDirected`, `mem`/`le`/`le_`); approximable maps preserve directed `⋃` — `toElementMap_iSupDirected` (`ApproximableExercises.lean`) | **Pass**
 
 
 #### Exercise 2.12
 * **Mathematical Target:** directed family `{fᵢ}` of approximable maps: pointwise union `⋃ᵢ fᵢ` approximable — `iSupMap`, `mem_toElementMap_iSupMap` (`ApproximableExercises.lean`)
 * **Lean File:** `Scott1980/Neighborhood/ApproximableExercises.lean`
-* **Proof Notes:** directed family `{fᵢ}` of approximable maps: pointwise union `⋃ᵢ fᵢ` approximable — `iSupMap`, `mem_toElementMap_iSupMap` (`ApproximableExercises.lean`)
 
 
 #### Exercise 2.13
-* **Mathematical Target:** (topologists) approximable maps = continuous maps between the `\
+* **Mathematical Target:** (topologists) approximable maps = continuous maps between the `|D|` spaces of Ex 1.22 — `continuous_toElementMap`, `ofContinuous`, `toElementMap_ofContinuous`, `mem_iff_principal_of_continuous` (choice-free)
 * **Lean File:** `Scott1980/Neighborhood/Exercise213.lean`
-* **Proof Notes:** D\|` spaces of Ex 1.22 — `continuous_toElementMap`, `ofContinuous`, `toElementMap_ofContinuous`, `mem_iff_principal_of_continuous` (`Exercise213.lean`, choice-free) | **Pass**
 
 
 #### Exercise 2.14
 * **Mathematical Target:** domain iso `e` and nbhd correspondence `φ` from Thm 2.7; `phi`/`phi_spec`, `rel_ofIso_iff` (`(ofIso e).rel X Y ⟺ φX⊆Y`), `phi_inter` (`φ(X∩X')=φX∩φX'` for consistent `X,X'`) (`Exercise214.lean`)
 * **Lean File:** `Scott1980/Neighborhood/Exercise214.lean`
-* **Proof Notes:** domain iso `e` and nbhd correspondence `φ` from Thm 2.7; `phi`/`phi_spec`, `rel_ofIso_iff` (`(ofIso e).rel X Y ⟺ φX⊆Y`), `phi_inter` (`φ(X∩X')=φX∩φX'` for consistent `X,X'`) (`Exercise214.lean`)
 
 
 #### Exercise 2.15
-* **Mathematical Target:** (topologists) one-token Sierpiński system `O`; opens of `\
+* **Mathematical Target:** (topologists) one-token Sierpiński system `O`; opens of `|D|` ↔ approximable maps `D→O` — `openToMap`/`mapToOpen`/`openSet_equiv_map` (builds on 2.13)
 * **Lean File:** `Scott1980/Neighborhood/Exercise215.lean`
-* **Proof Notes:** D\|` ↔ approximable maps `D→O` — `openToMap`/`mapToOpen`/`openSet_equiv_map` (`Exercise215.lean`, builds on 2.13) | **Pass**
 
 The one-token system `O` (master `{*}`, neighbourhoods `{∅?,{*}}`) is Scott's Sierpiński domain: its
 two elements are `⊥ ⊏ ⊤`. Building on Ex 2.13, open subsets of `|𝒟|` correspond bijectively to
@@ -888,31 +848,26 @@ characteristic-map data), so the footprint is `[propext, Classical.choice, Quot.
 #### Exercise 2.18
 * **Mathematical Target:** "spacing" map `h:B→B` (`b↦b0`) and left inverse `k`; `hMap`/`kMap`, `kMap_comp_hMap` (`k∘h=I_B`), `kMap_not_injective`, `hMap_not_surjective` (`h` not an iso) (`Exercise218.lean`, choice-free)
 * **Lean File:** `Scott1980/Neighborhood/Exercise218.lean`
-* **Proof Notes:** "spacing" map `h:B→B` (`b↦b0`) and left inverse `k`; `hMap`/`kMap`, `kMap_comp_hMap` (`k∘h=I_B`), `kMap_not_injective`, `hMap_not_surjective` (`h` not an iso) (`Exercise218.lean`, choice-free)
 
 
 #### Exercise 2.19
 * **Mathematical Target:** two-variable approximable maps `f:𝒟₀×𝒟₁→𝒟₂` as ternary relations — `ApproximableMap₂`, `toElementMap₂`, `rel₂_iff_mem_principal`, `toElementMap₂_mono` (`ApproximableExercises.lean`)
 * **Lean File:** `Scott1980/Neighborhood/ApproximableExercises.lean`
-* **Proof Notes:** two-variable approximable maps `f:𝒟₀×𝒟₁→𝒟₂` as ternary relations — `ApproximableMap₂`, `toElementMap₂`, `rel₂_iff_mem_principal`, `toElementMap₂_mono` (`ApproximableExercises.lean`)
 
 
 #### Exercise 2.20
-* **Mathematical Target:** powerset domain `𝒫` (cofinite nbhds over `ℕ`); `equivSetNat` (`\
+* **Mathematical Target:** powerset domain `𝒫` (cofinite nbhds over `ℕ`); `equivSetNat` (`|𝒫|≃o Set ℕ`); `unionMap`/`interMap₂` (`∪`,`∩` via Ex 2.19), `succMap`/`predMap` (`x±1`)
 * **Lean File:** `Scott1980/Neighborhood/Exercise220.lean`
-* **Proof Notes:** 𝒫\|≃o Set ℕ`); `unionMap`/`interMap₂` (`∪`,`∩` via Ex 2.19), `succMap`/`predMap` (`x±1`) (`Exercise220.lean`) | **Pass**
 
 
 #### Exercise 2.21
 * **Mathematical Target:** system `C ⊇ B` with finite *and* infinite total sequences (terminator singletons `{σ}`); `isTotal_singletonElt`, `bot_lt_Lambda` (`⊥⊏Λ`); juxtaposition `juxtapose : C×C→C` with `juxtapose_cone` (left bias) / `juxtapose_singleton_mem` (`Exercise221.lean`, choice-free)
 * **Lean File:** `Scott1980/Neighborhood/Exercise221.lean`
-* **Proof Notes:** system `C ⊇ B` with finite *and* infinite total sequences (terminator singletons `{σ}`); `isTotal_singletonElt`, `bot_lt_Lambda` (`⊥⊏Λ`); juxtaposition `juxtapose : C×C→C` with `juxtapose_cone` (left bias) / `juxtapose_singleton_mem` (`Exercise221.lean`, choice-free)
 
 
 #### Exercise 2.22
-* **Mathematical Target:** (set theorists) any family `C` closed under non-empty `⋂` + directed `⋃` is inclusion-iso to a domain — closure `Cl`, `reprSystem` (nbhds `C(F)={G∣F⊆Ḡ}`), `reprIso : \
+* **Mathematical Target:** (set theorists) any family `C` closed under non-empty `⋂` + directed `⋃` is inclusion-iso to a domain — closure `Cl`, `reprSystem` (nbhds `C(F)={G∣F⊆Ḡ}`), `reprIso : |reprSystem| ≃o C` (classical)
 * **Lean File:** `Scott1980/Neighborhood/Exercise222.lean`
-* **Proof Notes:** reprSystem\| ≃o C` (`Exercise222.lean`, classical) | **Pass**
 
 
 ---
@@ -980,181 +935,151 @@ flowchart TD
 #### Definition 3.1
 * **Mathematical Target:** `prod`, `prodNbhd` (`Sum.inl '' X ∪ Sum.inr '' Y`), element pairing `pair`, `Element.fst/snd` (`Product.lean`)
 * **Lean File:** `Scott1980/Neighborhood/Product.lean`
-* **Proof Notes:** `prod`, `prodNbhd` (`Sum.inl '' X ∪ Sum.inr '' Y`), element pairing `pair`, `Element.fst/snd` (`Product.lean`)
 
 
 #### Proposition 3.2
-* **Mathematical Target:** `prod` is a nbhd system; `prodEquiv : \
+* **Mathematical Target:** `prod` is a nbhd system; `prodEquiv : |𝒟₀×𝒟₁|≃o|𝒟₀|×|𝒟₁|`; `pair_le_pair_iff`
 * **Lean File:** `Scott1980/Neighborhood/Product.lean`
-* **Proof Notes:** 𝒟₀×𝒟₁\|≃o\|𝒟₀\|×\|𝒟₁\|`; `pair_le_pair_iff` (`Product.lean`) | **Pass**
 
 
 #### Definition 3.3
 * **Mathematical Target:** projections `proj₀`, `proj₁`; paired map `paired`; multivariate via `prod` (`Product.lean`)
 * **Lean File:** `Scott1980/Neighborhood/Product.lean`
-* **Proof Notes:** projections `proj₀`, `proj₁`; paired map `paired`; multivariate via `prod` (`Product.lean`)
 
 
 #### Proposition 3.4
 * **Mathematical Target:** `proj₀/proj₁/paired` approximable; `proj_comp_paired`; `toElementMap_paired_apply` (`⟨f,g⟩(w)=⟨f(w),g(w)⟩`) (`Product.lean`)
 * **Lean File:** `Scott1980/Neighborhood/Product.lean`
-* **Proof Notes:** `proj₀/proj₁/paired` approximable; `proj_comp_paired`; `toElementMap_paired_apply` (`⟨f,g⟩(w)=⟨f(w),g(w)⟩`) (`Product.lean`)
 
 
 #### Theorem 3.5
 * **Mathematical Target:** `toMap₂`/`ofMap₂`/`map₂Equiv`: `ApproximableMap (prod V₀ V₁) V₂ ≃ ApproximableMap₂ V₀ V₁ V₂` (joint ⟺ separate) (`Product.lean`)
 * **Lean File:** `Scott1980/Neighborhood/Product.lean`
-* **Proof Notes:** `toMap₂`/`ofMap₂`/`map₂Equiv`: `ApproximableMap (prod V₀ V₁) V₂ ≃ ApproximableMap₂ V₀ V₁ V₂` (joint ⟺ separate) (`Product.lean`)
 
 
 #### Lemma 3.6
 * **Mathematical Target:** constant map `constMap`; `toElementMap_constMap` (`Product.lean`)
 * **Lean File:** `Scott1980/Neighborhood/Product.lean`
-* **Proof Notes:** constant map `constMap`; `toElementMap_constMap` (`Product.lean`)
 
 
 #### Proposition 3.7
 * **Mathematical Target:** `substitution_toElementMap`: multivariate functions closed under substitution (`Product.lean`)
 * **Lean File:** `Scott1980/Neighborhood/Product.lean`
-* **Proof Notes:** `substitution_toElementMap`: multivariate functions closed under substitution (`Product.lean`)
 
 
 #### Definition 3.8
 * **Mathematical Target:** `step` (`[X,Y]={f∣X f Y}`), `stepFun`, `funSpace`; algebra `step_inter_right`/`step_subset`/`step_master_eq`/`step_mem` (`FunctionSpace.lean`)
 * **Lean File:** `Scott1980/Neighborhood/FunctionSpace.lean`
-* **Proof Notes:** `step` (`[X,Y]={f∣X f Y}`), `stepFun`, `funSpace`; algebra `step_inter_right`/`step_subset`/`step_master_eq`/`step_mem` (`FunctionSpace.lean`)
 
 
 #### Proposition 3.9
 * **Mathematical Target:** `interYs`, `leastMap` (cond. (ii) `X f₀ Y ⟺ ⋂{Yᵢ∣X⊆Xᵢ}⊆Y`), `leastMap_mem_stepFun`, `leastMap_le` (minimal element), `stepFun_subset_step_iff` (remark after 3.9) (`FunctionSpace.lean`)
 * **Lean File:** `Scott1980/Neighborhood/FunctionSpace.lean`
-* **Proof Notes:** `interYs`, `leastMap` (cond. (ii) `X f₀ Y ⟺ ⋂{Yᵢ∣X⊆Xᵢ}⊆Y`), `leastMap_mem_stepFun`, `leastMap_le` (minimal element), `stepFun_subset_step_iff` (remark after 3.9) (`FunctionSpace.lean`)
 
 
 #### Theorem 3.10
-* **Mathematical Target:** `funSpaceEquiv : \
+* **Mathematical Target:** `funSpaceEquiv : |𝒟₀→𝒟₁|≃o ApproximableMap V₀ V₁` (`toApproxMap`/`toFilter`); completeness, inclusion-preserving
 * **Lean File:** `Scott1980/Neighborhood/FunctionSpace.lean`
-* **Proof Notes:** 𝒟₀→𝒟₁\|≃o ApproximableMap V₀ V₁` (`toApproxMap`/`toFilter`); completeness, inclusion-preserving (`FunctionSpace.lean`) | **Pass**
 
 
 #### Theorem 3.11
 * **Mathematical Target:** `eval : ApproximableMap₂ (funSpace V₁ V₂) V₁ V₂`, `evalMap`; `evalMap_apply` (`eval(f,x)=f(x)`) (`FunctionSpace.lean`)
 * **Lean File:** `Scott1980/Neighborhood/FunctionSpace.lean`
-* **Proof Notes:** `eval : ApproximableMap₂ (funSpace V₁ V₂) V₁ V₂`, `evalMap`; `evalMap_apply` (`eval(f,x)=f(x)`) (`FunctionSpace.lean`)
 
 
 #### Theorem 3.12
 * **Mathematical Target:** `curry`, `uncurry`; `toElementMap_curry_apply`; `uncurry_curry`/`curry_uncurry`; `eval_comp_curry`/`curry_eval_comp`; `curryEquiv` (adjunction) (`FunctionSpace.lean`)
 * **Lean File:** `Scott1980/Neighborhood/FunctionSpace.lean`
-* **Proof Notes:** `curry`, `uncurry`; `toElementMap_curry_apply`; `uncurry_curry`/`curry_uncurry`; `eval_comp_curry`/`curry_eval_comp`; `curryEquiv` (adjunction) (`FunctionSpace.lean`)
 
 
 #### Theorem 3.13(i)
 * **Mathematical Target:** `le_iff_toElementMap_le` (`f⊑g ⟺ ∀x, f(x)⊑g(x)`) (`FunctionSpace.lean`)
 * **Lean File:** `Scott1980/Neighborhood/FunctionSpace.lean`
-* **Proof Notes:** `le_iff_toElementMap_le` (`f⊑g ⟺ ∀x, f(x)⊑g(x)`) (`FunctionSpace.lean`)
 
 
 #### Theorem 3.13(ii)
 * **Mathematical Target:** `mapsBounded_iff_pointwiseBounded` (`F` bounded ⟺ `{f(x)}` bounded ∀`x`) (`FunctionSpace.lean`)
 * **Lean File:** `Scott1980/Neighborhood/FunctionSpace.lean`
-* **Proof Notes:** `mapsBounded_iff_pointwiseBounded` (`F` bounded ⟺ `{f(x)}` bounded ∀`x`) (`FunctionSpace.lean`)
 
 
 #### Theorem 3.13(iii)
 * **Mathematical Target:** `sSupMaps` + `toElementMap_sSupMaps` (`(⊔F)(x) = ⊔{f(x)}`) (`FunctionSpace.lean`)
 * **Lean File:** `Scott1980/Neighborhood/FunctionSpace.lean`
-* **Proof Notes:** `sSupMaps` + `toElementMap_sSupMaps` (`(⊔F)(x) = ⊔{f(x)}`) (`FunctionSpace.lean`)
 
 
 #### Exercise 3.14
 * **Mathematical Target:** tagged product `0Δ₀∪1Δ₁` (disjointness unnecessary); `diag:D→D×D`; `n`-fold products
 * **Lean File:** `Scott1980/Neighborhood/Exercise314.lean`
-* **Proof Notes:** tagged product `0Δ₀∪1Δ₁` (disjointness unnecessary); `diag:D→D×D`; `n`-fold products
 
 
 #### Exercise 3.15
 * **Mathematical Target:** product isomorphisms: commutativity, associativity, empty product, functoriality
 * **Lean File:** `Scott1980/Neighborhood/Exercise315.lean`
-* **Proof Notes:** product isomorphisms: commutativity, associativity, empty product, functoriality
 
 
 #### Exercise 3.16
-* **Mathematical Target:** `𝒟`<sup>∞</sup> over `Δ`<sup>∞</sup>; 𝒟<sup>∞</sup>≅𝒟×𝒟<sup>∞</sup>; elements = infinite sequences of `\
+* **Mathematical Target:** `𝒟`<sup>∞</sup> over `Δ`<sup>∞</sup>; 𝒟<sup>∞</sup>≅𝒟×𝒟<sup>∞</sup>; elements = infinite sequences of `|𝒟|` elements
 * **Lean File:** `Scott1980/Neighborhood/Exercise316.lean`
-* **Proof Notes:** 𝒟\|` elements | **Pass** (`Exercise316.lean`)
 
 
 #### Exercise 3.17
 * **Mathematical Target:** B→T<sup>∞</sup> and T<sup>∞</sup>→B approximable; section/retraction; iso questions
 * **Lean File:** `Scott1980/Neighborhood/Exercise317.lean`
-* **Proof Notes:** B→T<sup>∞</sup> and T<sup>∞</sup>→B approximable; section/retraction; iso questions
 
 
 #### Exercise 3.18
 * **Mathematical Target:** *sum* system `𝒟₀+𝒟₁`; injections `inᵢ`, projections `outᵢ`; `outᵢ∘inᵢ=I`; `n`-term sums
 * **Lean File:** `Scott1980/Neighborhood/Exercise318.lean`
-* **Proof Notes:** *sum* system `𝒟₀+𝒟₁`; injections `inᵢ`, projections `outᵢ`; `outᵢ∘inᵢ=I`; `n`-term sums
 
 
 #### Exercise 3.19
 * **Mathematical Target:** functorial `f×g` and `f+g` on products/sums; `f×g=⟨f∘p₀,g∘p₁⟩`; `outᵢ∘(f+g)∘inᵢ=f/g`
 * **Lean File:** `Scott1980/Neighborhood/Exercise319.lean`
-* **Proof Notes:** functorial `f×g` and `f+g` on products/sums; `f×g=⟨f∘p₀,g∘p₁⟩`; `outᵢ∘(f+g)∘inᵢ=f/g`
 
 
 #### Exercise 3.20
 * **Mathematical Target:** (category theorists) `+` and `×` are functors; `×` is the categorical product
 * **Lean File:** `Scott1980/Neighborhood/Exercise319.lean`
-* **Proof Notes:** (category theorists) `+` and `×` are functors; `×` is the categorical product
 
 
 #### Exercise 3.21
 * **Mathematical Target:** `[Y,Z]` in `(D₁→D₂)` uniquely determines `Y,Z` when `Z≠Δ₂`; edge case `Z=Δ₂`
 * **Lean File:** `Scott1980/Neighborhood/Exercise321.lean`
-* **Proof Notes:** `[Y,Z]` in `(D₁→D₂)` uniquely determines `Y,Z` when `Z≠Δ₂`; edge case `Z=Δ₂`
 
 
 #### Exercise 3.22
 * **Mathematical Target:** composition `comp:(D₁→D₂)×(D₀→D₁)→(D₀→D₂)` approximable; `comp(g,f)=g∘f`; from `eval`+`curry`
 * **Lean File:** `Scott1980/Neighborhood/Exercise322.lean`
-* **Proof Notes:** composition `comp:(D₁→D₂)×(D₀→D₁)→(D₀→D₂)` approximable; `comp(g,f)=g∘f`; from `eval`+`curry`
 
 
 #### Exercise 3.23
 * **Mathematical Target:** (category theorists) domains + approximable maps form a cartesian closed category (3.11, 3.12)
 * **Lean File:** `Scott1980/Neighborhood/Exercise323.lean`
-* **Proof Notes:** (category theorists) domains + approximable maps form a cartesian closed category (3.11, 3.12)
 
 
 #### Exercise 3.24
 * **Mathematical Target:** more function-space isos: (i) `(D₀→D₁×D₂)≅(D₀→D₁)×(D₀→D₂)`, (ii) (D₀→D₁<sup>∞</sup>)≅(D₀→D₁)<sup>∞</sup>; (iii)(iv) as canonical mapping relationships (separated-sum bottom obstructs iso)
 * **Lean File:** `Scott1980/Neighborhood/Exercise324.lean`
-* **Proof Notes:** more function-space isos: (i) `(D₀→D₁×D₂)≅(D₀→D₁)×(D₀→D₂)`, (ii) (D₀→D₁<sup>∞</sup>)≅(D₀→D₁)<sup>∞</sup>; (iii)(iv) as canonical mapping relationships (separated-sum bottom obstructs iso)
 
 
 #### Exercise 3.25
-* **Mathematical Target:** (topologists) open subsets of `\
+* **Mathematical Target:** (topologists) open subsets of `|D|` form a domain (uses 3.10, Exercises 1.21 & 2.13)
 * **Lean File:** `Scott1980/Neighborhood/Exercise325.lean`
-* **Proof Notes:** D\|` form a domain (uses 3.10, Exercises 1.21 & 2.13) | **Pass** (`Exercise325.lean`)
 
 
 #### Exercise 3.26
 * **Mathematical Target:** conditional `cond:T×D×D→D` (`cond(true,x,y)=x`, etc.); sum variant `condSum:T×D₀×D₁→D₀+D₁`; `which:D₀+D₁→T` with `cond(which x,in₀ out₀ x,in₁ out₁ x)=x`
 * **Lean File:** `Scott1980/Neighborhood/Exercise326.lean`
-* **Proof Notes:** conditional `cond:T×D×D→D` (`cond(true,x,y)=x`, etc.); sum variant `condSum:T×D₀×D₁→D₀+D₁`; `which:D₀+D₁→T` with `cond(which x,in₀ out₀ x,in₁ out₁ x)=x`
 
 
 #### Exercise 3.27
 * **Mathematical Target:** (set theorists) alt proof `(D₀→D₁)` is a domain via Ex 2.22; compare with 3.9/3.10
 * **Lean File:** `Scott1980/Neighborhood/Exercise327.lean`
-* **Proof Notes:** (set theorists) alt proof `(D₀→D₁)` is a domain via Ex 2.22; compare with 3.9/3.10
 
 
 #### Exercise 3.28
 * **Mathematical Target:** minimal element of `⋂[Xᵢ,Yᵢ]` in function space: `f₀(x)=⊔{↑Yᵢ∣x∈[Xᵢ]}`
 * **Lean File:** `Scott1980/Neighborhood/Exercise328.lean`
-* **Proof Notes:** minimal element of `⋂[Xᵢ,Yᵢ]` in function space: `f₀(x)=⊔{↑Yᵢ∣x∈[Xᵢ]}`
 
 
 ---
@@ -1227,73 +1152,65 @@ flowchart TD
 #### Theorem 4.1
 * **Mathematical Target:** every approximable `f:D→D` has a **least** fixed point `fix(f)=⊔ₙ fⁿ(⊥)`
 * **Lean File:** `Scott1980/Neighborhood/Theorem41.lean`
-* **Proof Notes:** every approximable `f:D→D` has a **least** fixed point `fix(f)=⊔ₙ fⁿ(⊥)`
 
 
 #### Theorem 4.2
 * **Mathematical Target:** the fixed-point operator `fix:(D→D)→D` is itself approximable; `fix(f)=⊔ₙ fⁿ(⊥)`
 * **Lean File:** `Scott1980/Neighborhood/Theorem41.lean`
-* **Proof Notes:** the fixed-point operator `fix:(D→D)→D` is itself approximable; `fix(f)=⊔ₙ fⁿ(⊥)`
 
 
 #### Example 4.3
 * **Mathematical Target:** the natural-number domain `N` (infinite generalization of Ex 1.2); `0`, successor, predecessor
 * **Lean File:** `Scott1980/Neighborhood/Example43.lean`
-* **Proof Notes:** the natural-number domain `N` (infinite generalization of Ex 1.2); `0`, successor, predecessor
 
 
 #### Example 4.4
 * **Mathematical Target:** the domain `C` of finite/infinite binary sequences (Ex 2.21) as a structured domain
 * **Lean File:** `Scott1980/Neighborhood/Example44.lean`
-* **Proof Notes:** the domain `C` of finite/infinite binary sequences (Ex 2.21) as a structured domain
 
 
 #### Definition 4.5
 * **Mathematical Target:** *model for Peano's Axioms* `⟨N,0,⁺⟩` (zero not a successor, successor injective, induction)
 * **Lean File:** `Scott1980/Neighborhood/Theorem46.lean`
-* **Proof Notes:** *model for Peano's Axioms* `⟨N,0,⁺⟩` (zero not a successor, successor injective, induction)
 
 
 #### Theorem 4.6
 * **Mathematical Target:** all models of Peano's Axioms are isomorphic
 * **Lean File:** `Scott1980/Neighborhood/Theorem46.lean`
-* **Proof Notes:** all models of Peano's Axioms are isomorphic
 
 
 #### Exercise 4.7
 * **Mathematical Target:** `a⊑f(a)` ⟹ is there a fixed point `x=f(x)` with `a⊑x`?
 * **Lean File:** `Scott1980/Neighborhood/Exercise407.lean`
-* **Proof Notes:** `, `fixAbove_isFixed`, `le_fixAbove`, `fixAbove_least`; choice-free)
+* **Proof Notes:** **Yes** — replace `⊥` by `a`: the chain `a⊑f(a)⊑f²(a)⊑…` is increasing hence directed, so `fixAbove a f := ⊔ₙ fⁿ(a)` is a genuine element (approximable maps preserve directed unions, `toElementMap_iSupDirected`), giving a fixed point above `a` — `fixAbove_isFixed`, `le_fixAbove`, `fixAbove_least`; choice-free)
 
 
 #### Exercise 4.8
-* **Mathematical Target:** `f:D→D`, `S⊆\
+* **Mathematical Target:** `f:D→D`, `S⊆|D|` closure conditions for fixed points — `fix_induction` (fixed-point induction) + the `S={x∣a(x)=b(x)}` corollary `fix_induction_eq`
 * **Lean File:** `Scott1980/Neighborhood/Exercise408.lean`
-* **Proof Notes:** D\|` closure conditions for fixed points | **Pass** (`Exercise408.lean`: `fix_induction` (fixed-point induction) + the `S={x∣a(x)=b(x)}` corollary `fix_induction_eq`)
 
 
 #### Exercise 4.9
 * **Mathematical Target:** an approximable operator (least fixed point over a family)
 * **Lean File:** `Scott1980/Neighborhood/Exercise409.lean`
-* **Proof Notes:** ` with `bigPsi_apply : Ψ(θ)(f)=f(θ(f))`; `fix_eq_fixElement_bigPsi : fix = fix(Ψ)` via `bigPsi_fix`+`bigPsi_least`; operator data choice-free)
+* **Proof Notes:** the operator `Ψ : ((𝒟→𝒟)→𝒟)→((𝒟→𝒟)→𝒟)`, built from the cartesian-closed combinators as `Ψ=curry Φ` (`bigPsi`) with `bigPsi_apply : Ψ(θ)(f)=f(θ(f))`; `fix_eq_fixElement_bigPsi : fix = fix(Ψ)` via `bigPsi_fix`+`bigPsi_least`; operator data choice-free)
 
 
 #### Exercise 4.10
 * **Mathematical Target:** construct the relativized domain `Dₐ` (elements above `a`)
 * **Lean File:** `Scott1980/Neighborhood/Exercise410.lean`
-* **Proof Notes:** =a`, unique fixed point `relMap_unique_fixed`)
+* **Proof Notes:** `relSystem a` (`mem X := a.mem X`) is order-isomorphic to `{x∈|𝒟| ∣ x⊑a}` via `relIso`; if `f(a)=a` (e.g. `a=fix(f)`) then `f` restricts to `f':Dₐ→Dₐ` (`relMap`), and when `a=fix(f)` this `f'` has a unique fixed point `relMap_unique_fixed`)
 
 
 #### Exercise 4.11
 * **Mathematical Target:** (Plotkin) `fix` uniquely determined by general conditions on `D⇝F_D`
 * **Lean File:** `Scott1980/Neighborhood/Exercise411.lean`
-* **Proof Notes:** ); `fix_unique_of_uniform` via the inclusion `inclMap : Dₐ↪D` + Ex 4.10's unique fixed point)
+* **Proof Notes:** `fix` satisfies uniformity (`fixElement_uniform`: `h∘f₀=f₁∘h`, `h(⊥)=⊥` ⟹ `h(fix f₀)=fix f₁`, by induction + preservation of directed unions); `fix_unique_of_uniform` via the inclusion `inclMap : Dₐ↪D` + Ex 4.10's unique fixed point)
 
 
 #### Exercise 4.12
 * **Mathematical Target:** need `f` have a *maximum* fixed point? example with many fixed points
 * **Lean File:** `Scott1980/Neighborhood/Exercise412.lean`
-* **Proof Notes:** need `f` have a *maximum* fixed point? example with many fixed points
 
 
 #### Exercise 4.13
@@ -1305,73 +1222,68 @@ flowchart TD
 #### Exercise 4.14
 * **Mathematical Target:** need monotone `f:PA→PA` have a maximum fixed point?
 * **Lean File:** `Scott1980/Neighborhood/Exercise414.lean`
-* **Proof Notes:** need monotone `f:PA→PA` have a maximum fixed point?
 
 
 #### Exercise 4.15
-* **Mathematical Target:** (set theorists) monotone `f:\
+* **Mathematical Target:** (set theorists) monotone `f:|D|→|D|` has a *maximal* fixed point (Zorn) — `exists_maximal_fixedPoint` via `zorn_le₀` on post-fixed points + `chainUnion`; `exists_least_fixedPoint` via `monoFix`; classical
 * **Lean File:** `Scott1980/Neighborhood/Exercise415.lean`
-* **Proof Notes:** D\|→\|D\|` has a *maximal* fixed point (Zorn) | **Pass** (`Exercise415.lean`: `exists_maximal_fixedPoint` via `zorn_le₀` on post-fixed points + `chainUnion`; `exists_least_fixedPoint` via `monoFix`; classical)
 
 
 #### Exercise 4.16
 * **Mathematical Target:** (fixed-point nuts) the *optimal* fixed point
 * **Lean File:** `Scott1980/Neighborhood/Exercise416.lean`
-* **Proof Notes:** ⊑⋂S`; `optimalFix` below/consistent with every fixed point in `S` — `optimalFix_le`, `optimalFix_consistent`; choice-free data)
+* **Proof Notes:** for non-empty `S` a set of fixed points of monotone `f`, `f(⋂S)⊑⋂S` (`f_sInf_le`), so `⋂S` carries a least fixed point `optimalFix S`, itself `⊑⋂S`; `optimalFix` below/consistent with every fixed point in `S` — `optimalFix_le`, `optimalFix_consistent`; choice-free data)
 
 
 #### Exercise 4.17
 * **Mathematical Target:** (algebraists) semigroup `⟨S,1,·⟩`, `PS` a domain; least `x`
 * **Lean File:** `Scott1980/Neighborhood/Exercise417.lean`
-* **Proof Notes:** ; non-unique — `Set.univ` also fixed (`fixedPoint_not_unique`))
+* **Proof Notes:** the least `x` with `x={1}∪{a,b}∪x·x` is the submonoid generated by `{a,b}` — `lfpSet (F a b) = ⟨{a,b}⟩` (`lfpSet_eq_closure`), Knaster–Tarski via Ex 4.14; non-unique — `Set.univ` also fixed (`fixedPoint_not_unique`))
 
 
 #### Exercise 4.18
 * **Mathematical Target:** verify the assertions about `N`, `F` in Example 4.3
 * **Lean File:** `Scott1980/Neighborhood/Exercise418.lean`
-* **Proof Notes:** verify the assertions about `N`, `F` in Example 4.3
 
 
 #### Exercise 4.19
 * **Mathematical Target:** verify Example 4.4; `one:C→T` from the rest by a fixed-point equation
 * **Lean File:** `Scott1980/Neighborhood/Exercise419.lean`
-* **Proof Notes:** verify Example 4.4; `one:C→T` from the rest by a fixed-point equation
 
 
 #### Exercise 4.20
 * **Mathematical Target:** `fix(f∘g)=f(fix(g∘f))`
 * **Lean File:** `Scott1980/Neighborhood/Exercise420.lean`
-* **Proof Notes:** `fix(f∘g)=f(fix(g∘f))`
 
 
 #### Exercise 4.21
 * **Mathematical Target:** `≤ ⊆ N×N` as a unique fixed-point equation; addition/multiplication
 * **Lean File:** `Scott1980/Neighborhood/Exercise421.lean`
-* **Proof Notes:** ; the up-sets `[m] = upSet m` with `upSet_zero`/`upSet_succ`/`upSet_unique` (4.13(3)); the addition iso `addIso : ℕ ≃ [m]` (`addIso_apply`/`_zero`/`_succ`); multiplication `mulOp_lfp_eq_multiples` (least solution = multiples))
+* **Proof Notes:** `≤` is the unique fixed point of `ℓ={(n,n)}∪{(n,m⁺)∣(n,m)∈ℓ}` in `P(N×N)` — `leRel_isFixed` + uniqueness `leOp_unique` (induction on the second coordinate); the up-sets `[m] = upSet m` with `upSet_zero`/`upSet_succ`/`upSet_unique` (4.13(3)); the addition iso `addIso : ℕ ≃ [m]` (`addIso_apply`/`_zero`/`_succ`); multiplication `mulOp_lfp_eq_multiples` (least solution = multiples))
 
 
 #### Exercise 4.22
 * **Mathematical Target:** `N*` satisfying (i)(ii) ⟹ subset `N` satisfying (i)(ii)(iii)?
 * **Lean File:** `Scott1980/Neighborhood/Exercise422.lean`
-* **Proof Notes:** `, `zero_mem_nats`/`succ_mem_nats`/`nats_induction`; `peanoSub : PeanoModel {m // m ∈ nats}` (all three axioms) ⟹ `exists_peano_submodel`; existence via the axiom of infinity `natPeano`)
+* **Proof Notes:** **Yes** — the least fixed point `nats` of `g(x)={0}∪x⁺` in `P(N*)` (Knaster–Tarski, Ex 4.14) is the smallest subset containing `0` and closed under `⁺`, `zero_mem_nats`/`succ_mem_nats`/`nats_induction`; `peanoSub : PeanoModel {m // m ∈ nats}` (all three axioms) ⟹ `exists_peano_submodel`; existence via the axiom of infinity `natPeano`)
 
 
 #### Exercise 4.23
 * **Mathematical Target:** (Eilenberg) unique fixed point under an approximation `aₙ` scheme
 * **Lean File:** `Scott1980/Neighborhood/Exercise423.lean`
-* **Proof Notes:** `a₀=⊥`, (ii)+(iii) pointwise `IsLUB`, (iv) `aₙ₊₁∘f=aₙ₊₁∘f∘aₙ`); choice-free)
+* **Proof Notes:** given `f` approximable and a sequence `aₙ` with (i) `a₀=⊥`, (ii)+(iii) pointwise `IsLUB`, (iv) `aₙ₊₁∘f=aₙ₊₁∘f∘aₙ`); choice-free)
 
 
 #### Exercise 4.24
 * **Mathematical Target:** (set theorists) Schröder–Bernstein via the fixed-point theorem (Tarski)
 * **Lean File:** `Scott1980/Neighborhood/Exercise424.lean`
-* **Proof Notes:** ∪g(f X))` (choice-free), bijection `sbFun` with `sbFun_injective`/`sbFun_surjective` ⟹ `schroeder_bernstein` + `schroeder_bernstein_equiv : A ≃ B`; classical)
+* **Proof Notes:** for one-one `f:A→B`, `g:B→A`, a fixed point `X` of `T(X)=(A−g(B))∪g(f(X))` in `P A` (Knaster–Tarski, Ex 4.14) splits `A` into `h(a)=f(a)` on `X`, `h(a)=g⁻¹(a)` off `X` (choice-free), bijection `sbFun` with `sbFun_injective`/`sbFun_surjective` ⟹ `schroeder_bernstein` + `schroeder_bernstein_equiv : A ≃ B`; classical)
 
 
 #### Exercise 4.25
 * **Mathematical Target:** the system `C₁` over `{1}*` analogous to `N`
 * **Lean File:** `Scott1980/Neighborhood/Exercise425.lean`
-* **Proof Notes:** , `oneElem`/`oneBot`, successor `consMap` (`consMap_oneElem`/`_oneBot`), the infinite fixed point infElt = 1<sup>∞</sup> (`infElt_eq`) distinguishing non-flat `C₁` from flat `N`, and the relating map `relateNToC1 : N → C₁`; data choice-free)
+* **Proof Notes:** `C₁ = {tail n} ∪ {{1ⁿ}}` (nested-or-disjoint over unary strings `1ⁿ↔n`), total elements `oneElem`/partial `oneBot`, successor `consMap` (`consMap_oneElem`/`_oneBot`), the infinite fixed point `infElt = 1`<sup>∞</sup> (`infElt_eq`) distinguishing non-flat `C₁` from flat `N`, and the relating map `relateNToC1 : N → C₁`; data choice-free `oneElem`/`oneBot`, successor `consMap` (`consMap_oneElem`/`_oneBot`), the infinite fixed point infElt = 1<sup>∞</sup> (`infElt_eq`) distinguishing non-flat `C₁` from flat `N`, and the relating map `relateNToC1 : N → C₁`; data choice-free)
 
 
 ---
@@ -1432,31 +1344,26 @@ flowchart TD
 #### Theorem 5.1
 * **Mathematical Target:** every typed `λ`-term defines an approximable function of its free variables
 * **Lean File:** `Scott1980/Neighborhood/Theorem51.lean`
-* **Proof Notes:** every typed `λ`-term defines an approximable function of its free variables
 
 
 #### Theorem 5.2
 * **Mathematical Target:** the conversion/substitution equation for suitably typed `λ`-terms
 * **Lean File:** `Scott1980/Neighborhood/Theorem52.lean`
-* **Proof Notes:** the conversion/substitution equation for suitably typed `λ`-terms
 
 
 #### Proposition 5.3
 * **Mathematical Target:** least fixed point of a pair-valued `λ`, coordinatewise (Bekić)
 * **Lean File:** `Scott1980/Neighborhood/Proposition53.lean`
-* **Proof Notes:** least fixed point of a pair-valued `λ`, coordinatewise (Bekić)
 
 
 #### Proposition 5.4
 * **Mathematical Target:** fixed-point equation for `g:(D→D)`
 * **Lean File:** `Scott1980/Neighborhood/Proposition54.lean`
-* **Proof Notes:** fixed-point equation for `g:(D→D)`
 
 
 #### Table 5.5
 * **Mathematical Target:** summary table: combinators defined via `λ`-notation
 * **Lean File:** `Scott1980/Neighborhood/Table55.lean`
-* **Proof Notes:** summary table: combinators defined via `λ`-notation
 
 
 #### Theorem 5.6
@@ -1468,61 +1375,55 @@ flowchart TD
 #### Exercise 5.7
 * **Mathematical Target:** multi-variable `λ`/application from one-variable forms (`p₀`,`p₁`,`pair`)
 * **Lean File:** `Scott1980/Neighborhood/Exercise507.lean`
-* **Proof Notes:** multi-variable `λ`/application from one-variable forms (`p₀`,`p₁`,`pair`)
 
 
 #### Exercise 5.8
 * **Mathematical Target:** (combinator nuts) combinatory completeness: bracket abstraction (`I`/`K`/`S`) eliminates `λ`, `σ(τ)` only
 * **Lean File:** `Scott1980/Neighborhood/Exercise508.lean`
-* **Proof Notes:** (combinator nuts) combinatory completeness: bracket abstraction (`I`/`K`/`S`) eliminates `λ`, `σ(τ)` only
 
 
 #### Exercise 5.9
 * **Mathematical Target:** commuting `f,g` have a least common fixed point (cf. 4.20)
 * **Lean File:** `Scott1980/Neighborhood/Exercise509.lean`
-* **Proof Notes:** commuting `f,g` have a least common fixed point (cf. 4.20)
 
 
 #### Exercise 5.10
 * **Mathematical Target:** the *smash product* `D₀⊗D₁`, the *strict function space* `D₀→⊥D₁`, and the adjunction `(D₀⊗D₁)→⊥D₂ ≃ D₀→⊥(D₁→⊥D₂)`
 * **Lean File:** `Scott1980/Neighborhood/Exercise510.lean`
-* **Proof Notes:** the *smash product* `D₀⊗D₁`, the *strict function space* `D₀→⊥D₁`, and the adjunction `(D₀⊗D₁)→⊥D₂ ≃ D₀→⊥(D₁→⊥D₂)`
 
 
 #### Exercise 5.11
 * **Mathematical Target:** `D`<sup>∞</sup> as bottomless *stacks*; stack combinators (head/tail/push/diag/map)
 * **Lean File:** `Scott1980/Neighborhood/Exercise511.lean`
-* **Proof Notes:** `D`<sup>∞</sup> as bottomless *stacks*; stack combinators (head/tail/push/diag/map)
 
 
 #### Exercise 5.12
 * **Mathematical Target:** the `while` combinator on `D` by least fixed point
 * **Lean File:** `Scott1980/Neighborhood/Exercise512.lean`
-* **Proof Notes:** the `while` combinator on `D` by least fixed point
 
 
 #### Exercise 5.13
 * **Mathematical Target:** a one-one pairing `num:N×N→N`
 * **Lean File:** `Scott1980/Neighborhood/Exercise513.lean`
-* **Proof Notes:** (n+m+1)/2+m` (Cantor diagonal), the three recurrences + `num_injective`, the bijection `numEquiv:ℕ×ℕ≃ℕ` (choice-free inverse `unnum`); power-set domains as `(Set·,⊆)`, `setCongr` order-iso ⟹ `P N≅P(N×N)`, `P N≅P N×P N`, `P(N×N)≅P N×P N`; choice-free)
+* **Proof Notes:** closed form `num(n,m) = (n+m)(n+m+1)/2+m` (Cantor diagonal), the three recurrences + `num_injective`, the bijection `numEquiv:ℕ×ℕ≃ℕ` (choice-free inverse `unnum`); power-set domains as `(Set·,⊆)`, `setCongr` order-iso ⟹ `P N≅P(N×N)`, `P N≅P N×P N`, `P(N×N)≅P N×P N`; choice-free)
 
 
 #### Exercise 5.14
 * **Mathematical Target:** approximable `fun`/`graph` mappings
 * **Lean File:** `Scott1980/Neighborhood/Exercise514.lean`
-* **Proof Notes:** ×ℕ≃ℕ` (`tag_injective`; `tag_surjective` by strong induction, decreasing via `num_succ_left_gt`). With `Fun u x={m∣∃ns⊆x, tag ns m∈u}`, `Graph f={tag ns m∣m∈f(entries ns)}` and `IsApprox` (monotone + finite-approx): `Fun_Graph` (`fun∘graph=λf.f` for continuous `f`), `id_le_Graph_Fun` (`graph∘fun⊇λx.x`), `Fun_isApprox` (every `Fun u` is approximable); `Pω=(Set ℕ,⊆)` per 4.17/5.13; choice-free)
+* **Proof Notes:** the tag coding `[n₀,…,n_k]=num(n₀,[n₁,…,n_k])`, packaged as `tag:List ℕ×ℕ≃ℕ` (`tag_injective`; `tag_surjective` by strong induction, decreasing via `num_succ_left_gt`). With `Fun u x={m∣∃ns⊆x, tag ns m∈u}`, `Graph f={tag ns m∣m∈f(entries ns)}` and `IsApprox` (monotone + finite-approx): `Fun_Graph` (`fun∘graph=λf.f` for continuous `f`), `id_le_Graph_Fun` (`graph∘fun⊇λx.x`), `Fun_isApprox` (every `Fun u` is approximable); `Pω=(Set ℕ,⊆)` per 4.17/5.13; choice-free)
 
 
 #### Exercise 5.15
 * **Mathematical Target:** (algebraists) free semigroup `{0,1}*`, `P{0,1}*` as a domain
 * **Lean File:** `Scott1980/Neighborhood/Exercise515.lean`
-* **Proof Notes:** ` for any monoid `S`. `star z=⋃ₙ zⁿ` (recursive `kpow`, `star_eq: z*=Λ∪z·z*`). **Arden's lemma** `arden: lfpSet(λw.z·w∪v)=z*·v` (no `Monotone`). (1) `part1`: `lfpSet(λz.{e}·z∪{e'})=star{e}·{e'}` with `mem_star_singleton` (`e*={Λ,e,e²,…}`), specialised to `FreeMonoid Bool` (`part1_freeMonoid`). (2) David Park: `parkX=(a∪b·a*·b)*·(c∪b·a*·d)`, `parkY=a*·(b·x₀∪d)` — `park_solves` (solve the system) + `park_least` (below every solution = least), by Gaussian elimination via `arden`. Choice-free: reproves `mul_assoc`/dist (`smul_assoc`/`sunion_mul`/`smul_union`) at membership level since Mathlib's `Set` `*`-algebra, `⋃` order lemmas, `Set`-power, `mem_powers_iff` and `Monotone`-over-`Set` all pull `Classical.choice` here)
+* **Proof Notes:** the powerset domain `P S=(Set S,⊆)` of a monoid `S`, pointwise product `s·t={u·v∣u∈s,v∈t}`, as a fact about the Kleene algebra `(Set S,∪,·,∅,{1})` for any monoid `S`. `star z=⋃ₙ zⁿ` (recursive `kpow`, `star_eq: z*=Λ∪z·z*`). **Arden's lemma** `arden: lfpSet(λw.z·w∪v)=z*·v` (no `Monotone`). (1) `part1`: `lfpSet(λz.{e}·z∪{e'})=star{e}·{e'}` with `mem_star_singleton` (`e*={Λ,e,e²,…}`), specialised to `FreeMonoid Bool` (`part1_freeMonoid`). (2) David Park: `parkX=(a∪b·a*·b)*·(c∪b·a*·d)`, `parkY=a*·(b·x₀∪d)` — `park_solves` (solve the system) + `park_least` (below every solution = least), by Gaussian elimination via `arden`. Choice-free: reproves `mul_assoc`/dist (`smul_assoc`/`sunion_mul`/`smul_union`) at membership level since Mathlib's `Set` `*`-algebra, `⋃` order lemmas, `Set`-power, `mem_powers_iff` and `Monotone`-over-`Set` all pull `Classical.choice` here)
 
 
 #### Exercise 5.16
 * **Mathematical Target:** a fixed-point definition of `neg:C→C`
 * **Lean File:** `Scott1980/Neighborhood/Exercise516.lean`
-* **Proof Notes:** =x`, `tail(Λ)=⊥`, the item left to the reader) via `Exercise419.liftC`. `negMap:C→C` (`neg(0x)=1·neg(x)`, `neg(1x)=0·neg(x)`) solved in closed form (`neg(σ)=flip σ`, `flip=List.map not`) via `liftC`; recursion eqs `neg_cons_false`/`neg_cons_true` (so it is *the* solution) and **`negMap_negMap: neg(neg x)=x` for all `x∈|C|`** — proved by determination on the finite elements (`eq_of_toElementMap_principal`, Ex 2.8) where it is `flip∘flip=id`. `dMap:C→C` (bit-doubling `d(0x)=00·d(x)`) via `liftC` (`d(σ)=double σ`). `mergeMap:C×C→C` (`merge(εx,δy)=ε·δ·merge(x,y)`) built directly as an approximable map out of `prod C C` from an explicit interleave value function `mergeVal` on tagged strings `(b,σ)` (`b`=total/partial); the boundary Scott flags is resolved by the unique *monotone* convention (`merge(Λ,y)=Λ`, `merge(εx,y)=ε⊥` once `y` runs out), proved monotone (`mergeVal_SLe`/`mergeElem_mono`, the crux of approximability). Recursion eq `mergeMap_cons` (for all `x,y`, via product extensionality `prodMap_ext`) and **`mergeMap_diag: merge(x,x)=d(x)`**. All *data* choice-free `[propext,Quot.sound]`; map equalities use `Classical.choice` only via `eq_of_toElementMap_principal`. **The Thue–Morse properties of `t=0·merge(neg t,tail t)` are now done too:** `Exercise516ThueMorse.lean` defines `tmOp=Φ`, `tElt=t` (least fixed point), proves the unfolding `tElt_unfold` (`t=0·merge(neg t,tail t)`); the finite approximants `Φⁿ⁺¹(⊥)=(expandⁿ[0])⊥` are the Thue–Morse-morphism iterates (`expand`=`0↦01,1↦10`), and via the parity bit-function `tm n=⊕(binary digits of n)` (recurrences `tm(2n)=tm n`, `tm(2n+1)=¬tm n`) the bridge `expand_iterate_eq` shows `expandⁿ[0]=tmList(2ⁿ)`. **Property (a)** = `tElt_mem_cone_iff`: `σ` is a prefix of `t` iff `σ=tmList σ.length` (so the `n`-th digit of `t` is `tm n`, Lambek's digit-sum-mod-2 description) — fully choice-free `[propext,Quot.sound]`. `Exercise516Overlap.lean` proves **property (b)**, overlap-freeness, from scratch (no domain theory): `no_three_consec` (period-1), the descent on the period (even→half, odd≥5→a run of three), `no_overlap` (no factor of length `2p+1` with period `p`), and Scott's literal cube form `tElt_cube_free` (`t≠u·a·a·a·v` for nonempty `a`) via `no_cube`)
+* **Proof Notes:** `tail:C→C` (`tail(bx)=x`, `tail(Λ)=⊥`, the item left to the reader) via `Exercise419.liftC`. `negMap:C→C` (`neg(0x)=1·neg(x)`, `neg(1x)=0·neg(x)`) solved in closed form (`neg(σ)=flip σ`, `flip=List.map not`) via `liftC`; recursion eqs `neg_cons_false`/`neg_cons_true` (so it is *the* solution) and **`negMap_negMap: neg(neg x)=x` for all `x∈|C|`** — proved by determination on the finite elements (`eq_of_toElementMap_principal`, Ex 2.8) where it is `flip∘flip=id`. `dMap:C→C` (bit-doubling `d(0x)=00·d(x)`) via `liftC` (`d(σ)=double σ`). `mergeMap:C×C→C` (`merge(εx,δy)=ε·δ·merge(x,y)`) built directly as an approximable map out of `prod C C` from an explicit interleave value function `mergeVal` on tagged strings `(b,σ)` (`b`=total/partial); the boundary Scott flags is resolved by the unique *monotone* convention (`merge(Λ,y)=Λ`, `merge(εx,y)=ε⊥` once `y` runs out), proved monotone (`mergeVal_SLe`/`mergeElem_mono`, the crux of approximability). Recursion eq `mergeMap_cons` (for all `x,y`, via product extensionality `prodMap_ext`) and **`mergeMap_diag: merge(x,x)=d(x)`**. All *data* choice-free `[propext,Quot.sound]`; map equalities use `Classical.choice` only via `eq_of_toElementMap_principal`. **The Thue–Morse properties of `t=0·merge(neg t,tail t)` are now done too:** `Exercise516ThueMorse.lean` defines `tmOp=Φ`, `tElt=t` (least fixed point), proves the unfolding `tElt_unfold` (`t=0·merge(neg t,tail t)`); the finite approximants `Φⁿ⁺¹(⊥)=(expandⁿ[0])⊥` are the Thue–Morse-morphism iterates (`expand`=`0↦01,1↦10`), and via the parity bit-function `tm n=⊕(binary digits of n)` (recurrences `tm(2n)=tm n`, `tm(2n+1)=¬tm n`) the bridge `expand_iterate_eq` shows `expandⁿ[0]=tmList(2ⁿ)`. **Property (a)** = `tElt_mem_cone_iff`: `σ` is a prefix of `t` iff `σ=tmList σ.length` (so the `n`-th digit of `t` is `tm n`, Lambek's digit-sum-mod-2 description) — fully choice-free `[propext,Quot.sound]`. `Exercise516Overlap.lean` proves **property (b)**, overlap-freeness, from scratch (no domain theory): `no_three_consec` (period-1), the descent on the period (even→half, odd≥5→a run of three), `no_overlap` (no factor of length `2p+1` with period `p`), and Scott's literal cube form `tElt_cube_free` (`t≠u·a·a·a·v` for nonempty `a`) via `no_cube`)
 
 
 ---
@@ -1629,97 +1530,97 @@ flowchart TD
 #### Example 6.1
 * **Mathematical Target:** iterating `D×D` indefinitely into a single domain (`D`<sup>∞</sup>-style construct)
 * **Lean File:** `Scott1980/Neighborhood/Example61.lean`
-* **Proof Notes:** . Tokens live in `Γ = {1,2}* 0 Δ`, modelled as `List Bool × α` with master `Γ = {t ∣ t.2 ∈ Δ}` (`true=1`, `false=2`); the three neighbourhood embeddings `embZero X = 0X`, `embL P = 1P`, `embR Q = 2Q`, `embPair P Q = 1P ∪ 2Q` with their intersection/subset/injectivity/disjointness API. `MemS D` is the inductive least family containing (i) `Γ`, (ii) `0X` for `X∈𝒟`, (iii) `1P∪2Q` for P,Q∈𝒟<sup>§</sup>; **`memS_inter`** is Scott's central closure-under-consistent-intersection proof by induction on the derivation (cross cases `0A∩(1P∪2Q)=∅` discharged via non-emptiness `memS_nonempty`, needing the standing `∅∉𝒟` as `hD`). `Dsharp D hD` packages the system. The **domain equation** `dsharp_domain_equation : Dsharp D hD ≅ᴰ sum D (prod (Dsharp D hD) (Dsharp D hD)) …` is built as the explicit order-iso `dsharpEquiv` (forward `toS`/inverse `fromS` filter maps, the inverse laws `fromS_toS`/`toS_fromS`, and `map_rel_iff'`), routed through the project's `+` (Ex 3.18) and `×` (Def 3.1) with the shape-inversion lemmas `memS_embZero_inv`/`memS_embPair_inv`/`sum_mem_inj₀_inv`/`sum_mem_inj₁_inv`. Also the isomorphic injections `inSharp` (x<sup>§</sup> = {Γ}∪{0X∣X∈x}, `inSharp_le_iff`) and `pairSharp` (`⟨x,y⟩ = {Γ}∪{1P∪2Q∣P∈x,Q∈y}`, `pairSharp_le_iff`); `⊥ = {Γ}` is the system's own `bot`. **Fully choice-free** `[propext, Quot.sound]` — even the equation iso and order-injection lemmas)
+* **Proof Notes:** `D^§`, the tree algebra over `D`, solving `D^§ ≅ D + (D^§ × D^§)`. Tokens live in `Γ = {1,2}* 0 Δ`, modelled as `List Bool × α` with master `Γ = {t ∣ t.2 ∈ Δ}` (`true=1`, `false=2`); the three neighbourhood embeddings `embZero X = 0X`, `embL P = 1P`, `embR Q = 2Q`, `embPair P Q = 1P ∪ 2Q` with their intersection/subset/injectivity/disjointness API. `MemS D` is the inductive least family containing (i) `Γ`, (ii) `0X` for `X∈𝒟`, (iii) `1P∪2Q` for P,Q∈𝒟<sup>§</sup>; **`memS_inter`** is Scott's central closure-under-consistent-intersection proof by induction on the derivation (cross cases `0A∩(1P∪2Q)=∅` discharged via non-emptiness `memS_nonempty`, needing the standing `∅∉𝒟` as `hD`). `Dsharp D hD` packages the system. The **domain equation** `dsharp_domain_equation : Dsharp D hD ≅ᴰ sum D (prod (Dsharp D hD) (Dsharp D hD)) …` is built as the explicit order-iso `dsharpEquiv` (forward `toS`/inverse `fromS` filter maps, the inverse laws `fromS_toS`/`toS_fromS`, and `map_rel_iff'`), routed through the project's `+` (Ex 3.18) and `×` (Def 3.1) with the shape-inversion lemmas `memS_embZero_inv`/`memS_embPair_inv`/`sum_mem_inj₀_inv`/`sum_mem_inj₁_inv`. Also the isomorphic injections `inSharp` (x<sup>§</sup> = {Γ}∪{0X∣X∈x}, `inSharp_le_iff`) and `pairSharp` (`⟨x,y⟩ = {Γ}∪{1P∪2Q∣P∈x,Q∈y}`, `pairSharp_le_iff`); `⊥ = {Γ}` is the system's own `bot`. **Fully choice-free** `[propext, Quot.sound]` — even the equation iso and order-injection lemmas)
 
 
 #### Example 6.2
 * **Mathematical Target:** `B`, `C` as solutions of domain equations (isomorphisms)
 * **Lean File:** `Scott1980/Neighborhood/Example62.lean`
-* **Proof Notes:** over `Str = List Bool` with its intersection/subset/injectivity/disjointness API and the neighbourhood-shape classification `memB_cases` (master `Σ*`, `0X`, `1X`); the forward/inverse filter maps `toBB`/`fromBB` and the order-iso `bbEquiv : |B| ≃o |B + B|` against the project's `+` (Ex 3.18) give `B_domain_equation : B ≅ᴰ sum B B …`. `Example62C.lean` first builds the genuine **three-way separated sum** `sum3 V₀ V₁ V₂` over `Option (α ⊕ β ⊕ γ)` (tags `t0`/`t1`/`t2`, injections `j0`/`j1`/`j2`, `master3`, full `inter_mem`) — nesting the binary sum would add a spurious extra bottom — then the order-iso `ccEquiv : |C| ≃o |𝟙 + C + C|` (`toCC`/`fromCC`, with `𝟙 = unitSys` the `{{Λ}}` summand, the `{Λ} = {[]}` terminator going to the unit copy, `0X`/`1X` to the two `C` copies) giving `C_domain_equation : C ≅ᴰ sum3 unitSys C C …`. **Fully choice-free** `[propext, Quot.sound]`. The **`Aⁿ + Aⁿ` generalization** ("a simple, yet interesting generalization of `B`") is also done in `Example62A.lean`: the flat `n`-fold product `npow V n` over `Fin n × β` (neighbourhoods the proper products `prodN X = ⋃_j {j}×X_j`, componentwise `inter_mem`), Scott's domain `A` over `{0,1}*` as the inductive least family `MemA` with the slot encoding `embTuple i X = i ⋃_{j<n} 1ʲ0 X_j` (parsed via the uniqueness lemma `slotPre_inj`/`slot_list_inj`), the system `Asys n hn` (needs `0<n`), and the order-iso `aaEquiv : |A| ≃o |Aⁿ + Aⁿ|` giving `A_domain_equation : Asys n hn ≅ᴰ sum (npow A n) (npow A n) …` (choice-free `[propext, Quot.sound]`). The closing **eventually-periodic-tree ↔ regular-event** aside is `Example62Regular.lean`: Scott's `+/−`-labelled `n`-ary trees `Tree n = List (Fin n) → Bool` with `pos`, the subtree selector `select a σ` (Scott's `aσ`, recursion `aΛ=a`, `a(iσ)=(aᵢ)σ`), the language `treeLang a = L_a`, and the theorem `eventuallyPeriodic_iff_isRegular : EventuallyPeriodic a ↔ (treeLang a).IsRegular` together with `isRegular_iff_exists_eventuallyPeriodic` — exactly the **Myhill–Nerode theorem** (`treeLang_select` identifies `L_{aσ}` with the left quotient `σ⁻¹L_a`, so finitely many subtrees = finitely many left quotients = regular; Prop-level, uses `Classical.choice` via Mathlib's `Language.isRegular_iff_finite_range_leftQuotient`))
+* **Proof Notes:** `B ≅ B+B` and `C ≅ {{Λ}}+C+C`, both presented over `Str = List Bool` with its intersection/subset/injectivity/disjointness API and the neighbourhood-shape classification `memB_cases` (master `Σ*`, `0X`, `1X`); the forward/inverse filter maps `toBB`/`fromBB` and the order-iso `bbEquiv : |B| ≃o |B + B|` against the project's `+` (Ex 3.18) give `B_domain_equation : B ≅ᴰ sum B B …`. `Example62C.lean` first builds the genuine **three-way separated sum** `sum3 V₀ V₁ V₂` over `Option (α ⊕ β ⊕ γ)` (tags `t0`/`t1`/`t2`, injections `j0`/`j1`/`j2`, `master3`, full `inter_mem`) — nesting the binary sum would add a spurious extra bottom — then the order-iso `ccEquiv : |C| ≃o |𝟙 + C + C|` (`toCC`/`fromCC`, with `𝟙 = unitSys` the `{{Λ}}` summand, the `{Λ} = {[]}` terminator going to the unit copy, `0X`/`1X` to the two `C` copies) giving `C_domain_equation : C ≅ᴰ sum3 unitSys C C …`. **Fully choice-free** `[propext, Quot.sound]`. The **`Aⁿ + Aⁿ` generalization** ("a simple, yet interesting generalization of `B`") is also done in `Example62A.lean`: the flat `n`-fold product `npow V n` over `Fin n × β` (neighbourhoods the proper products `prodN X = ⋃_j {j}×X_j`, componentwise `inter_mem`), Scott's domain `A` over `{0,1}*` as the inductive least family `MemA` with the slot encoding `embTuple i X = i ⋃_{j<n} 1ʲ0 X_j` (parsed via the uniqueness lemma `slotPre_inj`/`slot_list_inj`), the system `Asys n hn` (needs `0<n`), and the order-iso `aaEquiv : |A| ≃o |Aⁿ + Aⁿ|` giving `A_domain_equation : Asys n hn ≅ᴰ sum (npow A n) (npow A n) …` (choice-free `[propext, Quot.sound]`). The closing **eventually-periodic-tree ↔ regular-event** aside is `Example62Regular.lean`: Scott's `+/−`-labelled `n`-ary trees `Tree n = List (Fin n) → Bool` with `pos`, the subtree selector `select a σ` (Scott's `aσ`, recursion `aΛ=a`, `a(iσ)=(aᵢ)σ`), the language `treeLang a = L_a`, and the theorem `eventuallyPeriodic_iff_isRegular : EventuallyPeriodic a ↔ (treeLang a).IsRegular` together with `isRegular_iff_exists_eventuallyPeriodic` — exactly the **Myhill–Nerode theorem** (`treeLang_select` identifies `L_{aσ}` with the left quotient `σ⁻¹L_a`, so finitely many subtrees = finitely many left quotients = regular; Prop-level, uses `Classical.choice` via Mathlib's `Language.isRegular_iff_finite_range_leftQuotient`))
 
 
 #### Definition 6.3
 * **Mathematical Target:** a *functor* `T` on the category of domains
 * **Lean File:** `Scott1980/Neighborhood/Definition63.lean`
-* **Proof Notes:** , the witness instance on `DomainObj`/`ApproximableMap` (laws = Thm 2.5), and `Endofunctor` (the *endofunctor* of Def 6.3, with `map_id`/`map_comp`). **On not using Mathlib's `CategoryTheory.Category`:** it is structurally identical and *expressive enough* to state all of 6.3–6.7 (it has functors `⥤`, `Endofunctor.Algebra`/`Algebra.Hom`, `Limits.IsInitial`, even Lambek's lemma as `Endofunctor.Algebra.Initial.strInv`/`left_inv`/`right_inv`), and a bare `Category DomainObj` instance is itself choice-free `[propext, Quot.sound]` — so this is *not* a question of missing vocabulary. It is nonetheless avoided because its *content* is choice-bound: `Endofunctor.Algebra.Initial.left_inv` (the inverse half of Lambek = Scott's Prop 6.7) reports `[propext, Classical.choice, Quot.sound]` since Mathlib's `IsInitial` rides on the `Limits` framework, whereas the project's `lambek`/`initialIso` (Props 6.7/6.6) depend on **no axioms whatsoever**. Adopting Mathlib would therefore either inject `Classical.choice` into the flagship Lecture VI results (breaking the `#print axioms ⊆ {propext, Quot.sound}` discipline) or reuse only the bare class and re-prove 6.6–6.7 by hand anyway — paying a heavy transitive import and the `≫` (diagrammatic) vs `⊚` (Scott's "after") convention clash for no reusable content. Since Scott asks only for "a small amount of the terminology of category theory", the ~50-line bespoke class is kept; the full rationale and the empirical axiom comparison live in the module docstring.)
+* **Proof Notes:** a small, self-contained `Category`/`Functor` abstraction, generic over an arbitrary category as Scott stresses, the witness instance on `DomainObj`/`ApproximableMap` (laws = Thm 2.5), and `Endofunctor` (the *endofunctor* of Def 6.3, with `map_id`/`map_comp`). **On not using Mathlib's `CategoryTheory.Category`:** it is structurally identical and *expressive enough* to state all of 6.3–6.7 (it has functors `⥤`, `Endofunctor.Algebra`/`Algebra.Hom`, `Limits.IsInitial`, even Lambek's lemma as `Endofunctor.Algebra.Initial.strInv`/`left_inv`/`right_inv`), and a bare `Category DomainObj` instance is itself choice-free `[propext, Quot.sound]` — so this is *not* a question of missing vocabulary. It is nonetheless avoided because its *content* is choice-bound: `Endofunctor.Algebra.Initial.left_inv` (the inverse half of Lambek = Scott's Prop 6.7) reports `[propext, Classical.choice, Quot.sound]` since Mathlib's `IsInitial` rides on the `Limits` framework, whereas the project's `lambek`/`initialIso` (Props 6.7/6.6) depend on **no axioms whatsoever**. Adopting Mathlib would therefore either inject `Classical.choice` into the flagship Lecture VI results (breaking the `#print axioms ⊆ {propext, Quot.sound}` discipline) or reuse only the bare class and re-prove 6.6–6.7 by hand anyway — paying a heavy transitive import and the `≫` (diagrammatic) vs `⊚` (Scott's "after") convention clash for no reusable content. Since Scott asks only for "a small amount of the terminology of category theory", the ~50-line bespoke class is kept; the full rationale and the empirical axiom comparison live in the module docstring.)
 
 
 #### Definition 6.4
 * **Mathematical Target:** a *`T`-algebra* `T(E)→E`
 * **Lean File:** `Scott1980/Neighborhood/Definition63.lean`
-* **Proof Notes:** : `structure TAlgebra T` = a carrier object `E` with a structure map `str : T(E) → E`; `structure AlgHom A B` = a morphism `hom : E → F` carrying the commuting-square field `comm : hom ⊚ A.str = B.str ⊚ T.map hom`. Scott's remark that the `T`-algebras *themselves form a category* is discharged by `AlgHom.id` (square closes via `id_comp`+`map_id`+`comp_id`) and `AlgHom.comp` (β after α; the composite square chains `assoc`→`α.comm`→`assoc`→`β.comm`→`assoc`→`map_comp`), with `@[simp]` projections `id_hom`/`comp_hom`. Stated over an arbitrary `Category`; `⊚` reads "`g` after `f`" (matching `ApproximableMap.comp`, deliberately *not* the diagrammatic `≫`). Choice-free `{propext, Quot.sound}`.
+* **Proof Notes:** `structure TAlgebra T` = a carrier object `E` with a structure map `str : T(E) → E`; `structure AlgHom A B` = a morphism `hom : E → F` carrying the commuting-square field `comm : hom ⊚ A.str = B.str ⊚ T.map hom`. Scott's remark that the `T`-algebras *themselves form a category* is discharged by `AlgHom.id` (square closes via `id_comp`+`map_id`+`comp_id`) and `AlgHom.comp` (β after α; the composite square chains `assoc`→`α.comm`→`assoc`→`β.comm`→`assoc`→`map_comp`), with `@[simp]` projections `id_hom`/`comp_hom`. Stated over an arbitrary `Category`; `⊚` reads "`g` after `f`" (matching `ApproximableMap.comp`, deliberately *not* the diagrammatic `≫`). Choice-free `{propext, Quot.sound}`.
 
 
 #### Definition 6.5
 * **Mathematical Target:** an *initial* `T`-algebra
 * **Lean File:** `Scott1980/Neighborhood/Definition63.lean`
-* **Proof Notes:** : `structure IsInitial A` bundles the existence datum `desc : (B : TAlgebra T) → AlgHom A B` with the uniqueness field `uniq : ∀ B (h : AlgHom A B), h = desc B` — a *unique* homomorphism into every algebra. The companion `structure Iso X Y` (mutually inverse `hom`/`inv` with `hom_inv_id`/`inv_hom_id`) is defined here too, since 6.6/6.7 manufacture isomorphisms. All of it lives over an arbitrary `Category`, exactly as Scott stresses ("could be given for any category"); the concrete `instance : Category DomainObj` (objects = systems, homs = `ApproximableMap`, laws = Thm 2.5) witnesses non-vacuity. `IsInitial` itself depends on **no axioms**; module bound `{propext, Quot.sound}` (the `DomainObj` witness).
+* **Proof Notes:** `structure IsInitial A` bundles the existence datum `desc : (B : TAlgebra T) → AlgHom A B` with the uniqueness field `uniq : ∀ B (h : AlgHom A B), h = desc B` — a *unique* homomorphism into every algebra. The companion `structure Iso X Y` (mutually inverse `hom`/`inv` with `hom_inv_id`/`inv_hom_id`) is defined here too, since 6.6/6.7 manufacture isomorphisms. All of it lives over an arbitrary `Category`, exactly as Scott stresses ("could be given for any category"); the concrete `instance : Category DomainObj` (objects = systems, homs = `ApproximableMap`, laws = Thm 2.5) witnesses non-vacuity. `IsInitial` itself depends on **no axioms**; module bound `{propext, Quot.sound}` (the `DomainObj` witness).
 
 
 #### Proposition 6.6
 * **Mathematical Target:** any two initial `T`-algebras are uniquely isomorphic
 * **Lean File:** `Scott1980/Neighborhood/Proposition66.lean`
-* **Proof Notes:** : the textbook diagram chase. For initial `A`,`B`, initiality gives unique homs each way; the helper `comp_desc_eq_id hA hB : (hB.desc A).comp (hA.desc B) = AlgHom.id A` holds because *both* sides are homs `A → A`, so `hA.uniq` forces each to equal `hA.desc A`. `initialIso hA hB : Iso A.carrier B.carrier` then sets `hom = (hA.desc B).hom`, `inv = (hB.desc A).hom`, and reads the two identity laws off `comp_desc_eq_id` in each direction via `congrArg AlgHom.hom`. Uniqueness of the realising hom is `iso_hom_unique := hA.uniq B h`. Verified to **depend on no axioms at all** (not even `propext`/`Quot.sound`) — purely the category laws; this is precisely *why* the project keeps a bespoke `Category` instead of Mathlib's choice-bound `Limits.IsInitial`.
+* **Proof Notes:** the textbook diagram chase. For initial `A`,`B`, initiality gives unique homs each way; the helper `comp_desc_eq_id hA hB : (hB.desc A).comp (hA.desc B) = AlgHom.id A` holds because *both* sides are homs `A → A`, so `hA.uniq` forces each to equal `hA.desc A`. `initialIso hA hB : Iso A.carrier B.carrier` then sets `hom = (hA.desc B).hom`, `inv = (hB.desc A).hom`, and reads the two identity laws off `comp_desc_eq_id` in each direction via `congrArg AlgHom.hom`. Uniqueness of the realising hom is `iso_hom_unique := hA.uniq B h`. Verified to **depend on no axioms at all** (not even `propext`/`Quot.sound`) — purely the category laws; this is precisely *why* the project keeps a bespoke `Category` instead of Mathlib's choice-bound `Limits.IsInitial`.
 
 
 #### Proposition 6.7
 * **Mathematical Target:** `i:T(D)→D` initial ⟹ `T(i)` initial and `i` is an isomorphism
 * **Lean File:** `Scott1980/Neighborhood/Proposition67.lean`
-* **Proof Notes:** : formalises the decisive half — the structure map of an initial algebra is an iso. With `A=(D,i)`, the functor builds `tStr A = (T(D), T(i))` and `strHom A : (T(D),T(i)) → (D,i)` (square = `rfl`). Initiality returns the descent hom `j := (hA.desc (tStr A)).hom`; `str_comp_desc` proves `i ⊚ j = I_D` (again `(strHom A).comp j` and `id` are both homs `A→A`, so `uniq` collapses them). `lambek A hA : Iso (T(D)) D` packages `hom=i`, `inv=j`: `inv_hom_id` *is* `str_comp_desc`, and `hom_inv_id` (`j ⊚ i = I_{T(D)}`) is the calc `j⊚i = T(i)⊚T(j) = T(i⊚j) = T(I_D) = I_{T(D)}` using `j`'s square (`comm`), `(map_comp _ _).symm`, `str_comp_desc`, then `map_id`. This is Scott's point that "to have initial algebras at all we must satisfy `D ≅ T(D)`". Verified to **depend on no axioms at all**.
+* **Proof Notes:** formalises the decisive half — the structure map of an initial algebra is an iso. With `A=(D,i)`, the functor builds `tStr A = (T(D), T(i))` and `strHom A : (T(D),T(i)) → (D,i)` (square = `rfl`). Initiality returns the descent hom `j := (hA.desc (tStr A)).hom`; `str_comp_desc` proves `i ⊚ j = I_D` (again `(strHom A).comp j` and `id` are both homs `A→A`, so `uniq` collapses them). `lambek A hA : Iso (T(D)) D` packages `hom=i`, `inv=j`: `inv_hom_id` *is* `str_comp_desc`, and `hom_inv_id` (`j ⊚ i = I_{T(D)}`) is the calc `j⊚i = T(i)⊚T(j) = T(i⊚j) = T(I_D) = I_{T(D)}` using `j`'s square (`comm`), `(map_comp _ _).symm`, `str_comp_desc`, then `map_id`. This is Scott's point that "to have initial algebras at all we must satisfy `D ≅ T(D)`". Verified to **depend on no axioms at all**.
 
 
 #### Definition 6.8
 * **Mathematical Target:** a functor *continuous on maps*
 * **Lean File:** `Scott1980/Neighborhood/Definition68.lean`
-* **Proof Notes:** ` — for all domains `D, E` the induced action `λf. T(f)` on Scott's **strict** function space is approximable. Stated *verbatim* over the strict maps: the (co)domain `(D →⊥ E)` is the project's `strictFun D.sys E.sys` (Exercise 5.10), whose elements are exactly the strict approximable maps (`IsStrict f`, i.e. `f(⊥)=⊥`), with the representation `strictFunEquiv : \|D →⊥ E\| ≃o StrictMap D E` mirroring Theorem 3.10. "`λf.T(f)` is approximable" is rendered (Prop 2.2 / Thm 3.10) as the existence of a representing `Φ : ApproximableMap (strictFun D.sys E.sys) (strictFun (T.obj D).sys (T.obj E).sys)` whose elementwise action — transported through `toStrictFilter`/`toStrictMap` — reproduces `T` on underlying maps: `(toStrictMap (Φ.toElementMap (toStrictFilter f))).1 = T.map f.1`. Since the LHS is the underlying map of a `StrictMap`, the condition automatically forces `T(f)` strict whenever `f` is (`ContinuousOnMaps.isStrict_map`), so a continuous-on-maps `T` genuinely restricts to Scott's category of domains and strict maps. Non-vacuity: the identity functor is continuous on maps (`continuousOnMaps_id`, representing map = `idMap` on `strictFun`), built on the generic `idEndofunctor`. **Choice-free** `[propext, Quot.sound]`. *Design note:* Scott's category for 6.8 uses strict maps, but the project's abstract spine (Defs 6.3–6.7) uses the all-maps `DomainObj` category; this is bridged faithfully by keeping `T : Endofunctor DomainObj` (all maps) while stating the continuity condition over the strict function spaces and *deriving* strictness-preservation, rather than introducing a separate strict-category abstraction.)
+* **Proof Notes:** `ContinuousOnMaps T` — for all domains `D, E` the induced action `λf. T(f)` on Scott's **strict** function space is approximable. Stated *verbatim* over the strict maps: the (co)domain `(D →⊥ E)` is the project's `strictFun D.sys E.sys` (Exercise 5.10), whose elements are exactly the strict approximable maps (`IsStrict f`, i.e. `f(⊥)=⊥`), with the representation `strictFunEquiv : |D →⊥ E| ≃o StrictMap D E` mirroring Theorem 3.10. "`λf.T(f)` is approximable" is rendered (Prop 2.2 / Thm 3.10) as the existence of a representing `Φ : ApproximableMap (strictFun D.sys E.sys) (strictFun (T.obj D).sys (T.obj E).sys)` whose elementwise action — transported through `toStrictFilter`/`toStrictMap` — reproduces `T` on underlying maps: `(toStrictMap (Φ.toElementMap (toStrictFilter f))).1 = T.map f.1`. Since the LHS is the underlying map of a `StrictMap`, the condition automatically forces `T(f)` strict whenever `f` is (`ContinuousOnMaps.isStrict_map`), so a continuous-on-maps `T` genuinely restricts to Scott's category of domains and strict maps. Non-vacuity: the identity functor is continuous on maps (`continuousOnMaps_id`, representing map = `idMap` on `strictFun`), built on the generic `idEndofunctor`. **Choice-free** `[propext, Quot.sound]`. *Design note:* Scott's category for 6.8 uses strict maps, but the project's abstract spine (Defs 6.3–6.7) uses the all-maps `DomainObj` category; this is bridged faithfully by keeping `T : Endofunctor DomainObj` (all maps) while stating the continuity condition over the strict function spaces and *deriving* strictness-preservation, rather than introducing a separate strict-category abstraction.)
 
 
 #### Theorem 6.9
 * **Mathematical Target:** continuous `T` with `D≅T(D)` ⟹ a homomorphism `D→E` to any `T`-algebra
 * **Lean File:** `Scott1980/Neighborhood/Theorem69.lean`
-* **Proof Notes:** (hT : ContinuousOnMaps T) (iso : Iso (T.obj D) D) (B : TAlgebra T) (hk : IsStrict B.str) : Nonempty (AlgHom ⟨D, iso.hom⟩ B)` — Scott's existence statement. Lets `i = iso.hom : T(D)→D`, `j = iso.inv : D→T(D)`; `j` is strict (`isStrict_of_comp_eq_id` from `j∘i=I`, any split iso preserves `⊥`), `k = B.str` strict by hypothesis (a morphism of Scott's strict category). A homomorphism `h` satisfies `h∘i=k∘T(h)`, i.e. the fixed-point equation `h = k∘T(h)∘j`. The operator `λh.k∘T(h)∘j` on the strict function space `(D→⊥E)` is `Op = homOp ∘ Φ`: `Φ` is Def 6.8's witness that `λf.T(f)` is approximable, and `homOp` (built by Ex 2.8 `ofMono`) is the post/pre-composition `g↦k∘g∘j : (T(D)→⊥T(E))→(D→⊥E)`, with `homOpComp` the strict composite and action lemma `homOp_apply_filter : homOp(f̂)=(k∘f∘j)^` (proved by reducing — through `strictFunEquiv` injectivity — to single step nbhds `[X,Z]`, the finite factoring being `N:=[Y₁,Y₂]`). `Op.fixElement` (Thm 4.1) represents `h := toStrictMap …`; `toElementMap_fixElement` + `Φ`'s defining eq + `homOp_apply_filter` give `h = k∘T(h)∘j`, which rearranges via `j∘i=I` (`comp_assoc`, `comp_idMap`) to the `AlgHom` square `h∘i=k∘T(h)`. Conclusion is `Nonempty` (a `Prop`), so `Φ` is extracted from the `Prop`-valued `ContinuousOnMaps` by `Exists.elim` — **fully choice-free** `[propext, Quot.sound]`. New reusable helpers: `isStrict_comp`, `isStrict_of_comp_eq_id`, `comp_mono_gen`, `toStrictMap_mono`, `toStrictFilter_mono`, `toStrictFilter_toStrictMap`.)
+* **Proof Notes:** `nonempty_algHom_of_continuousOnMaps (hT : ContinuousOnMaps T) (iso : Iso (T.obj D) D) (B : TAlgebra T) (hk : IsStrict B.str) : Nonempty (AlgHom ⟨D, iso.hom⟩ B)` — Scott's existence statement. Lets `i = iso.hom : T(D)→D`, `j = iso.inv : D→T(D)`; `j` is strict (`isStrict_of_comp_eq_id` from `j∘i=I`, any split iso preserves `⊥`), `k = B.str` strict by hypothesis (a morphism of Scott's strict category). A homomorphism `h` satisfies `h∘i=k∘T(h)`, i.e. the fixed-point equation `h = k∘T(h)∘j`. The operator `λh.k∘T(h)∘j` on the strict function space `(D→⊥E)` is `Op = homOp ∘ Φ`: `Φ` is Def 6.8's witness that `λf.T(f)` is approximable, and `homOp` (built by Ex 2.8 `ofMono`) is the post/pre-composition `g↦k∘g∘j : (T(D)→⊥T(E))→(D→⊥E)`, with `homOpComp` the strict composite and action lemma `homOp_apply_filter : homOp(f̂)=(k∘f∘j)^` (proved by reducing — through `strictFunEquiv` injectivity — to single step nbhds `[X,Z]`, the finite factoring being `N:=[Y₁,Y₂]`). `Op.fixElement` (Thm 4.1) represents `h := toStrictMap …`; `toElementMap_fixElement` + `Φ`'s defining eq + `homOp_apply_filter` give `h = k∘T(h)∘j`, which rearranges via `j∘i=I` (`comp_assoc`, `comp_idMap`) to the `AlgHom` square `h∘i=k∘T(h)`. Conclusion is `Nonempty` (a `Prop`), so `Φ` is extracted from the `Prop`-valued `ContinuousOnMaps` by `Exists.elim` — **fully choice-free** `[propext, Quot.sound]`. New reusable helpers: `isStrict_comp`, `isStrict_of_comp_eq_id`, `comp_mono_gen`, `toStrictMap_mono`, `toStrictFilter_mono`, `toStrictFilter_toStrictMap`.)
 
 
 #### Definition 6.10
 * **Mathematical Target:** the subsystem relation `D ◁ E`
 * **Lean File:** `Scott1980/Neighborhood/Definition610.lean`
-* **Proof Notes:** , `sub` (`D ⊆ E`: `D.mem X → E.mem X`), and the essential `inter_closed` (consistency is inherited from `E`: `D.mem X → D.mem Y → E.mem (X∩Y) → D.mem (X∩Y)`). Elementary API matching Scott's prose: `Subsystem.refl`/`Subsystem.trans` (the `inter_closed` clause threads through `E`) and antisymmetry `Subsystem.antisymm` (`D◁E` and `E◁D` ⟹ `D=E`, via the new `NeighborhoodSystem.ext`: equal `mem` + equal `master` ⟹ equal system, other fields `Prop`). **Scott's remark** `Subsystem.subsystem_iff_subset_of_common`: once `D₀◁E` and `D₁◁E`, the subdomain relation collapses to plain inclusion `D₀◁D₁ ↔ D₀⊆D₁` (the `←` `inter_closed` routes `X∩Y∈D₁⊆E` back into `D₀` via `D₀◁E`). Fully **choice-free** — `refl`/`subsystem_iff_subset_of_common` depend on *no* axioms, `antisymm`/`ext` on `[propext, Quot.sound]`.)
+* **Proof Notes:** `structure Subsystem D E` bundles `sub` (`D ⊆ E`: `D.mem X → E.mem X`), and the essential `inter_closed` (consistency is inherited from `E`: `D.mem X → D.mem Y → E.mem (X∩Y) → D.mem (X∩Y)`). Elementary API matching Scott's prose: `Subsystem.refl`/`Subsystem.trans` (the `inter_closed` clause threads through `E`) and antisymmetry `Subsystem.antisymm` (`D◁E` and `E◁D` ⟹ `D=E`, via the new `NeighborhoodSystem.ext`: equal `mem` + equal `master` ⟹ equal system, other fields `Prop`). **Scott's remark** `Subsystem.subsystem_iff_subset_of_common`: once `D₀◁E` and `D₁◁E`, the subdomain relation collapses to plain inclusion `D₀◁D₁ ↔ D₀⊆D₁` (the `←` `inter_closed` routes `X∩Y∈D₁⊆E` back into `D₀` via `D₀◁E`). Fully **choice-free** — `refl`/`subsystem_iff_subset_of_common` depend on *no* axioms, `antisymm`/`ext` on `[propext, Quot.sound]`.)
 
 
 #### Proposition 6.11
 * **Mathematical Target:** the subsystems of `E` form a domain
 * **Lean File:** `Scott1980/Neighborhood/Proposition611.lean`
-* **Proof Notes:** : {D // D ◁ E} ≃o \|reprSystem (subFam E) …\|` — the set of subsystems `{D ∣ D ◁ E}`, ordered by `◁`, *forms a domain* (Scott's one-line corollary of the directed-union remark). Route = the project's abstract representation theorem **Exercise 2.22** (`reprIso`), exactly as Ex 3.25/3.27. A subsystem `D◁E` is determined by its neighbourhood-family `{X ∣ D.mem X}` (via `NeighborhoodSystem.ext` + the standing `D.master=E.master`), so the poset is represented by `subFam E = {{X∣D.mem X} ∣ D◁E} ⊆ 𝒫(𝒫(Δ))` under `⊆`; `subIso : {D//D◁E} ≃o {𝒮//𝒮∈subFam E}` preserves/reflects order by Scott's remark `Subsystem.subsystem_iff_subset_of_common` (`◁` = `⊆` of neighbourhood-families). The two 2.22 closure hypotheses hold: **non-empty intersections** `subFam_sInter_mem` (the intersection subdomain `interSys` whose nbhds are the common ones) and **directed unions** `subFam_sUnion_mem` (the union subdomain `unionSys` — Scott's remark; directedness is used precisely to verify closure under consistent intersection). Helper lemmas `subFam_master_mem`/`subFam_mem_E`/`subFam_inter_closed` extract Definition 6.10's data from `subFam` membership; `ofMem`/`ofMem_subsystem` rebuild a subsystem from a neighbourhood-family. **Axioms:** the combinatorial core (`subFam`, `interSys`/`unionSys`, the closure lemmas, `subIso`) is **choice-free** — `subFam`/`interSys`/`unionSys` depend on *no* axioms, the rest on `[propext, Quot.sound]`; `subsystemReprIso` inherits `Classical.choice` *solely* through Exercise 2.22's `reprIso` (the documented "for set theorists" exercise), as Ex 3.27 does.)
+* **Proof Notes:** `subsystemReprIso : {D // D ◁ E} ≃o |reprSystem (subFam E) …|` — the set of subsystems `{D ∣ D ◁ E}`, ordered by `◁`, *forms a domain* (Scott's one-line corollary of the directed-union remark). Route = the project's abstract representation theorem **Exercise 2.22** (`reprIso`), exactly as Ex 3.25/3.27. A subsystem `D◁E` is determined by its neighbourhood-family `{X ∣ D.mem X}` (via `NeighborhoodSystem.ext` + the standing `D.master=E.master`), so the poset is represented by `subFam E = {{X∣D.mem X} ∣ D◁E} ⊆ 𝒫(𝒫(Δ))` under `⊆`; `subIso : {D//D◁E} ≃o {𝒮//𝒮∈subFam E}` preserves/reflects order by Scott's remark `Subsystem.subsystem_iff_subset_of_common` (`◁` = `⊆` of neighbourhood-families). The two 2.22 closure hypotheses hold: **non-empty intersections** `subFam_sInter_mem` (the intersection subdomain `interSys` whose nbhds are the common ones) and **directed unions** `subFam_sUnion_mem` (the union subdomain `unionSys` — Scott's remark; directedness is used precisely to verify closure under consistent intersection). Helper lemmas `subFam_master_mem`/`subFam_mem_E`/`subFam_inter_closed` extract Definition 6.10's data from `subFam` membership; `ofMem`/`ofMem_subsystem` rebuild a subsystem from a neighbourhood-family. **Axioms:** the combinatorial core (`subFam`, `interSys`/`unionSys`, the closure lemmas, `subIso`) is **choice-free** — `subFam`/`interSys`/`unionSys` depend on *no* axioms, the rest on `[propext, Quot.sound]`; `subsystemReprIso` inherits `Classical.choice` *solely* through Exercise 2.22's `reprIso` (the documented "for set theorists" exercise), as Ex 3.27 does.)
 
 
 #### Proposition 6.12
 * **Mathematical Target:** `D◁E` ⟹ a projection pair `i,j`
 * **Lean File:** `Scott1980/Neighborhood/Proposition612.lean`
-* **Proof Notes:** ={Y∈E ∣ ∃X∈x, X⊆Y}` = `toElementMap_inj`) and `j = Subsystem.proj h : E→D` (rel `Y j X ↔ E.mem Y ∧ D.mem X ∧ Y⊆X`, element-wise `j(y)=y∩D` = `toElementMap_proj`). The `inter_right` law of `j` is exactly where Definition 6.10's `inter_closed` is used (`X,X'∈D`, `Y⊆X∩X'∈E` via `E.inter_mem` ⟹ `X∩X'∈D`). The two laws: `Subsystem.proj_comp_inj : j∘i = I_D` (both round trips `X⊆Y⊆Z` collapse to the identity relation `X⊆Z` on `D`; proved with the **choice-free** relational `ApproximableMap.ext`) and `Subsystem.inj_comp_proj_le : i∘j ⊆ I_E` (a round trip `Y⊆X⊆Y'` through a common `D`-nbhd is in particular `Y⊆Y'`; only an inclusion, not equality). Bundled as `Subsystem.ProjectionPair D E` (`inj`/`proj`/`proj_comp_inj`/`inj_comp_proj_le`) via `Subsystem.projectionPair`. **Fully choice-free** `[propext, Quot.sound]`.)
+* **Proof Notes:** `i = Subsystem.inj h : D→E` (element-wise `i(x)={Y∈E ∣ ∃X∈x, X⊆Y}` = `toElementMap_inj`) and `j = Subsystem.proj h : E→D` (rel `Y j X ↔ E.mem Y ∧ D.mem X ∧ Y⊆X`, element-wise `j(y)=y∩D` = `toElementMap_proj`). The `inter_right` law of `j` is exactly where Definition 6.10's `inter_closed` is used (`X,X'∈D`, `Y⊆X∩X'∈E` via `E.inter_mem` ⟹ `X∩X'∈D`). The two laws: `Subsystem.proj_comp_inj : j∘i = I_D` (both round trips `X⊆Y⊆Z` collapse to the identity relation `X⊆Z` on `D`; proved with the **choice-free** relational `ApproximableMap.ext`) and `Subsystem.inj_comp_proj_le : i∘j ⊆ I_E` (a round trip `Y⊆X⊆Y'` through a common `D`-nbhd is in particular `Y⊆Y'`; only an inclusion, not equality). Bundled as `Subsystem.ProjectionPair D E` (`inj`/`proj`/`proj_comp_inj`/`inj_comp_proj_le`) via `Subsystem.projectionPair`. **Fully choice-free** `[propext, Quot.sound]`.)
 
 
 #### Definition 6.13
 * **Mathematical Target:** a functor *monotone / continuous on domains*
 * **Lean File:** `Scott1980/Neighborhood/Definition613.lean`
-* **Proof Notes:** ◁T(E)` but the pair `i,j` of 6.12 is mapped to `T(i),T(j)`": `carrier_eq` (the two image carriers `(T.obj⟨α,E⟩).carrier`, `(T.obj⟨α,D⟩).carrier` coincide — needed since the abstract `T` may change token type, so `T(D)◁T(E)` only typechecks once carriers agree), `sub` (the transported `T(D)◁T(E)`), and `inj_heq`/`proj_heq` (the canonical 6.12 pair of `sub` is `(T.map h.inj, T.map h.proj)`, up to the carrier transport — hence `HEq`). **Continuous on domains** `ContinuousOnDomains T := ∃ hmono : MonotoneOnDomains T, ∀ …` = preservation of directed unions of subsystems: for any non-empty directed family `ℱ` of subsystems of `E` whose union is the subsystem `U`, the target-side neighbourhood family `targetFam T hmono (U◁E)` (the nbhds of `T(D)` pushed to `T(E)`'s carrier via `MonotoneAt.carrier_eq`) equals `⋃_{D∈ℱ} targetFam T hmono (D◁E)` — exactly the continuity Scott uses in 6.14 (`T(⋃ₙTⁿ{Γ})=⋃ₙT(Tⁿ⁺¹{Γ})`). Non-vacuity: `monotoneOnDomains_id`/`continuousOnDomains_id` (the identity functor; carrier_eq=`rfl`, `targetFam` collapses to the plain family so continuity is just the union hypothesis). **Fully choice-free** `[propext, Quot.sound]`.)
+* **Proof Notes:** `MonotoneOnDomains T := ∀ D E, D◁E → T(D)◁T(E)` but the pair `i,j` of 6.12 is mapped to `T(i),T(j)`": `carrier_eq` (the two image carriers `(T.obj⟨α,E⟩).carrier`, `(T.obj⟨α,D⟩).carrier` coincide — needed since the abstract `T` may change token type, so `T(D)◁T(E)` only typechecks once carriers agree), `sub` (the transported `T(D)◁T(E)`), and `inj_heq`/`proj_heq` (the canonical 6.12 pair of `sub` is `(T.map h.inj, T.map h.proj)`, up to the carrier transport — hence `HEq`). **Continuous on domains** `ContinuousOnDomains T := ∃ hmono : MonotoneOnDomains T, ∀ …` = preservation of directed unions of subsystems: for any non-empty directed family `ℱ` of subsystems of `E` whose union is the subsystem `U`, the target-side neighbourhood family `targetFam T hmono (U◁E)` (the nbhds of `T(D)` pushed to `T(E)`'s carrier via `MonotoneAt.carrier_eq`) equals `⋃_{D∈ℱ} targetFam T hmono (D◁E)` — exactly the continuity Scott uses in 6.14 (`T(⋃ₙTⁿ{Γ})=⋃ₙT(Tⁿ⁺¹{Γ})`). Non-vacuity: `monotoneOnDomains_id`/`continuousOnDomains_id` (the identity functor; carrier_eq=`rfl`, `targetFam` collapses to the plain family so continuity is just the union hypothesis). **Fully choice-free** `[propext, Quot.sound]`.)
 
 
 #### Theorem 6.14
 * **Mathematical Target:** (main) continuous monotone `T` with a generating set `Γ` ⟹ solution `D≅T(D)`
 * **Lean File:** `Scott1980/Neighborhood/Theorem614.lean`
-* **Proof Notes:** : hypotheses bundled in `Setup` (`T` continuous on maps + monotone + continuous on domains, generating system `Γ` with `ceq`/`hsub` realizing `{Γ}◁T({Γ})`). The **iterated-functor tower** `iter`/`Dsys`/`Dceq`/`Dchain` builds `Tⁿ({Γ})` over the common token type `Tok` (carrier-type juggling via the choice-free transport lemmas `subsystem_cast`/`rec_trans`/`mem_cast`/`set_rec_trans` and `MonotoneAt.carrier_eq`), with `Dsys_master`/`chain_le` (the chain `Tⁿ◁Tᵐ`). The **colimit** `colim` = `𝒟=⋃ₙTⁿ({Γ})` (`inter_mem` via `chain_le`), `Dsys_sub_colim` (`Tⁿ◁𝒟`), `Tcolim`/`colimCeq` (= `T(𝒟)` over `Tok`), `Dsys_sub_Tcolim` (`Tⁿ⁺¹◁T(𝒟)`), `colim_sub_Tcolim` (easy `𝒟⊆T(𝒟)`) and the **continuity step** `Tcolim_sub_colim` (`T(𝒟)⊆𝒟`, the only use of `ContinuousOnDomains`, applied to `ℱ=range(Dsys)`). Hence `Tcolim_eq_colim : T(𝒟)=𝒟`, the `DomainObj` equality `colimObj_eq`, the identity iso `colimIso : Iso (T(𝒟)) 𝒟`, and the algebra `colimAlg`. **Existence** `nonempty_algHom` (homomorphism into every strict algebra, via **Theorem 6.9**) and the capstone `exists_algebra_with_hom`. The **`ρₙ=iₙ∘jₙ` projection chain** `rho`/`rho_rel`/`rho_mono` and `iSupRho_eq_id` (**`⋃ₙρₙ=I_𝒟`**, Scott's uniqueness engine) are also in place. **Uniqueness/initiality** is now complete: `key_rho : ρₙ₊₁ = colimIso.hom⊚T(ρₙ)⊚colimIso.inv` (Scott's `T(ρₙ)=ρₙ₊₁`) via the `HEq` toolkit `transport_heq`/`isoOfEq_conj`/`map_comp_proj_heq` (the crux: `subst` both carrier-eqs, then proof-irrelevance collapses the two `Subsystem` proofs so `eq_of_heq` closes) + `map_rho_heq` (`T.map_comp` then `MonotoneAt.inj_heq`/`proj_heq`). Then `gₙ=g∘ρₙ` is `g`-independent: base `rho_zero_rel`/`gcomp_rho_zero_indep` (needs **`{Γ}` one-point**, `hΓ`, giving `ρ₀=⊥`), step `gcomp_rho_succ : g∘ρₙ₊₁=k∘T(g∘ρₙ)∘j` (a `⊚`-level `calc` with `Category.assoc` + `g.comm` + `T.map_comp`, using `congrArg` so `calc` bridges by defeq). Hence `gcomp_eq` (`g=g∘I=g∘⋃ρₙ=⋃(g∘ρₙ)` via `iSupRho_eq_id`+`comp_idMap`), `algHom_unique`, and `exists_unique_strict_algHom` (the **initial** `T`-algebra among strict algebras — required strengthening Thm 6.9's `nonempty_algHom_of_continuousOnMaps` to return a *strict* hom). All **choice-free** `[propext, Quot.sound]` (incl. the `Prop`-level uniqueness)
+* **Proof Notes:** hypotheses bundled in `Setup` (`T` continuous on maps + monotone + continuous on domains, generating system `Γ` with `ceq`/`hsub` realizing `{Γ}◁T({Γ})`). The **iterated-functor tower** `iter`/`Dsys`/`Dceq`/`Dchain` builds `Tⁿ({Γ})` over the common token type `Tok` (carrier-type juggling via the choice-free transport lemmas `subsystem_cast`/`rec_trans`/`mem_cast`/`set_rec_trans` and `MonotoneAt.carrier_eq`), with `Dsys_master`/`chain_le` (the chain `Tⁿ◁Tᵐ`). The **colimit** `colim` = `𝒟=⋃ₙTⁿ({Γ})` (`inter_mem` via `chain_le`), `Dsys_sub_colim` (`Tⁿ◁𝒟`), `Tcolim`/`colimCeq` (= `T(𝒟)` over `Tok`), `Dsys_sub_Tcolim` (`Tⁿ⁺¹◁T(𝒟)`), `colim_sub_Tcolim` (easy `𝒟⊆T(𝒟)`) and the **continuity step** `Tcolim_sub_colim` (`T(𝒟)⊆𝒟`, the only use of `ContinuousOnDomains`, applied to `ℱ=range(Dsys)`). Hence `Tcolim_eq_colim : T(𝒟)=𝒟`, the `DomainObj` equality `colimObj_eq`, the identity iso `colimIso : Iso (T(𝒟)) 𝒟`, and the algebra `colimAlg`. **Existence** `nonempty_algHom` (homomorphism into every strict algebra, via **Theorem 6.9**) and the capstone `exists_algebra_with_hom`. The **`ρₙ=iₙ∘jₙ` projection chain** `rho`/`rho_rel`/`rho_mono` and `iSupRho_eq_id` (**`⋃ₙρₙ=I_𝒟`**, Scott's uniqueness engine) are also in place. **Uniqueness/initiality** is now complete: `key_rho : ρₙ₊₁ = colimIso.hom⊚T(ρₙ)⊚colimIso.inv` (Scott's `T(ρₙ)=ρₙ₊₁`) via the `HEq` toolkit `transport_heq`/`isoOfEq_conj`/`map_comp_proj_heq` (the crux: `subst` both carrier-eqs, then proof-irrelevance collapses the two `Subsystem` proofs so `eq_of_heq` closes) + `map_rho_heq` (`T.map_comp` then `MonotoneAt.inj_heq`/`proj_heq`). Then `gₙ=g∘ρₙ` is `g`-independent: base `rho_zero_rel`/`gcomp_rho_zero_indep` (needs **`{Γ}` one-point**, `hΓ`, giving `ρ₀=⊥`), step `gcomp_rho_succ : g∘ρₙ₊₁=k∘T(g∘ρₙ)∘j` (a `⊚`-level `calc` with `Category.assoc` + `g.comm` + `T.map_comp`, using `congrArg` so `calc` bridges by defeq). Hence `gcomp_eq` (`g=g∘I=g∘⋃ρₙ=⋃(g∘ρₙ)` via `iSupRho_eq_id`+`comp_idMap`), `algHom_unique`, and `exists_unique_strict_algHom` (the **initial** `T`-algebra among strict algebras — required strengthening Thm 6.9's `nonempty_algHom_of_continuousOnMaps` to return a *strict* hom). All **choice-free** `[propext, Quot.sound]` (incl. the `Prop`-level uniqueness)
 
 
 #### Lemma 6.15
 * **Mathematical Target:** projection pair `i,j` with `j∘i=I_D`, `i∘j⊑I_E` ⟹ `D⊴E` (converse to 6.12)
 * **Lean File:** `Scott1980/Neighborhood/Lemma615.lean`
-* **Proof Notes:** (j : E→D) (hji : j∘i=I_D) (hij : i∘j≤I_E) : D ⊴ E`, the converse of Prop 6.12, for `D, E` over **possibly different** token types. `D ⊴ E` (`Trianglelefteq`, Scott's `⊴`) `:= ∃ D'◁E, D ≅ᴰ D'`. Cleaner than Scott's filter-by-filter argument: isolate the relational predicate `IsGen i j X Y := X i Y ∧ Y j X` ("`Y` generates `i(↑X)`"). Three facts drive everything — `isGen_exists` (every `X∈D` has a generator: apply `j∘i=I` to `X I_D X`; uses `hji`), `isGen_mono`/`isGen_mono'` (the correspondence is `⊆`-monotone both ways, `Y⊆Y' ↔ X⊆X'`; use `hji`/`hij` resp.) ⟹ generators unique in each arg (`isGen_fst_unique`/`isGen_snd_unique`), and `isGen_inter` (generators closed under `∩` when `Y∩Y'∈E`; just `mono`/`inter_right`). The image system `Dprime i j` (`mem Y := ∃X, IsGen X Y`, `master := E.master`) is a nbhd system (`isGen_inter` gives (ii)) with `Dprime_subsystem : Dprime i j ◁ E` (its `inter_closed` clause **is** `isGen_inter`). The iso `dprimeEquiv : D ≅ Dprime` is `toEl x = {Y∣∃X∈x, IsGen X Y}` / `ofEl y = {X∣∃Y∈y, IsGen X Y}`, the inverse laws + `map_rel_iff'` from generator uniqueness + existence. Also `Subsystem.trianglelefteq : D◁E → D⊴E` (take `D'=D`), so `D⊴E ↔ ∃` projection pair `D⇄E`. **Fully choice-free** `[propext, Quot.sound]` — entirely at the level of Definition 2.1 relations.)
+* **Proof Notes:** `trianglelefteq_of_projectionPair (i : D→E) (j : E→D) (hji : j∘i=I_D) (hij : i∘j≤I_E) : D ⊴ E`, the converse of Prop 6.12, for `D, E` over **possibly different** token types. `D ⊴ E` (`Trianglelefteq`, Scott's `⊴`) `:= ∃ D'◁E, D ≅ᴰ D'`. Cleaner than Scott's filter-by-filter argument: isolate the relational predicate `IsGen i j X Y := X i Y ∧ Y j X` ("`Y` generates `i(↑X)`"). Three facts drive everything — `isGen_exists` (every `X∈D` has a generator: apply `j∘i=I` to `X I_D X`; uses `hji`), `isGen_mono`/`isGen_mono'` (the correspondence is `⊆`-monotone both ways, `Y⊆Y' ↔ X⊆X'`; use `hji`/`hij` resp.) ⟹ generators unique in each arg (`isGen_fst_unique`/`isGen_snd_unique`), and `isGen_inter` (generators closed under `∩` when `Y∩Y'∈E`; just `mono`/`inter_right`). The image system `Dprime i j` (`mem Y := ∃X, IsGen X Y`, `master := E.master`) is a nbhd system (`isGen_inter` gives (ii)) with `Dprime_subsystem : Dprime i j ◁ E` (its `inter_closed` clause **is** `isGen_inter`). The iso `dprimeEquiv : D ≅ Dprime` is `toEl x = {Y∣∃X∈x, IsGen X Y}` / `ofEl y = {X∣∃Y∈y, IsGen X Y}`, the inverse laws + `map_rel_iff'` from generator uniqueness + existence. Also `Subsystem.trianglelefteq : D◁E → D⊴E` (take `D'=D`), so `D⊴E ↔ ∃` projection pair `D⇄E`. **Fully choice-free** `[propext, Quot.sound]` — entirely at the level of Definition 2.1 relations.)
 
 
 #### Theorem 6.16
 * **Mathematical Target:** initial `T`-algebra `D` ⟹ `D ⊴ E` for any `E≅T(E)`
 * **Lean File:** `Scott1980/Neighborhood/Theorem616.lean`
-* **Proof Notes:** (hT : ContinuousOnMaps T) (Dalg) (hinit : IsInitial Dalg) (E) (isoE : Iso (T(E)) E) : D ⊴ E`. Scott's argument, reusing Theorem 6.9's operator `Op = (homOp T D E j k)⊚Φ` on the strict function space `D →⊥ E`. Lambek (Prop 6.7) gives `isoD : T(D)≅D` (so `i=isoD.hom=Dalg.str`, `j=isoD.inv`); `u=isoE.hom`, `v=isoE.inv`; all four are strict via `isStrict_of_comp_eq_id` on the split-iso laws. The Definition-6.8 witnesses `Φ` for the three hom-spaces `(D,E)`,`(E,D)`,`(E,E)` are `obtain`-ed (choice-free, `Prop` goal). The shared per-step computation is isolated as **`opStep`**: `toStrictMap(Op x).1 = k ⊚ T(toStrictMap x).1 ⊚ j` (just `homOp_apply_filter` + `Φ`'s defining eq `hΦ`). From it the three approximant chains `H,G,K n := toStrictMap(Op.iterElem n).1` satisfy `H₀=G₀=K₀=⊥` (`iterElem 0 = ⊥`, `botStrict_rel`: `⊥`'s strict map relates `X↦master`) and `Hₙ₊₁=u⊚T(Hₙ)⊚j`, etc. (`iterElem_succ`+`opStep`). The **ladder** `Hₙ⊚Gₙ=Kₙ` (induction; step uses `key : (u⊚a⊚j)⊚(i⊚b⊚v)=u⊚(a⊚b)⊚v` via `j⊚i=I` plus `T.map_comp` as `hTcomp`). `⊔`-decompositions `H_fix_rel`/`G_fix_rel`/`K_fix_rel` (`fixElement_eq_iSupDirected`+`mem_iSupDirected`) give `h⊚g=k` (`hgk`, diagonalizing the doubly-indexed family at `max m n` via `H_mono`/`G_mono`). `k⊑I_E` (`hk_le`) because `I_E` is a fixed point of `Op_k` (`opStep`+`T.map_id`+`u⊚v=I`, then `fixElement_le_of_toElementMap_le`). `g⊚h=I_D` (`hgh_id`) from initiality: `h,g` are `AlgHom`s (`h_comm`/`g_comm` from `h_fixeq`/`g_fixeq` via `toElementMap_fixElement`), so `g∘h` and `id` both `=hinit.desc`. Capstone via Lemma 6.15 `trianglelefteq_of_projectionPair h g hgh_id (h⊚g≤I_E)`. The whole `⊚`-vs-`.comp` friction handled by stating the iso/functor laws (`hji`,`hvu`,`huv`,`hmapid`,`hTcomp`) in `.comp` form (defeq copies). **Fully choice-free** `[propext, Quot.sound]` incl. the `Prop`-level initiality use.)
+* **Proof Notes:** `trianglelefteq_of_isInitial (hT : ContinuousOnMaps T) (Dalg) (hinit : IsInitial Dalg) (E) (isoE : Iso (T(E)) E) : D ⊴ E`. Scott's argument, reusing Theorem 6.9's operator `Op = (homOp T D E j k)⊚Φ` on the strict function space `D →⊥ E`. Lambek (Prop 6.7) gives `isoD : T(D)≅D` (so `i=isoD.hom=Dalg.str`, `j=isoD.inv`); `u=isoE.hom`, `v=isoE.inv`; all four are strict via `isStrict_of_comp_eq_id` on the split-iso laws. The Definition-6.8 witnesses `Φ` for the three hom-spaces `(D,E)`,`(E,D)`,`(E,E)` are `obtain`-ed (choice-free, `Prop` goal). The shared per-step computation is isolated as **`opStep`**: `toStrictMap(Op x).1 = k ⊚ T(toStrictMap x).1 ⊚ j` (just `homOp_apply_filter` + `Φ`'s defining eq `hΦ`). From it the three approximant chains `H,G,K n := toStrictMap(Op.iterElem n).1` satisfy `H₀=G₀=K₀=⊥` (`iterElem 0 = ⊥`, `botStrict_rel`: `⊥`'s strict map relates `X↦master`) and `Hₙ₊₁=u⊚T(Hₙ)⊚j`, etc. (`iterElem_succ`+`opStep`). The **ladder** `Hₙ⊚Gₙ=Kₙ` (induction; step uses `key : (u⊚a⊚j)⊚(i⊚b⊚v)=u⊚(a⊚b)⊚v` via `j⊚i=I` plus `T.map_comp` as `hTcomp`). `⊔`-decompositions `H_fix_rel`/`G_fix_rel`/`K_fix_rel` (`fixElement_eq_iSupDirected`+`mem_iSupDirected`) give `h⊚g=k` (`hgk`, diagonalizing the doubly-indexed family at `max m n` via `H_mono`/`G_mono`). `k⊑I_E` (`hk_le`) because `I_E` is a fixed point of `Op_k` (`opStep`+`T.map_id`+`u⊚v=I`, then `fixElement_le_of_toElementMap_le`). `g⊚h=I_D` (`hgh_id`) from initiality: `h,g` are `AlgHom`s (`h_comm`/`g_comm` from `h_fixeq`/`g_fixeq` via `toElementMap_fixElement`), so `g∘h` and `id` both `=hinit.desc`. Capstone via Lemma 6.15 `trianglelefteq_of_projectionPair h g hgh_id (h⊚g≤I_E)`. The whole `⊚`-vs-`.comp` friction handled by stating the iso/functor laws (`hji`,`hvu`,`huv`,`hmapid`,`hTcomp`) in `.comp` form (defeq copies). **Fully choice-free** `[propext, Quot.sound]` incl. the `Prop`-level initiality use.)
 
 
 #### Exercise 6.17
@@ -1731,31 +1632,31 @@ flowchart TD
 #### Exercise 6.18
 * **Mathematical Target:** `D`<sup>∞</sup> (Ex 3.16) as an initial algebra / domain-equation solution
 * **Lean File:** `Scott1980/Neighborhood/Exercise618.lean`
-* **Proof Notes:** : `𝒟^∞` is the **initial algebra** of the product endofunctor `T(X)=𝒟×X` for a fixed `∅`-free `𝒟`; the **domain-equation half** `𝒟^∞≅𝒟×𝒟^∞` is Exercise 3.16 (`iter_isomorphic`/`iterProdIso`). Done in the bespoke `StrictDomainObj` category of Ex 6.17 (where `IsInitial` is Scott's universal property among strict algebras). **Theorem 6.14 does not apply**: `T(X)=𝒟×X` grows the token set `ℕ×Δ`, so its same-carrier colimit tower is impossible — `𝒟^∞` is built directly à la Ex 3.16. **Element layer:** `prod_nonempty`/`iterSys_nonempty` (`∅`-freeness preserved); head/tail reading `iterProdIso_apply` and inverse "cons" `iterProdIso_symm_pair` (via `consSeq`); `iterBot_eq`/`component_bot`/`pair_bot`. **Structure maps:** `jmap=ofIso iterProdIso`, `imap=ofIso iterProdIso⁻¹` (algebra map, `isStrict_imap`), `jmap_comp_imap : j∘i=I`. **Existence:** operator `descOp k f = k∘(id×f)∘j`, chain `descSeq` (`h₀=⊥`, `hₙ₊₁=descOp k hₙ`), and **`descMap=iSupMap descSeq` (choice-free data, `[propext, Quot.sound]`)**; `descMap_fix` (`descMap=descOp descMap`, via continuity of `k` over directed unions — reindex the suprema termwise with `kHead`), `descMap_strict`, and the square **`descMap_comm : descMap∘i=k∘T(descMap)`** (`descMap_fix`+`j∘i=I`, then `comp_assoc`/`comp_idMap`). **Uniqueness:** truncation chain `ρₙ=descSeq imap` with closed form `rho_apply : ρₙ(z)=⟨z₀,…,z_{n-1},⊥,…⟩` (induction, `consSeq`) and **`iSupRho_eq_id : ⋃ₙρₙ=I`** (cofinite-`Δ` structure: each nbhd of `z` is realized by a finite truncation `N` from `(iterSys).mem`'s `∃N` clause); `g`-independence `gcomp_rho_zero`/`gcomp_rho_succ : g∘ρₙ₊₁=Op_k(g∘ρₙ)` (a `comp_assoc`/`g.comm`/`prodMap_comp` calc) ⟹ **`comm_unique`** (two strict homs agree on every `ρₙ` via the rel-level `iSupMap` description, hence agree). **Packaging:** `isStrict_prodMap`, `prodObj`/`prodMapHom`/**`prodFunctor Dom : Endofunctor StrictDomainObj`** (`map_id`=`prodMap_id`, `map_comp`=`prodMap_comp`+`idMap_comp`), `iterObj`/**`iterAlg Dom`** (`(𝒟^∞,i)`), `descAlgHom`, and **`iterIsInitial Dom : IsInitial (iterAlg Dom)`**. **Axioms:** data (`descMap`, `prodFunctor`, `iterAlg`) is `[propext, Quot.sound]`; Prop-level `descMap_comm`/`comm_unique`/`iSupRho_eq_id`/`iterIsInitial` inherit `Classical.choice` only from the foundational directed-suprema membership lemmas — the **same precedent as Ex 6.17's `CisInitial`**.
+* **Proof Notes:** `𝒟^∞` is the **initial algebra** of the product endofunctor `T(X)=𝒟×X` for a fixed `∅`-free `𝒟`; the **domain-equation half** `𝒟^∞≅𝒟×𝒟^∞` is Exercise 3.16 (`iter_isomorphic`/`iterProdIso`). Done in the bespoke `StrictDomainObj` category of Ex 6.17 (where `IsInitial` is Scott's universal property among strict algebras). **Theorem 6.14 does not apply**: `T(X)=𝒟×X` grows the token set `ℕ×Δ`, so its same-carrier colimit tower is impossible — `𝒟^∞` is built directly à la Ex 3.16. **Element layer:** `prod_nonempty`/`iterSys_nonempty` (`∅`-freeness preserved); head/tail reading `iterProdIso_apply` and inverse "cons" `iterProdIso_symm_pair` (via `consSeq`); `iterBot_eq`/`component_bot`/`pair_bot`. **Structure maps:** `jmap=ofIso iterProdIso`, `imap=ofIso iterProdIso⁻¹` (algebra map, `isStrict_imap`), `jmap_comp_imap : j∘i=I`. **Existence:** operator `descOp k f = k∘(id×f)∘j`, chain `descSeq` (`h₀=⊥`, `hₙ₊₁=descOp k hₙ`), and **`descMap=iSupMap descSeq` (choice-free data, `[propext, Quot.sound]`)**; `descMap_fix` (`descMap=descOp descMap`, via continuity of `k` over directed unions — reindex the suprema termwise with `kHead`), `descMap_strict`, and the square **`descMap_comm : descMap∘i=k∘T(descMap)`** (`descMap_fix`+`j∘i=I`, then `comp_assoc`/`comp_idMap`). **Uniqueness:** truncation chain `ρₙ=descSeq imap` with closed form `rho_apply : ρₙ(z)=⟨z₀,…,z_{n-1},⊥,…⟩` (induction, `consSeq`) and **`iSupRho_eq_id : ⋃ₙρₙ=I`** (cofinite-`Δ` structure: each nbhd of `z` is realized by a finite truncation `N` from `(iterSys).mem`'s `∃N` clause); `g`-independence `gcomp_rho_zero`/`gcomp_rho_succ : g∘ρₙ₊₁=Op_k(g∘ρₙ)` (a `comp_assoc`/`g.comm`/`prodMap_comp` calc) ⟹ **`comm_unique`** (two strict homs agree on every `ρₙ` via the rel-level `iSupMap` description, hence agree). **Packaging:** `isStrict_prodMap`, `prodObj`/`prodMapHom`/**`prodFunctor Dom : Endofunctor StrictDomainObj`** (`map_id`=`prodMap_id`, `map_comp`=`prodMap_comp`+`idMap_comp`), `iterObj`/**`iterAlg Dom`** (`(𝒟^∞,i)`), `descAlgHom`, and **`iterIsInitial Dom : IsInitial (iterAlg Dom)`**. **Axioms:** data (`descMap`, `prodFunctor`, `iterAlg`) is `[propext, Quot.sound]`; Prop-level `descMap_comm`/`comm_unique`/`iSupRho_eq_id`/`iterIsInitial` inherit `Classical.choice` only from the foundational directed-suprema membership lemmas — the **same precedent as Ex 6.17's `CisInitial`**.
 
 
 #### Exercise 6.19
 * **Mathematical Target:** sum & product on the category of strict maps
 * **Lean File:** `Scott1980/Neighborhood/Exercise619.lean`
-* **Proof Notes:** **Pass (both parts)** (`Exercise619.lean`, `Exercise619PartB.lean`): Scott's uniform token-level sum/product over `Δ ⊆ {0,1}*` (`Λ=[]`, `∅∉𝒟`) and the answer to *"correct up to isomorphism?"* — **yes**. **`sumTok D₀ D₁ h₀ h₁`**: `mem W := W={Λ}∪0Δ₀∪1Δ₁ ∨ (∃X∈𝒟₀,W=0X) ∨ (∃Y∈𝒟₁,W=1Y)` (`0X=embBit false X`, `1Y=embBit true Y` from Ex 6.2), master `insert [] (0Δ₀∪1Δ₁)`, `∅`-free; capstone **`sumTok_iso_sum : sumTok D₀ D₁ h₀ h₁ ≅ᴰ sum D₀ D₁ h₀ h₁`** (`sumTokEquiv` = `Example62.bbEquiv` generalised from `B` to arbitrary `∅`-free `D₀,D₁`: `toSum`/`fromSum`, `@[simp]` `toSum_mem_inj₀/₁`/`fromSum_mem_embF/T`, generic `sum_mem_inj₀_inv`/`inj₁_inv`/`sum_mem_nonempty`, `sumTok_mem_embF_inv/embT_inv`). **`prodTok D₀ D₁`**: `mem W := ∃X∈𝒟₀ Y∈𝒟₁, W={Λ}∪0X∪1Y` (`prodTokNbhd X Y := insert [] (0X∪1Y)`); `mem_prodTokNbhd_nil/false/true` ⟹ Scott (2) `prodTokNbhd_inter`, (1) `prodTokNbhd_subset_iff`, uniqueness `prodTokNbhd_injective`; `∅`-free; capstone **`prodTok_iso_prod : prodTok D₀ D₁ ≅ᴰ prod D₀ D₁`** via `prodTokEquiv.trans (prodEquiv …).symm` where `prodTokEquiv : \|prodTok\| ≃o \|D₀\|×\|D₁\|` mirrors Prop 3.2 (`fstTok`/`sndTok`, splitting `prodTok_mem_split`, `pairTok`, `pairTok_fstTok_sndTok`/`fstTok_pairTok`/`sndTok_pairTok`). All `⊆ {propext, Quot.sound}`. **Part B** (`Exercise619PartB.lean`): the functor algebra over the fixed token type `{0,1}*`, packaged as a concrete category `structure ScottSys` (`∅`-free systems over `Str`) so `◁` needs no carrier transport. Object actions `ScottSys.sum`/`prod`; map actions **`sumMapTok`**/**`prodMapTok`** (full `ApproximableMap`s, cases via new `embBit_not_subset_cross`), strictness `sumMapTok_isStrict` (always)/`prodMapTok_isStrict` (iff factors), bifunctor laws `sum/prodMapTok_id`/`_comp`. Grammar `inductive FExpr := const \| var \| sum \| prod`, `FExpr.obj`/`FExpr.map`. Scott's four properties, all by induction: **functors** `FExpr.map_id`/`map_comp`/`map_isStrict`; **continuous on maps** `FExpr.map_mono` + `FExpr.map_continuous` (monotone + preserves directed sups = approximable in `f`, Ex 2.13); **monotone on domains** `FExpr.obj_subsystem` (`X◁Y⟹T(X)◁T(Y)`, via `sum/prodTok_subsystem`); **continuous on domains** `FExpr.obj_continuous` (preserves directed unions of subsystems, the Thm 6.14 form). All `⊆ {propext, Quot.sound}`.)
+* **Proof Notes:** **Pass (both parts)** (`Exercise619.lean`, `Exercise619PartB.lean`): Scott's uniform token-level sum/product over `Δ ⊆ {0,1}*` (`Λ=[]`, `∅∉𝒟`) and the answer to *"correct up to isomorphism?"* — **yes**. **`sumTok D₀ D₁ h₀ h₁`**: `mem W := W={Λ}∪0Δ₀∪1Δ₁ ∨ (∃X∈𝒟₀,W=0X) ∨ (∃Y∈𝒟₁,W=1Y)` (`0X=embBit false X`, `1Y=embBit true Y` from Ex 6.2), master `insert [] (0Δ₀∪1Δ₁)`, `∅`-free; capstone **`sumTok_iso_sum : sumTok D₀ D₁ h₀ h₁ ≅ᴰ sum D₀ D₁ h₀ h₁`** (`sumTokEquiv` = `Example62.bbEquiv` generalised from `B` to arbitrary `∅`-free `D₀,D₁`: `toSum`/`fromSum`, `@[simp]` `toSum_mem_inj₀/₁`/`fromSum_mem_embF/T`, generic `sum_mem_inj₀_inv`/`inj₁_inv`/`sum_mem_nonempty`, `sumTok_mem_embF_inv/embT_inv`). **`prodTok D₀ D₁`**: `mem W := ∃X∈𝒟₀ Y∈𝒟₁, W={Λ}∪0X∪1Y` (`prodTokNbhd X Y := insert [] (0X∪1Y)`); `mem_prodTokNbhd_nil/false/true` ⟹ Scott (2) `prodTokNbhd_inter`, (1) `prodTokNbhd_subset_iff`, uniqueness `prodTokNbhd_injective`; `∅`-free; capstone **`prodTok_iso_prod : prodTok D₀ D₁ ≅ᴰ prod D₀ D₁`** via `prodTokEquiv.trans (prodEquiv …).symm` where `prodTokEquiv : |prodTok| ≃o |D₀|×|D₁|` mirrors Prop 3.2 (`fstTok`/`sndTok`, splitting `prodTok_mem_split`, `pairTok`, `pairTok_fstTok_sndTok`/`fstTok_pairTok`/`sndTok_pairTok`). All `⊆ {propext, Quot.sound}`. **Part B** (`Exercise619PartB.lean`): the functor algebra over the fixed token type `{0,1}*`, packaged as a concrete category `structure ScottSys` (`∅`-free systems over `Str`) so `◁` needs no carrier transport. Object actions `ScottSys.sum`/`prod`; map actions **`sumMapTok`**/**`prodMapTok`** (full `ApproximableMap`s, cases via new `embBit_not_subset_cross`), strictness `sumMapTok_isStrict` (always)/`prodMapTok_isStrict` (iff factors), bifunctor laws `sum/prodMapTok_id`/`_comp`. Grammar `inductive FExpr := const | var | sum | prod`, `FExpr.obj`/`FExpr.map`. Scott's four properties, all by induction: **functors** `FExpr.map_id`/`map_comp`/`map_isStrict`; **continuous on maps** `FExpr.map_mono` + `FExpr.map_continuous` (monotone + preserves directed sups = approximable in `f`, Ex 2.13); **monotone on domains** `FExpr.obj_subsystem` (`X◁Y⟹T(X)◁T(Y)`, via `sum/prodTok_subsystem`); **continuous on domains** `FExpr.obj_continuous` (preserves directed unions of subsystems, the Thm 6.14 form). All `⊆ {propext, Quot.sound}`.)
 
 
 #### Exercise 6.20
 * **Mathematical Target:** the `tok(D)` function on systems
 * **Lean File:** `Scott1980/Neighborhood/Exercise619PartB.lean`
-* **Proof Notes:** : `λΓ. tok(T({Γ}))` is continuous on `{Γ ⊆ {0,1}* ∣ Λ∈Γ}`, hence a fixed point `Γ=tok(T({Γ}))` exists and `{Γ}◁T({Γ})` (so Thm 6.14 applies), for any `T` from 6.19. Here `tok(𝒟)=𝒟.master` (the master *is* `Δ`) and `{Γ}=singletonSys Γ` (one neighbourhood `Γ`, master `Γ`, `∅`-free iff `Γ≠∅`). **Key simplification:** the master of `T({Γ})` is a tiny token recursion `mFun` needing no system data — `const C↦C.master`, `var↦Γ`, and **both** `sum`/`prod ↦ insert Λ (0·mFun T₀ Γ ∪ 1·mFun T₁ Γ)` (since `sumTokMaster=prodTokNbhd` on masters); `mFun_eq_master : mFun T Γ = (T.obj {Γ}).sys.master`. `mFun T` is `mFun_mono` (monotone) and `mFun_continuous` (in fact fully additive: preserves arbitrary non-empty unions, a fortiori directed — proved via helper `insertTag_continuous`), so it is continuous on the subdomain. **Fixed point** is the explicit Kleene union `⋃ₙ mIter T n` with `mIter 0={Λ}`, `mIter (n+1)=mFun T (mIter n)`: `nil_mem_mIter`/`mIter_mono_step`/`mIter_mono` (chain `Λ∈`, increasing) feed `mFun_iter_fixed : mFun T (⋃ₙ mIter n)=⋃ₙ mIter n` (continuity applied to `range (mIter T)`). `FExpr.RootedConst` (every constant `C` has `Λ∈C.master`; free for sum/prod) keeps the chain in the domain. Capstones `exists_tok_fixedPoint` (`∃Γ, Λ∈Γ ∧ mFun T Γ=Γ`) and **`exists_singleton_subsystem : ∃Γ h, (singletonSys Γ h).sys ◁ (T.obj (singletonSys Γ h)).sys`**. All `⊆ {propext, Quot.sound}` (choice-free; needed hand-rolled `insertTag_mono` and `mIter_mono` since `Eq.le` on `Set` and `monotone_nat_of_le_succ` pull `Classical.choice`).
+* **Proof Notes:** `λΓ. tok(T({Γ}))` is continuous on `{Γ ⊆ {0,1}* ∣ Λ∈Γ}`, hence a fixed point `Γ=tok(T({Γ}))` exists and `{Γ}◁T({Γ})` (so Thm 6.14 applies), for any `T` from 6.19. Here `tok(𝒟)=𝒟.master` (the master *is* `Δ`) and `{Γ}=singletonSys Γ` (one neighbourhood `Γ`, master `Γ`, `∅`-free iff `Γ≠∅`). **Key simplification:** the master of `T({Γ})` is a tiny token recursion `mFun` needing no system data — `const C↦C.master`, `var↦Γ`, and **both** `sum`/`prod ↦ insert Λ (0·mFun T₀ Γ ∪ 1·mFun T₁ Γ)` (since `sumTokMaster=prodTokNbhd` on masters); `mFun_eq_master : mFun T Γ = (T.obj {Γ}).sys.master`. `mFun T` is `mFun_mono` (monotone) and `mFun_continuous` (in fact fully additive: preserves arbitrary non-empty unions, a fortiori directed — proved via helper `insertTag_continuous`), so it is continuous on the subdomain. **Fixed point** is the explicit Kleene union `⋃ₙ mIter T n` with `mIter 0={Λ}`, `mIter (n+1)=mFun T (mIter n)`: `nil_mem_mIter`/`mIter_mono_step`/`mIter_mono` (chain `Λ∈`, increasing) feed `mFun_iter_fixed : mFun T (⋃ₙ mIter n)=⋃ₙ mIter n` (continuity applied to `range (mIter T)`). `FExpr.RootedConst` (every constant `C` has `Λ∈C.master`; free for sum/prod) keeps the chain in the domain. Capstones `exists_tok_fixedPoint` (`∃Γ, Λ∈Γ ∧ mFun T Γ=Γ`) and **`exists_singleton_subsystem : ∃Γ h, (singletonSys Γ h).sys ◁ (T.obj (singletonSys Γ h)).sys`**. All `⊆ {propext, Quot.sound}` (choice-free; needed hand-rolled `insertTag_mono` and `mIter_mono` since `Eq.le` on `Set` and `monotone_nat_of_le_succ` pull `Classical.choice`).
 
 
 #### Exercise 6.21
 * **Mathematical Target:** functors generated by the operations
 * **Lean File:** `Scott1980/Neighborhood/Exercise621.lean`
-* **Proof Notes:** : extends 6.19B/6.20 with the *coalesced* sum `⊕` and *smash* product `⊗`, and generalizes all of `+,×,⊕,⊗` to several terms. **Objects:** `oplusTok D₀ D₁ h₀ h₁` (= `sumTok` with the improper copies `0Δ₀,1Δ₁` deleted: `mem W := W=M ∨ (∃X∈𝒟₀, X≠Δ₀, W=0X) ∨ (∃Y∈𝒟₁, Y≠Δ₁, W=1Y)`, same master `M={Λ}∪0Δ₀∪1Δ₁`) and `otimesTok D₀ D₁` (`mem W := W=M ∨ (∃X∈𝒟₀ Y∈𝒟₁, X≠Δ₀, Y≠Δ₁, W=prodTokNbhd X Y)`); both `∅`-free (`oplusTok_nonempty`/`otimesTok_nonempty`), repackaged as `ScottSys.oplus`/`ScottSys.otimes`. Coalescence = the two bottoms are **identified** (`⊕`=coalesced sum, `⊗`=smash), vs `+,×` which keep them apart. Closure uses `inter_ne_of_ne_left/right` (`X⊆Δ, X≠Δ ⟹ X∩X'≠Δ`). **Monotone on domains:** `oplusTok_subsystem`/`otimesTok_subsystem` carry `◁` componentwise (inversions `oplusTok_mem_embF/T_inv`, `otimesTok_mem_prod_inv`). **Maps:** `oplusMapTok`/`otimesMapTok` are full `ApproximableMap`s; their relation adds a **master/collapse row** *(every `W` relates to the top `M`)* that absorbs a boundary hit `f₀(X)=Δ₀'` collapsing back to the shared bottom, plus `≠Δ` side-conditions on the proper rows. Both **always strict** (`oplus/otimesMapTok_isStrict`); identities `oplus/otimesMapTok_id`; **composition laws `oplus/otimesMapTok_comp` require `g₀,g₁` strict** — strictness of the outer map is exactly what prevents an intermediate top from being re-expanded, the categorical reason `⊕,⊗` are functors only on Scott's **strict-map** category; monotone `oplus/otimesMapTok_mono`. **Extended algebra** `inductive GExpr := const \| var \| sum \| prod \| oplus \| otimes` with `GExpr.obj`/`GExpr.map`, and the four properties by induction over all six constructors: **functors** `GExpr.map_id`/`map_comp` (`map_comp` carries `IsStrict g`, threaded through subexprs)/`map_isStrict`; **continuous on maps** `GExpr.map_mono`+`map_continuous`; **monotone on domains** `GExpr.obj_subsystem`; **continuous on domains** `GExpr.obj_continuous`. **6.20 for the extended algebra:** `gFun` (token-master recursion — all four binary ops share the body `insert Λ (0·gFun a ∪ 1·gFun b)` since `sumTokMaster=prodTokNbhd` on masters), `gFun_eq_master`, `gFun_mono`/`gFun_continuous` (reusing Part B's generic `insertTag_mono`/`insertTag_continuous`, `singletonSys`), Kleene `gIter`/`gFun_iter_fixed`, and capstones `gExists_tok_fixedPoint`, **`gExists_singleton_subsystem : ∃Γ h, (singletonSys Γ h).sys ◁ (T.obj (singletonSys Γ h)).sys`** (Thm 6.14 applies). **Several terms:** since `GExpr` is closed under the binary ops, every finite combination `T₀⋆T₁⋆⋯⋆Tₙ` is itself a `GExpr` and inherits all results; `GExpr.naryOp`/`narySum`/`naryProd`/`naryOplus`/`naryOtimes` package the n-ary right-nested folds, `naryOp_rootedConst` preserves the `Λ∈tok` side-condition, and `narySum/naryProd/naryOplus/naryOtimes_singleton_subsystem` give each n-ary construct a solution `Γ=tok(T({Γ}))`. All `⊆ {propext, Quot.sound}` (choice-free).
+* **Proof Notes:** extends 6.19B/6.20 with the *coalesced* sum `⊕` and *smash* product `⊗`, and generalizes all of `+,×,⊕,⊗` to several terms. **Objects:** `oplusTok D₀ D₁ h₀ h₁` (= `sumTok` with the improper copies `0Δ₀,1Δ₁` deleted: `mem W := W=M ∨ (∃X∈𝒟₀, X≠Δ₀, W=0X) ∨ (∃Y∈𝒟₁, Y≠Δ₁, W=1Y)`, same master `M={Λ}∪0Δ₀∪1Δ₁`) and `otimesTok D₀ D₁` (`mem W := W=M ∨ (∃X∈𝒟₀ Y∈𝒟₁, X≠Δ₀, Y≠Δ₁, W=prodTokNbhd X Y)`); both `∅`-free (`oplusTok_nonempty`/`otimesTok_nonempty`), repackaged as `ScottSys.oplus`/`ScottSys.otimes`. Coalescence = the two bottoms are **identified** (`⊕`=coalesced sum, `⊗`=smash), vs `+,×` which keep them apart. Closure uses `inter_ne_of_ne_left/right` (`X⊆Δ, X≠Δ ⟹ X∩X'≠Δ`). **Monotone on domains:** `oplusTok_subsystem`/`otimesTok_subsystem` carry `◁` componentwise (inversions `oplusTok_mem_embF/T_inv`, `otimesTok_mem_prod_inv`). **Maps:** `oplusMapTok`/`otimesMapTok` are full `ApproximableMap`s; their relation adds a **master/collapse row** *(every `W` relates to the top `M`)* that absorbs a boundary hit `f₀(X)=Δ₀'` collapsing back to the shared bottom, plus `≠Δ` side-conditions on the proper rows. Both **always strict** (`oplus/otimesMapTok_isStrict`); identities `oplus/otimesMapTok_id`; **composition laws `oplus/otimesMapTok_comp` require `g₀,g₁` strict** — strictness of the outer map is exactly what prevents an intermediate top from being re-expanded, the categorical reason `⊕,⊗` are functors only on Scott's **strict-map** category; monotone `oplus/otimesMapTok_mono`. **Extended algebra** `inductive GExpr := const | var | sum | prod | oplus | otimes` with `GExpr.obj`/`GExpr.map`, and the four properties by induction over all six constructors: **functors** `GExpr.map_id`/`map_comp` (`map_comp` carries `IsStrict g`, threaded through subexprs)/`map_isStrict`; **continuous on maps** `GExpr.map_mono`+`map_continuous`; **monotone on domains** `GExpr.obj_subsystem`; **continuous on domains** `GExpr.obj_continuous`. **6.20 for the extended algebra:** `gFun` (token-master recursion — all four binary ops share the body `insert Λ (0·gFun a ∪ 1·gFun b)` since `sumTokMaster=prodTokNbhd` on masters), `gFun_eq_master`, `gFun_mono`/`gFun_continuous` (reusing Part B's generic `insertTag_mono`/`insertTag_continuous`, `singletonSys`), Kleene `gIter`/`gFun_iter_fixed`, and capstones `gExists_tok_fixedPoint`, **`gExists_singleton_subsystem : ∃Γ h, (singletonSys Γ h).sys ◁ (T.obj (singletonSys Γ h)).sys`** (Thm 6.14 applies). **Several terms:** since `GExpr` is closed under the binary ops, every finite combination `T₀⋆T₁⋆⋯⋆Tₙ` is itself a `GExpr` and inherits all results; `GExpr.naryOp`/`narySum`/`naryProd`/`naryOplus`/`naryOtimes` package the n-ary right-nested folds, `naryOp_rootedConst` preserves the `Λ∈tok` side-condition, and `narySum/naryProd/naryOplus/naryOtimes_singleton_subsystem` give each n-ary construct a solution `Γ=tok(T({Γ}))`. All `⊆ {propext, Quot.sound}` (choice-free).
 
 
 #### Exercise 6.22
 * **Mathematical Target:** comment on given domain equations
 * **Lean File:** `Scott1980/Neighborhood/Exercise622.lean`
-* **Proof Notes:** : the "comment on" exercise, formalized as recognising each of the three equations as an instance of the 6.21/6.20 fixed-point machinery, so each has a solution (`Γ=tok(T({Γ}))`, `{Γ} ◁ T({Γ})`, Thm 6.14 applies). **Constants:** `Cnat = {{0},{0,Λ}}` — the two-point chain `{0}⊏Δ` (`0=[false]`, `Λ=[]`), built directly with nested-pair `inter_mem` via `inter_eq_self_of_subset_left/right`, `∅`-free + rooted (`nil_mem_Cnat`); `Cone = singletonSys {Λ}` = the one-point `𝟙` (`nil_mem_Cone`). **Equations:** `NExpr = ⊕(const Cnat, var)` (`N ≅ {{0},{0,Λ}}⊕N`, the **vertical naturals** — coalesced `⊕` collapses the per-step choice into a chain), `MExpr = +(const Cone, var)` (`M ≅ {{Λ}}+M`, the **lazy naturals** — separated `+` keeps stop/continue branching), `NStarExpr N = ⊕(const N, ⊗(const N, var))` (`N* ≅ N⊕(N⊗N*)`, **strict streams over N**: cons-cell functor with smash `⊗`). **Theorems:** `N_eq_solution`/`M_eq_solution`/`NStar_eq_solution N (hN:Λ∈tok N)` each `gExists_singleton_subsystem _ rooted`; `NStar_over_N_exists` chains eq-1's solution (a rooted domain, `Λ∈Γ₁`) as the datum domain of eq-3 via `gExists_tok_fixedPoint`. Axiom audit `⊆ {propext, Quot.sound}`.
+* **Proof Notes:** the "comment on" exercise, formalized as recognising each of the three equations as an instance of the 6.21/6.20 fixed-point machinery, so each has a solution (`Γ=tok(T({Γ}))`, `{Γ} ◁ T({Γ})`, Thm 6.14 applies). **Constants:** `Cnat = {{0},{0,Λ}}` — the two-point chain `{0}⊏Δ` (`0=[false]`, `Λ=[]`), built directly with nested-pair `inter_mem` via `inter_eq_self_of_subset_left/right`, `∅`-free + rooted (`nil_mem_Cnat`); `Cone = singletonSys {Λ}` = the one-point `𝟙` (`nil_mem_Cone`). **Equations:** `NExpr = ⊕(const Cnat, var)` (`N ≅ {{0},{0,Λ}}⊕N`, the **vertical naturals** — coalesced `⊕` collapses the per-step choice into a chain), `MExpr = +(const Cone, var)` (`M ≅ {{Λ}}+M`, the **lazy naturals** — separated `+` keeps stop/continue branching), `NStarExpr N = ⊕(const N, ⊗(const N, var))` (`N* ≅ N⊕(N⊗N*)`, **strict streams over N**: cons-cell functor with smash `⊗`). **Theorems:** `N_eq_solution`/`M_eq_solution`/`NStar_eq_solution N (hN:Λ∈tok N)` each `gExists_singleton_subsystem _ rooted`; `NStar_over_N_exists` chains eq-1's solution (a rooted domain, `Λ∈Γ₁`) as the datum domain of eq-3 via `gExists_tok_fixedPoint`. Axiom audit `⊆ {propext, Quot.sound}`.
 
 
 #### Exercise 6.23
@@ -1767,7 +1668,7 @@ flowchart TD
 #### Exercise 6.24
 * **Mathematical Target:** existence of domains satisfying given equations
 * **Lean File:** `Scott1980/Neighborhood/Exercise624.lean`
-* **Proof Notes:** : the **double fixed-point** method for the coupled system `D ≅ D+(D×E)`, `E ≅ D+E`. **Tokens decided:** both `D,E` are `∅`-free systems over the single type `Str={0,1}*` (Ex 6.19's uniform category). Since sum `+` and product `×` share the master shape `{Λ}∪0·(…)∪1·(…)` over `{0,1}*`, the two token recursions are `gTok p q = tok(D+E) = insert Λ (0p ∪ 1q)` and `fTok p q = tok(D+(D×E)) = gTok p (gTok p q)`. Both monotone (`gTok_mono`/`fTok_mono`) and **fully additive over a chain**: `mem_gTok_iUnion`/`mem_fTok_iUnion` show every token of `*Tok(⋃aₙ)(⋃bₙ)` lands in some single `*Tok aₙ bₙ` — **each token references at most one coordinate**, even in `fTok`'s nested `1(0p)` branch, so no directedness merge is needed. **Double fixed point:** the pair Kleene iteration `pIter : ℕ → Set Str × Set Str` (`Φ(p,q)=(fTok p q, gTok p q)` from `({Λ},{Λ})`), with component unions `GammaD=⋃ₙ(pIter n).1`, `GammaE=⋃ₙ(pIter n).2`; `fTok_GammaD_GammaE : fTok Γ_D Γ_E = Γ_D` and `gTok_GammaD_GammaE : gTok Γ_D Γ_E = Γ_E` (⊇ by `fTok_mono`+`pIter_fst_subset_GammaD`; ⊆ by the additivity lemma landing at stage `n+1`). Capstone `exists_double_fixedPoint`. **Object level:** `Dsol={Γ_D}`, `Esol={Γ_E}` (`singletonSys`), `Fsol D E = D.sum (D.prod E)`, `Gsol D E = D.sum E`; `master_Fsol`/`master_Gsol` are `rfl` (masters expand to `fTok`/`gTok`), so `Dsol_subsystem : {Γ_D} ◁ D+(D×E)` and `Esol_subsystem : {Γ_E} ◁ D+E` hold simultaneously (singleton-subsystem pattern as in 6.20). `exists_simultaneous_subsystems` packages both — **exactly the joint hypothesis of the simultaneous Theorem 6.14**, which then yields the two isos (matching the 6.20/6.21 precedent that delivers the `◁` hypothesis "so 6.14 applies"). **Choice discipline:** avoid `Set.subset_iUnion` (it is classical) — use the choice-free `pIter_*_subset_*` via `Set.mem_iUnion`. Axiom audit `⊆ {propext, Quot.sound}`.
+* **Proof Notes:** the **double fixed-point** method for the coupled system `D ≅ D+(D×E)`, `E ≅ D+E`. **Tokens decided:** both `D,E` are `∅`-free systems over the single type `Str={0,1}*` (Ex 6.19's uniform category). Since sum `+` and product `×` share the master shape `{Λ}∪0·(…)∪1·(…)` over `{0,1}*`, the two token recursions are `gTok p q = tok(D+E) = insert Λ (0p ∪ 1q)` and `fTok p q = tok(D+(D×E)) = gTok p (gTok p q)`. Both monotone (`gTok_mono`/`fTok_mono`) and **fully additive over a chain**: `mem_gTok_iUnion`/`mem_fTok_iUnion` show every token of `*Tok(⋃aₙ)(⋃bₙ)` lands in some single `*Tok aₙ bₙ` — **each token references at most one coordinate**, even in `fTok`'s nested `1(0p)` branch, so no directedness merge is needed. **Double fixed point:** the pair Kleene iteration `pIter : ℕ → Set Str × Set Str` (`Φ(p,q)=(fTok p q, gTok p q)` from `({Λ},{Λ})`), with component unions `GammaD=⋃ₙ(pIter n).1`, `GammaE=⋃ₙ(pIter n).2`; `fTok_GammaD_GammaE : fTok Γ_D Γ_E = Γ_D` and `gTok_GammaD_GammaE : gTok Γ_D Γ_E = Γ_E` (⊇ by `fTok_mono`+`pIter_fst_subset_GammaD`; ⊆ by the additivity lemma landing at stage `n+1`). Capstone `exists_double_fixedPoint`. **Object level:** `Dsol={Γ_D}`, `Esol={Γ_E}` (`singletonSys`), `Fsol D E = D.sum (D.prod E)`, `Gsol D E = D.sum E`; `master_Fsol`/`master_Gsol` are `rfl` (masters expand to `fTok`/`gTok`), so `Dsol_subsystem : {Γ_D} ◁ D+(D×E)` and `Esol_subsystem : {Γ_E} ◁ D+E` hold simultaneously (singleton-subsystem pattern as in 6.20). `exists_simultaneous_subsystems` packages both — **exactly the joint hypothesis of the simultaneous Theorem 6.14**, which then yields the two isos (matching the 6.20/6.21 precedent that delivers the `◁` hypothesis "so 6.14 applies"). **Choice discipline:** avoid `Set.subset_iUnion` (it is classical) — use the choice-free `pIter_*_subset_*` via `Set.mem_iUnion`. Axiom audit `⊆ {propext, Quot.sound}`.
 
 
 #### Exercise 6.25
@@ -1779,7 +1680,7 @@ flowchart TD
 #### Exercise 6.26
 * **Mathematical Target:** the lifting `𝒟_⊥` over `{0,1}*`
 * **Lean File:** `Scott1980/Neighborhood/Exercise626.lean`
-* **Proof Notes:** `Exercise626.lean`, ns `Exercise619`. `liftTok D _hD` = `{{Λ}∪0Δ}∪{0X∣X∈𝒟}` (master `liftTokMaster=insert [] (0Δ)`, proper `0X=embBit false X`), `∅`-free (`liftTok_nonempty`), packaged `ScottSys.lift`. **Elements** `\|𝒟_⊥\|≅\|𝒟\|_⊥`: fresh bottom `liftBot` (mem ↔ `=master`), embedding `liftUp x` (`{master}∪{0X∣X∈x}`); `liftBot_le`, `liftUp_le_liftUp_iff` (order embedding), `liftBot_lt_liftUp` (strict, via `embF_ne_liftTokMaster`), `unlift z hz`/`liftUp_unlift` (choice-free) and `eq_liftBot_or_exists_liftUp` (covering, lone `Classical.choice` for the `z.mem 0Δ?` split). **Functor** (yes, strict): `liftMapTok f` (rel: collapse-to-master row ∨ `0X→0X'` from `f.rel X X'`), `liftMapTok_isStrict` (any `f`), `liftMapTok_id`, `liftMapTok_comp` — mirrors `sumMapTok` with one summand. **`𝒟_⊥⊕ℰ_⊥≅ᴰ𝒟+ℰ`** (`lift_oplus_lift_iso_sum`): elementwise `OrderIso` `toSumLift`/`fromSumLift` deleting the inner `0` (`00X'↔0X'`,`10Y'↔1Y'`), cross-tags vanish by `∅`-freeness — mirrors 6.19 `toSum`/`fromSum`. **`𝒟_⊥⊗ℰ_⊥≅ᴰ(𝒟×ℰ)_⊥`** (`lift_otimes_lift_iso_lift_prod`, answer to Scott's `??`): `toLiftProd`/`fromLiftProd`, `prodTokNbhd(0X')(0Y')↔0(prodTokNbhd X' Y')`, purely rectangular (no cross-empties). Helpers `o_mem_embFF/TF(_inv)`, `ot_mem_prod(_inv)`, `lp_mem_embF`/`lp_prod_inv`. NB: `oplusTok`/`sumTok` membership lemmas need explicit `h₀ h₁`/`D₀ D₁` (the `.mem` predicate drops the nonempty proofs under unification). Choice-free `{propext, Quot.sound}` except the one covering lemma.
+* **Proof Notes:** `Exercise626.lean`, ns `Exercise619`. `liftTok D _hD` = `{{Λ}∪0Δ}∪{0X∣X∈𝒟}` (master `liftTokMaster=insert [] (0Δ)`, proper `0X=embBit false X`), `∅`-free (`liftTok_nonempty`), packaged `ScottSys.lift`. **Elements** `|𝒟_⊥|≅|𝒟|_⊥`: fresh bottom `liftBot` (mem ↔ `=master`), embedding `liftUp x` (`{master}∪{0X∣X∈x}`); `liftBot_le`, `liftUp_le_liftUp_iff` (order embedding), `liftBot_lt_liftUp` (strict, via `embF_ne_liftTokMaster`), `unlift z hz`/`liftUp_unlift` (choice-free) and `eq_liftBot_or_exists_liftUp` (covering, lone `Classical.choice` for the `z.mem 0Δ?` split). **Functor** (yes, strict): `liftMapTok f` (rel: collapse-to-master row ∨ `0X→0X'` from `f.rel X X'`), `liftMapTok_isStrict` (any `f`), `liftMapTok_id`, `liftMapTok_comp` — mirrors `sumMapTok` with one summand. **`𝒟_⊥⊕ℰ_⊥≅ᴰ𝒟+ℰ`** (`lift_oplus_lift_iso_sum`): elementwise `OrderIso` `toSumLift`/`fromSumLift` deleting the inner `0` (`00X'↔0X'`,`10Y'↔1Y'`), cross-tags vanish by `∅`-freeness — mirrors 6.19 `toSum`/`fromSum`. **`𝒟_⊥⊗ℰ_⊥≅ᴰ(𝒟×ℰ)_⊥`** (`lift_otimes_lift_iso_lift_prod`, answer to Scott's `??`): `toLiftProd`/`fromLiftProd`, `prodTokNbhd(0X')(0Y')↔0(prodTokNbhd X' Y')`, purely rectangular (no cross-empties). Helpers `o_mem_embFF/TF(_inv)`, `ot_mem_prod(_inv)`, `lp_mem_embF`/`lp_prod_inv`. NB: `oplusTok`/`sumTok` membership lemmas need explicit `h₀ h₁`/`D₀ D₁` (the `.mem` predicate drops the nonempty proofs under unification). Choice-free `{propext, Quot.sound}` except the one covering lemma.
 
 
 #### Exercise 6.27
@@ -1791,13 +1692,13 @@ flowchart TD
 #### Exercise 6.28
 * **Mathematical Target:** (Plotkin) finite systems `D,E`
 * **Lean File:** `Scott1980/Neighborhood/Exercise628.lean`
-* **Proof Notes:** `Exercise628.lean`, ns `Domain.Neighborhood`. **Finite Cantor–Schröder–Bernstein:** if `\|𝒟\|,\|ℰ\|` finite and `𝒟⊴ℰ⊴𝒟` then `𝒟≅ᴰℰ` (`isomorphic_of_trianglelefteq_both`); faithful "finite system" = finitely many nbhds version is `isomorphic_of_finite_system` (hyps `NeighborhoodSystem.IsFinite := Finite {X//D.mem X}`, via `finite_element_of_isFinite`: `x↦{p\|x.mem p.1}` injects `\|D\|` into `Set {X//D.mem X}`). **Crux:** `⊴` already gives an *order embedding* `\|D\|↪o\|E\|` (`Trianglelefteq.elementEmbedding`): unfold `⊴` to iso `e:\|D\|≅o\|D'\|` onto `D'◁E`, take Prop 6.12's pair `i,j` (`j∘i=I`), and `projElementEmbedding i j` is an embedding — monotone (`toElementMap_mono`) + order-reflecting via the monotone left inverse `j` (`i(a)⊑i(b)→j(i(a))⊑j(i(b))→a⊑b`, using `toElementMap_comp`/`hji`/`toElementMap_idMap`); compose with `e.toOrderEmbedding`. Then `orderIso_of_embeddings`: mutual order embeddings of *finite* types ⟹ iso (`f` injective + `Fintype.card` antisymm ⟹ `Fintype.bijective_iff_injective_and_card` ⟹ `f` bijective; build `OrderIso` from `Equiv.ofBijective f hbij` + `f.map_rel_iff'` — partial-order safe, unlike `orderIsoOfSurjective` which needs `LinearOrder`). **Need the same for infinite systems? No** — the proof is a finite cardinality count with no infinite analogue (mutual retracts of infinite dcpos need not be isomorphic, Eilenberg-swindle obstruction); counterexample left as prose. Axioms: `projElementEmbedding`,`Trianglelefteq.elementEmbedding` `⊆{propext,Quot.sound}`; `orderIso_of_embeddings`,`finite_element_of_isFinite` + main theorems add `Classical.choice` (extract `Fintype` from `Finite`; genuinely unavoidable). Full `Domain` green.
+* **Proof Notes:** `Exercise628.lean`, ns `Domain.Neighborhood`. **Finite Cantor–Schröder–Bernstein:** if `|𝒟|,|ℰ|` finite and `𝒟⊴ℰ⊴𝒟` then `𝒟≅ᴰℰ` (`isomorphic_of_trianglelefteq_both`); faithful "finite system" = finitely many nbhds version is `isomorphic_of_finite_system` (hyps `NeighborhoodSystem.IsFinite := Finite {X//D.mem X}`, via `finite_element_of_isFinite`: `x↦{p|x.mem p.1}` injects `|D|` into `Set {X//D.mem X}`). **Crux:** `⊴` already gives an *order embedding* `|D|↪o|E|` (`Trianglelefteq.elementEmbedding`): unfold `⊴` to iso `e:|D|≅o|D'|` onto `D'◁E`, take Prop 6.12's pair `i,j` (`j∘i=I`), and `projElementEmbedding i j` is an embedding — monotone (`toElementMap_mono`) + order-reflecting via the monotone left inverse `j` (`i(a)⊑i(b)→j(i(a))⊑j(i(b))→a⊑b`, using `toElementMap_comp`/`hji`/`toElementMap_idMap`); compose with `e.toOrderEmbedding`. Then `orderIso_of_embeddings`: mutual order embeddings of *finite* types ⟹ iso (`f` injective + `Fintype.card` antisymm ⟹ `Fintype.bijective_iff_injective_and_card` ⟹ `f` bijective; build `OrderIso` from `Equiv.ofBijective f hbij` + `f.map_rel_iff'` — partial-order safe, unlike `orderIsoOfSurjective` which needs `LinearOrder`). **Need the same for infinite systems? No** — the proof is a finite cardinality count with no infinite analogue (mutual retracts of infinite dcpos need not be isomorphic, Eilenberg-swindle obstruction); counterexample left as prose. Axioms: `projElementEmbedding`,`Trianglelefteq.elementEmbedding` `⊆{propext,Quot.sound}`; `orderIso_of_embeddings`,`finite_element_of_isFinite` + main theorems add `Classical.choice` (extract `Fintype` from `Finite`; genuinely unavoidable). Full `Domain` green.
 
 
 #### Exercise 6.29
 * **Mathematical Target:** generalize `+`, `×` to infinitary operations
 * **Lean File:** `Scott1980/Neighborhood/Exercise629.lean`
-* **Proof Notes:** `Exercise629.lean`, ns `Exercise629`. **Verdict: `+`, `×`, `⊕` all generalize to an index family `D : ∀ i, 𝒟ᵢ` over `α i`; `⊗` does NOT (infinite smash degenerates).** Tokens: `Σ i, α i` (product-like) / `Option (Σ i, α i)` (sum-like, `none`=basepoint). **`∏_i D_i` (`iprod`)**: cylinders `iprodNbhd X = {p \| p.2 ∈ X p.1}` with `X i ∈ 𝒟ᵢ` master off a finite support. Finite support is `FinSupp D X := ∃ l:List ι, ∀ i, i∉l → X i = master` — the **positive `List` form** is the key choice-discipline move: it makes `FinSupp.inter` (master ∩ master outside `l++l'`) and reconstruction `z_mem_of_slices` constructive (the negative form `X i≠master→i∈l` needs DNE on undecidable set-equality → `Classical.choice`). Headline **infinitary Prop 3.2**: `iprodEquiv : \|∏_i D_i\| ≃o ∀ i,\|D_i\|` (pointwise order), via `proj`/`fromPi` round-trips `fromPi_toPi`/`proj_fromPi` + slice reconstruction `z_mem_iprodNbhd_restrictTo` (`List.rec` over support) and `iprodNbhd_injective`. **`∑_i D_i` (`isum`)**: basepoint master `sumMasterI` or one tagged copy `injI i X` (single coordinate ⟹ no support condition). `isum_trichotomy` (⊥ or exactly one summand), `isum_summand_unique`. **`⊕_i D_i` (`ioplus`)**: as `∑` minus improper copies (`X≠master`) — generalizes fine. **`⊗_i D_i` (`iotimes`)**: proper = *every* coordinate proper, which over infinite `ι` contradicts finite support ⟹ `iotimes_only_master`/`iotimes_subsingleton`: only the basepoint survives (one-point domain). **Choice-discipline GOTCHAs:** (a) `Function.update_eq_self` is classical — prove `updTuple D i master = (·master)` by `funext`+`by_cases`; (b) avoid `by_cases` on index `i=j` in `injI`-intersection `inter_mem` proofs — recover `i=j` constructively from the consistency witness `index_of_some_mem_injI`; (c) Mathlib's `Set.Finite`/`Function.update_eq_self`/`List.mem_toFinset`/`Finite.of_fintype` all pull `Classical.choice`. **Axioms:** data `iprod`,`isum`,`ioplus`,`iotimes`,`iprodEquiv` and `isum_summand_unique` all `⊆ {propext, Quot.sound}`; only `isum_trichotomy` (excluded middle: reaches-a-summand?) and the degeneracy `iotimes_subsingleton` (cardinality via classical `Set.Finite`) add `Classical.choice` — both Prop-level and flagged. Full `Domain` green, zero `sorry`.
+* **Proof Notes:** `Exercise629.lean`, ns `Exercise629`. **Verdict: `+`, `×`, `⊕` all generalize to an index family `D : ∀ i, 𝒟ᵢ` over `α i`; `⊗` does NOT (infinite smash degenerates).** Tokens: `Σ i, α i` (product-like) / `Option (Σ i, α i)` (sum-like, `none`=basepoint). **`∏_i D_i` (`iprod`)**: cylinders `iprodNbhd X = {p | p.2 ∈ X p.1}` with `X i ∈ 𝒟ᵢ` master off a finite support. Finite support is `FinSupp D X := ∃ l:List ι, ∀ i, i∉l → X i = master` — the **positive `List` form** is the key choice-discipline move: it makes `FinSupp.inter` (master ∩ master outside `l++l'`) and reconstruction `z_mem_of_slices` constructive (the negative form `X i≠master→i∈l` needs DNE on undecidable set-equality → `Classical.choice`). Headline **infinitary Prop 3.2**: `iprodEquiv : |∏_i D_i| ≃o ∀ i,|D_i|` (pointwise order), via `proj`/`fromPi` round-trips `fromPi_toPi`/`proj_fromPi` + slice reconstruction `z_mem_iprodNbhd_restrictTo` (`List.rec` over support) and `iprodNbhd_injective`. **`∑_i D_i` (`isum`)**: basepoint master `sumMasterI` or one tagged copy `injI i X` (single coordinate ⟹ no support condition). `isum_trichotomy` (⊥ or exactly one summand), `isum_summand_unique`. **`⊕_i D_i` (`ioplus`)**: as `∑` minus improper copies (`X≠master`) — generalizes fine. **`⊗_i D_i` (`iotimes`)**: proper = *every* coordinate proper, which over infinite `ι` contradicts finite support ⟹ `iotimes_only_master`/`iotimes_subsingleton`: only the basepoint survives (one-point domain). **Choice-discipline GOTCHAs:** (a) `Function.update_eq_self` is classical — prove `updTuple D i master = (·master)` by `funext`+`by_cases`; (b) avoid `by_cases` on index `i=j` in `injI`-intersection `inter_mem` proofs — recover `i=j` constructively from the consistency witness `index_of_some_mem_injI`; (c) Mathlib's `Set.Finite`/`Function.update_eq_self`/`List.mem_toFinset`/`Finite.of_fintype` all pull `Classical.choice`. **Axioms:** data `iprod`,`isum`,`ioplus`,`iotimes`,`iprodEquiv` and `isum_summand_unique` all `⊆ {propext, Quot.sound}`; only `isum_trichotomy` (excluded middle: reaches-a-summand?) and the degeneracy `iotimes_subsingleton` (cardinality via classical `Set.Finite`) add `Classical.choice` — both Prop-level and flagged. Full `Domain` green, zero `sorry`.
 
 
 ---
@@ -1966,7 +1867,7 @@ Lecture VII establishes the recursion-theoretic foundations of domain theory.
 #### Example 7.8
 * **Mathematical Target:** the powerset `PN` is effectively given
 * **Lean File:** `Scott1980/Neighborhood/Example78.lean`
-* **Proof Notes:** `Example78.lean`, ns `Domain.Neighborhood.Example78`, green, wired. Scott's finite-set enumeration `Eₙ={k∣∃i,j. i<2ᵏ ∧ n=i+2ᵏ+j·2ᵏ⁺¹}` is exactly "`k` is a set bit of `n`" (`Nat.testBit n k`); neighbourhoods are the cofinite sets `nbhd n = ℕ∖Eₙ = {k∣n.testBit k=false}` (`nbhd 0=ℕ=Δ`, `nbhd_zero`). **`nbhd_inter`**: `nbhd n ∩ nbhd m = nbhd (n\|\|\|m)` (Scott's `Eₙ∪Eₘ=E_k`, via `Nat.testBit_lor`+`Bool.or_eq_false_iff`); **`nbhd_injective`** (`Nat.eq_of_testBit_eq`). The system **`PN`** over tokens `ℕ` (`mem Y := ∃n, Y=nbhd n`, master `Δ=ℕ`) is closed under ∩ by `nbhd_inter`, so *any two neighbourhoods are consistent* (`PN_consistent`). **`PNpres : ComputablePresentation PN`**: enumeration `nbhd`; intersection function = the bespoke **choice-free primitive-recursive bitwise OR `Recursive.myLor` (`= (·\|\|\|·)` by `myLor_eq_lor`, `primrec_myLor`)**; relation 7.1(i) `nbhd n∩nbhd m=nbhd k ↔ n\|\|\|m=k` decided by `RecDecidable.natEq` (equality of two primrec fns + `nbhd_injective`); 7.1(ii) consistency is always-true (`recDecidable_of_forall`). **`PN_isEffectivelyGiven`**. New RT layer in `Recursive.lean`: `myLor a b` iterates `lorStep` (strip the low bit of each arg, OR them, accumulate with a doubling weight) `a+b` times; correctness via the invariant `lorStep_iter_spec` (`acc + 2ᵏ·(a/2ᵏ \|\|\| b/2ᵏ) = a\|\|\|b`) + the one-step law `lor_low_rec` and `lowOr`/`lowOr_eq_mod`; `primrec_myLor` is built from `Nat.Primrec.prec` (`rec_const_iterate`). All audit `⊆{propext,Quot.sound}` (the only `omega`-on-`↔` choice trap in `lowOr_eq_mod` is avoided by an explicit `Nat.mod_two_eq_zero_or_one` case split).
+* **Proof Notes:** `Example78.lean`, ns `Domain.Neighborhood.Example78`, green, wired. Scott's finite-set enumeration `Eₙ={k∣∃i,j. i<2ᵏ ∧ n=i+2ᵏ+j·2ᵏ⁺¹}` is exactly "`k` is a set bit of `n`" (`Nat.testBit n k`); neighbourhoods are the cofinite sets `nbhd n = ℕ∖Eₙ = {k∣n.testBit k=false}` (`nbhd 0=ℕ=Δ`, `nbhd_zero`). **`nbhd_inter`**: `nbhd n ∩ nbhd m = nbhd (n|||m)` (Scott's `Eₙ∪Eₘ=E_k`, via `Nat.testBit_lor`+`Bool.or_eq_false_iff`); **`nbhd_injective`** (`Nat.eq_of_testBit_eq`). The system **`PN`** over tokens `ℕ` (`mem Y := ∃n, Y=nbhd n`, master `Δ=ℕ`) is closed under ∩ by `nbhd_inter`, so *any two neighbourhoods are consistent* (`PN_consistent`). **`PNpres : ComputablePresentation PN`**: enumeration `nbhd`; intersection function = the bespoke **choice-free primitive-recursive bitwise OR `Recursive.myLor` (`= (·|||·)` by `myLor_eq_lor`, `primrec_myLor`)**; relation 7.1(i) `nbhd n∩nbhd m=nbhd k ↔ n|||m=k` decided by `RecDecidable.natEq` (equality of two primrec fns + `nbhd_injective`); 7.1(ii) consistency is always-true (`recDecidable_of_forall`). **`PN_isEffectivelyGiven`**. New RT layer in `Recursive.lean`: `myLor a b` iterates `lorStep` (strip the low bit of each arg, OR them, accumulate with a doubling weight) `a+b` times; correctness via the invariant `lorStep_iter_spec` (`acc + 2ᵏ·(a/2ᵏ ||| b/2ᵏ) = a|||b`) + the one-step law `lor_low_rec` and `lowOr`/`lowOr_eq_mod`; `primrec_myLor` is built from `Nat.Primrec.prec` (`rec_const_iterate`). All audit `⊆{propext,Quot.sound}` (the only `omega`-on-`↔` choice trap in `lowOr_eq_mod` is avoided by an explicit `Nat.mod_two_eq_zero_or_one` case split).
 
 
 #### Definition 7.9
@@ -1983,19 +1884,19 @@ Lecture VII establishes the recursion-theoretic foundations of domain theory.
 #### Definition 7.11
 * **Mathematical Target:** finite-element joins `{x₀,…,x_{n-1}}` in the power domain
 * **Lean File:** `Scott1980/Neighborhood/Definition711.lean`
-* **Proof Notes:** `Definition711.lean`, ns `Domain.Neighborhood.NeighborhoodSystem`, green, wired. Scott's `{x₀,…,x_{n-1}} = {z∈\|ℙ𝒟\| ∣ ∃X_i∈x_i. ⋃_{i<n}(↑X_i)⊆z}` formalized as a filter **`PDfinJoin n xs : V.PowerDomain.Element`** (`n=0` ⟹ **`PDfinJoinZero = ⊥`**; `n≥1` ⟹ **`PDfinJoinSucc`**). Membership **`PDmemFinJoin`**: `W∈{xs} ↔ ∃(X_i∈x_i). PD.mem W ∧ ∀i. ↓X_i⊆W` (Scott's union read as down-sets via **`upSet`**); **`PDmem_finJoin_iUnion`** rewrites the `∀i` conjunct as **`⋃_{i<n}↓X_i⊆W`**. Unary **`PDsingleton x = PDfinJoin 1 ![x]`** with **`PDmem_singleton`**. Filter axioms (`master_mem`/`inter_mem`/`up_mem`) proved choice-free (`⊆{propext,Quot.sound}`; intersection step uses Ex 1.20 **`upSet_inter`**). **`{↑X}=↑(↓X)`** (`PDsingleton_principal`) proved in **Prop 7.12**.
+* **Proof Notes:** `Definition711.lean`, ns `Domain.Neighborhood.NeighborhoodSystem`, green, wired. Scott's `{x₀,…,x_{n-1}} = {z∈|ℙ𝒟| ∣ ∃X_i∈x_i. ⋃_{i<n}(↑X_i)⊆z}` formalized as a filter **`PDfinJoin n xs : V.PowerDomain.Element`** (`n=0` ⟹ **`PDfinJoinZero = ⊥`**; `n≥1` ⟹ **`PDfinJoinSucc`**). Membership **`PDmemFinJoin`**: `W∈{xs} ↔ ∃(X_i∈x_i). PD.mem W ∧ ∀i. ↓X_i⊆W` (Scott's union read as down-sets via **`upSet`**); **`PDmem_finJoin_iUnion`** rewrites the `∀i` conjunct as **`⋃_{i<n}↓X_i⊆W`**. Unary **`PDsingleton x = PDfinJoin 1 ![x]`** with **`PDmem_singleton`**. Filter axioms (`master_mem`/`inter_mem`/`up_mem`) proved choice-free (`⊆{propext,Quot.sound}`; intersection step uses Ex 1.20 **`upSet_inter`**). **`{↑X}=↑(↓X)`** (`PDsingleton_principal`) proved in **Prop 7.12**.
 
 
 #### Proposition 7.12
 * **Mathematical Target:** the union mapping on the power domain
 * **Lean File:** `Scott1980/Neighborhood/Proposition712.lean`
-* **Proof Notes:** **Pass (A/B/D proved; C = `D⊴ℙD` REFUTED with formalized counterexample)** — `Proposition712.lean`, ns `Domain.Neighborhood.NeighborhoodSystem` (+ counterexample ns `Domain.Neighborhood.Counterexample712C`), green, wired, zero `sorry`. **Part A:** **`PDsingletonApproxMap`** (`ofMono` on `↑X↦{↑X}`) with **`PDsingletonApproxMap_toElementMap`** (`(λx.{x})(x)={x}`) and **`PDsingleton_principal`** (`{↑X}=↑(↓X)` on finite elements). **Part B:** filter meet **`PDsingletonMeet`**; binary intersection law **`PDfinJoin_pair`** / **`PDfinJoin_inter_two`** (`{x,y}={x}∩{y}`); binary approximable map **`PDfinJoinApproxMap₂`** + product packaging **`finJoinMap_prod`** (`ofMap₂`). **Part C (`D⊴ℙD`) is FALSE in general** (it holds iff `\|𝒟\|` has a greatest element, e.g. `∅∈𝒟`): **`vshape_not_trianglelefteq_powerDomain : ¬(Vshape ⊴ Vshape.PowerDomain)`** for the flat two-point domain **`Vshape`** (`Bool`-tokens `{univ,{true},{false}}`, `{true}∩{false}=∅∉𝒟`). Invariant: **`HasTop`** (greatest element); `ℙ𝒟` is *unconditionally* ∩-closed (empty union always a witness, `PDmem_inter`) so `\|ℙ𝒟\|` has a top (**`improperTop`**/**`hasTop_of_inter_closed`**/**`powerDomain_hasTop`**); `◁` inherits ∩-closure (**`subsystem_inter_closed`**) and `≅ᴰ` transports `HasTop` (**`hasTop_of_iso`**), so `D⊴ℙ𝒟⟹HasTop D` (**`hasTop_of_trianglelefteq_powerDomain`**); but `Vshape` has two incomparable maximal points, **`Vshape_not_hasTop`**. The surviving injection half is `PDsingletonApproxMap`. **Part D:** against **`PDPresentation`**, **`singleton_isComputable`** (`∃b∈dl k, X_n⊆X_b` via `incl_computable.swap.bExistsList.swap`) and **`PDfinJoinApproxMap₂_isComputable`** (two independent singleton tests, `proj₀`-style reindexing). Audited: data `Vshape`/`improperTop` choice-free (`⊆{propext,Quot.sound}` / none); A/B/D + counterexample-Prop decls `⊆{propext,Quot.sound,Classical.choice}` (inherited from `PowerDomain.inter_mem`).
+* **Proof Notes:** **Pass (A/B/D proved; C = `D⊴ℙD` REFUTED with formalized counterexample)** — `Proposition712.lean`, ns `Domain.Neighborhood.NeighborhoodSystem` (+ counterexample ns `Domain.Neighborhood.Counterexample712C`), green, wired, zero `sorry`. **Part A:** **`PDsingletonApproxMap`** (`ofMono` on `↑X↦{↑X}`) with **`PDsingletonApproxMap_toElementMap`** (`(λx.{x})(x)={x}`) and **`PDsingleton_principal`** (`{↑X}=↑(↓X)` on finite elements). **Part B:** filter meet **`PDsingletonMeet`**; binary intersection law **`PDfinJoin_pair`** / **`PDfinJoin_inter_two`** (`{x,y}={x}∩{y}`); binary approximable map **`PDfinJoinApproxMap₂`** + product packaging **`finJoinMap_prod`** (`ofMap₂`). **Part C (`D⊴ℙD`) is FALSE in general** (it holds iff `|𝒟|` has a greatest element, e.g. `∅∈𝒟`): **`vshape_not_trianglelefteq_powerDomain : ¬(Vshape ⊴ Vshape.PowerDomain)`** for the flat two-point domain **`Vshape`** (`Bool`-tokens `{univ,{true},{false}}`, `{true}∩{false}=∅∉𝒟`). Invariant: **`HasTop`** (greatest element); `ℙ𝒟` is *unconditionally* ∩-closed (empty union always a witness, `PDmem_inter`) so `|ℙ𝒟|` has a top (**`improperTop`**/**`hasTop_of_inter_closed`**/**`powerDomain_hasTop`**); `◁` inherits ∩-closure (**`subsystem_inter_closed`**) and `≅ᴰ` transports `HasTop` (**`hasTop_of_iso`**), so `D⊴ℙ𝒟⟹HasTop D` (**`hasTop_of_trianglelefteq_powerDomain`**); but `Vshape` has two incomparable maximal points, **`Vshape_not_hasTop`**. The surviving injection half is `PDsingletonApproxMap`. **Part D:** against **`PDPresentation`**, **`singleton_isComputable`** (`∃b∈dl k, X_n⊆X_b` via `incl_computable.swap.bExistsList.swap`) and **`PDfinJoinApproxMap₂_isComputable`** (two independent singleton tests, `proj₀`-style reindexing). Audited: data `Vshape`/`improperTop` choice-free (`⊆{propext,Quot.sound}` / none); A/B/D + counterexample-Prop decls `⊆{propext,Quot.sound,Classical.choice}` (inherited from `PowerDomain.inter_mem`).
 
 
 #### Exercise 7.13
 * **Mathematical Target:** effectively given domain ↔ an `INCL(n,m)` relation on integers
 * **Lean File:** `Scott1980/Neighborhood/Exercise713.lean`
-* **Proof Notes:** `Exercise713.lean`, ns `Domain.Neighborhood.Exercise713`, green, wired, zero `sorry`. The abstract data **`InclStructure`** carries `INCL:ℕ→ℕ→Prop` with `INCL`/`CONS`/`MEET` recursively decidable (`RecDecidable₂`/`RecDecidable₂`/`RecDecidable₃`), a primrec meet function `meetIdx` + master code `topIdx` (faithful "effective" witnesses of Scott's `∃`-axioms (iii)/(iv), mirroring how `ComputablePresentation` carries `inter` as primrec data), reflexivity/transitivity, `topIdx_spec`, `meetIdx_spec`; derived **`CONS n m:=∃k,INCL k n∧INCL k m`**, **`MEET n m k:=∀j,INCL j k↔(INCL j n∧INCL j m)`**, Scott's axioms restated as **`axiom_i`..`axiom_iv`**. **(⇐)** Scott's hint system **`toNbhd n={m∣INCL m n}`** with key law **`toNbhd_subset_iff : Sₙ⊆Sₖ↔INCL n k`** (→ via `n∈Sₙ` by (i); ← by (ii)); **`toSystem`** (master `Δ=ℕ=S_{topIdx}` by `toNbhd_top`; `inter_mem` from (iv) via `MEET`) and **`toPresentation`** make it effectively given (**`toSystem_isEffectivelyGiven`**): rel 7.1(i) `Sₙ∩Sₘ=Sₖ ↔ MEET n m k` (**`toNbhd_inter_eq_iff`**, decided by `meet_dec`), rel 7.1(ii) consistency `↔ CONS` (`cons_dec`, via **`toNbhd_subset_inter_iff`**), `inter:=meetIdx`, `masterIdx:=topIdx`. **(⇒)** **`ofPresentation P`** turns any `ComputablePresentation V` into an `InclStructure` with `INCL n m:=Xₙ⊆Xₘ`: refl/trans of `⊆`, `topIdx:=masterIdx` (`Xₙ⊆Δ`), `meetIdx:=P.inter`; `INCL`/`CONS` deciders are `P.incl_computable`/`P.cons_computable`, and `MEET` decidability is the key lemma **`meet_iff_interEq : MEET(n,m,k) ↔ Xₙ∩Xₘ=Xₖ`** (⇒ a `MEET` witness at `j=k` makes `(n,m)` consistent ⟹ `Xₙ∩Xₘ∈𝒟` by `inter_mem`, `surj` enumerates it ⟹ `Xₙ∩Xₘ⊆Xₖ`; ⇐ `subset_inter_iff`) composed with `P.interEq_computable`. **Round-trip A** **`ofPresentation_toPresentation_INCL`** (`INCL↦𝒟↦INCL` recovers `INCL` exactly, via `toNbhd_subset_iff`). **Round-trip B** answers "is this essentially *any* effectively given system?" with **yes**: **`reconstruct_isomorphic : toSystem (ofPresentation P) ≅ᴰ V`** built from the mutually-inverse, order-preserving **`reconElem`** (`{Sₙ∣Xₙ∈x}`) / **`reconElemInv`** (`{Xₙ∣Sₙ∈y}`) packaged as **`reconIso : \|V\| ≃o \|reconstruct P\|`** (powerIso-style; `reconElemInv.inter_mem` derives V-consistency from the S-meet index `p∈Sₚ⊆Sₙ∩Sₘ` ⟹ `Xₚ⊆Xₙ∩Xₘ`). **`ofPresentation_toNbhd_eq_iff : Sₙ=Sₘ↔Xₙ=Xₘ`** glues the iso. The Ex-7.18 *effective* isomorphism would tighten "essentially". Choice-discipline win: `toNbhd_inter_eq_iff` uses `exact iff_comm` (NOT `tauto`, which silently pulls `Classical.choice`), so **all** decls — data and Prop — audit `⊆{propext,Quot.sound}`.
+* **Proof Notes:** `Exercise713.lean`, ns `Domain.Neighborhood.Exercise713`, green, wired, zero `sorry`. The abstract data **`InclStructure`** carries `INCL:ℕ→ℕ→Prop` with `INCL`/`CONS`/`MEET` recursively decidable (`RecDecidable₂`/`RecDecidable₂`/`RecDecidable₃`), a primrec meet function `meetIdx` + master code `topIdx` (faithful "effective" witnesses of Scott's `∃`-axioms (iii)/(iv), mirroring how `ComputablePresentation` carries `inter` as primrec data), reflexivity/transitivity, `topIdx_spec`, `meetIdx_spec`; derived **`CONS n m:=∃k,INCL k n∧INCL k m`**, **`MEET n m k:=∀j,INCL j k↔(INCL j n∧INCL j m)`**, Scott's axioms restated as **`axiom_i`..`axiom_iv`**. **(⇐)** Scott's hint system **`toNbhd n={m∣INCL m n}`** with key law **`toNbhd_subset_iff : Sₙ⊆Sₖ↔INCL n k`** (→ via `n∈Sₙ` by (i); ← by (ii)); **`toSystem`** (master `Δ=ℕ=S_{topIdx}` by `toNbhd_top`; `inter_mem` from (iv) via `MEET`) and **`toPresentation`** make it effectively given (**`toSystem_isEffectivelyGiven`**): rel 7.1(i) `Sₙ∩Sₘ=Sₖ ↔ MEET n m k` (**`toNbhd_inter_eq_iff`**, decided by `meet_dec`), rel 7.1(ii) consistency `↔ CONS` (`cons_dec`, via **`toNbhd_subset_inter_iff`**), `inter:=meetIdx`, `masterIdx:=topIdx`. **(⇒)** **`ofPresentation P`** turns any `ComputablePresentation V` into an `InclStructure` with `INCL n m:=Xₙ⊆Xₘ`: refl/trans of `⊆`, `topIdx:=masterIdx` (`Xₙ⊆Δ`), `meetIdx:=P.inter`; `INCL`/`CONS` deciders are `P.incl_computable`/`P.cons_computable`, and `MEET` decidability is the key lemma **`meet_iff_interEq : MEET(n,m,k) ↔ Xₙ∩Xₘ=Xₖ`** (⇒ a `MEET` witness at `j=k` makes `(n,m)` consistent ⟹ `Xₙ∩Xₘ∈𝒟` by `inter_mem`, `surj` enumerates it ⟹ `Xₙ∩Xₘ⊆Xₖ`; ⇐ `subset_inter_iff`) composed with `P.interEq_computable`. **Round-trip A** **`ofPresentation_toPresentation_INCL`** (`INCL↦𝒟↦INCL` recovers `INCL` exactly, via `toNbhd_subset_iff`). **Round-trip B** answers "is this essentially *any* effectively given system?" with **yes**: **`reconstruct_isomorphic : toSystem (ofPresentation P) ≅ᴰ V`** built from the mutually-inverse, order-preserving **`reconElem`** (`{Sₙ∣Xₙ∈x}`) / **`reconElemInv`** (`{Xₙ∣Sₙ∈y}`) packaged as **`reconIso : |V| ≃o |reconstruct P|`** (powerIso-style; `reconElemInv.inter_mem` derives V-consistency from the S-meet index `p∈Sₚ⊆Sₙ∩Sₘ` ⟹ `Xₚ⊆Xₙ∩Xₘ`). **`ofPresentation_toNbhd_eq_iff : Sₙ=Sₘ↔Xₙ=Xₘ`** glues the iso. The Ex-7.18 *effective* isomorphism would tighten "essentially". Choice-discipline win: `toNbhd_inter_eq_iff` uses `exact iff_comm` (NOT `tauto`, which silently pulls `Classical.choice`), so **all** decls — data and Prop — audit `⊆{propext,Quot.sound}`.
 
 
 #### Exercise 7.14
@@ -2025,7 +1926,7 @@ Lecture VII establishes the recursion-theoretic foundations of domain theory.
 #### Exercise 7.18
 * **Mathematical Target:** define *effective isomorphism*; effective `D∞ ≅ (D∞)∞`
 * **Lean File:** `Scott1980/Neighborhood/Exercise718.lean`
-* **Proof Notes:** `Exercise718.lean`, ns `Domain.Neighborhood.Exercise718`, green, wired, zero `sorry`. **Part 1 — "complete the sentence":** **`EffectiveIso P Q`** = a pair of mutually inverse approximable maps `toMap:D→E`, `invMap:E→D`, **both computable** (`IsComputableMap`, Def 7.2), with `invMap∘toMap=I_D`, `toMap∘invMap=I_E`; **`EffectivelyIsomorphic P Q := Nonempty (EffectiveIso P Q)`**. Derives a domain iso **`EffectiveIso.toDomainIso : \|D\|≃o\|E\|`** (elementwise maps inverse via `toElementMap_comp`/`toElementMap_idMap`, monotone via `toElementMap_mono`) ⟹ **`EffectivelyIsomorphic.isomorphic : D≅ᴰE`** (tightens Def 1.9's `≅`; with Ex 7.13's `reconstruct_isomorphic`, tightens "essentially the same"). **Part 2 — `D∞≅(D∞)∞` effective:** the index reindexing `x_k ↔ x_{(unpair k)}` (`x_{i,j}=x_{pair i j}`). Double-indexed fiber **`fiber2 S i j := fiber (fiber S i) j`**; forward/inverse maps **`Fmap`** (`W F S ↔ ∀i j, fiber W (pair i j)⊆fiber2 S i j`) / **`Gmap`** (`S G W ↔ ∀k, fiber2 S (unpair k)⊆fiber W k`). Inverse laws **`Gmap_comp_Fmap`/`Fmap_comp_Gmap`** proved directly on the relations via the reindex constructions **`reindexF`/`reindexG`** (`reindexF_subset_iff`/`reindexG_subset_iff`, membership `reindexF_mem`/`reindexG_mem`). The `reindexG` cofinite-`Δ` bound uses a **choice-free** `Prop`-level induction **`exists_inner_bound`** for the uniform inner max + a local strict `pair_lt_pair_of_lt` (no `Exists.choose`). **Computability** (`Fmap_isComputable`/`Gmap_isComputable`): over `iterPresentation P` / `iterPresentation (iterPresentation P)`, each rel reduces (`Fmap_rel_enum_iff`/`Gmap_rel_enum_iff`) to a **bounded** `incl_computable` check — `G` a single `bForall` over `k<n`, `F` a *nested* `bForall` over `i<m`, `j<iterIdx (iterᴾ) m i` (everything beyond the coded fiber lengths is `Δ`, trivially `⊆`); both are recursively *decidable*, hence `.re`. Packaged as **`iterIterEffectiveIso P`** ⟹ **`iterSys_effectivelyIsomorphic_iterIter`** + corollary **`iterSys_isomorphic_iterIter : D∞≅ᴰ(D∞)∞`**. Reuses `Exercise715.iterPresentation`/`iterEnum`/`iterIdx`/`fiber_iterEnum`/`iterIdx_ge`, `Exercise316` fiber lemmas, `Recursive.bForall`/`nthCode`/`le_pair_left/right`.
+* **Proof Notes:** `Exercise718.lean`, ns `Domain.Neighborhood.Exercise718`, green, wired, zero `sorry`. **Part 1 — "complete the sentence":** **`EffectiveIso P Q`** = a pair of mutually inverse approximable maps `toMap:D→E`, `invMap:E→D`, **both computable** (`IsComputableMap`, Def 7.2), with `invMap∘toMap=I_D`, `toMap∘invMap=I_E`; **`EffectivelyIsomorphic P Q := Nonempty (EffectiveIso P Q)`**. Derives a domain iso **`EffectiveIso.toDomainIso : |D|≃o|E|`** (elementwise maps inverse via `toElementMap_comp`/`toElementMap_idMap`, monotone via `toElementMap_mono`) ⟹ **`EffectivelyIsomorphic.isomorphic : D≅ᴰE`** (tightens Def 1.9's `≅`; with Ex 7.13's `reconstruct_isomorphic`, tightens "essentially the same"). **Part 2 — `D∞≅(D∞)∞` effective:** the index reindexing `x_k ↔ x_{(unpair k)}` (`x_{i,j}=x_{pair i j}`). Double-indexed fiber **`fiber2 S i j := fiber (fiber S i) j`**; forward/inverse maps **`Fmap`** (`W F S ↔ ∀i j, fiber W (pair i j)⊆fiber2 S i j`) / **`Gmap`** (`S G W ↔ ∀k, fiber2 S (unpair k)⊆fiber W k`). Inverse laws **`Gmap_comp_Fmap`/`Fmap_comp_Gmap`** proved directly on the relations via the reindex constructions **`reindexF`/`reindexG`** (`reindexF_subset_iff`/`reindexG_subset_iff`, membership `reindexF_mem`/`reindexG_mem`). The `reindexG` cofinite-`Δ` bound uses a **choice-free** `Prop`-level induction **`exists_inner_bound`** for the uniform inner max + a local strict `pair_lt_pair_of_lt` (no `Exists.choose`). **Computability** (`Fmap_isComputable`/`Gmap_isComputable`): over `iterPresentation P` / `iterPresentation (iterPresentation P)`, each rel reduces (`Fmap_rel_enum_iff`/`Gmap_rel_enum_iff`) to a **bounded** `incl_computable` check — `G` a single `bForall` over `k<n`, `F` a *nested* `bForall` over `i<m`, `j<iterIdx (iterᴾ) m i` (everything beyond the coded fiber lengths is `Δ`, trivially `⊆`); both are recursively *decidable*, hence `.re`. Packaged as **`iterIterEffectiveIso P`** ⟹ **`iterSys_effectivelyIsomorphic_iterIter`** + corollary **`iterSys_isomorphic_iterIter : D∞≅ᴰ(D∞)∞`**. Reuses `Exercise715.iterPresentation`/`iterEnum`/`iterIdx`/`fiber_iterEnum`/`iterIdx_ge`, `Exercise316` fiber lemmas, `Recursive.bForall`/`nthCode`/`le_pair_left/right`.
 
 
 #### Exercise 7.19
@@ -2054,7 +1955,7 @@ also now **Pass**, closing the inventory.
 #### Exercise 7.22a
 * **Mathematical Target:** least-fixed-point family `S` over `{0,1}*` (`InS`)
 * **Lean File:** `Scott1980/Neighborhood/Exercise722.lean`
-* **Proof Notes:** Inductive **`InS`** with generators `univ` (`Σ=Set.univ`), `singleton σ`, `mul` (`concat X Y`), `inter` (non-empty `∩`). Bespoke **`concat X Y={a++b\|a∈X,b∈Y}`** with `concat_mono`/`concat_assoc`/`concat_singleton`/`concat_nonempty`. Tokens `Σ={0,1}*=List Bool`. Green, zero `sorry`, **choice-free `⊆{propext,Quot.sound}`**.
+* **Proof Notes:** Inductive **`InS`** with generators `univ` (`Σ=Set.univ`), `singleton σ`, `mul` (`concat X Y`), `inter` (non-empty `∩`). Bespoke **`concat X Y={a++b|a∈X,b∈Y}`** with `concat_mono`/`concat_assoc`/`concat_singleton`/`concat_nonempty`. Tokens `Σ={0,1}*=List Bool`. Green, zero `sorry`, **choice-free `⊆{propext,Quot.sound}`**.
 
 #### Exercise 7.22b
 * **Mathematical Target:** `S` is a positive neighbourhood system
@@ -2062,9 +1963,9 @@ also now **Pass**, closing the inventory.
 * **Proof Notes:** **`InS.nonempty`** ⟹ **`Ssys : NeighborhoodSystem (List Bool)`** via `ofPositive` (master `Δ=Σ=univ`); **`Ssys_isPositive`** proved directly. Green, zero `sorry`, choice-free.
 
 #### Exercise 7.22c
-* **Mathematical Target:** semigroup on `\|S\|` and embedding of the free monoid
+* **Mathematical Target:** semigroup on `|S|` and embedding of the free monoid
 * **Lean File:** `Scott1980/Neighborhood/Exercise722.lean`
-* **Proof Notes:** **`mulElem`** (`xy={Z∈S\|∃X∈x∃Y∈y, XY⊆Z}`) a filter; **`mulElem_assoc`**. **`emb σ={X∈S\|σ∈X}`** with **`emb_mul`**, **`emb_injective`**. Green, zero `sorry`, choice-free.
+* **Proof Notes:** **`mulElem`** (`xy={Z∈S|∃X∈x∃Y∈y, XY⊆Z}`) a filter; **`mulElem_assoc`**. **`emb σ={X∈S|σ∈X}`** with **`emb_mul`**, **`emb_injective`**. Green, zero `sorry`, choice-free.
 
 #### Exercise 7.22d
 * **Mathematical Target:** regular-event syntax; decidable membership (Scott's hint)
@@ -2089,7 +1990,7 @@ also now **Pass**, closing the inventory.
 #### Exercise 7.22h
 * **Mathematical Target:** infinite-word equations (Scott's investigatory questions)
 * **Lean File:** `Scott1980/Neighborhood/Exercise722.lean`
-* **Proof Notes:** **`streamElem`** (`w⃗` as `{Z \| InS Z ∧ ∀n, wⁿ∈Z}`), **`powerLang`**, **`streamElem_powers_of_mul`**, **`streamElem_idempotent`** (`w⃗·w⃗=w⃗` when `InS (powerLang w)`). **`example`** checks: empty word idempotent; triple product via **`mulElem_assoc`**; `σ++[true]` and `01` four-fold cases conditional on `InS (powerLang …)`. This "power-filter" proxy's side-condition `InS (powerLang w)` for `\|w\|≥1` remains an open combinatorics-on-words question, but **7.22l**'s `streamArrow` (genuine domain least fixed point, no side-condition) now answers Scott's actual equations unconditionally, superseding this file's role for that purpose; kept for reference. Green, zero `sorry`; axioms `⊆ {propext, Quot.sound}`.
+* **Proof Notes:** **`streamElem`** (`w⃗` as `{Z | InS Z ∧ ∀n, wⁿ∈Z}`), **`powerLang`**, **`streamElem_powers_of_mul`**, **`streamElem_idempotent`** (`w⃗·w⃗=w⃗` when `InS (powerLang w)`). **`example`** checks: empty word idempotent; triple product via **`mulElem_assoc`**; `σ++[true]` and `01` four-fold cases conditional on `InS (powerLang …)`. This "power-filter" proxy's side-condition `InS (powerLang w)` for `|w|≥1` remains an open combinatorics-on-words question, but **7.22l**'s `streamArrow` (genuine domain least fixed point, no side-condition) now answers Scott's actual equations unconditionally, superseding this file's role for that purpose; kept for reference. Green, zero `sorry`; axioms `⊆ {propext, Quot.sound}`.
 
 #### Exercise 7.22i(a)
 * **Mathematical Target:** generic primitive-recursive closure for Bool/char deciders (Composer **C9a**)
@@ -2186,17 +2087,17 @@ also now **Pass**, closing the inventory.
 #### Exercise 7.22l
 * **Mathematical Target:** Scott's infinite-word equations (`σ⃗σ⃗=σ⃗`, `σ⃗σ⃗σ⃗=σ⃗`, `σ⃗1⃗σ⃗1⃗=σ⃗1⃗`, `01⃗⁴=01⃗²`), `σ⃗` defined by least fixed point `σ⃗=σσ⃗`
 * **Lean File:** `Scott1980/Neighborhood/Exercise722.lean`
-* **Proof Notes:** The earlier framing (power-filter `streamElem w := {Z\|InS Z∧∀n,wⁿ∈Z}`, conditional on the side-question `InS (powerLang w)` — is `{wⁿ}` itself in `S`?) turned that side-question into a genuinely open combinatorics-on-words problem (kept, unresolved, as `streamElem`/`powerLang`, but it is **not** part of Scott's actual question — an artefact of that proxy construction). **Resolved instead** by answering Scott's question **as literally posed**: `σ⃗` is a genuine **least fixed point in the domain `\|S\|`**, built with the project's existing Theorem 4.1 machinery (`prependMap σ : ApproximableMap Ssys Ssys`, `x↦σ·x`, mirroring `Example44.lean`'s alternating-sequence construction `a=0(1a)`; `streamArrow σ := (prependMap σ).fixElement`, giving `streamArrow_eq : σ·σ⃗=σ⃗` via `toElementMap_fixElement`). All four equations then hold **unconditionally**: `streamArrow_mul_self` (`σ⃗·σ⃗=σ⃗` — `≤` via `fixElement_le_of_toElementMap_le` [σ⃗·σ⃗ is itself a fixed point, by associativity]; `≥` via an induction on `fⁿ(⊥)·σ⃗≤σ⃗` [base case `mulElem_bot_le`, step via associativity+monotonicity+`streamArrow_eq`], combined with `fixElement_eq_iSupDirected`'s "σ⃗ = sup of approximants" characterisation and `mem_fixElement`/`mem_iterElem` to locate any witness `X` at some finite approximant), `streamArrow_mul_self_self`, `streamArrow_mul_self_append_true` (Scott's `σ⃗1⃗σ⃗1⃗=σ⃗1⃗`, read as `streamArrow(σ++[true])`'s own idempotency, matching how the file's `streamElem`-based examples already read the same notation), `streamArrow_containsZero_pow_four` (`01⃗⁴=01⃗²`). Zero `sorry`, **`⊆ {propext, Quot.sound}`** — no `Classical.choice` (tighter than the abandoned Zorn-based `exists_least_fixedPoint` route would have been). Along the way, fixed an unrelated latent `simp`-fragility bug in `Recursive.lean`'s `appendListTabFn_eq` (C9b4) blocking a from-scratch build.
+* **Proof Notes:** The earlier framing (power-filter `streamElem w := {Z|InS Z∧∀n,wⁿ∈Z}`, conditional on the side-question `InS (powerLang w)` — is `{wⁿ}` itself in `S`?) turned that side-question into a genuinely open combinatorics-on-words problem (kept, unresolved, as `streamElem`/`powerLang`, but it is **not** part of Scott's actual question — an artefact of that proxy construction). **Resolved instead** by answering Scott's question **as literally posed**: `σ⃗` is a genuine **least fixed point in the domain `|S|`**, built with the project's existing Theorem 4.1 machinery (`prependMap σ : ApproximableMap Ssys Ssys`, `x↦σ·x`, mirroring `Example44.lean`'s alternating-sequence construction `a=0(1a)`; `streamArrow σ := (prependMap σ).fixElement`, giving `streamArrow_eq : σ·σ⃗=σ⃗` via `toElementMap_fixElement`). All four equations then hold **unconditionally**: `streamArrow_mul_self` (`σ⃗·σ⃗=σ⃗` — `≤` via `fixElement_le_of_toElementMap_le` [σ⃗·σ⃗ is itself a fixed point, by associativity]; `≥` via an induction on `fⁿ(⊥)·σ⃗≤σ⃗` [base case `mulElem_bot_le`, step via associativity+monotonicity+`streamArrow_eq`], combined with `fixElement_eq_iSupDirected`'s "σ⃗ = sup of approximants" characterisation and `mem_fixElement`/`mem_iterElem` to locate any witness `X` at some finite approximant), `streamArrow_mul_self_self`, `streamArrow_mul_self_append_true` (Scott's `σ⃗1⃗σ⃗1⃗=σ⃗1⃗`, read as `streamArrow(σ++[true])`'s own idempotency, matching how the file's `streamElem`-based examples already read the same notation), `streamArrow_containsZero_pow_four` (`01⃗⁴=01⃗²`). Zero `sorry`, **`⊆ {propext, Quot.sound}`** — no `Classical.choice` (tighter than the abandoned Zorn-based `exists_least_fixedPoint` route would have been). Along the way, fixed an unrelated latent `simp`-fragility bug in `Recursive.lean`'s `appendListTabFn_eq` (C9b4) blocking a from-scratch build.
 
 #### Exercise 7.23
 * **Mathematical Target:** finish `PN` (Ex 7.8): `fun`/`graph` (Ex 5.14) computable; `∩`/`∪`/`+` computable; characterize the computable elements of `PN`
 * **Lean File:** `Scott1980/Neighborhood/Exercise723.lean` (1476 lines)
-* **Proof Notes:** **All four parts done and audited choice-free.** `nbhd n ⊆ nbhd k ↔ myLor n k = n` (`nbhd_subset_iff_myLor_eq`) is the master reduction: every binary combinator here tests `Eₖ ⊆ h(Eₙ,Eₘ)`, i.e. `nbhd n ⊆ nbhd k` reindexed, so **`∩`/`∪`** (`capMap`/`cupMap`, `capMap_isComputable`/`cupMap_isComputable`) reuse `PNpres.incl_computable` directly with zero new bitwise machinery. **`λx,y.x+y`** (Minkowski sum `x+y=\{n+m\|n∈x,m∈y\}`, `plusMap`/`plusMap_isComputable`) needed real bit-level work: `bitAt`/`primrec_bitAt` (`Nat.testBit` made primitive-recursive via `halfIter`), `orUpTo`/`plusIdx` (`plusIdx n m` = iterative bitwise-OR of `m<<<a` over set bits `a` of `n`, mirroring `myLor`'s fold), `compl_nbhd_plusIdx : (nbhd(plusIdx n m))ᶜ = (nbhd n)ᶜ +ˢ (nbhd m)ᶜ`, and a `plusStep`/`Nat.Primrec.prec` primitive-recursive presentation (`primrec_plusIdx`). **Computable elements of `PN`** (`isComputableElement_iff_elemSet_re`): `elemSet x := ⋃\{Eₙ\|x.mem(nbhd n)\}` identifies `PN.Element ≃o (Set ℕ,⊆)`; `nbhd_mem_iff_subset_elemSet : x.mem(nbhd n) ↔ Eₙ⊆elemSet x` (⟸ via a choice-free finite-covering lemma `exists_combined_witness`, combining per-bit witnesses with `myLor`); forward direction is a direct r.e. projection; converse packages `Eₙ⊆elemSet x` as a bounded conjunction over a primitive-recursive coded list (`bitsCode`/`primrec_bitsCode`, mirroring `plusIdx`'s iteration) via `REPred.forall_mem_decodeList` — the headline fact that PN's computable elements are exactly the r.e. sets, Scott's classical result for the powerset domain. **`fun`/`graph` (the reflexive-domain combinators, mechanised this session).** `gMap : ApproximableMap (prod PN PN) PN` implements Ex 5.14's `Fun` on neighbourhoods via the reversal idiom `Zᶜ ⊆ Fun Xᶜ Yᶜ`; the decode direction needed `untagRef`/`untagList`/`untagVal` (a well-founded reference decoder for `tag`, made primitive-recursive by a bounded-iteration `untagState := untagStep^[c+1] …` via `Nat.Primrec.prec`) so that `mem_Fun_compl_nbhd_iff'` rewrites `j∈Fun(nbhd n)ᶜ(nbhd m)ᶜ` as a *bounded* `∃c<n` (ranging over `decodeList(bitsCode n n)`, i.e. the set bits of `n`) with decode-and-check body, closing `gMap_isComputable` via `RecDecidable.bExists`/`.bForall`. `funMap := curry gMap` is computable for free via Theorem 7.5's generic `curry_isComputable`. **`graphMap : ApproximableMap (funSpace PN PN) PN`** dualizes via `Zᶜ ⊆ GraphIdx W` where `GraphIdx W := \{c\|∃n m₀ m, c=tagOfBits n m ∧ (∀f∈W,f.rel(nbhd n)(nbhd m₀)) ∧ m₀.testBit m\}` — crucially using `tagOfBits n m := tagCode(bitsCode n n) m` (a *primitive-recursive* encoding of `tag(decodeList(bitsCode n n)) m`, not the merely well-founded `tag(bitsList n) m`) so that `GraphIdx` membership decodes computably: `mem_GraphIdx_iff` shows `c∈GraphIdx W ↔ ∃n m₀, untagList c = bitsCode n n ∧ (∀f∈W,f.rel(nbhd n)(nbhd m₀)) ∧ m₀.testBit(untagVal c)` via `tag`'s injectivity plus a one-line `decodeList` injectivity (`decodeList_injective`, from the round-trip `encodeList_decodeList`). The `∀f∈W,f.rel X Y` clause becomes the *decidable* function-space inclusion `Xenum…c ⊆ Xenum…(pair(pair n m₀)0+1)` via `mem_step`+`Xenum_singleton`+`funPresentation.incl_computable` (mirroring `Theorem75.lean`'s `evalMap_isComputable`); the two witnesses `n,m₀` are *unboundedly* searched via `REPred.proj` (applied twice) since (unlike `gMap`'s `Fun`) `GraphIdx`'s existentials aren't boundable by the queried index alone — `graphIdx_isComputable` packages this as `REPred₂`, and `graphMap_isComputable` closes with `REPred.forall_mem_decodeList₂` over `bitsCode m m` (bounding the outer `∀j<m`, mirroring `compl_nbhd_subset_iff`, the `S`-generic form of `gMap`'s own bound lemma). `graphMap_isComputable`/`funMap_isComputable` are stated generically over *any* valid `funPresentation PNpres PNpres gN incl0 incl1 eq1 …` witnessing data, exactly as `Theorem75.lean`'s own `curry_isComputable`/`evalMap_isComputable` are. All of the above is audited **fully choice-free `⊆{propext,Quot.sound}`** (`#print axioms` on every top-level theorem) — this took real care across two sessions: several `simp`/`omega`/`simpa`/`by_contra` calls silently pulled in `Nat.unpair_pair`, `Set.compl_subset_compl`, `Set.compl_inter`, or `Nat.Primrec.id` (Mathlib's own convenience lemma, classical! — this project's local choice-free `primrec_id` must be used instead) even though the specific instance in play is constructive, fixed by hand-rolled choice-free replacements (`compl_subset_compl_of_subset`, `compl_inter_nbhd`, `nbhd_subset_iff_compl_subset_compl`, swapping stray `Nat.Primrec.id`s for `primrec_id`) and by rewriting equation-compiler recursions as `induction k with`. **Lean-mechanics lesson (also worth recording):** `Nat.pair`/`Nat.unpair` do *not* cancel definitionally (`unpair_pair_fst`/`unpair_pair_snd` are genuine theorems, not `rfl`), so a `have h : ⟨explicit unpaired target⟩ := ⟨primrec .pair/.comp chain⟩` term-mode ascription silently round-trips through `Nat.unpair(Nat.pair _ _)` wherever a `.pair` combinator's output is immediately `.unpair`'d downstream (e.g. inside `RecDecidable.natEq`/`RecDecidable₂`'s own unfolding) — this either times out at `whnf` (heartbeats) or fails outright with a type mismatch; the fix, used throughout this codebase, is to *never* rely on that defeq and instead always close such compositions with `.of_eq (fun w => by simp only [unpair_pair_fst, unpair_pair_snd])`. Relatedly, dot-notation (`hp.re`, `hp.forall_mem_decodeList₂`) only resolves when the *stated* type's head symbol literally matches the namespace (`REPred.re`, not `REPred₂.re`) — reducible `def`s like `RecDecidable`/`REPred₂` can silently unfold under elaboration and break dot-notation resolution; safest is prefix application (`REPred.forall_mem_decodeList₂ hp`) when the hypothesis's stated type is the `₂`-suffixed alias.
+* **Proof Notes:** **All four parts done and audited choice-free.** `nbhd n ⊆ nbhd k ↔ myLor n k = n` (`nbhd_subset_iff_myLor_eq`) is the master reduction: every binary combinator here tests `Eₖ ⊆ h(Eₙ,Eₘ)`, i.e. `nbhd n ⊆ nbhd k` reindexed, so **`∩`/`∪`** (`capMap`/`cupMap`, `capMap_isComputable`/`cupMap_isComputable`) reuse `PNpres.incl_computable` directly with zero new bitwise machinery. **`λx,y.x+y`** (Minkowski sum `x+y=\{n+m|n∈x,m∈y\}`, `plusMap`/`plusMap_isComputable`) needed real bit-level work: `bitAt`/`primrec_bitAt` (`Nat.testBit` made primitive-recursive via `halfIter`), `orUpTo`/`plusIdx` (`plusIdx n m` = iterative bitwise-OR of `m<<<a` over set bits `a` of `n`, mirroring `myLor`'s fold), `compl_nbhd_plusIdx : (nbhd(plusIdx n m))ᶜ = (nbhd n)ᶜ +ˢ (nbhd m)ᶜ`, and a `plusStep`/`Nat.Primrec.prec` primitive-recursive presentation (`primrec_plusIdx`). **Computable elements of `PN`** (`isComputableElement_iff_elemSet_re`): `elemSet x := ⋃\{Eₙ|x.mem(nbhd n)\}` identifies `PN.Element ≃o (Set ℕ,⊆)`; `nbhd_mem_iff_subset_elemSet : x.mem(nbhd n) ↔ Eₙ⊆elemSet x` (⟸ via a choice-free finite-covering lemma `exists_combined_witness`, combining per-bit witnesses with `myLor`); forward direction is a direct r.e. projection; converse packages `Eₙ⊆elemSet x` as a bounded conjunction over a primitive-recursive coded list (`bitsCode`/`primrec_bitsCode`, mirroring `plusIdx`'s iteration) via `REPred.forall_mem_decodeList` — the headline fact that PN's computable elements are exactly the r.e. sets, Scott's classical result for the powerset domain. **`fun`/`graph` (the reflexive-domain combinators, mechanised this session).** `gMap : ApproximableMap (prod PN PN) PN` implements Ex 5.14's `Fun` on neighbourhoods via the reversal idiom `Zᶜ ⊆ Fun Xᶜ Yᶜ`; the decode direction needed `untagRef`/`untagList`/`untagVal` (a well-founded reference decoder for `tag`, made primitive-recursive by a bounded-iteration `untagState := untagStep^[c+1] …` via `Nat.Primrec.prec`) so that `mem_Fun_compl_nbhd_iff'` rewrites `j∈Fun(nbhd n)ᶜ(nbhd m)ᶜ` as a *bounded* `∃c<n` (ranging over `decodeList(bitsCode n n)`, i.e. the set bits of `n`) with decode-and-check body, closing `gMap_isComputable` via `RecDecidable.bExists`/`.bForall`. `funMap := curry gMap` is computable for free via Theorem 7.5's generic `curry_isComputable`. **`graphMap : ApproximableMap (funSpace PN PN) PN`** dualizes via `Zᶜ ⊆ GraphIdx W` where `GraphIdx W := \{c|∃n m₀ m, c=tagOfBits n m ∧ (∀f∈W,f.rel(nbhd n)(nbhd m₀)) ∧ m₀.testBit m\}` — crucially using `tagOfBits n m := tagCode(bitsCode n n) m` (a *primitive-recursive* encoding of `tag(decodeList(bitsCode n n)) m`, not the merely well-founded `tag(bitsList n) m`) so that `GraphIdx` membership decodes computably: `mem_GraphIdx_iff` shows `c∈GraphIdx W ↔ ∃n m₀, untagList c = bitsCode n n ∧ (∀f∈W,f.rel(nbhd n)(nbhd m₀)) ∧ m₀.testBit(untagVal c)` via `tag`'s injectivity plus a one-line `decodeList` injectivity (`decodeList_injective`, from the round-trip `encodeList_decodeList`). The `∀f∈W,f.rel X Y` clause becomes the *decidable* function-space inclusion `Xenum…c ⊆ Xenum…(pair(pair n m₀)0+1)` via `mem_step`+`Xenum_singleton`+`funPresentation.incl_computable` (mirroring `Theorem75.lean`'s `evalMap_isComputable`); the two witnesses `n,m₀` are *unboundedly* searched via `REPred.proj` (applied twice) since (unlike `gMap`'s `Fun`) `GraphIdx`'s existentials aren't boundable by the queried index alone — `graphIdx_isComputable` packages this as `REPred₂`, and `graphMap_isComputable` closes with `REPred.forall_mem_decodeList₂` over `bitsCode m m` (bounding the outer `∀j<m`, mirroring `compl_nbhd_subset_iff`, the `S`-generic form of `gMap`'s own bound lemma). `graphMap_isComputable`/`funMap_isComputable` are stated generically over *any* valid `funPresentation PNpres PNpres gN incl0 incl1 eq1 …` witnessing data, exactly as `Theorem75.lean`'s own `curry_isComputable`/`evalMap_isComputable` are. All of the above is audited **fully choice-free `⊆{propext,Quot.sound}`** (`#print axioms` on every top-level theorem) — this took real care across two sessions: several `simp`/`omega`/`simpa`/`by_contra` calls silently pulled in `Nat.unpair_pair`, `Set.compl_subset_compl`, `Set.compl_inter`, or `Nat.Primrec.id` (Mathlib's own convenience lemma, classical! — this project's local choice-free `primrec_id` must be used instead) even though the specific instance in play is constructive, fixed by hand-rolled choice-free replacements (`compl_subset_compl_of_subset`, `compl_inter_nbhd`, `nbhd_subset_iff_compl_subset_compl`, swapping stray `Nat.Primrec.id`s for `primrec_id`) and by rewriting equation-compiler recursions as `induction k with`. **Lean-mechanics lesson (also worth recording):** `Nat.pair`/`Nat.unpair` do *not* cancel definitionally (`unpair_pair_fst`/`unpair_pair_snd` are genuine theorems, not `rfl`), so a `have h : ⟨explicit unpaired target⟩ := ⟨primrec .pair/.comp chain⟩` term-mode ascription silently round-trips through `Nat.unpair(Nat.pair _ _)` wherever a `.pair` combinator's output is immediately `.unpair`'d downstream (e.g. inside `RecDecidable.natEq`/`RecDecidable₂`'s own unfolding) — this either times out at `whnf` (heartbeats) or fails outright with a type mismatch; the fix, used throughout this codebase, is to *never* rely on that defeq and instead always close such compositions with `.of_eq (fun w => by simp only [unpair_pair_fst, unpair_pair_snd])`. Relatedly, dot-notation (`hp.re`, `hp.forall_mem_decodeList₂`) only resolves when the *stated* type's head symbol literally matches the namespace (`REPred.re`, not `REPred₂.re`) — reducible `def`s like `RecDecidable`/`REPred₂` can silently unfold under elaboration and break dot-notation resolution; safest is prefix application (`REPred.forall_mem_decodeList₂ hp`) when the hypothesis's stated type is the `₂`-suffixed alias.
 
 #### Exercise 7.24
-* **Mathematical Target:** define `Γ` (finite/infinite sequences of naturals) and its neighbourhood system `L`; show `L` effectively given; identify `\|L\|` with `Γ`; relate `L` to `B`; show LUCID (Ashcroft–Wadge) combinators are computable maps of type `(L→T)→(L→T)` / `(L→T)×(L→T)→(L→T)`; conclude LUCID programs define computable maps
+* **Mathematical Target:** define `Γ` (finite/infinite sequences of naturals) and its neighbourhood system `L`; show `L` effectively given; identify `|L|` with `Γ`; relate `L` to `B`; show LUCID (Ashcroft–Wadge) combinators are computable maps of type `(L→T)→(L→T)` / `(L→T)×(L→T)→(L→T)`; conclude LUCID programs define computable maps
 * **Lean File:** `Scott1980/Neighborhood/Exercise724.lean` (1515 lines)
-* **Proof Notes:** **All four claims done.** **(i) effectively given.** `Gamma := List ℕ ⊕ (ℕ→ℕ)` (`star`/`cons`, `Gamma_cases`); `L`'s neighbourhoods are cone sets `nbhd l := {z\|∃γ,z=cons-chain l γ}` indexed by finite lists (`nbhd_subset_iff : nbhd l⊆nbhd l' ↔ l'<+:l`, i.e. reverse-prefix order, mirroring `B`'s `cone`), `L_nestedOrDisjoint` from `consSet_inter_ne`. **`Lpres : ComputablePresentation L`**: `Lenum n := nbhd (decodeList n)` (reuses the project's list-coding layer), `isPrefixChar`/`LenumSubsetChar` (relation ⊆, primrec via `listEqChar∘takeCode`), `LenumConsChar`/`LenumInterEqChar` (relations (i)/(ii) of Def 7.1, both primrec), `LenumInter` (an explicit primrec intersection witness, `selectFn` on the prefix test) — same "step pattern" as every prior `ComputablePresentation` in the project. **(ii) `\|L\|≃Γ`.** `toElement : Gamma → L.Element` (`star↦⊥`-ish default via `nbhd []=univ`, `cons i γ` via the finite-prefix chain); injectivity via `streamElement_injective`/`finPrefix_eq_of_streamElement_eq` (two streams with the same set of finite approximants must agree pointwise, `List.ext`-style); **surjectivity is the one genuinely choice-using step** (`toElement_surjective` via `buildData`/`toStream`, a coordinate-by-coordinate witness-extraction recursion, `noncomputable`, mirrors the same pattern already used for `PN`/other domain-element identifications) — packaged as `gammaEquivElement : Gamma ≃ L.Element`. **(iii) `B` inside `L`.** `embStr : ExampleB.Str → List ℕ` (`bitToNat` per bit) embeds `B`'s finite binary strings into `L`'s address lists; `cone_subset_cone_iff_nbhd_embStr` and `sigmaBot_le_iff_toElement_inl_embStr` show this embedding is an order-embedding at both the neighbourhood level and the finite-element level (`B`'s `\|B\|` sits inside `\|L\|` as the sub-order of finite binary addresses, matching Scott's remark that `B` is the special case of `L` with alphabet `{0,1}`). **(iv) LUCID combinators computable — the headline claim.** Rather than mechanizing LUCID's full concrete syntax, gave `T` (`Example23.T`, the 3-point truth-value domain from Example 1.2) an explicit `Tpres : ComputablePresentation T` (`Tenum : 0↦Δ,1↦{0},2↦{1}`, `TinterCode`/`TeqChar` primrec), then exhibited two representative combinators as genuine `ApproximableMap`s **and proved them computable**: **`notT`** (pointwise negation, `notFn`/`notCode`, `notT_isComputable`) and **`andT`** (sequential/pointwise AND via `ofMap₂ andMap2`, `andFn`/`andCode`, `andT_isComputable`) — both built on the standard Scott "step-pattern" relation `rel X Y := mem X ∧ mem Y ∧ f(X)⊆Y` (needed for monotonicity: blunter outputs must stay valid), with `subset_iff_eq_or_eq_master`-style case splits on `T`'s three neighbourhoods closing `mono`. The **general engine** is two reusable lifting theorems, proved once and for all: **`postcompose`** (`h:V₁→V₂` computable ⟹ `curry(h∘eval) : (L→V₁)→(L→V₂)` computable) and **`pointwiseBin`** (`h:V₀×V₁→V₂` computable ⟹ the pointwise-apply map `(L→V₀)×(L→V₁)→(L→V₂)` computable), both closed via the existing `curry_isComputable`/`evalMap_isComputable`/`comp_isComputable`/`paired_isComputable` (Theorem 7.5/Prop 7.3/Theorem 7.4) — no bespoke machinery per combinator. A helper structure **`LFunData`** bundles the `funPresentation` characteristic-function data needed with `L` as the domain, with **`LFunData.ofPresentation`** (`noncomputable`, `Classical.choice`) extracting concrete witnesses from any `ComputablePresentation`'s existential deciders — this **localizes** the one `Classical.choice` use needed to instantiate a concrete `(L→T)` presentation (`LTdata`/`LTpres`) to a single helper, matching the classical bridge pattern already used for `toElement_surjective`. `notT_lifted_isComputable`/`andT_lifted_isComputable` instantiate the two lifting theorems for LUCID's negation/AND; **`deMorganT_isComputable`** (`¬(¬f∧¬g)`, a composite LUCID-style program) is the capstone showing **closure under composition**: because `comp_isComputable` (Prop 7.3) composes computable maps, *any* LUCID program built from computable primitives — however deeply nested — again defines a computable map, which is exactly Scott's "conclude that programs in LUCID define computable maps." **Axiom profile:** `⊆ {propext, Classical.choice, Quot.sound}` throughout part (iv) — two independent, both-documented sources: (a) `notFn`/`andFn` are `noncomputable def`s branching on `Set Token` equality (`Classical.propDecidable`), the same pattern as `smashEnum`/`osumEnum` elsewhere in the project; (b) `LFunData.ofPresentation`'s explicit `Classical.choice` extraction, and — discovered this session via axiom-bisection — a **pre-existing** leak already present in `Lpres` itself, traced to `Domain.Recursive.primrec_listEqStpNonzero`: its individual ingredients (`primrec_natEqChar`, `primrec_sub₂`, `primrec_selectFn`) are all independently choice-free, but the closing `.of_eq (fun w => by simp [listEqStpNonzero, selectFn])` step apparently discharges its equality goal through a classical `simp` lemma (replacing `simp` with `unfold …; rfl` times out at `whnf` even at `maxHeartbeats 800000`, rather than eliminating the axiom, so this is a real elaboration-cost tradeoff, not a one-line fix) — flagged as a follow-up, not blocking, since `List`-equality deciding is inherently `Classical.propDecidable`-adjacent and every downstream consumer of `Lpres` already inherits it. Parts (i)–(iii) alone (not depending on `Tpres`/`notT`/`andT`) are `⊆ {propext, Quot.sound}` except for `gammaEquivElement`'s surjectivity half, which is `Classical.choice` by the nature of the coordinate-extraction argument (same as other `Element ≃ concrete-type` identifications in the project).
+* **Proof Notes:** **All four claims done.** **(i) effectively given.** `Gamma := List ℕ ⊕ (ℕ→ℕ)` (`star`/`cons`, `Gamma_cases`); `L`'s neighbourhoods are cone sets `nbhd l := {z|∃γ,z=cons-chain l γ}` indexed by finite lists (`nbhd_subset_iff : nbhd l⊆nbhd l' ↔ l'<+:l`, i.e. reverse-prefix order, mirroring `B`'s `cone`), `L_nestedOrDisjoint` from `consSet_inter_ne`. **`Lpres : ComputablePresentation L`**: `Lenum n := nbhd (decodeList n)` (reuses the project's list-coding layer), `isPrefixChar`/`LenumSubsetChar` (relation ⊆, primrec via `listEqChar∘takeCode`), `LenumConsChar`/`LenumInterEqChar` (relations (i)/(ii) of Def 7.1, both primrec), `LenumInter` (an explicit primrec intersection witness, `selectFn` on the prefix test) — same "step pattern" as every prior `ComputablePresentation` in the project. **(ii) `|L|≃Γ`.** `toElement : Gamma → L.Element` (`star↦⊥`-ish default via `nbhd []=univ`, `cons i γ` via the finite-prefix chain); injectivity via `streamElement_injective`/`finPrefix_eq_of_streamElement_eq` (two streams with the same set of finite approximants must agree pointwise, `List.ext`-style); **surjectivity is the one genuinely choice-using step** (`toElement_surjective` via `buildData`/`toStream`, a coordinate-by-coordinate witness-extraction recursion, `noncomputable`, mirrors the same pattern already used for `PN`/other domain-element identifications) — packaged as `gammaEquivElement : Gamma ≃ L.Element`. **(iii) `B` inside `L`.** `embStr : ExampleB.Str → List ℕ` (`bitToNat` per bit) embeds `B`'s finite binary strings into `L`'s address lists; `cone_subset_cone_iff_nbhd_embStr` and `sigmaBot_le_iff_toElement_inl_embStr` show this embedding is an order-embedding at both the neighbourhood level and the finite-element level (`B`'s `|B|` sits inside `|L|` as the sub-order of finite binary addresses, matching Scott's remark that `B` is the special case of `L` with alphabet `{0,1}`). **(iv) LUCID combinators computable — the headline claim.** Rather than mechanizing LUCID's full concrete syntax, gave `T` (`Example23.T`, the 3-point truth-value domain from Example 1.2) an explicit `Tpres : ComputablePresentation T` (`Tenum : 0↦Δ,1↦{0},2↦{1}`, `TinterCode`/`TeqChar` primrec), then exhibited two representative combinators as genuine `ApproximableMap`s **and proved them computable**: **`notT`** (pointwise negation, `notFn`/`notCode`, `notT_isComputable`) and **`andT`** (sequential/pointwise AND via `ofMap₂ andMap2`, `andFn`/`andCode`, `andT_isComputable`) — both built on the standard Scott "step-pattern" relation `rel X Y := mem X ∧ mem Y ∧ f(X)⊆Y` (needed for monotonicity: blunter outputs must stay valid), with `subset_iff_eq_or_eq_master`-style case splits on `T`'s three neighbourhoods closing `mono`. The **general engine** is two reusable lifting theorems, proved once and for all: **`postcompose`** (`h:V₁→V₂` computable ⟹ `curry(h∘eval) : (L→V₁)→(L→V₂)` computable) and **`pointwiseBin`** (`h:V₀×V₁→V₂` computable ⟹ the pointwise-apply map `(L→V₀)×(L→V₁)→(L→V₂)` computable), both closed via the existing `curry_isComputable`/`evalMap_isComputable`/`comp_isComputable`/`paired_isComputable` (Theorem 7.5/Prop 7.3/Theorem 7.4) — no bespoke machinery per combinator. A helper structure **`LFunData`** bundles the `funPresentation` characteristic-function data needed with `L` as the domain, with **`LFunData.ofPresentation`** (`noncomputable`, `Classical.choice`) extracting concrete witnesses from any `ComputablePresentation`'s existential deciders — this **localizes** the one `Classical.choice` use needed to instantiate a concrete `(L→T)` presentation (`LTdata`/`LTpres`) to a single helper, matching the classical bridge pattern already used for `toElement_surjective`. `notT_lifted_isComputable`/`andT_lifted_isComputable` instantiate the two lifting theorems for LUCID's negation/AND; **`deMorganT_isComputable`** (`¬(¬f∧¬g)`, a composite LUCID-style program) is the capstone showing **closure under composition**: because `comp_isComputable` (Prop 7.3) composes computable maps, *any* LUCID program built from computable primitives — however deeply nested — again defines a computable map, which is exactly Scott's "conclude that programs in LUCID define computable maps." **Axiom profile:** `⊆ {propext, Classical.choice, Quot.sound}` throughout part (iv) — two independent, both-documented sources: (a) `notFn`/`andFn` are `noncomputable def`s branching on `Set Token` equality (`Classical.propDecidable`), the same pattern as `smashEnum`/`osumEnum` elsewhere in the project; (b) `LFunData.ofPresentation`'s explicit `Classical.choice` extraction, and — discovered this session via axiom-bisection — a **pre-existing** leak already present in `Lpres` itself, traced to `Domain.Recursive.primrec_listEqStpNonzero`: its individual ingredients (`primrec_natEqChar`, `primrec_sub₂`, `primrec_selectFn`) are all independently choice-free, but the closing `.of_eq (fun w => by simp [listEqStpNonzero, selectFn])` step apparently discharges its equality goal through a classical `simp` lemma (replacing `simp` with `unfold …; rfl` times out at `whnf` even at `maxHeartbeats 800000`, rather than eliminating the axiom, so this is a real elaboration-cost tradeoff, not a one-line fix) — flagged as a follow-up, not blocking, since `List`-equality deciding is inherently `Classical.propDecidable`-adjacent and every downstream consumer of `Lpres` already inherits it. Parts (i)–(iii) alone (not depending on `Tpres`/`notT`/`andT`) are `⊆ {propext, Quot.sound}` except for `gammaEquivElement`'s surjectivity half, which is `Classical.choice` by the nature of the coordinate-extraction argument (same as other `Element ≃ concrete-type` identifications in the project).
 
 ---
 
@@ -2510,9 +2411,9 @@ Lecture VIII covers retractions, projections, and the construction of the univer
 * **Proof Notes:** **Setup:** for a finitary projection `a`, Theorem 8.6's `sub_eq_self_of_isFinitaryProjection` gives `a = i_a∘j_a` for the *concrete* subsystem pair `i_a,j_a : D_a ⇄ 𝒰` (`D_a := fixedNbhd a`, Theorem 8.5), replacing the abstract `IsFinitary` witness with something to compute against. **Generic tool `elementIsoOfProjectionPair`** (Proposition 8.2's `elementIso`, generalized off the literal `D◁E` requirement to *any* approximable pair `i:D→E,j:E→D` with `j∘i=I_D`, no shared token type needed, and `g:=i∘j`): gives `D.Element ≃o Fix(g)` directly — verbatim `Subsystem.elementIso`'s proof. For each combinator `*∈{+,×,→}`, build a *new* pair `I:D_a*D_b→𝒰`, `J:𝒰→D_a*D_b` by transporting Definition 8.9's fixed maps through `*`'s functorial action on `i_a,j_a,i_b,j_b`; the two composite laws `J∘I=idMap` and `I∘J=a*b` (proved algebraically from the functor laws plus `i_a∘j_a=a`/`i_b∘j_b=b`) feed `elementIsoOfProjectionPair` for `D_{a*b}≅D_a*D_b` and `IsFinitary(a*b)` in one shot; `IsProjection(a*b)` is Proposition 8.10(a). **`×` (cleanest):** `prodComb` is literally `iTimes∘(prodMap·)∘jTimes`, so `IProdComb:=iTimes∘prodMap(i_a,i_b)`/`JProdComb:=prodMap(j_a,j_b)∘jTimes` close via Ex. 3.19/3.20's `prodMap_id`/`prodMap_comp` directly. **`+` (new `sumMap` infrastructure, ~200 lines):** unlike `×`, `sumComb` is *not* literally `iPlus∘sumMap∘jPlus` by `rfl` (Definition 8.9 builds it via `cond`/`whichMap` instead) — proved *elementwise equal* instead (`sumComb_eq_iPlus_sumMap_jPlus`, case-splitting on `sum_element_trichotomy` against `Proposition810.lean`'s own `toElementMap_sumComb_of_left/right/neither` formulas, matched against new elementwise formulas for `sumMap` itself: `sumMap_reaches_left/right`, `toElementMap_sumMap_inMap₀/₁` (via the existing `outMap₀_comp_sumMap_comp_inMap₀` identity plus round-trips), `toElementMap_sumMap_of_left/right`, `sumMap_bot`, and `reaches_neither_iff_eq_bot`); the bottom case needs a new general fact `toElementMap_bot_eq_bot_of_comp_le_idMap` (`i∘j≤I_E ⟹ i(D.bot)=E.bot`, via `i(D.bot)≤i(j(E.bot))≤E.bot` plus `bot_le`). This bridge in hand, `sumMap_id`/`sumMap_comp` (proved via the *same* elementwise case-split, reusing the formulas — genuinely a functor, `f+g` on raw sum-neighbourhoods) give `IsumComb`/`JSumComb` closing exactly like `×`. **`→` (new `expMap` bifunctor, generalizing `lamComb`):** `expMap h k : (𝒟₀→𝒟₁)→(𝒟₀'→𝒟₁')` for `h:𝒟₀'→𝒟₀` (contravariant), `k:𝒟₁→𝒟₁'` (covariant), built exactly as `lamComb` (`curry(k∘eval∘(id×ₘh))`) but for arbitrary systems (`lamComb a b = expMap a b` on the nose, `rfl`); `toApproxMap_toElementMap_expMap` (`f↦k∘f∘h` transported through `funSpaceEquiv`) is `Proposition810.lean`'s `toApproxMap_toElementMap_lamComb` proof verbatim, generalized; `expMap_id`/`expMap_comp` (contravariant composition law) follow by transporting through `funSpaceEquiv`'s injectivity plus `comp_assoc` bookkeeping. `IArrowComb:=iArrow∘expMap(j_a,i_b)`/`JArrowComb:=expMap(i_a,j_b)∘jArrow` then close identically to `×`/`+`. Assembled: `finitaryProjection_sumComb`/`finitaryProjection_prodComb`/`finitaryProjection_arrowComb`/`finitaryProjection_combinators`, plus the three explicit isomorphisms `sumComb_elementIso`/`prodComb_elementIso`/`arrowComb_elementIso`. `lake build` (whole project, 3155 jobs) green, zero `sorry`; `#print axioms` on all seven headline results gives `⊆{propext,Classical.choice,Quot.sound}`, the same inherited `U`-footprint, nothing new.
 
 #### Exercise 8.11
-* **Mathematical Target:** `R = {[0,r) \| r∈Q, 0<r≤1}`; `[0,r) a [0,s) iff r<s or r=s=1` is approximable, `a` is a projection whose fixed-point set `↔ [0,1]⊆ℝ` (Dedekind cuts), and `a` is NOT finitary
+* **Mathematical Target:** `R = {[0,r) | r∈Q, 0<r≤1}`; `[0,r) a [0,s) iff r<s or r=s=1` is approximable, `a` is a projection whose fixed-point set `↔ [0,1]⊆ℝ` (Dedekind cuts), and `a` is NOT finitary
 * **Lean File:** `Scott1980/Neighborhood/Exercise811.lean`
-* **Proof Notes:** `R := ofNestedOrDisjoint`-style chain system `{[0,r) \| 0<r≤1}` over `ℚ` (nested by `r`, so no disjoint case ever fires). `aRel X Y := ∃r s, X=[0,r),Y=[0,s),(r<s∨r=s=1)`; `a : ApproximableMap R R` from `aRel`, with `inter_right`/`mono` reduced to endpoint arithmetic via helper lemmas `Ico0_inj` (injectivity of `r↦[0,r)`), `Ico0_le_of_subset`, `Ico0_inter` (`[0,r)∩[0,s)=[0,min r s)`), `aRel_combine`. `isRetraction_a`/`isProjection_a`: direct endpoint unwinding (retraction's `∃`-witness for `r<t` is `exists_between`; projection is `aRel_le`). **Fixed-point correspondence:** `R.Element`s are characterized by "up-set" predicates `U:ℚ→Prop` on `(0,1]` (`Element.ext_U`, `mkElement`); Scott's Dedekind cut for `t∈[0,1]` is `cutU t r := r≤1∧(1-t<r∨r=1)` (`cutElt t`), shown to be `a`-fixed (`toElementMap_cutElt`, using density `exists_rat_btwn` for the "openness" direction) and to satisfy `⊆` matches `≤` (`cutElt_le_iff`, i.e. Scott's hint verbatim). Surjectivity: any fixed `x`'s canonical cut point is `cutPoint x := 1 - sInf (cutS x)` where `cutS x := {(r:ℝ) \| x.mem[0,r)}` (`cutElt_cutPoint`, using `exists_lt_of_csInf_lt` for the reverse direction); antisymmetry of `cutElt_le_iff` gives injectivity (`cutElt_injective`). Packaged as `fixOrderIso : Fix(a) ≃o Set.Icc (0:ℝ) 1` (`noncomputable`, via `sInf`). **Non-finitarity:** `not_isCompactElt_pos` shows *no* `g⟨t,_,_⟩` with `t>0` is `IsCompactElt`, for *any* `g : Set.Icc(0:ℝ)1 ≃o F.Element` — the directed family `{g⟨s,_,_⟩ \| 0≤s<t}` has sup exactly `g⟨t,_,_⟩` (`isLUB_Ico` transported via `OrderIso.isLUB_image'`, matched against `iSupDirected`'s own `le_iSupDirected`/`iSupDirected_le` LUB-characterization by `IsLUB.unique`), yet `g⟨t,_,_⟩` is strictly above every member — exactly Scott's hint ("aside from `⊥`, no finite elements"). `not_isFinitary_a`: assuming `IsFinitary a` gives `e:Fix(a)≃o F.Element`; compose `g:=fixOrderIso.symm.trans e`; every principal approximant of `x:=g⟨1,_,_⟩` is compact (`principal_isCompactElt`) hence (by `not_isCompactElt_pos`'s contrapositive) equals `g⟨0,_,_⟩`; algebraicity (`eq_iSupDirected_principal x`) then forces `x=g⟨0,_,_⟩`, contradicting injectivity of `g` at `1≠0`. Zero `sorry`; `lake build` (whole project, 3156 jobs) green; `#print axioms` on `a`/`isRetraction_a`/`isProjection_a`/`fixOrderIso`/`not_isFinitary_a` all give `⊆{propext,Classical.choice,Quot.sound}` (`Classical.choice` inherited from Mathlib's `ℚ`/`ℝ` order instances, same as `Definition87.lean`'s `𝒰`; no new choice usage beyond that).
+* **Proof Notes:** `R := ofNestedOrDisjoint`-style chain system `{[0,r) | 0<r≤1}` over `ℚ` (nested by `r`, so no disjoint case ever fires). `aRel X Y := ∃r s, X=[0,r),Y=[0,s),(r<s∨r=s=1)`; `a : ApproximableMap R R` from `aRel`, with `inter_right`/`mono` reduced to endpoint arithmetic via helper lemmas `Ico0_inj` (injectivity of `r↦[0,r)`), `Ico0_le_of_subset`, `Ico0_inter` (`[0,r)∩[0,s)=[0,min r s)`), `aRel_combine`. `isRetraction_a`/`isProjection_a`: direct endpoint unwinding (retraction's `∃`-witness for `r<t` is `exists_between`; projection is `aRel_le`). **Fixed-point correspondence:** `R.Element`s are characterized by "up-set" predicates `U:ℚ→Prop` on `(0,1]` (`Element.ext_U`, `mkElement`); Scott's Dedekind cut for `t∈[0,1]` is `cutU t r := r≤1∧(1-t<r∨r=1)` (`cutElt t`), shown to be `a`-fixed (`toElementMap_cutElt`, using density `exists_rat_btwn` for the "openness" direction) and to satisfy `⊆` matches `≤` (`cutElt_le_iff`, i.e. Scott's hint verbatim). Surjectivity: any fixed `x`'s canonical cut point is `cutPoint x := 1 - sInf (cutS x)` where `cutS x := {(r:ℝ) | x.mem[0,r)}` (`cutElt_cutPoint`, using `exists_lt_of_csInf_lt` for the reverse direction); antisymmetry of `cutElt_le_iff` gives injectivity (`cutElt_injective`). Packaged as `fixOrderIso : Fix(a) ≃o Set.Icc (0:ℝ) 1` (`noncomputable`, via `sInf`). **Non-finitarity:** `not_isCompactElt_pos` shows *no* `g⟨t,_,_⟩` with `t>0` is `IsCompactElt`, for *any* `g : Set.Icc(0:ℝ)1 ≃o F.Element` — the directed family `{g⟨s,_,_⟩ | 0≤s<t}` has sup exactly `g⟨t,_,_⟩` (`isLUB_Ico` transported via `OrderIso.isLUB_image'`, matched against `iSupDirected`'s own `le_iSupDirected`/`iSupDirected_le` LUB-characterization by `IsLUB.unique`), yet `g⟨t,_,_⟩` is strictly above every member — exactly Scott's hint ("aside from `⊥`, no finite elements"). `not_isFinitary_a`: assuming `IsFinitary a` gives `e:Fix(a)≃o F.Element`; compose `g:=fixOrderIso.symm.trans e`; every principal approximant of `x:=g⟨1,_,_⟩` is compact (`principal_isCompactElt`) hence (by `not_isCompactElt_pos`'s contrapositive) equals `g⟨0,_,_⟩`; algebraicity (`eq_iSupDirected_principal x`) then forces `x=g⟨0,_,_⟩`, contradicting injectivity of `g` at `1≠0`. Zero `sorry`; `lake build` (whole project, 3156 jobs) green; `#print axioms` on `a`/`isRetraction_a`/`isProjection_a`/`fixOrderIso`/`not_isFinitary_a` all give `⊆{propext,Classical.choice,Quot.sound}` (`Classical.choice` inherited from Mathlib's `ℚ`/`ℝ` order instances, same as `Definition87.lean`'s `𝒰`; no new choice usage beyond that).
 
 #### Exercise 8.12
 * **Mathematical Target:** Generalize `2X+1` to `2^k X + ℓ` (`ℓ<2^k`); `V` = non-empty finite unions of `2^k ℕ + ℓ`; show `U ≅ V` effectively, another presentation of `U`
@@ -2522,7 +2423,7 @@ Lecture VIII covers retractions, projections, and the construction of the univer
 #### Exercise 8.12(a)
 * **Mathematical Target:** Part 1 of 7 — define `V`: the neighbourhood system over `ℕ` of non-empty finite unions of `2^k ℕ + ℓ` (`ℓ<2^k`), with its basic structural properties
 * **Lean File:** `Scott1980/Neighborhood/Exercise812.lean`
-* **Proof Notes:** `affine k ℓ := {n \| n%2^k=ℓ}` (Scott's `2^kℕ+ℓ`, auto-`∅` for `ℓ≥2^k`). Bookkeeping-free encoding `levelSet k m := {n \| m.testBit(n%2^k)}` (a single bitmask replaces `Definition87.lean`'s `List`, since residue classes at a fixed level partition `ℕ`, unlike arbitrary rational intervals). `upsample k k' m` re-expresses a level-`k` mask at finer level `k'` via `Nat.equivBitIndices` (`ℕ≃Finset ℕ` bit-index bijection), giving `levelSet_upsample`; `levelSet_inter` (upsample-both-then-`&&&`) shows closure under intersection **unconditionally** (mirrors `Example78.lean`'s `PN`, unlike `U` which needs a consistency hypothesis). `V : NeighborhoodSystem ℕ` from these. `V_no_minimal` (Scott's Def-8.7 remark transplanted): refine one level finer so every witnessing bit `ℓ₀` doubles into `(ℓ₀,ℓ₀+2^k)`, peel off one copy, the twin guarantees the "rest" is non-empty. `V_mem_iff_finiteUnion` (faithfulness, mirrors `U_mem_iff_scott`): via `V_union_mem`/`V_iUnion_mem` (mirrors `U_union_mem`/`U_iUnion_mem`) reassembling Scott's literal finite unions from `levelSet`. Zero `sorry`; axiom footprint `⊆{propext,Classical.choice,Quot.sound}`, confirmed an upstream Mathlib `ℕ`/`Finset`/`Set` API artifact (not a choice made in this file — see the file's own docstring).
+* **Proof Notes:** `affine k ℓ := {n | n%2^k=ℓ}` (Scott's `2^kℕ+ℓ`, auto-`∅` for `ℓ≥2^k`). Bookkeeping-free encoding `levelSet k m := {n | m.testBit(n%2^k)}` (a single bitmask replaces `Definition87.lean`'s `List`, since residue classes at a fixed level partition `ℕ`, unlike arbitrary rational intervals). `upsample k k' m` re-expresses a level-`k` mask at finer level `k'` via `Nat.equivBitIndices` (`ℕ≃Finset ℕ` bit-index bijection), giving `levelSet_upsample`; `levelSet_inter` (upsample-both-then-`&&&`) shows closure under intersection **unconditionally** (mirrors `Example78.lean`'s `PN`, unlike `U` which needs a consistency hypothesis). `V : NeighborhoodSystem ℕ` from these. `V_no_minimal` (Scott's Def-8.7 remark transplanted): refine one level finer so every witnessing bit `ℓ₀` doubles into `(ℓ₀,ℓ₀+2^k)`, peel off one copy, the twin guarantees the "rest" is non-empty. `V_mem_iff_finiteUnion` (faithfulness, mirrors `U_mem_iff_scott`): via `V_union_mem`/`V_iUnion_mem` (mirrors `U_union_mem`/`U_iUnion_mem`) reassembling Scott's literal finite unions from `levelSet`. Zero `sorry`; axiom footprint `⊆{propext,Classical.choice,Quot.sound}`, confirmed an upstream Mathlib `ℕ`/`Finset`/`Set` API artifact (not a choice made in this file — see the file's own docstring).
 
 #### Exercise 8.12(b)
 * **Mathematical Target:** Part 2 of 7 — `V`'s effective presentation (`ComputablePresentation V`), mirroring `UComputablePresentation.lean`
@@ -3459,9 +3360,9 @@ Lecture VIII covers retractions, projections, and the construction of the univer
     work for, and is out of scope here.
 
 #### Exercise 8.16
-* **Mathematical Target:** for finitary projections `a,b:E→E`, `a ⊑ b ↔ D_a ◁ D_b` where `D_a = {X ∈ E \| X ⊑ aX}`; if `E` is effectively given and `a:E→E` is computable, then `D_a` is effectively given
+* **Mathematical Target:** for finitary projections `a,b:E→E`, `a ⊑ b ↔ D_a ◁ D_b` where `D_a = {X ∈ E | X ⊑ aX}`; if `E` is effectively given and `a:E→E` is computable, then `D_a` is effectively given
 * **Lean File:** `Scott1980/Neighborhood/Exercise816.lean`
-* **Proof Notes:** Both halves were already (nearly) proved by existing machinery, so this is a thin assembly. `D_a` is exactly Theorem 8.5's `fixedNbhd a`. Part 1 (`isFinitaryProjection_le_iff_fixedNbhd_subsystem`) restricts Theorem 8.6(a)'s order-isomorphism `finitaryProjectionSubsystemEquiv : {f \| sub f = f} ≃o {D \| D ◁ E}` (where `≤` on the right is literally `◁`, Prop 6.11) from `sub`-fixed points to finitary projections via `sub_eq_self_iff_isFinitaryProjection`, assembled from `OrderIso.monotone`/`.symm.monotone`/`.symm_apply_apply` rather than the generated `map_rel_iff` (to sidestep guessing Mathlib's implicit-argument names). Part 2 is *already* Theorem 8.8(c)'s `fixedNbhd_isEffectivelyGiven` (`Theorem88m.lean`) in full generality — `IsComputableMap P P a` for any `ComputablePresentation P` of any `E` already packages "`E` effectively given via `P`, `a` computable relative to `P`" — so Part 2 needed no new proof, only a restatement under the exercise's name (`exercise_8_16`). Choice-free (`⊆ {propext, Quot.sound}`).
+* **Proof Notes:** Both halves were already (nearly) proved by existing machinery, so this is a thin assembly. `D_a` is exactly Theorem 8.5's `fixedNbhd a`. Part 1 (`isFinitaryProjection_le_iff_fixedNbhd_subsystem`) restricts Theorem 8.6(a)'s order-isomorphism `finitaryProjectionSubsystemEquiv : {f | sub f = f} ≃o {D | D ◁ E}` (where `≤` on the right is literally `◁`, Prop 6.11) from `sub`-fixed points to finitary projections via `sub_eq_self_iff_isFinitaryProjection`, assembled from `OrderIso.monotone`/`.symm.monotone`/`.symm_apply_apply` rather than the generated `map_rel_iff` (to sidestep guessing Mathlib's implicit-argument names). Part 2 is *already* Theorem 8.8(c)'s `fixedNbhd_isEffectivelyGiven` (`Theorem88m.lean`) in full generality — `IsComputableMap P P a` for any `ComputablePresentation P` of any `E` already packages "`E` effectively given via `P`, `a` computable relative to `P`" — so Part 2 needed no new proof, only a restatement under the exercise's name (`exercise_8_16`). Choice-free (`⊆ {propext, Quot.sound}`).
 
 #### Exercise 8.17
 * **Mathematical Target:** find explicit projection pairs for `𝒰+𝒰`, `𝒰×𝒰`, `𝒰→𝒰` needed for 8.9; are any of these isomorphic to `𝒰`?; find a universal domain `V ≠ 𝒰`
@@ -3868,7 +3769,7 @@ matches [`Scott1980.lean`](https://github.com/catskillsresearch/scott1980/blob/m
 * [Recursive.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/Recursive.lean) — **`isBinDigit`** / **`allBinDigitsChar`** (Composer **C9a** / **7.22i(a)**); future C9b generic primrec lemmas
 * [Exercise722Presentation.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/Exercise722Presentation.lean) — `SsysX` enumeration, `ssysConsChar`, C9 `RecDecidable₂` bridge (partial; **`Ssys_cons_computable`** open — **7.22i(b)1–8**)
 * [Exercise723.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/Exercise723.lean) — `PN`'s `∩`/`∪`/`+`/`fun`/`graph` computable, computable elements = r.e. sets
-* [Exercise724.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/Exercise724.lean) — `Γ`/`L` effectively given, `\|L\|≃Γ`, `B⊴L`, LUCID combinators computable
+* [Exercise724.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/Exercise724.lean) — `Γ`/`L` effectively given, `|L|≃Γ`, `B⊴L`, LUCID combinators computable
 * [Exercise811.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/Exercise811.lean)
 * [Exercise812.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/Exercise812.lean)
 * [Exercise812c.lean](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980/Neighborhood/Exercise812c.lean)
