@@ -13,6 +13,8 @@ sources/ocr_*.log
 # Generated from arxiv.md by scripts/generate_arxiv_with_code.sh (do not commit)
 arxiv_with_code.md
 arxiv.tex
+appendix.tex
+appendix.pdf
 lean-listings/
 figures/
 dist/
@@ -25,4 +27,5 @@ dist/
 *.fls
 *.fdb_latexmk
 *.toc
+*.lof
 texput.log

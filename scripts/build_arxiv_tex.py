@@ -13,6 +13,9 @@ Pipeline:
   5b. Render ```mermaid blocks to vector PDFs via mermaid-cli (mmdc).
   6. Inject AI model-card acknowledgements from `scripts/ai_model_cards.py` (before HTML-comment strip).
   7. pandoc -> LaTeX, then splice the listing/math/figure placeholders back in.
+  8. Split the Lean-source appendix into ``appendix.tex`` (compiled locally to
+     ``appendix.pdf``); the main ``arxiv.tex`` ends with ``\\includepdf`` so arXiv
+     AutoTeX and iterative narrative edits compile only the ~200-page body.
 """
 
 from __future__ import annotations
@@ -33,11 +36,13 @@ from lean_listing_sanitize import chunk_line_ranges, sanitize_lean_for_arxiv
 
 SRC = ROOT / "arxiv_with_code.md"
 OUT = ROOT / "arxiv.tex"
+APPENDIX_OUT = ROOT / "appendix.tex"
 PREAMBLE = SCRIPTS / "tex_preamble_arxiv.tex"
 LISTINGS_DIR = ROOT / "lean-listings"
 FIGURES_DIR = ROOT / "figures"
 PUPPETEER_CONFIG = SCRIPTS / "puppeteer-config.json"
 LISTING_CHUNK_LINES = 400
+_WRITTEN_LISTINGS: set[Path] = set()
 
 AUTHOR = "Lars Ericson"
 COMPANY = "Catskills Research Company"
@@ -61,7 +66,14 @@ def render_mermaid(code: str, idx: int) -> str:
     FIGURES_DIR.mkdir(parents=True, exist_ok=True)
     mmd_path = FIGURES_DIR / f"figure-{idx:03d}.mmd"
     pdf_path = FIGURES_DIR / f"figure-{idx:03d}.pdf"
-    mmd_path.write_text(code.strip() + "\n", encoding="utf-8")
+    code_stripped = code.strip() + "\n"
+    if (
+        mmd_path.is_file()
+        and pdf_path.is_file()
+        and mmd_path.read_text(encoding="utf-8") == code_stripped
+    ):
+        return pdf_path.relative_to(ROOT).as_posix()
+    mmd_path.write_text(code_stripped, encoding="utf-8")
 
     mmdc = shutil.which("mmdc")
     if not mmdc:
@@ -111,6 +123,7 @@ COMPOSER_APPENDIX_START = re.compile(
     re.MULTILINE,
 )
 MERMAID_CAPTION_RE = re.compile(r"^### (Lecture [^\n]+)\n\n```mermaid", re.MULTILINE)
+APPENDIX_MARKER = "\\appendix\n\\section{Lean Code}"
 
 # ASCII fallbacks for combining-mark sequences and emoji that `\newunicodechar` cannot
 # handle cleanly (accents stack backwards in LaTeX; emoji have no single-glyph textcomp
@@ -120,6 +133,7 @@ PROSE_ASCII_FALLBACKS: tuple[tuple[str, str], ...] = (
     ("\u26a0", "Warning:"),  # bare WARNING SIGN
     ("w\u20d7", "w-vec"),  # w + COMBINING RIGHT ARROW ABOVE
     ("\u03c3\u20d7", "sigma-vec"),  # sigma + COMBINING RIGHT ARROW ABOVE
+    ("\U0001d4af", "T"),  # MATHEMATICAL SCRIPT CAPITAL T (𝒯) — prose only; pdfLaTeX-safe
     ("f\u0302", "f-hat"),  # f + COMBINING CIRCUMFLEX ACCENT
     ("\u039b\u0302", "Lambda-hat"),  # Lambda + COMBINING CIRCUMFLEX ACCENT
     ("\u2705", r"\ensuremath{\checkmark}"),  # WHITE HEAVY CHECK MARK
@@ -131,6 +145,8 @@ PROSE_ASCII_FALLBACKS: tuple[tuple[str, str], ...] = (
 def apply_prose_ascii_fallbacks(text: str) -> str:
     for src, dst in PROSE_ASCII_FALLBACKS:
         text = text.replace(src, dst)
+    # Remaining COMBINING RIGHT ARROW ABOVE (e.g. 1⃗, 01⃗) after explicit σ⃗/w⃗ rules.
+    text = re.sub(r"(.)\u20d7", r"\1-vec", text)
     return text
 
 
@@ -223,9 +239,18 @@ def write_listing(code: str, listing_name: str) -> tuple[str, int]:
     LISTINGS_DIR.mkdir(parents=True, exist_ok=True)
     source = sanitize_lean_for_arxiv(code.rstrip("\n"))
     listing_path = LISTINGS_DIR / listing_name
-    listing_path.write_text(source + "\n", encoding="utf-8")
+    write_if_changed(listing_path, source + "\n")
+    _WRITTEN_LISTINGS.add(listing_path.resolve())
     rel_path = listing_path.relative_to(ROOT).as_posix()
     return rel_path, (len(source.splitlines()) if source else 0)
+
+
+def prune_stale_listings() -> None:
+    if not LISTINGS_DIR.is_dir():
+        return
+    for path in LISTINGS_DIR.iterdir():
+        if path.is_file() and path.resolve() not in _WRITTEN_LISTINGS:
+            path.unlink()
 
 
 def lean_block_latex(code: str, listing_name: str) -> str:
@@ -382,6 +407,44 @@ def insert_list_of_figures(latex: str) -> str:
     return latex.replace(marker, r"\listoffigures" + "\n\n" + marker, 1)
 
 
+def split_main_and_appendix(latex_body: str) -> tuple[str, str]:
+    """Split pandoc body at the Lean Code appendix (after References)."""
+    marker_pos = latex_body.find(APPENDIX_MARKER)
+    if marker_pos == -1:
+        raise RuntimeError("missing Lean Code appendix marker in LaTeX body")
+    ht_marker = r"\hypertarget{lean-code}{%"
+    ht_pos = latex_body.rfind(ht_marker, 0, marker_pos)
+    split_at = ht_pos if ht_pos != -1 else marker_pos
+    main = latex_body[:split_at].rstrip()
+    appendix = latex_body[split_at:].lstrip()
+    return main, appendix
+
+
+def build_main_document(preamble: str, title_page: str, main_body: str) -> str:
+    # arXiv pdfLaTeX: \pdfoutput=1 must be the first line of the submission toplevel .tex
+    # (https://info.arxiv.org/help/faq/mistakes.html).  Guard with \ifdefined so local
+    # LuaLaTeX builds (see .latexmkrc) do not hit an undefined \pdfoutput.
+    head = "\\ifdefined\\pdfoutput\\pdfoutput=1\\fi\n\n"
+    tail = (
+        "\n\n\\clearpage\n"
+        "\\includepdf[pages=-,pagecommand={\\thispagestyle{plain}}]{appendix.pdf}\n\n"
+        "\\end{document}\n"
+    )
+    return head + preamble + "\n\n" + title_page + "\n\n" + main_body + tail
+
+
+def build_appendix_document(preamble: str, appendix_body: str) -> str:
+    return preamble + "\n\n\\begin{document}\n\n" + appendix_body + "\n\n\\end{document}\n"
+
+
+def write_if_changed(path: Path, content: str) -> bool:
+    """Write ``path`` only when content differs; return True if the file was updated."""
+    if path.is_file() and path.read_text(encoding="utf-8") == content:
+        return False
+    path.write_text(content, encoding="utf-8")
+    return True
+
+
 def cleanup_abstract_latex(latex: str) -> str:
     """Keep the abstract pdfLaTeX/arXiv-safe: ASCII plus standard LaTeX escapes."""
     latex = latex.replace("\\pandocbounded{", "{")
@@ -431,11 +494,8 @@ def main() -> int:
         return 1
 
     for d in (LISTINGS_DIR, FIGURES_DIR):
-        if d.exists():
-            for path in d.iterdir():
-                if path.is_file():
-                    path.unlink()
         d.mkdir(parents=True, exist_ok=True)
+    _WRITTEN_LISTINGS.clear()
 
     raw = SRC.read_text(encoding="utf-8")
     body = drop_github_nav(raw)
@@ -449,6 +509,7 @@ def main() -> int:
     body = demote_inventory_headings(body)
     body = github_math_to_tex(body)
     body, placeholders = replace_fences(body)
+    prune_stale_listings()
 
     latex_body = pandoc_to_latex(body, shift=True)
     latex_body = inject_placeholders(latex_body, placeholders)
@@ -461,13 +522,22 @@ def main() -> int:
 
     preamble = PREAMBLE.read_text(encoding="utf-8")
     title_page = build_title_page(abstract_latex)
-    document = preamble + "\n\n" + title_page + "\n\n" + latex_body + "\n\n\\end{document}\n"
-    OUT.write_text(document, encoding="utf-8")
+    main_body, appendix_body = split_main_and_appendix(latex_body)
+    main_document = build_main_document(preamble, title_page, main_body)
+    appendix_document = build_appendix_document(preamble, appendix_body)
+    main_changed = write_if_changed(OUT, main_document)
+    appendix_changed = write_if_changed(APPENDIX_OUT, appendix_document)
     n_listings = sum(1 for p in LISTINGS_DIR.iterdir() if p.is_file())
     n_figures = sum(1 for p in FIGURES_DIR.glob("*.pdf"))
+    main_note = "updated" if main_changed else "unchanged"
+    appendix_note = "updated" if appendix_changed else "unchanged"
     print(
         f"wrote {OUT.relative_to(ROOT)} ({OUT.stat().st_size:,} bytes, "
-        f"{n_listings} listings, {n_figures} mermaid figures)"
+        f"main body only, {main_note})"
+    )
+    print(
+        f"wrote {APPENDIX_OUT.relative_to(ROOT)} ({APPENDIX_OUT.stat().st_size:,} bytes, "
+        f"{n_listings} listings, {n_figures} mermaid figures in main, {appendix_note})"
     )
     return 0
 

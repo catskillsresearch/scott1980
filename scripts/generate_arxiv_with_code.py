@@ -103,12 +103,14 @@ def expand_lean_links(text: str) -> str:
 
 
 def expand_appendix_links(text: str) -> str:
-    """Inline appendix markdown (arxiv.md appendices A–B) for the PDF/review artifact."""
+    """Inline appendix markdown (arxiv.md appendices A–B) when present."""
     matches = [
         m
         for m in APPENDIX_LINK_RE.finditer(text)
         if Path(m.group(2)).name in APPENDIX_INLINE_FILES
     ]
+    if not matches:
+        return text
     if len(matches) != len(APPENDIX_INLINE_FILES):
         found = {Path(m.group(2)).name for m in matches}
         missing = APPENDIX_INLINE_FILES - found
