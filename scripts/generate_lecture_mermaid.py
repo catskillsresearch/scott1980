@@ -1,13 +1,17 @@
 #!/usr/bin/env python3
-"""Generate per-lecture Mermaid dependency diagrams for arxiv.md.
+"""Generate Mermaid dependency diagrams for arxiv.md.
+
+1. Per-lecture module graphs under each ``### Lecture …`` header.
+2. A chapter-level inclusion hierarchy under the Introduction
+   (``### Chapter inclusion hierarchy (Lean imports)``).
 
 Primary edge source: `import Scott1980.Neighborhood.*` in each module.
-Cross-lecture imports appear as dashed edges from a compact ``LectNcore`` stub.
-Node labels combine Scott inventory titles (from arxiv.md) with the Lean filename.
+Cross-lecture imports in per-lecture graphs appear as dashed edges from a compact
+``LectNcore`` stub. Node labels combine Scott inventory titles (from arxiv.md)
+with the Lean filename.
 
 Run: python3 scripts/generate_lecture_mermaid.py [--write]
-With --write, patches arxiv.md in place (replacing existing ```mermaid blocks under each
-``### Lecture …`` header, or inserting a new block if absent).
+With --write, patches arxiv.md in place.
 """
 
 from __future__ import annotations
@@ -247,7 +251,44 @@ def lecture_headers() -> list[str]:
     return [m.group(1) for m in re.finditer(r"^### (Lecture [IVX]+:[^\n]+)\n", text, re.MULTILINE)]
 
 
-def patch_arxiv(diagrams: dict[str, str]) -> None:
+CHAPTER_HIERARCHY_HEADER = "Chapter inclusion hierarchy (Lean imports)"
+
+
+def build_chapter_hierarchy(
+    order: list[str],
+    splits: tuple[int, ...],
+    imports: dict[str, list[str]],
+    mod_to_lecture: dict[str, int],
+) -> str:
+    """One node per lecture; edge A→B if some B-module directly imports an A-module."""
+    counts = [splits[i + 1] - splits[i] for i in range(8)]
+    edge_weight: dict[tuple[int, int], int] = defaultdict(int)
+    for dst_mod, imps in imports.items():
+        if dst_mod not in mod_to_lecture:
+            continue
+        dli = mod_to_lecture[dst_mod]
+        for src_mod in imps:
+            if src_mod not in mod_to_lecture:
+                continue
+            sli = mod_to_lecture[src_mod]
+            if sli < dli:
+                edge_weight[(sli, dli)] += 1
+
+    lines = [
+        "flowchart TB",
+        "  %% Node = lecture where modules are newly introduced;",
+        "  %% edge A --> B = some B-module directly imports a module from A.",
+    ]
+    for i in range(8):
+        lines.append(
+            f'  L{i + 1}["Lecture {ROMAN[i]}<br/><i>{counts[i]} modules introduced</i>"]'
+        )
+    for (s, d), w in sorted(edge_weight.items()):
+        lines.append(f"  L{s + 1} -->|{w} imports| L{d + 1}")
+    return "\n".join(lines)
+
+
+def patch_arxiv(diagrams: dict[str, str], chapter_diagram: str) -> None:
     text = ARXIV.read_text(encoding="utf-8")
     for header, diagram in diagrams.items():
         block = f"```mermaid\n{diagram}\n```"
@@ -260,6 +301,40 @@ def patch_arxiv(diagrams: dict[str, str]) -> None:
         if n == 0:
             raise RuntimeError(f"could not locate section header: {header!r}")
         text = new_text
+
+    chapter_block = (
+        f"### {CHAPTER_HIERARCHY_HEADER}\n\n"
+        "Each node is a lecture (Scott chapter) at the point its Lean modules are "
+        "first introduced. An edge $A \\to B$ means some module belonging to lecture "
+        "$B$ has a direct `import` of a module belonging to lecture $A$ (transitive "
+        "imports through intermediate lectures are *not* drawn). Edge labels count "
+        "those direct import sites. This is the dependency picture relevant to "
+        "splitting the monograph into separate arXiv papers.\n\n"
+        f"```mermaid\n{chapter_diagram}\n```\n"
+    )
+    chapter_pattern = (
+        rf"(^### {re.escape(CHAPTER_HIERARCHY_HEADER)}\n\n)"
+        rf"(?:.*?\n)?"
+        rf"(?:```mermaid\n.*?\n```\n)"
+    )
+    if re.search(rf"^### {re.escape(CHAPTER_HIERARCHY_HEADER)}\n", text, re.MULTILINE):
+        new_text, n = re.subn(
+            chapter_pattern,
+            chapter_block + "\n",
+            text,
+            count=1,
+            flags=re.DOTALL | re.MULTILINE,
+        )
+        if n == 0:
+            raise RuntimeError("could not refresh chapter hierarchy block")
+        text = new_text
+    else:
+        # Insert before the Methodology section (end of Introduction).
+        marker = "\n---\n\n## Methodology\n"
+        if marker not in text:
+            raise RuntimeError("missing Methodology marker for chapter hierarchy insert")
+        text = text.replace(marker, "\n\n" + chapter_block + "\n" + marker, 1)
+
     ARXIV.write_text(text)
 
 
@@ -290,10 +365,14 @@ def main() -> int:
         )
         print(f"{header}: {len(diagrams[header].splitlines())} lines")
 
+    chapter_diagram = build_chapter_hierarchy(order, splits, imports, mod_to_lecture)
+    print(f"{CHAPTER_HIERARCHY_HEADER}: {len(chapter_diagram.splitlines())} lines")
+
     if args.write:
-        patch_arxiv(diagrams)
+        patch_arxiv(diagrams, chapter_diagram)
         print(f"patched {ARXIV}")
     else:
+        print(f"\n=== {CHAPTER_HIERARCHY_HEADER} ===\n{chapter_diagram}\n")
         for header, diagram in diagrams.items():
             print(f"\n=== {header} ===\n{diagram}\n")
     return 0

@@ -11,10 +11,12 @@ ROOT = Path(__file__).resolve().parent.parent
 
 # GitHub blob links in the Lean Code section, e.g.
 # * [Basic.lean](https://github.com/.../blob/main/Scott1980/Neighborhood/Basic.lean)
+# Optional trailing annotation (em-dash note) is ignored for expansion matching.
 LEAN_LINK_RE = re.compile(
     r"^\* \[([^\]]+\.lean)\]\("
     r"https://github\.com/[^/]+/[^/]+/blob/[^/]+/"
-    r"([^)]+)\)\s*$",
+    r"([^)]+)\)"
+    r"(?:\s+[—–-].*)?\s*$",
     re.MULTILINE,
 )
 

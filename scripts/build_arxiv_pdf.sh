@@ -1,17 +1,11 @@
 #!/usr/bin/env bash
-# Regenerate arxiv.tex + appendix.tex, compile both PDFs, and dist/arxiv_submit.zip.
-#
-# The Lean-source appendix (~1400 pages of listings) is compiled separately into
-# appendix.pdf.  The main arxiv.tex ends with \includepdf{appendix.pdf}, so
-# narrative-only edits recompile only the ~200-page body (target: under 5 minutes).
-# arXiv AutoTeX does the same: fast main pass + pre-built pages.
+# Regenerate arxiv.tex from arxiv.md and compile arxiv.pdf in one shot.
+# Lean Code appendix = GitHub hyperlinks + plain URLs (no inlined sources).
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
 TEX="arxiv.tex"
 PDF="arxiv.pdf"
-APPENDIX_TEX="appendix.tex"
-APPENDIX_PDF="appendix.pdf"
 
 # shellcheck source=scripts/arxiv_pdf_checks.sh
 source "$(dirname "$0")/arxiv_pdf_checks.sh"
@@ -39,42 +33,17 @@ compile_tex() {
   }
 }
 
-echo "==> Regenerating arxiv.tex + appendix.tex + lean-listings/ + figures/"
+echo "==> Regenerating arxiv.tex + figures/ from arxiv.md"
 if [[ "${1:-}" == "--pdf-only" ]]; then
   echo "    (--pdf-only: skipping markdown/tex regeneration)"
 else
   bash scripts/build_arxiv_tex.sh
 fi
 
-need_appendix=0
-if ! pdf_valid "$APPENDIX_PDF"; then
-  need_appendix=1
-elif [[ "$APPENDIX_TEX" -nt "$APPENDIX_PDF" ]]; then
-  need_appendix=1
-fi
-
-if [[ "$need_appendix" -eq 1 ]]; then
-  echo "==> Compiling appendix PDF (slow pass: Lean listings; LuaLaTeX, see .latexmkrc)"
-  rm -f "$APPENDIX_PDF"
-  compile_tex "$APPENDIX_TEX" 1
-  if ! pdf_valid "$APPENDIX_PDF"; then
-    echo "error: ${APPENDIX_PDF} missing or corrupt after compile" >&2
-    exit 1
-  fi
-  echo "wrote $APPENDIX_PDF ($(du -h "$APPENDIX_PDF" | cut -f1), $(pdfinfo "$APPENDIX_PDF" | awk '/Pages:/ {print $2}') pages)"
-else
-  echo "==> Reusing cached $APPENDIX_PDF ($(du -h "$APPENDIX_PDF" | cut -f1), $(pdfinfo "$APPENDIX_PDF" | awk '/Pages:/ {print $2}') pages)"
-fi
-
-echo "==> arXiv preflight: appendix.pdf font embedding"
-check_pdf_fonts_embedded "$APPENDIX_PDF" "appendix.pdf"
-
-echo "==> Compiling main PDF (fast pass + pdfpages; LuaLaTeX, see .latexmkrc)"
+echo "==> Compiling arxiv.pdf (single-shot LuaLaTeX; see .latexmkrc)"
 need_main=1
 if pdf_valid "$PDF" \
   && [[ ! "$TEX" -nt "$PDF" ]] \
-  && [[ ! "$APPENDIX_PDF" -nt "$PDF" ]] \
-  && [[ ! lean-listings -nt "$PDF" ]] \
   && [[ ! figures -nt "$PDF" ]]; then
   need_main=0
 fi
@@ -93,8 +62,11 @@ else
     echo "error: ${PDF} missing or corrupt after compile" >&2
     exit 1
   fi
-  echo "wrote $PDF ($(du -h "$PDF" | cut -f1), $(pdfinfo "$PDF" | awk '/Pages:/ {print $2}') pages; main compile ${main_secs}s)"
+  echo "wrote $PDF ($(du -h "$PDF" | cut -f1), $(pdfinfo "$PDF" | awk '/Pages:/ {print $2}') pages; compile ${main_secs}s)"
 fi
+
+echo "==> arXiv preflight: font embedding"
+check_pdf_fonts_embedded "$PDF" "arxiv.pdf"
 
 echo "==> Packaging arXiv submission zip"
 bash scripts/package_arxiv_submit.sh --skip-tex-build

@@ -13252,3 +13252,62 @@ session should either (a) polish/refactor existing green material, (b) extend in
 text does not cover (his own open questions, e.g. Exercise 7.20/7.21's un-mechanized discussion
 items), or (c) work on the arXiv writeup pipeline (`scripts/`, `arxiv.md`/`arxiv_with_code.md`,
 `build_arxiv_tex.py`) rather than new Lean content.
+
+## 2026-07-09: Single-shot `arxiv.pdf` (drop `appendix.pdf` include) + chapter import Mermaid
+
+**Trigger:** user asked to unwind the `appendix.pdf` / `\includepdf` split for a single-shot LaTeX
+build, and to add an Introduction Mermaid chart of chapter-level Lean import dependencies (for a
+possible 8-paper arXiv split).
+
+**Build pipeline (single-shot again):**
+- `scripts/build_arxiv_tex.py` emits one `arxiv.tex` (narrative + Lean Code appendix); no
+  `appendix.tex`, no `\includepdf{appendix.pdf}`.
+- `scripts/build_arxiv_pdf.sh` regenerates tex then one `latexmk` of `arxiv.tex` → `arxiv.pdf`.
+- `scripts/package_arxiv_submit.sh` zips `arxiv.tex` + `lean-listings/*` + `figures/*.pdf` (no
+  pre-built appendix PDF).
+- Dropped `pdfpages` from `scripts/tex_preamble_arxiv.tex`.
+- `scripts/arxiv_pdf_checks.sh` size check no longer assumes `appendix.pdf`.
+- Stale `appendix.tex` / `appendix.pdf` may still exist locally (still gitignored); ignore them.
+
+**Lean Code expansion fix (related):** `generate_arxiv_with_code.py`'s `LEAN_LINK_RE` now allows an
+optional trailing ` — …` annotation, so the 22 annotated bullets (Lecture VIII support modules +
+Exercise 7.22*/7.23/7.24) expand into listings. Verified: 236/236 Lean fences in
+`arxiv_with_code.md`.
+
+**Chapter inclusion Mermaid (Introduction):**
+- `scripts/generate_lecture_mermaid.py --write` now also inserts/refreshes
+  `### Chapter inclusion hierarchy (Lean imports)` before Methodology.
+- Nodes = lectures (modules newly introduced); edge $A\to B$ = some $B$-module directly imports a
+  module from $A$; labels = direct import-site counts.
+- Result: lectures are **strongly** cross-dependent (not a chain). Every later lecture imports from
+  multiple earlier ones; VIII alone has direct edges from I–VII (2+2+14+2+4+15+18 import sites).
+  A clean 8-way arXiv split would need shared "core" packages or heavy duplication — not weakly
+  layered papers.
+
+**Commands:**
+```bash
+python3 scripts/generate_lecture_mermaid.py --write
+bash scripts/build_arxiv_pdf.sh            # single-shot -> arxiv.pdf + dist zip
+bash scripts/build_arxiv_pdf.sh --pdf-only
+```
+
+**Smoke-tested:** `generate_arxiv_with_code.sh` (236 fences); `build_arxiv_tex.py` (single-shot
+`arxiv.tex`, 9 mermaid figures including chapter hierarchy as `figures/figure-000.pdf`). Full
+`latexmk` of the ~1400-page combined PDF not run in this session (slow); use
+`bash scripts/build_arxiv_pdf.sh --pdf-only` when ready.
+
+## 2026-07-09: PDF Lean Code appendix = GitHub links only (no source expansion)
+
+**Trigger:** user wants single-shot build from `arxiv.md` without expanding Lean into `.tex`;
+appendix should list full GitHub path as hyperlink + plain-text URL; package a dist zip.
+
+**Pipeline change:**
+- `scripts/build_arxiv_tex.py` reads **`arxiv.md` directly** (no `generate_arxiv_with_code` /
+  `arxiv_with_code.md` in the PDF path).
+- `format_lean_code_github_links` rewrites each Lean Code bullet to
+  ``[`repo/path.lean`](url) — `url``` (optional annotation kept).
+- `scripts/build_arxiv_tex.sh` no longer calls `generate_arxiv_with_code.sh`.
+- Built and packaged: `arxiv.pdf` (211 pages, 2.9M), `dist/arxiv_submit.zip` (1.7M:
+  `arxiv.tex` + 9 mermaid figures + 1 bash snippet listing). Zero `.lean` listings inlined.
+
+**Command:** `bash scripts/build_arxiv_pdf.sh`

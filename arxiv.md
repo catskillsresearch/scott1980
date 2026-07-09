@@ -67,6 +67,52 @@ count. This is a cost of the choice-free discipline adopted below, not a propert
 mathematics; a formalization willing to inherit `Classical.choice` through Mathlib's recursion theory
 would find Lecture VII's exercises considerably shorter.
 
+
+### Chapter inclusion hierarchy (Lean imports)
+
+Each node is a lecture (Scott chapter) at the point its Lean modules are first introduced. An edge $A \to B$ means some module belonging to lecture $B$ has a direct `import` of a module belonging to lecture $A$ (transitive imports through intermediate lectures are *not* drawn). Edge labels count those direct import sites. This is the dependency picture relevant to splitting the monograph into separate arXiv papers.
+
+```mermaid
+flowchart TB
+  %% Node = lecture where modules are newly introduced;
+  %% edge A --> B = some B-module directly imports a module from A.
+  L1["Lecture I<br/><i>24 modules introduced</i>"]
+  L2["Lecture II<br/><i>12 modules introduced</i>"]
+  L3["Lecture III<br/><i>20 modules introduced</i>"]
+  L4["Lecture IV<br/><i>23 modules introduced</i>"]
+  L5["Lecture V<br/><i>19 modules introduced</i>"]
+  L6["Lecture VI<br/><i>31 modules introduced</i>"]
+  L7["Lecture VII<br/><i>33 modules introduced</i>"]
+  L8["Lecture VIII<br/><i>73 modules introduced</i>"]
+  L1 -->|7 imports| L2
+  L1 -->|3 imports| L3
+  L1 -->|3 imports| L4
+  L1 -->|3 imports| L6
+  L1 -->|5 imports| L7
+  L1 -->|2 imports| L8
+  L2 -->|6 imports| L3
+  L2 -->|6 imports| L4
+  L2 -->|1 imports| L5
+  L2 -->|4 imports| L6
+  L2 -->|3 imports| L7
+  L2 -->|2 imports| L8
+  L3 -->|2 imports| L4
+  L3 -->|9 imports| L5
+  L3 -->|12 imports| L6
+  L3 -->|8 imports| L7
+  L3 -->|14 imports| L8
+  L4 -->|10 imports| L5
+  L4 -->|3 imports| L6
+  L4 -->|2 imports| L7
+  L4 -->|2 imports| L8
+  L5 -->|2 imports| L6
+  L5 -->|4 imports| L7
+  L5 -->|4 imports| L8
+  L6 -->|2 imports| L7
+  L6 -->|15 imports| L8
+  L7 -->|18 imports| L8
+```
+
 ---
 
 ## Methodology
@@ -3458,9 +3504,9 @@ Rebuild the formalization, this document, and the arXiv submission bundle with:
 ```bash
 lake exe cache get
 lake build Scott1980
-python3 scripts/generate_lecture_mermaid.py --write   # sync ### Lecture … mermaid blocks in arxiv.md
-bash scripts/build_arxiv_pdf.sh            # regen tex + compile appendix.pdf (slow, cached) + arxiv.tex (fast) -> arxiv.pdf + dist/arxiv_submit.zip
-bash scripts/build_arxiv_pdf.sh --pdf-only # PDF/dist only when arxiv.tex + appendix.tex already current
+python3 scripts/generate_lecture_mermaid.py --write   # sync chapter + per-lecture mermaid blocks in arxiv.md
+bash scripts/build_arxiv_pdf.sh            # regen tex + single-shot latexmk -> arxiv.pdf + dist/arxiv_submit.zip
+bash scripts/build_arxiv_pdf.sh --pdf-only # PDF/dist only when arxiv.tex already current
 bash scripts/package_arxiv_submit.sh       # dist zip only (skips PDF)
 ```
 
@@ -3482,8 +3528,9 @@ bash scripts/package_arxiv_submit.sh       # dist zip only (skips PDF)
 ## Lean Code
 
 All **236** Lean 4 modules in the [scott1980](https://github.com/catskillsresearch/scott1980)
-repository, grouped by role. Links point to the current `main` branch on GitHub. The import order
-matches [`Scott1980.lean`](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980.lean).
+repository, grouped by role. Each entry is a hyperlink to the file on the current `main` branch
+together with the same GitHub URL in plain text (sources are not inlined in this PDF). The import
+order matches [`Scott1980.lean`](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980.lean).
 
 ### Package
 
