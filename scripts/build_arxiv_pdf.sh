@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Regenerate arxiv.tex (full Lean appendix) and compile arxiv.pdf; then package Zenodo zip.
+# Regenerate arxiv.tex (full Lean appendix, one subsection per file) and compile arxiv.pdf.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -65,11 +65,7 @@ else
   echo "wrote $PDF ($(du -h "$PDF" | cut -f1), $(pdfinfo "$PDF" | awk '/Pages:/ {print $2}') pages; compile ${main_secs}s)"
 fi
 
-# Keep the tracked preview PDF in sync with the build.
 cp -f "$PDF" view.pdf
 
 echo "==> Font embedding check"
 check_pdf_fonts_embedded "$PDF" "arxiv.pdf"
-
-echo "==> Packaging Zenodo deposit zip"
-bash scripts/package_zenodo.sh --skip-pdf-build

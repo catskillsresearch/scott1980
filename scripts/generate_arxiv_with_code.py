@@ -1,42 +1,23 @@
 #!/usr/bin/env python3
-"""Expand Lean hyperlinks and appendix markdown in arxiv.md → arxiv_with_code.md."""
+"""Append complete Lean source to arxiv.md → arxiv_with_code.md (build artifact).
+
+Follows the scott1972 appendix convention: one markdown heading per Lean file
+(demoted to a LaTeX ``\\subsection`` by ``build_arxiv_tex.py``), with the
+verbatim source in a fenced ``lean`` block.
+"""
 
 from __future__ import annotations
 
-import re
 from datetime import date
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 
-# GitHub blob links in the Lean Code section, e.g.
-# * [Basic.lean](https://github.com/.../blob/main/Scott1980/Neighborhood/Basic.lean)
-# Optional trailing annotation (em-dash note). Do not use \s*$ — that would eat the
-# blank line before the next ### heading and collapse subsection structure.
-LEAN_LINK_RE = re.compile(
-    r"^\* \[([^\]]+\.lean)\]\("
-    r"https://github\.com/[^/]+/[^/]+/blob/[^/]+/"
-    r"([^)]+)\)"
-    r"(?:[ \t]+[—–-].*)?[ \t]*$",
-    re.MULTILINE,
-)
-
-# Standalone appendix links under ## Appendix A / B, e.g.
-# [Exercise722-Composer-Run.md](https://github.com/.../blob/main/Exercise722-Composer-Run.md)
-APPENDIX_LINK_RE = re.compile(
-    r"^\[([^\]]+\.md)\]\("
-    r"https://github\.com/[^/]+/[^/]+/blob/[^/]+/"
-    r"([^)]+\.md)\)\s*$",
-    re.MULTILINE,
-)
-
-# Markdown files inlined when generating arxiv_with_code.md (see arxiv.md appendices A–B).
-APPENDIX_INLINE_FILES = frozenset(
-    {
-        "Exercise722-Composer-Run.md",
-        "Exercise722-Composer-Playbook.md",
-    }
-)
+# Optional role labels for the appendix index table (keyed by repo-relative path).
+# Files not listed here still appear; the Role cell falls back to the path stem.
+FILE_ROLES: dict[str, str] = {
+    "Scott1980.lean": "Root import graph",
+}
 
 
 def paper_title(arxiv_text: str) -> str:
@@ -57,11 +38,23 @@ def narrative_body(arxiv_text: str) -> str:
     return body.rstrip()
 
 
+def strip_lean_code_section(body: str) -> str:
+    """Drop arxiv.md's GitHub-link Lean Code index; the appendix replaces it."""
+    markers = ("\n## Lean Code\n", "\n## Lean Code\r\n")
+    for marker in markers:
+        idx = body.find(marker)
+        if idx != -1:
+            return body[:idx].rstrip() + "\n"
+    if body.startswith("## Lean Code\n"):
+        return ""
+    return body
+
+
 def lean_files_from_root() -> list[str]:
     """All library `.lean` files in `Scott1980.lean` import order, plus the root module."""
     root_mod = ROOT / "Scott1980.lean"
     files = ["Scott1980.lean"]
-    for line in root_mod.read_text().splitlines():
+    for line in root_mod.read_text(encoding="utf-8").splitlines():
         line = line.strip()
         if not line.startswith("import "):
             continue
@@ -78,82 +71,63 @@ def sanitize_fence_content(content: str) -> str:
     return content.replace("```", "'''")
 
 
-def expand_lean_links(text: str) -> str:
-    def repl(match: re.Match[str]) -> str:
-        name = match.group(1)
-        relpath = match.group(2)
-        fpath = ROOT / relpath
-        if not fpath.is_file():
-            raise FileNotFoundError(f"Lean link target missing: {relpath} (from [{name}])")
-        content = sanitize_fence_content(fpath.read_text().rstrip()) + "\n"
-        n = len(content.splitlines())
-        return (
-            f"* **{name}** (`{relpath}`) — {n} lines\n\n"
-            f"```lean\n"
-            f"{content}"
-            f"```"
-        )
-
-    expanded, count = LEAN_LINK_RE.subn(repl, text)
-    if count == 0:
-        raise RuntimeError(
-            "No GitHub blob `.lean` links found to expand. "
-            "Expected bullet lines like "
-            "`* [Basic.lean](https://github.com/.../blob/main/Scott1980/Neighborhood/Basic.lean)` "
-            "in the Lean Code section of arxiv.md."
-        )
-    return expanded
-
-
-def expand_appendix_links(text: str) -> str:
-    """Inline appendix markdown (arxiv.md appendices A–B) when present."""
-    matches = [
-        m
-        for m in APPENDIX_LINK_RE.finditer(text)
-        if Path(m.group(2)).name in APPENDIX_INLINE_FILES
-    ]
-    if not matches:
-        return text
-    if len(matches) != len(APPENDIX_INLINE_FILES):
-        found = {Path(m.group(2)).name for m in matches}
-        missing = APPENDIX_INLINE_FILES - found
-        raise RuntimeError(
-            f"Expected {len(APPENDIX_INLINE_FILES)} appendix link(s) in arxiv.md "
-            f"(appendices A–B); found {len(matches)}. Missing: {sorted(missing)}."
-        )
-
-    def repl(match: re.Match[str]) -> str:
-        name = match.group(1)
-        relpath = match.group(2)
-        if Path(relpath).name not in APPENDIX_INLINE_FILES:
-            return match.group(0)
-        fpath = ROOT / relpath
-        if not fpath.is_file():
-            raise FileNotFoundError(f"Appendix link target missing: {relpath} (from [{name}])")
-        content = fpath.read_text().rstrip() + "\n"
-        n = len(content.splitlines())
-        return (
-            f"*Inlined from `{relpath}` ({n} lines):*\n\n"
-            f"{content}"
-        )
-
-    expanded, _ = APPENDIX_LINK_RE.subn(repl, text)
-    return expanded
+def role_for(path: str) -> str:
+    if path in FILE_ROLES:
+        return FILE_ROLES[path]
+    # Heuristic from filename prefixes (mirrors arxiv.md Lean Code groupings).
+    name = Path(path).stem
+    if name.startswith("Example"):
+        return "Example"
+    if name.startswith("Definition"):
+        return "Definition"
+    if name.startswith("Theorem") or name.startswith("Lemma"):
+        return "Theorem / Lemma"
+    if name.startswith("Proposition"):
+        return "Proposition"
+    if name.startswith("Exercise"):
+        return "Exercise"
+    if name in {
+        "Approximable",
+        "ApproximableExercises",
+        "Basic",
+        "Combinators77",
+        "FunctionSpace",
+        "Product",
+        "Recursive",
+    }:
+        return "Core infrastructure"
+    if name in {
+        "DAtomDecidable",
+        "IntervalPrimrec",
+        "LevelSetPrimrec",
+        "MinLevel",
+        "RationalPrimrec",
+        "RecursiveCross",
+        "SplitU",
+        "SplitV",
+        "UBisection2",
+        "UComputablePresentation",
+        "VDiff",
+    }:
+        return "Lecture VIII support"
+    if name.startswith("Table"):
+        return "Table"
+    return name
 
 
 def main() -> None:
     arxiv_path = ROOT / "arxiv.md"
-    arxiv = arxiv_path.read_text()
+    arxiv = arxiv_path.read_text(encoding="utf-8")
     title = paper_title(arxiv)
-    body = narrative_body(arxiv)
-    body = expand_appendix_links(body)
-    body = expand_lean_links(body)
+    body = strip_lean_code_section(narrative_body(arxiv))
     files = lean_files_from_root()
 
-    total_lines = sum(len((ROOT / f).read_text().splitlines()) for f in files)
-    appendix_lines = sum(
-        len((ROOT / name).read_text().splitlines()) for name in APPENDIX_INLINE_FILES
-    )
+    total_lines = 0
+    file_line_counts: list[tuple[str, int]] = []
+    for f in files:
+        n = len((ROOT / f).read_text(encoding="utf-8").splitlines())
+        file_line_counts.append((f, n))
+        total_lines += n
 
     parts: list[str] = []
     parts.append(
@@ -167,24 +141,41 @@ def main() -> None:
         "This file is stale whenever it is older than `arxiv.md` or any listed `.lean` file.\n\n"
     )
     parts.append(
-        f"*Generated {date.today().isoformat()} from `arxiv.md` (Lean Code hyperlinks "
-        f"expanded inline; appendices A–B inlined) and {len(files)} library `.lean` files "
-        f"({total_lines} lines total; appendices {appendix_lines} lines).*\n\n"
+        f"*Generated {date.today().isoformat()} from `arxiv.md` and {len(files)} library "
+        f"`.lean` files ({total_lines} lines) in `Scott1980.lean` import order.*\n\n"
     )
     parts.append(
         "**Review copy.** The narrative body matches [`arxiv.md`](arxiv.md) "
-        "(excluding the title block through the first `---`), with every "
-        "**Lean Code** GitHub hyperlink replaced by the verbatim source file, and "
-        "**Appendix A/B** markdown links replaced by the verbatim playbook files.\n\n"
+        "(excluding the title block through the first `---` and the GitHub-link "
+        "**Lean Code** index). This file appends **Appendix: Complete Lean source** "
+        "with one subsection per file.\n\n"
     )
     parts.append("---\n\n")
     parts.append("# Narrative + Lean source (from arxiv.md)\n\n")
     parts.append(body)
-    parts.append("\n")
+    parts.append("\n\n---\n\n")
+    parts.append("# Appendix A: Complete Lean source\n\n")
+    parts.append("| Role | File | Lines |\n")
+    parts.append("| --- | --- | ---: |\n")
+    for f, n in file_line_counts:
+        parts.append(f"| {role_for(f)} | `{f}` | {n} |\n")
+    parts.append(
+        f"\n**Total:** {len(files)} files, {total_lines} lines of Lean.\n\n"
+        "Files appear in `Scott1980.lean` import order. "
+        "Each block is a verbatim copy of the repository file at generation time.\n\n"
+    )
+
+    for f, n in file_line_counts:
+        content = sanitize_fence_content((ROOT / f).read_text(encoding="utf-8").rstrip()) + "\n"
+        parts.append(f"## `{f}`\n\n")
+        parts.append(f"*{n} lines.*\n\n")
+        parts.append("```lean\n")
+        parts.append(content)
+        parts.append("```\n\n")
 
     out = ROOT / "arxiv_with_code.md"
-    out.write_text("".join(parts))
-    print(f"Wrote {out} ({len(out.read_text().splitlines())} lines)")
+    out.write_text("".join(parts), encoding="utf-8")
+    print(f"Wrote {out} ({len(out.read_text(encoding='utf-8').splitlines())} lines)")
 
 
 if __name__ == "__main__":

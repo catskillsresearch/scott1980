@@ -3499,16 +3499,15 @@ full responsibility for them.
 
 The development **[ER80]** is at
 [`github.com/catskillsresearch/scott1980`](https://github.com/catskillsresearch/scott1980).
-Rebuild the formalization, this document (PDF with complete Lean source appendix), and the Zenodo
-deposit zip with:
+Rebuild the formalization and this document (PDF with complete Lean source appendix, one
+subsection per module) with:
 
 ```bash
 lake exe cache get
 lake build Scott1980
 python3 scripts/generate_lecture_mermaid.py --write   # sync chapter + per-lecture mermaid blocks in arxiv.md
-bash scripts/build_arxiv_pdf.sh            # expand Lean → tex → arxiv.pdf + dist/scott1980-zenodo.zip
-bash scripts/build_arxiv_pdf.sh --pdf-only # PDF/Zenodo only when arxiv.tex already current
-bash scripts/package_zenodo.sh --skip-pdf-build   # zip only (requires existing arxiv.pdf)
+bash scripts/build_arxiv_pdf.sh            # expand Lean → tex → arxiv.pdf
+bash scripts/build_arxiv_pdf.sh --pdf-only # PDF only when arxiv.tex already current
 ```
 
 ---

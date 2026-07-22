@@ -13320,3 +13320,10 @@ toolchain / LICENSE / README.
 **Pipeline:** restore `generate_arxiv_with_code` → full listings; delete `package_arxiv_submit.sh` /
 `arxiv_pdf_checks.sh`; add `package_zenodo.sh` + `pdf_checks.sh`. Source doc remains `arxiv.md`.
 **Command:** `bash scripts/build_arxiv_pdf.sh`
+
+## 2026-07-22: PDF-only build; scott1972-style per-file appendix subsections
+
+Dropped Zenodo packaging (`package_zenodo.sh` removed). `build_arxiv_pdf.sh` now only
+produces `arxiv.pdf` / `view.pdf`. Lean appendix follows scott1972: `\section{Complete Lean
+source}` then one `\subsection{Scott1980/...File.lean}` per module (import order), with the
+green "Lean 4 source" listing header. `generate_arxiv_with_code.py` rewritten accordingly.

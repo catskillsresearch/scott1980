@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-r"""Convert arxiv_with_code.md to arxiv.tex (Zenodo PDF build).
+r"""Convert arxiv_with_code.md to arxiv.tex (PDF build).
 
 Pipeline:
   1. Drop the GitHub-only navigation preamble from ``arxiv_with_code.md``.
   2. Lift the `## Abstract` section into a LaTeX \begin{abstract}.
-  3. Clean up "## Appendix A/B -- ..." heading titles, then insert \\appendix before
-     `## Lean Code` (complete inlined Lean sources).
+  3. Demote Appendix Lean-file headings so each module is a ``\\subsection``
+     (scott1972 convention), then insert \\appendix before Complete Lean source.
   4. Strip manual section numbers so LaTeX does the numbering.
   5. Replace fenced Lean/math/bash with \\lstinputlisting blocks; render mermaid to PDF.
   6. Inject AI model-card acknowledgements; pandoc -> LaTeX; splice placeholders.
@@ -102,10 +102,9 @@ HTML_COMMENT = re.compile(r"<!--.*?-->", re.DOTALL)
 FENCE_RE = re.compile(r"^```([^\n]*)\n(.*?)^```\s*$", re.MULTILINE | re.DOTALL)
 MANUAL_SECTION_NUM = re.compile(r"^(#{1,6})[ \t]+\d+(?:\.\d+)*\.?[ \t]+", re.MULTILINE)
 NARRATIVE_MARKER = "# Narrative + Lean source (from arxiv.md)"
-# Bullet line immediately preceding a ```lean fence in the "## Lean Code" section, e.g.
-# * **Basic.lean** (`Scott1980/Neighborhood/Basic.lean`) -- 450 lines
-LEAN_BULLET_RE = re.compile(
-    r"^\*\s+\*\*([^*]+\.lean)\*\*\s+\(`([^`]+)`\)\s+[-\u2013\u2014]+\s+\d+\s+lines?\s*$"
+# After normalize_appendix_headings: `### Scott1980/...File.lean` precedes each fence.
+LEAN_FILE_HEADING_RE = re.compile(
+    r"^###\s+(Scott1980(?:\.lean|/[\w./-]+\.lean))\s*$"
 )
 APPENDIX_HEADING_RE = re.compile(
     r"^##\s+Appendix\s+[A-Z]\s*[-\u2013\u2014]+\s*(.+)$", re.MULTILINE
@@ -160,12 +159,29 @@ def drop_github_nav(text: str) -> str:
 
 
 def normalize_appendix_headings(text: str) -> str:
-    """Drop the redundant literal "Appendix X --" prefix from `## Appendix A -- ...` /
-    `## Appendix B -- ...` headings (Exercise 7.22 Composer autorun/playbook) so LaTeX's
-    own `\\appendix` numbering doesn't print "Appendix B: Appendix A -- ...". The main
-    `## Lean Code` section needs no such rewrite -- it is already a plain title and
-    becomes the first (unlettered-in-the-title) appendix section.
+    """Match scott1972 heading demotion so each Lean file becomes a ``\\subsection``.
+
+    ``# Appendix A: Complete Lean source`` → ``## Complete Lean source``
+    (pandoc shift-1 → ``\\section``).
+
+    ``## `Scott1980/...File.lean``` → ``### Scott1980/...File.lean``
+    (pandoc shift-1 → ``\\subsection``).
+
+    Also drop the redundant literal "Appendix X --" prefix from any Composer
+    ``## Appendix A/B -- ...`` headings if present.
     """
+    text = re.sub(
+        r"^#\s+Appendix A: Complete Lean source\s*$",
+        "## Complete Lean source",
+        text,
+        flags=re.MULTILINE,
+    )
+    text = re.sub(
+        r"^##\s+`(Scott1980(?:\.lean|/[^`]+))`\s*$",
+        r"### \1",
+        text,
+        flags=re.MULTILINE,
+    )
     return APPENDIX_HEADING_RE.sub(lambda m: f"## {m.group(1)}", text)
 
 
@@ -278,18 +294,16 @@ def lean_block_latex(code: str, listing_name: str) -> str:
 
 
 def extract_lean_titles(text: str) -> dict[str, str]:
-    """Map each ```lean fence (by order of appearance) to its module path, read off the
-    `* **Name.lean** (`path`) -- N lines` bullet line generate_arxiv_with_code.py writes
-    immediately before every fence in the `## Lean Code` section."""
+    """Map each ```lean fence to its module path from the preceding ``### path`` heading."""
     titles: dict[str, str] = {}
     lean_starts = [m.start() for m in re.finditer(r"^```lean\s*$", text, re.MULTILINE)]
     for idx, pos in enumerate(lean_starts):
         prefix = text[:pos].rstrip("\n")
         module = None
-        for line in reversed(prefix.splitlines()[-4:]):
-            m = LEAN_BULLET_RE.match(line.strip())
+        for line in reversed(prefix.splitlines()[-6:]):
+            m = LEAN_FILE_HEADING_RE.match(line.strip())
             if m:
-                module = m.group(2)
+                module = m.group(1)
                 break
         titles[f"LEANINCLUDE{idx:03d}"] = module or f"module-{idx + 1}"
     return titles
@@ -392,12 +406,22 @@ def cleanup_pandoc_latex(latex: str) -> str:
             r"\1",
             latex,
         )
+    latex = re.sub(
+        r"\\section\{Appendix A\. Lean source index\}",
+        "",
+        latex,
+    )
+    latex = re.sub(
+        r"\\section\{Appendix A: Complete Lean source\}",
+        r"\\section{Complete Lean source}",
+        latex,
+    )
     latex = re.sub(r"\n{3,}", "\n\n", latex)
     return latex
 
 
 def insert_appendix_command(latex: str) -> str:
-    marker = r"\section{Lean Code}"
+    marker = r"\section{Complete Lean source}"
     if marker not in latex:
         raise RuntimeError(f"missing {marker!r} in LaTeX output")
     return latex.replace(marker, r"\appendix" + "\n" + marker, 1)
