@@ -3499,15 +3499,16 @@ full responsibility for them.
 
 The development **[ER80]** is at
 [`github.com/catskillsresearch/scott1980`](https://github.com/catskillsresearch/scott1980).
-Rebuild the formalization, this document, and the arXiv submission bundle with:
+Rebuild the formalization, this document (PDF with complete Lean source appendix), and the Zenodo
+deposit zip with:
 
 ```bash
 lake exe cache get
 lake build Scott1980
 python3 scripts/generate_lecture_mermaid.py --write   # sync chapter + per-lecture mermaid blocks in arxiv.md
-bash scripts/build_arxiv_pdf.sh            # regen tex + single-shot latexmk -> arxiv.pdf + dist/arxiv_submit.zip
-bash scripts/build_arxiv_pdf.sh --pdf-only # PDF/dist only when arxiv.tex already current
-bash scripts/package_arxiv_submit.sh       # dist zip only (skips PDF)
+bash scripts/build_arxiv_pdf.sh            # expand Lean → tex → arxiv.pdf + dist/scott1980-zenodo.zip
+bash scripts/build_arxiv_pdf.sh --pdf-only # PDF/Zenodo only when arxiv.tex already current
+bash scripts/package_zenodo.sh --skip-pdf-build   # zip only (requires existing arxiv.pdf)
 ```
 
 ---
@@ -3528,9 +3529,9 @@ bash scripts/package_arxiv_submit.sh       # dist zip only (skips PDF)
 ## Lean Code
 
 All **236** Lean 4 modules in the [scott1980](https://github.com/catskillsresearch/scott1980)
-repository, grouped by role. Each entry is a hyperlink to the file on the current `main` branch
-together with the same GitHub URL in plain text (sources are not inlined in this PDF). The import
-order matches [`Scott1980.lean`](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980.lean).
+repository, grouped by role. In the PDF build each link is replaced by the verbatim Lean source
+(complete appendix). Links below point to the current `main` branch on GitHub. The import order
+matches [`Scott1980.lean`](https://github.com/catskillsresearch/scott1980/blob/main/Scott1980.lean).
 
 ### Package
 

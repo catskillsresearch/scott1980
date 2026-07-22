@@ -11,12 +11,13 @@ ROOT = Path(__file__).resolve().parent.parent
 
 # GitHub blob links in the Lean Code section, e.g.
 # * [Basic.lean](https://github.com/.../blob/main/Scott1980/Neighborhood/Basic.lean)
-# Optional trailing annotation (em-dash note) is ignored for expansion matching.
+# Optional trailing annotation (em-dash note). Do not use \s*$ — that would eat the
+# blank line before the next ### heading and collapse subsection structure.
 LEAN_LINK_RE = re.compile(
     r"^\* \[([^\]]+\.lean)\]\("
     r"https://github\.com/[^/]+/[^/]+/blob/[^/]+/"
     r"([^)]+)\)"
-    r"(?:\s+[—–-].*)?\s*$",
+    r"(?:[ \t]+[—–-].*)?[ \t]*$",
     re.MULTILINE,
 )
 

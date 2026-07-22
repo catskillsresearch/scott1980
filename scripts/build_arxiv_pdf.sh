@@ -1,14 +1,13 @@
 #!/usr/bin/env bash
-# Regenerate arxiv.tex from arxiv.md and compile arxiv.pdf in one shot.
-# Lean Code appendix = GitHub hyperlinks + plain URLs (no inlined sources).
+# Regenerate arxiv.tex (full Lean appendix) and compile arxiv.pdf; then package Zenodo zip.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
 TEX="arxiv.tex"
 PDF="arxiv.pdf"
 
-# shellcheck source=scripts/arxiv_pdf_checks.sh
-source "$(dirname "$0")/arxiv_pdf_checks.sh"
+# shellcheck source=scripts/pdf_checks.sh
+source "$(dirname "$0")/pdf_checks.sh"
 
 pdf_valid() {
   local f="$1"
@@ -33,17 +32,18 @@ compile_tex() {
   }
 }
 
-echo "==> Regenerating arxiv.tex + figures/ from arxiv.md"
+echo "==> Regenerating arxiv.tex + lean-listings/ + figures/ (full Lean appendix)"
 if [[ "${1:-}" == "--pdf-only" ]]; then
   echo "    (--pdf-only: skipping markdown/tex regeneration)"
 else
   bash scripts/build_arxiv_tex.sh
 fi
 
-echo "==> Compiling arxiv.pdf (single-shot LuaLaTeX; see .latexmkrc)"
+echo "==> Compiling arxiv.pdf (LuaLaTeX; see .latexmkrc)"
 need_main=1
 if pdf_valid "$PDF" \
   && [[ ! "$TEX" -nt "$PDF" ]] \
+  && [[ ! lean-listings -nt "$PDF" ]] \
   && [[ ! figures -nt "$PDF" ]]; then
   need_main=0
 fi
@@ -65,8 +65,11 @@ else
   echo "wrote $PDF ($(du -h "$PDF" | cut -f1), $(pdfinfo "$PDF" | awk '/Pages:/ {print $2}') pages; compile ${main_secs}s)"
 fi
 
-echo "==> arXiv preflight: font embedding"
+# Keep the tracked preview PDF in sync with the build.
+cp -f "$PDF" view.pdf
+
+echo "==> Font embedding check"
 check_pdf_fonts_embedded "$PDF" "arxiv.pdf"
 
-echo "==> Packaging arXiv submission zip"
-bash scripts/package_arxiv_submit.sh --skip-tex-build
+echo "==> Packaging Zenodo deposit zip"
+bash scripts/package_zenodo.sh --skip-pdf-build

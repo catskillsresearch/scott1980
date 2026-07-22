@@ -13311,3 +13311,12 @@ appendix should list full GitHub path as hyperlink + plain-text URL; package a d
   `arxiv.tex` + 9 mermaid figures + 1 bash snippet listing). Zero `.lean` listings inlined.
 
 **Command:** `bash scripts/build_arxiv_pdf.sh`
+
+## 2026-07-22: Zenodo dist (full Lean appendix); drop arXiv packaging
+
+**PDF:** `arxiv.pdf` — 1851 pages, 8.8M, full Lean sources inlined in appendix (LuaLaTeX).
+**Zip:** `dist/scott1980-zenodo.zip` (9.7M) — PDF + `arxiv.md` + Lean sources + `lakefile.toml` /
+toolchain / LICENSE / README.
+**Pipeline:** restore `generate_arxiv_with_code` → full listings; delete `package_arxiv_submit.sh` /
+`arxiv_pdf_checks.sh`; add `package_zenodo.sh` + `pdf_checks.sh`. Source doc remains `arxiv.md`.
+**Command:** `bash scripts/build_arxiv_pdf.sh`
