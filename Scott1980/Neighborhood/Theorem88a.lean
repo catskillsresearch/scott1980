@@ -361,7 +361,7 @@ theorem theorem_8_8_a.{u} {α : Type u} (D : NeighborhoodSystem α)
       | succ n => rw [hen n]; exact (f n).2
   exact ⟨DprimeU D e hcover he0, isomorphic_DprimeU D e hcover he0, DprimeU_subsystem D e hcover he0⟩
 
-/-- **Theorem 8.8 (Scott 1981, PRG-19), general half.** Scott's wording:
+/-- **Theorem 8.8(a) (Scott 1981, PRG-19).** Scott's wording:
 "The system `𝒰` is universal in the sense that, for every countable neighbourhood
 system `𝒟`, we have `𝒟 ⊴ 𝒰`." This packages `theorem_8_8_a` as that relation. -/
 theorem theorem_8_8.{u} {α : Type u} (D : NeighborhoodSystem α)

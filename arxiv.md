@@ -1,14 +1,18 @@
-# Formalizing Dana Scott's 1980 Theory of Computation in Lean 4
+# Formalizing Dana Scott's 1980 Lectures (PRG-19, 1981) in Lean 4
 
 ---
 
 ## Abstract
 
-In November 1969, Dana Scott formulated a mathematical program to construct the first non-degenerate, purely mathematical model ($D_\infty$) for Alonzo Church's untyped $\lambda$-calculus. He formally detailed this in his landmark 1972 paper *Continuous Lattices*, providing the foundational justification for denotational semantics. However, Scott's initial 1972 framework relied on dense, abstract point-set topology, which remained an intimidating barrier for computer scientists seeking a practical tool for representing programming language semantics.
+In November 1969, Dana Scott formulated a mathematical program to construct a non-degenerate, purely mathematical model ($D_\infty$) for Alonzo Church's untyped $\lambda$-calculus — the construction later published in *Continuous Lattices* (1972). That paper is often described as giving the first such model; this formalization does not adjudicate historical priority. Scott's 1972 framework relied on point-set topology, which remained a barrier for computer scientists seeking a practical tool for programming-language semantics.
 
-When Scott delivered his lectures at Oxford in 1980—subsequently published as *Lectures on a Mathematical Theory of Computation* (Technical Report PRG-19)—he made an intentional, systematic pivot. The 1980 lectures focused on discrete information presented as *domains*. This more discrete presentation was intended to be more accessible to computer scientists without training in point-set topology and lattice theory.
+When Scott delivered his Oxford lectures in Michaelmas Term 1980 — published May 1981 as *Lectures on a Mathematical Theory of Computation* (Technical Monograph PRG-19) — he pivoted to discrete information presented as *domains*. That presentation was intended to be more accessible without training in point-set topology and lattice theory.
 
-This Lean 4 formalization covers every element of PRG-19, including all exercises.  We strive to avoid law of the excluded middle.  We check axioms throughout, so if a proof seems to unavoidably require law of the excluded middle, that will be shown in the axiom check.
+This Lean 4 library formalizes the numbered definitions, theorems, examples, and exercises of PRG-19, with one documented deferral: Exercise 8.17 Part 2 (whether $\mathcal{U}+\mathcal{U}$, $\mathcal{U}\times\mathcal{U}$, or $\mathcal{U}\to\mathcal{U}$ is isomorphic to $\mathcal{U}$), which Scott himself left unresolved for the function-space case. Data constructions are kept choice-free where possible. Prop-level results may use `Classical.choice`; axiom audits record the footprint. The Palomar compared theorem `theorem_8_8` uses `{propext, Classical.choice, Quot.sound}`.
+
+### Palomar compared claim (Theorem 8.8(a))
+
+Palomar registers **only the first sentence of Theorem 8.8**: every countable neighbourhood system $\mathcal{D}$ embeds as a subdomain of $\mathcal{U}$ ($\mathcal{D}\trianglelefteq\mathcal{U}$, Lean `theorem_8_8`). That is not the full three-sentence theorem: the effective projection-pair sentence and the finitary-projection correspondence are proved in the library as `theorem_8_8_b` / `theorem_8_8_c` and are **not** Comparator targets. `Challenge.lean` also locks two concrete countable instances: Example 1.5 (`P4_embeds`) and Exercise 7.22's system $S$ (`Ssys_embeds`). See `Challenge.lean` and `formalization.yaml`.
 
 ---
 
@@ -128,8 +132,10 @@ The primary source is Dana Scott's *Lectures on a Mathematical Theory of Computa
 inventory of every numbered Definition, Theorem, Example, and Exercise—with formalization status and
 proof notes—is maintained in this document (`arxiv.md`). Each item is keyed to Scott's original
 numbering and cross-linked to its Lean module. Status values distinguish **Pass** (mechanized, builds
-green, zero `sorry`), **Partial** (substantial core done; documented gaps remain), **Not Yet**, and
-**Deferred** (Lecture VIII and items beyond the current formalization frontier).
+green, zero `sorry`). Remaining mismatches versus the monograph are documented deferrals or
+expository items (Exercise 8.17 Part 2; Exercise 8.15 item 6g; pictures / “discuss” prompts),
+not unfinished numbered proofs. The older **Partial** / **Not Yet** / **Deferred** legend
+described an earlier inventory state.
 
 ### Neighbourhood systems as the uniform substrate
 
@@ -369,18 +375,18 @@ Footprint `[propext, Quot.sound]`.
 
 
 #### Example 1.5
-* **Mathematical Target:** `Δ={0,1,2,3}`, `𝒟 =` all non-empty subsets; `Example15.neighborhoodSystem` (`mem X := X.Nonempty`), `mem_iff_nonempty`
+* **Mathematical Target:** `Δ={0,1,2,3}`, `𝒟 =` all non-empty subsets; `Example15.neighborhoodSystem` (`P4Mem`), `mem_iff_nonempty`, Palomar `P4_embeds`
 * **Lean File:** — (see proof notes)
 
-`Δ = {0,1,2,3}` (`Token := Fin 4`) with `𝒟` = all **non-empty** subsets (`mem X := X.Nonempty`,
+`Δ = {0,1,2,3}` (`Token := Fin 4`) with `𝒟` = all **non-empty** subsets (`P4Mem X := X.Nonempty`,
 `master := Set.univ`). Condition (ii) is immediate and choice-free: a non-empty witness `Z ⊆ X ∩ Y`
-makes `X ∩ Y` non-empty (`obtain ⟨z, hz⟩ := hZ; exact ⟨z, hZsub hz⟩`). **Factoid 1.5a**
+makes `X ∩ Y` non-empty (`P4_inter_mem`). **Factoid 1.5a**
 (`consistent_iff_inter_nonempty`) is Scott's remark that "sets are consistent iff they have a
 non-empty intersection": reusing the `Basic` `Consistent`/`interUpTo` infrastructure, a prefix is
 consistent (`∃ Z, Z.Nonempty ∧ Z ⊆ ⋂`) iff `⋂_{i<n} Xᵢ` is non-empty (`→` shrinks the witness, `←`
 takes the intersection as its own witness). Notably this example needs **no** `fin_cases`/`decide`
 and audits to `[propext]` (system) / `[propext, Quot.sound]` (Factoid 1.5a) — a fully constructive
-contrast to the finite Examples 1.2–1.4.
+contrast to the finite Examples 1.2–1.4. Palomar compares `P4_embeds : neighborhoodSystem ⊴ U`.
 
 
 #### Factoid 1.5a
@@ -1925,11 +1931,11 @@ Lecture VII establishes the recursion-theoretic foundations of domain theory.
 * **Proof Notes:** `Exercise721.lean`, ns `Domain.Neighborhood`, green, wired, zero `sorry`. Headline **Q1** `ℙ(D→E)→(ℙD→ℙE)`: **yes**, the Smyth power-domain lift of evaluation. **`papplyEval V W : ApproximableMap₂ ℙ(funSpace V W) ℙV ℙW`**, `rel Φ A B := ℙfun Φ ∧ ℙD A ∧ ℙE B ∧ ∀G∈Φ,∀X∈A,∃Y∈B, (eval V W).rel G X Y` (two-var analogue of Ex 7.19's `ℙf`). Approximable: `master_rel` (witness `Δ_E`), `inter_right` (`eval.inter_right`+downward-closure `PDmem_down`, witness `Y∩Y'`), `mono`. Made a product map **`papplyB = ofMap₂ papplyEval`** then **curried (Thm 3.12) to the exact type `papply = curry papplyB : ℙ(D→E)→(ℙD→ℙE)`**. **Non-trivial**: `papplyEval_step_witness` — `↓[X₀,Y₀] papply ↓X₀ ↦ ↓Y₀` for any `X₀∈D,Y₀∈E`. **Computable: yes when `eval` is** — `papplyEval_rel_Ypd_iff` reduces (Prop-7.10 codes) to `∀g∈dl Φc,∀x∈dl Ac,∃y∈dl Bc, eval(Pf.X g)(P.X x)(Q.X y)`; r.e. via new choice-free helper **`re_forallG_forallX_existsY`** (`⊆{propext,Quot.sound}`: layers `bExists_decodeList_re` (Ex 7.19) + `REPred.forall_mem_decodeList₂` twice, with 4 primrec re-indexings); base predicate `heval` = Thm 7.5 `evalMap_isComputable` transported through `funPresentation` (`papplyEval_isComputable`). **Discussion (docstring):** **Q2** isos among `(D→ℙE)`, `ℙ(D×E)`, `ℙD×ℙE` — *no in general* (Smyth `ℙ` doesn't distribute over `×`; `ℙ(D×E)→ℙD×ℙE` via `⟨ℙp₀,ℙp₁⟩` forgets correlation, e.g. `{(d₁,e₁),(d₂,e₂)}` vs `{(d₁,e₂),(d₂,e₁)}` share marginals); **Q3** `ℙ(D×E)×ℙ(E×F)→ℙ(D×F)` — *yes*, relational composition `R;S` (Smyth lift, middle witness via Ex-7.19 `comp_witness`), same recipe as `papply`; **Q4** `ℙN` vs `PN` — `ℙN⊴PN` (finitely generated/computable core, `PN` = ideal completion), not isomorphic. Axioms: helper `⊆{propext,Quot.sound}`; all other decls `={propext,Classical.choice,Quot.sound}` (choice Prop-level, inherited from the power domain Prop 7.10, none added — as in 7.19/7.20).
 
 
-Scott's **Exercise 7.22** is split below into sub-rows **7.22a–h**, **7.22i(a)–i(b)**, **7.22j–l**
-(proven blocks first, then open items with plans). Composer sessions **C1–C8**, **C11**, **C12**, **C9a**,
-**C9b1–C9b8**, **C10**, and **C7b** delivered **7.22a–h**, **7.22i(a)**, **7.22i(b)1–8**, **7.22j**,
-and **7.22k**; **7.22l** (Scott's infinite-word equations, as genuine domain least fixed points) is
-also now **Pass**, closing the inventory.
+Scott's **Exercise 7.22** is split below into sub-rows **7.22a–h**, **7.22i(a)–i(b)**, **7.22j–l**.
+Composer sessions **C1–C8**, **C11**, **C12**, **C9a**, **C9b1–C9b8**, **C10**, and **C7b** delivered
+**7.22a–h**, **7.22i(a)**, **7.22i(b)1–8**, **7.22j**, and **7.22k**; **7.22l** (Scott's infinite-word
+equations, as genuine domain least fixed points) is also **Pass**, closing the inventory. Palomar
+compares `Ssys_embeds : Ssys ⊴ U` (`PalomarExamples.lean`).
 
 #### Exercise 7.22a
 * **Mathematical Target:** least-fixed-point family `S` over `{0,1}*` (`InS`)
@@ -3516,9 +3522,9 @@ bash scripts/build_arxiv_pdf.sh --pdf-only # PDF only when arxiv.tex already cur
 
 * **[Sco69]** D. S. Scott. *Lattice-theoretic models for the $\lambda$-calculus* (Unpublished manuscript). University of Oxford, 1969.
 * **[Sco72]** D. S. Scott. Continuous lattices. In F. W. Lawvere (Ed.), *Toposes, Algebraic Geometry and Logic* (Lecture Notes in Mathematics, Vol. 274, pp. 97–136). Springer, Berlin, Heidelberg, 1972.
-* **[Sco81]** D. S. Scott. *Lectures on a mathematical theory of computation* (Technical Report no. PRG-19). Oxford University Computing Laboratory, 1980.
+* **[Sco81]** D. S. Scott. *Lectures on a mathematical theory of computation* (Technical Monograph PRG-19). Oxford University Computing Laboratory, Programming Research Group, May 1981. Lectures delivered Michaelmas Term 1980.
 * **[Win93]** G. Winskel. *The Formal Semantics of Programming Languages*. MIT Press, 1993.
-* **[ER80]** Catskills Research. *scott1980* (this work). <https://github.com/catskillsresearch/scott1980>.
+* **[ER80]** Lars Warren Ericson. *scott1980* (this work). <https://github.com/catskillsresearch/scott1980>.
 * **[COPE24]** Committee on Publication Ethics (COPE). *Authorship and AI tools: COPE position statement*. 2024. <https://publicationethics.org/guidance/cope-position/authorship-and-ai-tools>
 <!-- AI_MODEL_REFERENCES -->
 <!-- /AI_MODEL_REFERENCES -->

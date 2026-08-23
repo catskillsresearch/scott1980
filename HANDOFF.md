@@ -66,7 +66,11 @@ A session may begin after a context reset; chat memory is not durable, these fil
 4. Build with `lake build Domain` (filter output: `| grep -vE 'LEAN_PATH|trace:' | tail`).
 5. Follow `.cursor/rules/handoff-discipline.mdc` (choice discipline, axiom audits, and the
    end-of-item checklist that keeps this file + `arxiv.md` current).
-6. **Exercise 7.22 (split inventory): COMPLETE.** grep `Exercise 7.22` in `arxiv.md`: rows
+6. **Palomar compared claim** is `theorem_8_8 : D ⊴ U` (Scott's first
+   Theorem 8.8 sentence) plus two concrete instances: Example 1.5
+   `P4_embeds` and Exercise 7.22 `Ssys_embeds`. Not 8.8(b)/(c). Informal
+   surfaces must not say otherwise.
+7. **Exercise 7.22 (split inventory): COMPLETE.** grep `Exercise 7.22` in `arxiv.md`: rows
    **7.22a–h**, **7.22i(a)**, **7.22i(b)1(a–e)**, **7.22i(b)2–8**, the **7.22i(b)** umbrella,
    **7.22j**, **7.22k**, and **7.22l** are **all Pass**. `Ssys_cons_computable`/
    `Ssys_interEq_computable`: Definition 7.1 (i)/(ii) recursively decidable. `streamArrow`/
@@ -13403,3 +13407,43 @@ Copied the updated Comparator style notes and transitive-body dump from
 plus extras; preflight step title matches. Kept the axiom-free
 `#print axioms` parse (`element_le_refl` / `element_le_trans` have none).
 `scripts/palomar_preflight.sh` still green.
+
+## 2026-08-23: Palomar package review hardening
+
+Responded to a submit-file audit. Compared theorem unchanged (`theorem_8_8`).
+
+- Informal surfaces now say Palomar is **only** Scott's first 8.8 sentence.
+- `arxiv.md` no longer claims "every element / all exercises / avoid LEM /
+  first model"; Exercise 8.17 Part 2 is the documented deferral.
+- Year labeling: 1980 lectures, May 1981 PRG-19. Author: Lars Warren Ericson.
+- `NOTICE` + `sources/README.md`: Scott's monograph is not Apache-2.0.
+- `sources/PRG19.md` `verification_status: verified` for compared passages.
+- Locked `element_le` so the element-order relation is a compared definition.
+- Rebuilt `arxiv.pdf` / `view.pdf` (1824 pages, 2026-08-23) so the tracked
+  PDFs include the Palomar package notes. Preflight still green.
+
+## 2026-08-23: Palomar examples (1.5 + 7.22)
+
+Added two concrete countable systems to the Palomar Challenge so the
+universal-domain claim has inhabitants, not only the abstract
+`theorem_8_8`. Challenge is 236 lines (dedicated rendered page; still
+human-auditable). Preflight green.
+
+- Example 1.5: named `P4Mem` / `P4_*` proof fields, `P4_countable`,
+  compared `P4_embeds : neighborhoodSystem ⊴ U`.
+- Exercise 7.22: named `Ssys_*` proof fields (no inline `ofPositive`),
+  Challenge syntax `SExpr`/`InS`/`concat`, compared `Ssys_embeds`.
+- `Ssys_countable` lives in `PalomarExamples.lean` (uses `Classical.choice`
+  via `Surjective.countable`); Regular stays choice-free.
+- `Solution.lean` imports `PalomarExamples`. Comparator locks the new
+  named proof theorems plus `concat` / `Ssys` / `P4Mem` /
+  `neighborhoodSystem`. Instances and inductives are not locked.
+
+## 2026-08-23: Palomar titles say 8.8(a) / `D ⊴ U`
+
+Renamed Palomar-facing titles that said bare "Theorem 8.8" so they
+claim only the first sentence: yaml `project.name` is now
+`Scott 1981 — D ⊴ U (Theorem 8.8(a))`; Challenge heading and
+`theorem_8_8` docstring, README table, PROVENANCE, Solution,
+`sources/README.md`, and the arxiv Palomar heading match. Library
+inventory rows for 8.8(b)/(c) are unchanged.

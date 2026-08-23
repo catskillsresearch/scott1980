@@ -2,21 +2,22 @@
 version: "v0.4"
 
 project:
-  name: "Scott 1981 Neighbourhood Systems — Theorem 8.8"
+  name: "Scott 1981 — D ⊴ U (Theorem 8.8(a))"
   description: >-
-    A Lean 4 / mathlib formalization of Dana Scott's 1981 PRG-19 Lectures on
-    a Mathematical Theory of Computation. The Palomar compared result is
-    Theorem 8.8 as worded in sources/PRG19.md: the neighbourhood system U
-    over [0,1) ⊆ ℚ is universal, in the sense that every countable
-    neighbourhood system D embeds as a subdomain (D ⊴ U). Challenge.lean
-    fixes the neighbourhood-system vocabulary, Scott's ⊴, and the concrete
-    Definition 8.7 family U. The full Lectures I–VIII development lives in
-    Scott1980/Neighborhood/*. The informal account is arxiv.md and
-    sources/PRG19.md in this repository. Lean was written by AI agents
-    under the direction and review of the author. Dana Scott did not
-    participate in or endorse this formalization. There is no sorry
-    outside the deliberate holes in Challenge.lean, no project-defined
-    axiom, and Mathlib is the only Lake dependency.
+    A Lean 4 / mathlib formalization of Dana Scott's 1980 Oxford lectures,
+    published May 1981 as PRG-19 Lectures on a Mathematical Theory of
+    Computation. The Palomar compared result is only the first sentence of
+    Theorem 8.8: the neighbourhood system U over [0,1) ⊆ ℚ is universal, in
+    the sense that every countable neighbourhood system D embeds as a
+    subdomain (D ⊴ U). Challenge.lean fixes the neighbourhood-system
+    vocabulary, Scott's ⊴, and the concrete Definition 8.7 family U. The
+    broader Lectures I–VIII development lives in Scott1980/Neighborhood/*
+    and is not the advertised Comparator result. The informal account is
+    arxiv.md; the working transcription is sources/PRG19.md. Lean was
+    written by AI agents under the direction and review of the author.
+    Dana Scott did not participate in or endorse this formalization. There
+    is no sorry outside the deliberate holes in Challenge.lean, no
+    project-defined axiom, and Mathlib is the only Lake dependency.
   authors:
     - "Lars Warren Ericson"
   license: "Apache-2.0"
@@ -32,15 +33,19 @@ classification:
 
 status:
   scope: >-
-    Complete for the compared claim and the underlying Scott1980 library it
-    uses. theorem_8_8 is the compared declaration: for every countable
-    neighbourhood system D one has D ⊴ U, i.e. D ≅ D' for some subsystem
-    D' ◁ U. Challenge.lean locks the filter-element order, the Definition
-    8.7 membership predicate UMem, and the concrete value of U. The
-    broader book (Lectures I–VIII, every numbered item in arxiv.md) is
-    formalized in the same library but is not part of the advertised
-    Comparator result; the additional Comparator theorem targets are
-    proof obligations used only to lock these concrete definition bodies.
+    Complete for the compared claim. theorem_8_8 is the compared
+    declaration: for every countable neighbourhood system D one has
+    D ⊴ U, i.e. D ≅ D' for some subsystem D' ◁ U. That is Scott's first
+    Theorem 8.8 sentence only. Challenge.lean locks the filter-element
+    order (element_le), the Definition 8.7 membership predicate UMem, and
+    the concrete value of U. Challenge.lean also locks two concrete
+    countable examples that instantiate the claim: Example 1.5
+    (`P4_embeds`) and Exercise 7.22's system S (`Ssys_embeds`). The
+    broader book is formalized in the same library but is not part of
+    the advertised Comparator result; Exercise 8.17 Part 2 remains a
+    documented deferral. Additional Comparator theorem targets are
+    proof obligations used only to lock these concrete definition
+    bodies.
   sorry_count: 0
   sorry_in_definitions: 0
   axioms: ["propext", "Classical.choice", "Quot.sound"]
@@ -70,14 +75,17 @@ sources:
   - title: "Lectures on a Mathematical Theory of Computation"
     authors: ["Dana S. Scott"]
     type: "article"
-    location: "Technical Monograph PRG-19, Oxford University Computing Laboratory, Programming Research Group, May 1981. Theorem 8.8."
+    location: "Technical Monograph PRG-19, Oxford University Computing Laboratory, Programming Research Group, May 1981. Theorem 8.8(a)."
     relationship: formalizes
     author_endorsement: not-contacted
     note: >-
-      Primary source. Dana Scott was not contacted and did not participate
-      in or endorse this formalization. The compared claim is Theorem 8.8
-      (general universality). Working transcription: sources/PRG19.md.
-      Narrative inventory: arxiv.md.
+      Primary source (© 1981 Dana S. Scott / University of Oxford). Dana
+      Scott was not contacted and did not participate in or endorse this
+      formalization. The compared claim is the first sentence of Theorem
+      8.8 (general universality). Working transcription:
+      sources/PRG19.md, which is not licensed under this repository's
+      Apache-2.0 terms. Narrative inventory: arxiv.md. Lectures 1980;
+      monograph May 1981.
 
   - title: "A Lean 4 Formalization of Scott's Lectures on a Mathematical Theory of Computation (PRG-19)"
     authors: ["Lars Warren Ericson"]
@@ -151,12 +159,24 @@ review:
     of the Lean source, and no review or endorsement by Dana Scott.
     Every proof step is checked by the Lean kernel.
 
-known_gaps: []
+known_gaps:
+  - >-
+    Palomar compares only the first sentence of Theorem 8.8 (`theorem_8_8`).
+    The effective half `theorem_8_8_b` and the finitary-projection
+    correspondence `theorem_8_8_c` are in the library, not in Comparator.
+  - >-
+    Exercise 8.17 Part 2 (whether U+U, U×U, or U→U is isomorphic to U) is
+    deliberately deferred. Scott flagged the function-space case as open.
+  - >-
+    NeighborhoodSystem, Element, Subsystem, and the PartialOrder instance
+    are structures or instances and cannot be Comparator-locked. Their
+    proof fields and the named relation element_le are locked instead.
 
 limitations:
   - >-
-    The Comparator-compared family is Theorem 8.8 (general universality)
-    and the definitions it mentions, not the full PRG-19 inventory in
+    The Comparator-compared family is the first sentence of Theorem 8.8
+    (general universality D ⊴ U) and the definitions it mentions, not
+    the full three-sentence theorem and not the PRG-19 inventory in
     arxiv.md.
   - >-
     The compared theorem depends on propext, Classical.choice, and
@@ -170,21 +190,24 @@ alignment:
   namespace: "Scott1980.Neighborhood"
   statements:
     - source: >-
-        sources/PRG19.md, Theorem 8.8: The system U is universal in the
-        sense that, for every countable neighbourhood system D, we have
-        D ⊴ U.
+        sources/PRG19.md, Theorem 8.8(a): The system U is universal in
+        the sense that, for every countable neighbourhood system D, we
+        have D ⊴ U.
       lean: "theorem_8_8"
       module: "Challenge (statement), Theorem88a.lean (proof)"
       status: proved
       note: >-
-        Challenge quotes that sentence. The library proves it by
-        packaging theorem_8_8_a (D ≅ D' ∧ D' ◁ U) as D ⊴ U.
+        Challenge quotes that first sentence only. The library proves it
+        by packaging theorem_8_8_a (D ≅ D' ∧ D' ◁ U) as D ⊴ U.
 
     - source: "Scott 1981, Definition 8.7: the universal neighbourhood system U"
       lean: "U"
       module: "Challenge (definition), Definition87.lean"
       status: proved
-      note: "Compared as a definition. Membership is UMem."
+      note: >-
+        Compared as a definition. Membership is UMem (list presentation;
+        equivalent to Scott's per-pair 0 ≤ r < s ≤ 1 family by
+        U_mem_iff_scott).
 
     - source: "Scott 1981, Definition 1.1: neighbourhood system"
       lean: "NeighborhoodSystem"
@@ -203,3 +226,15 @@ alignment:
       module: "Challenge (definition), Lemma615.lean"
       status: proved
       note: "Compared as a definition."
+
+    - source: "Scott 1981, Example 1.5: all nonempty subsets of {0,1,2,3}"
+      lean: "P4_embeds"
+      module: "Challenge (statement), PalomarExamples.lean"
+      status: proved
+      note: "Compared instance of theorem_8_8."
+
+    - source: "Scott 1981, Exercise 7.22: the least-fixed-point family S over {0,1}*"
+      lean: "Ssys_embeds"
+      module: "Challenge (statement), PalomarExamples.lean"
+      status: proved
+      note: "Compared instance of theorem_8_8. SExpr is shown, not locked."

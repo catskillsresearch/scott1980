@@ -259,6 +259,11 @@ theorem Element.mem_interUpTo_iff {α : Type*} {V : NeighborhoodSystem α} (x : 
     exact x.up_mem h (hX i hi) (V.interUpTo_subset X hi)
   · exact x.mem_interUpTo X
 
+/-- Filter-inclusion order on elements (Scott's approximation order, Definition 1.8).
+Named so Palomar can lock the `PartialOrder` relation without inlining it. -/
+def element_le (x y : V.Element) : Prop :=
+  ∀ X, x.mem X → y.mem X
+
 /-- Reflexivity of the filter-inclusion order. Named so Palomar can lock the
 `PartialOrder` instance without a generated `._proof_N`. -/
 theorem element_le_refl (x : V.Element) : ∀ X, x.mem X → x.mem X :=
@@ -279,7 +284,7 @@ theorem element_le_antisymm (x y : V.Element)
 /-- Elements are ordered by inclusion of their membership predicates (Scott's approximation
 order, Definition 1.8). -/
 instance : PartialOrder V.Element where
-  le x y := ∀ X, x.mem X → y.mem X
+  le := element_le V
   le_refl := element_le_refl V
   le_trans := element_le_trans V
   le_antisymm := element_le_antisymm V

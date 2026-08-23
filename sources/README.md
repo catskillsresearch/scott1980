@@ -1,0 +1,14 @@
+# Source materials
+
+`PRG19.pdf` is Dana S. Scott's technical monograph (© 1981 Dana S. Scott /
+University of Oxford), published May 1981 from lectures delivered in
+Michaelmas Term 1980. It is included for citation and transcription
+checking only. It is **not** licensed under this repository's Apache-2.0
+terms.
+
+`PRG19.md` is the maintained working transcription of that monograph.
+Scott's wording remains Scott's copyright. Compared Palomar wording is
+checked against this file; the YAML `verification_status` records that
+the compared Theorem 8.8(a) / Definition 8.7 passages have been checked.
+
+Do not treat either file as redistributable under Apache-2.0.
