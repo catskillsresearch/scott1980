@@ -15,3 +15,11 @@ lake build Scott1980
 ```
 
 Pinned: Lean / mathlib **v4.33.0** (`lean-toolchain`).
+
+### LLM / single-file export
+
+To ship the entire library as one Lean file (for tools without local repo access):
+
+```bash
+python3 scripts/flatten_to_proof.py   # writes proof.lean (gitignored)
+```

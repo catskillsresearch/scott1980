@@ -13328,19 +13328,24 @@ produces `arxiv.pdf` / `view.pdf`. Lean appendix follows scott1972: `\section{Co
 source}` then one `\subsection{Scott1980/...File.lean}` per module (import order), with the
 green "Lean 4 source" listing header. `generate_arxiv_with_code.py` rewritten accordingly.
 
-## 2026-08-17: flattened `proof.lean` (all 235 Scott1980 modules)
+## 2026-08-17: flattened `proof.lean` export (all 235 Scott1980 modules)
 
-Generated a single-file dump of every Lean 4 module under `Scott1980/`:
+**`scripts/flatten_to_proof.py`** concatenates every module under `Scott1980/` into
+one **`proof.lean`** at the repo root — for LLM export when the consumer cannot
+browse the multi-file tree locally. Mathlib imports hoisted; internal
+`import Scott1980.*` stripped; dependency order (Kahn sort,
+`Scott1980.lean` listing as tie-break).
 
-- **`proof.lean`** — 235 modules, 86 823 lines; Mathlib imports hoisted; internal
-  `import Scott1980.*` stripped; bodies concatenated in import-dependency order
-  (Kahn sort, `Scott1980.lean` listing as tie-break). Starts at `Basic.lean`,
-  ends at `Exercise827.lean`.
-- **`scripts/flatten_to_proof.py`** — regenerator. Listed in `.cursorignore`
-  (duplicate of the whole library; not a source of truth). Not wired into
-  `lakefile.toml` / `lake build Scott1980`.
+- **Not committed** (`proof.lean` / `proof.lean.*` are in `.gitignore` and
+  `.cursorignore`; stale copies should be purged, not versioned).
+- **Not** wired into `lakefile.toml` / `lake build Scott1980`.
 
 **Command:** `python3 scripts/flatten_to_proof.py`
+
+## 2026-08-23: purge committed `proof.lean`; keep flatten script only
+
+Removed the tracked 86k-line `proof.lean` and deleted stale `proof.lean.txt`.
+The export script stays; regenerate `proof.lean` on demand for LLM handoff.
 
 ## 2026-08-23: Lean / mathlib bump `v4.30.0` → `v4.33.0`
 
