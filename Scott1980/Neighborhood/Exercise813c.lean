@@ -222,7 +222,7 @@ theorem generatedBy_iff_exists_evalSet' {Y : Set (ℕ → Bool)} :
   · rintro ⟨φ, rfl⟩
     induction φ with
     | var i => exact GeneratedBy.of i
-    | bot => simpa using GeneratedBy.univ.compl
+    | bot => simpa [evalSet'] using GeneratedBy.univ.compl
     | top => exact GeneratedBy.univ
     | neg φ ih => exact ih.compl
     | and φ ψ ihφ ihψ => exact ihφ.inter ihψ

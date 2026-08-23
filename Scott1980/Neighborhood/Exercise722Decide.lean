@@ -153,7 +153,9 @@ def autStateCard : SExpr → ℕ
 
 theorem autStateCard_le_card (e : SExpr) : autStateCard e ≤ Fintype.card (autState e) := by
   induction e with
-  | sigma => simp [autStateCard, autState]
+  | sigma =>
+    simp [autStateCard, autState]
+    exact (Fintype.card_unique (α := Unit)).ge
   | single σ =>
     have heq : autStateCard (.single σ) = Fintype.card (autState (.single σ)) := by
       simp only [autStateCard, autState]
@@ -390,7 +392,9 @@ theorem nfa_accepts_nonempty_iff_short :
 
 theorem autStateCard_eq_card (e : SExpr) : autStateCard e = Fintype.card (autState e) := by
   induction e with
-  | sigma => simp [autStateCard, autState]
+  | sigma =>
+    simp [autStateCard, autState]
+    exact (Fintype.card_unique (α := Unit)).symm
   | single σ =>
     simp only [autStateCard, autState]
     have h1 : Fintype.card (Option (Fin (σ.length + 1))) =

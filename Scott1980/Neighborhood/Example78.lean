@@ -114,7 +114,6 @@ def PNpres : ComputablePresentation PN where
             simp only [unpair_pair_fst, unpair_pair_snd])
         (Nat.Primrec.right.comp Nat.Primrec.right))
     -- the pointwise equivalence
-    dsimp only
     constructor
     · intro h; exact nbhd_injective ((nbhd_inter _ _).symm.trans h)
     · intro h; rw [nbhd_inter]; exact congrArg nbhd h

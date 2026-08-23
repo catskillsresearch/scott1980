@@ -138,7 +138,7 @@ theorem PDmem_inter {W₁ W₂ : Set (Set α)} (h₁ : V.PDmem W₁) (h₂ : V.P
 
 /-- **Proposition 7.10 (Part A) — the Smyth power domain `ℙ𝒟` as a neighbourhood system.** Master
 `↓Δ`; closure under intersection is `PDmem_inter`; `↓X ⊆ ↓Δ` since `X ⊆ Δ`. -/
-def PowerDomain : NeighborhoodSystem (Set α) where
+abbrev PowerDomain : NeighborhoodSystem (Set α) where
   mem := V.PDmem
   master := V.upSet V.master
   master_mem := V.PDmem_master

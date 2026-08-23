@@ -235,6 +235,7 @@ theorem decodeFuelOkChar_eq_one_iff (fuel c : ℕ) :
       rw [decodeFuel_succ_single fuel c tag]
       simp [decodeListBool_isSome_iff, Option.isSome_map]
     | 2 =>
+      simp [tag]
       rw [decodeFuel_succ_cat fuel c tag, mulBit_eq_one_iff, decodeFuel_pair_cat_isSome_iff]
       have ih1 := ih c.unpair.2.unpair.1
       have ih2 := ih c.unpair.2.unpair.2
@@ -244,6 +245,7 @@ theorem decodeFuelOkChar_eq_one_iff (fuel c : ℕ) :
       · intro ⟨h1, h2⟩
         exact ⟨ih1.mpr h1, ih2.mpr h2⟩
     | 3 =>
+      simp [tag]
       rw [decodeFuel_succ_cap fuel c tag, mulBit_eq_one_iff, decodeFuel_pair_cap_isSome_iff]
       have ih1 := ih c.unpair.2.unpair.1
       have ih2 := ih c.unpair.2.unpair.2

@@ -148,9 +148,7 @@ def addIso (m : ℕ) : ℕ ≃ {k : ℕ // k ∈ upSet m} where
   left_inv n := by show m + n - m = n; omega
   right_inv := by
     rintro ⟨k, hk⟩
-    have : m ≤ k := hk
-    simp only [Subtype.mk.injEq]
-    omega
+    exact Subtype.ext (Nat.add_sub_of_le hk)
 
 /-- The isomorphism is given by addition: `addIso m n = m + n`. -/
 theorem addIso_apply (m n : ℕ) : (addIso m n : ℕ) = m + n := rfl

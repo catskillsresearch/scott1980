@@ -14,4 +14,4 @@ lake exe cache get
 lake build Scott1980
 ```
 
-Pinned: Lean / mathlib **v4.30.0** (`lean-toolchain`).
+Pinned: Lean / mathlib **v4.33.0** (`lean-toolchain`).

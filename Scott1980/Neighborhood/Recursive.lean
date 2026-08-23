@@ -2291,19 +2291,20 @@ theorem decodeFuelOkChar_le_one : ∀ fuel c, decodeFuelOkChar fuel c ≤ 1
     rw [decodeFuelOkChar, decodeFuelOkCharBody_eq]
     match tag : c.unpair.1 with
     | 0 =>
-      dsimp only
+      simp [tag]
       rcases (show isOne (1 - c.unpair.2) = 0 ∨ isOne (1 - c.unpair.2) = 1 by
         have := isOne_le_one (1 - c.unpair.2); omega) with h0 | h1
       · rw [h0, selectFn_zero]; exact Nat.zero_le 1
       · rw [h1, selectFn_one]
     | 1 =>
-      dsimp only
+      simp [tag]
       exact allBinDigitsChar_le_one _
     | 2 | 3 =>
-      dsimp only
+      simp [tag]
       exact mulBit_le_one (decodeFuelOkChar_le_one fuel c.unpair.2.unpair.1)
         (decodeFuelOkChar_le_one fuel c.unpair.2.unpair.2)
-    | _ + 4 => exact Nat.zero_le 1
+    | _ + 4 =>
+      simp [tag]
 
 /-! ### `decodeFuelOkChar` jointly primitive recursive in `(fuel, code)`
 
@@ -3421,7 +3422,6 @@ theorem matchesBChar_le_one : ∀ fuel c cw, matchesBChar fuel c cw ≤ 1
     | 1 => exact listEqChar_le_one _ _
     | 2 => exact bExistsFn_le_one _ _ _
     | 3 =>
-      dsimp only
       exact mulBit_le_one (matchesBChar_le_one fuel _ _) (matchesBChar_le_one fuel _ _)
     | _ + 4 => simp
 
@@ -3439,7 +3439,7 @@ private theorem matchesBCharBody_local (f g : ℕ → ℕ) (c cw : ℕ)
   | 0 => rfl
   | 1 => rfl
   | 2 =>
-    dsimp only
+    simp [tag]
     apply bExistsFn_congr
     intro i _
     unfold matchesBCatG
@@ -3450,7 +3450,7 @@ private theorem matchesBCharBody_local (f g : ℕ → ℕ) (c cw : ℕ)
       pair_le_pair (le_trans (unpair_snd_le c.unpair.2) (unpair_snd_le c)) (dropCode_le i cw)
     rw [h _ h1, h _ h2]
   | 3 =>
-    dsimp only
+    simp [tag]
     have h1 : Nat.pair c.unpair.2.unpair.1 cw ≤ Nat.pair c cw :=
       pair_le_pair (le_trans (unpair_left_le c.unpair.2) (unpair_snd_le c)) (le_refl cw)
     have h2 : Nat.pair c.unpair.2.unpair.2 cw ≤ Nat.pair c cw :=

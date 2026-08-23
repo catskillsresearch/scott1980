@@ -290,7 +290,7 @@ def colimIso (s : Setup.{w}) : Iso (s.T.obj ⟨s.Tok, colim s⟩) (⟨s.Tok, col
   isoOfEq (colimObj_eq s)
 
 /-- The colimit `𝒟` as a `T`-algebra, with structure map the iso `T(𝒟) → 𝒟`. -/
-def colimAlg (s : Setup.{w}) : TAlgebra s.T :=
+abbrev colimAlg (s : Setup.{w}) : TAlgebra s.T :=
   ⟨⟨s.Tok, colim s⟩, (colimIso s).hom⟩
 
 /-! ### Existence of homomorphisms (Theorem 6.9) -/

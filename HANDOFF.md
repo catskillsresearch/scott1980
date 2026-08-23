@@ -52,7 +52,7 @@ closed too, see the dated checkpoints at the end of this file. **Every row in `a
 You are a Lean 4 proof engineer formalizing Dana Scott's 1981 *Lectures on a Mathematical Theory of
 Computation* (PRG-19) in:
 
-`/home/catskills/Desktop/domain_theory` — mathlib `v4.30.0`, Lean toolchain per `lean-toolchain`.
+`/home/catskills/Desktop/scott1980` — mathlib `v4.33.0`, Lean toolchain per `lean-toolchain`.
 
 ## Resume Protocol (read this first)
 
@@ -13327,3 +13327,36 @@ Dropped Zenodo packaging (`package_zenodo.sh` removed). `build_arxiv_pdf.sh` now
 produces `arxiv.pdf` / `view.pdf`. Lean appendix follows scott1972: `\section{Complete Lean
 source}` then one `\subsection{Scott1980/...File.lean}` per module (import order), with the
 green "Lean 4 source" listing header. `generate_arxiv_with_code.py` rewritten accordingly.
+
+## 2026-08-17: flattened `proof.lean` (all 235 Scott1980 modules)
+
+Generated a single-file dump of every Lean 4 module under `Scott1980/`:
+
+- **`proof.lean`** — 235 modules, 86 823 lines; Mathlib imports hoisted; internal
+  `import Scott1980.*` stripped; bodies concatenated in import-dependency order
+  (Kahn sort, `Scott1980.lean` listing as tie-break). Starts at `Basic.lean`,
+  ends at `Exercise827.lean`.
+- **`scripts/flatten_to_proof.py`** — regenerator. Listed in `.cursorignore`
+  (duplicate of the whole library; not a source of truth). Not wired into
+  `lakefile.toml` / `lake build Scott1980`.
+
+**Command:** `python3 scripts/flatten_to_proof.py`
+
+## 2026-08-23: Lean / mathlib bump `v4.30.0` → `v4.33.0`
+
+Pinned to the newest toolchain already downloaded (`elan toolchain list`:
+`v4.30.0`, `v4.31.0`, `v4.32.2`, **`v4.33.0`**).
+
+- `lean-toolchain`, `lakefile.toml` `rev`, `lake-manifest.json` (`mathlib`
+  `db584cd…`, `inputRev: v4.33.0`), `README.md`, and this file's Resume
+  Protocol path/version line.
+- `lake update` + cache hit (8689 files); `lake build Scott1980` green
+  (3263 jobs).
+- Lean 4.33 is stricter at **implicit transparency** (`rw`/`simpa`/`calc`/`dsimp`).
+  Fixes: wrapper `def` → `abbrev` (`N`, `C`, `Cn`, `L`, `Dsharp`, `PowerDomain`,
+  `Dom.arrow`, `tStr`, `TexpF`/`gFunctor`/`ExpAlg`, `colimAlg`, `Tc`/`Calg`/`Cobj`,
+  `Tsig`/`Cnalg`/…); named `Monotone` proofs; `PFun`/`ℕ →. Bool` packaged as
+  `rfindZeroPred`; `dsimp only` no-ops deleted or replaced by `simp [tag]`;
+  `exact`/`change` instead of `simpa` where types only matched after unfolding.
+
+**Command:** `lake build Scott1980`
