@@ -7,6 +7,7 @@ Github:  https://github.com/catskillsresearch/scott1980
 
 import Scott1980.Neighborhood.Theorem88
 import Scott1980.Neighborhood.Definition610
+import Scott1980.Neighborhood.Lemma615
 import Mathlib.Data.Countable.Defs
 
 /-!
@@ -337,7 +338,7 @@ using `Countable`/`Nonempty` — the only place `Classical.choice` enters, since
 data), shifted by one and patched at `0` to enforce Scott's convention `X₀ = Δ`. Everything else —
 `idxSet`'s "separated" reindexing, the `Yidx`/transfer apparatus of `Theorem88.lean`, and the
 `DprimeU`/`domainIso` machinery above — is then assembled directly. -/
-theorem theorem_8_8_a {α : Type*} (D : NeighborhoodSystem α)
+theorem theorem_8_8_a.{u} {α : Type u} (D : NeighborhoodSystem α)
     [Countable {S : Set α // D.mem S}] :
     ∃ D' : NeighborhoodSystem ℚ, (D ≅ᴰ D') ∧ (D' ◁ U) := by
   have : Nonempty {S : Set α // D.mem S} := ⟨⟨D.master, D.master_mem⟩⟩
@@ -359,5 +360,13 @@ theorem theorem_8_8_a {α : Type*} (D : NeighborhoodSystem α)
       | zero => rw [he0]; exact D.master_mem
       | succ n => rw [hen n]; exact (f n).2
   exact ⟨DprimeU D e hcover he0, isomorphic_DprimeU D e hcover he0, DprimeU_subsystem D e hcover he0⟩
+
+/-- **Theorem 8.8 (Scott 1981, PRG-19), general half.** Scott's wording:
+"The system `𝒰` is universal in the sense that, for every countable neighbourhood
+system `𝒟`, we have `𝒟 ⊴ 𝒰`." This packages `theorem_8_8_a` as that relation. -/
+theorem theorem_8_8.{u} {α : Type u} (D : NeighborhoodSystem α)
+    [Countable {S : Set α // D.mem S}] : D ⊴ U := by
+  obtain ⟨D', hiso, hsub⟩ := theorem_8_8_a D
+  exact ⟨D', hsub, hiso⟩
 
 end Scott1980.Neighborhood

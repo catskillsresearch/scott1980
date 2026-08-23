@@ -5,13 +5,34 @@ Lean 4 formalization of Dana Scott's **1981** PRG-19 *Lectures on a Mathematical
 Theory of Computation* (neighborhood systems / filter domains).
 
 Standalone package — no dependency on the 1972 formalization. Part IV equivalence
-theorems live in [`scott_models`](../scott_models).
+theorems live in [`scott_models`](../scott_models). This repo is packaged for
+[Palomar](https://palomar-registry.org/about) on its own (see `PROVENANCE.md`).
+
+## Files (Palomar)
+
+| File | Role |
+|---|---|
+| `arxiv.md` | Formalization narrative and theorem inventory |
+| `sources/PRG19.md` | Transcribed source text (Scott PRG-19) |
+| `Scott1980/` | Sorry-free formalization of the lectures |
+| `Challenge.lean` | Palomar statement of record: Theorem 8.8 + definitions |
+| `Solution.lean` | Palomar solution module: imports `Scott1980/*` proofs |
+| `comparator.json` | Comparator config for the compared theorem and definitions |
+| `formalization.yaml` | Palomar / formalization.yaml v0.4 metadata |
+| `PROVENANCE.md` | Standalone Palomar submission; relation to siblings |
 
 ## Build
 
 ```bash
 lake exe cache get
-lake build Scott1980
+lake build
+```
+
+`lake build` typechecks `Scott1980`, `Challenge.lean`, and `Solution.lean`. Before a
+Palomar submission, run:
+
+```bash
+bash scripts/palomar_preflight.sh
 ```
 
 Pinned: Lean / mathlib **v4.33.0** (`lean-toolchain`).

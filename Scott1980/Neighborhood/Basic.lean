@@ -259,14 +259,30 @@ theorem Element.mem_interUpTo_iff {α : Type*} {V : NeighborhoodSystem α} (x : 
     exact x.up_mem h (hX i hi) (V.interUpTo_subset X hi)
   · exact x.mem_interUpTo X
 
+/-- Reflexivity of the filter-inclusion order. Named so Palomar can lock the
+`PartialOrder` instance without a generated `._proof_N`. -/
+theorem element_le_refl (x : V.Element) : ∀ X, x.mem X → x.mem X :=
+  fun _ h => h
+
+/-- Transitivity of the filter-inclusion order. -/
+theorem element_le_trans (x y z : V.Element)
+    (hxy : ∀ X, x.mem X → y.mem X) (hyz : ∀ X, y.mem X → z.mem X) :
+    ∀ X, x.mem X → z.mem X :=
+  fun X h => hyz X (hxy X h)
+
+/-- Antisymmetry of the filter-inclusion order. -/
+theorem element_le_antisymm (x y : V.Element)
+    (hxy : ∀ X, x.mem X → y.mem X) (hyx : ∀ X, y.mem X → x.mem X) :
+    x = y :=
+  @Element.ext α V x y fun X => ⟨hxy X, hyx X⟩
+
 /-- Elements are ordered by inclusion of their membership predicates (Scott's approximation
 order, Definition 1.8). -/
 instance : PartialOrder V.Element where
   le x y := ∀ X, x.mem X → y.mem X
-  le_refl x X h := h
-  le_trans x y z h1 h2 X h := h2 X (h1 X h)
-  le_antisymm x y h1 h2 :=
-    @Element.ext α V x y fun X => ⟨h1 X, h2 X⟩
+  le_refl := element_le_refl V
+  le_trans := element_le_trans V
+  le_antisymm := element_le_antisymm V
 
 /-- The **limit family** of a sequence of neighbourhoods (Scott, the prose before Definition
 1.6): `x = {Z ∈ 𝒟 ∣ Xₙ ⊆ Z for some n}` — the family of all neighbourhoods eventually reached

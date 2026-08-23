@@ -13380,3 +13380,18 @@ clean rebuild of the Scott1980 oleans.
   `Dchain`, `colimCeq`, `succChainDir`, `expSub`).
 - Unused `simp` args, unused binders, unused section `[Fintype σ]`
   (`omit` in `Exercise722Decide`), and a dead `all_goals try omega`.
+
+## 2026-08-23: Palomar infrastructure (Theorem 8.8)
+
+Added the cardb / scott1972 Challenge–Solution layout. Compared claim is
+Scott's Theorem 8.8 (general half): every countable neighbourhood system
+embeds as a subdomain of `𝒰` (`theorem_8_8 : D ⊴ U`), wrapping
+`theorem_8_8_a`.
+
+- `Challenge.lean` (Mathlib-only, 155 lines), `Solution.lean`,
+  `comparator.json`, `formalization.yaml`, `PROVENANCE.md`.
+- Locked `U` via named proof fields `UMem` / `UMaster` / `U_master_mem` /
+  `U_inter_mem` / `U_sub_master`; element order via `element_le_*`.
+- `scripts/palomar_preflight.sh` green: types match, no `._proof_N`,
+  axioms `⊆ {propext, Classical.choice, Quot.sound}`.
+- CI now runs the preflight. Challenge `sorry`s are the deliberate holes.
