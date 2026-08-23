@@ -133,7 +133,7 @@ def iter (s : Setup.{w}) : (n : ℕ) →
 def Dsys (s : Setup.{w}) (n : ℕ) : NeighborhoodSystem s.Tok := (iter s n).1
 
 /-- The carrier identification `(T.obj Tⁿ({Γ})).carrier = Tok`. -/
-def Dceq (s : Setup.{w}) (n : ℕ) : (s.T.obj ⟨s.Tok, Dsys s n⟩).carrier = s.Tok := (iter s n).2.1
+theorem Dceq (s : Setup.{w}) (n : ℕ) : (s.T.obj ⟨s.Tok, Dsys s n⟩).carrier = s.Tok := (iter s n).2.1
 
 /-- `Tⁿ⁺¹({Γ})` is the carrier-transport of `T(Tⁿ({Γ}))`. -/
 theorem Dsys_succ (s : Setup.{w}) (n : ℕ) :
@@ -141,7 +141,7 @@ theorem Dsys_succ (s : Setup.{w}) (n : ℕ) :
   rfl
 
 /-- The basic subdomain step `Tⁿ({Γ}) ◁ Tⁿ⁺¹({Γ})`. -/
-def Dchain (s : Setup.{w}) (n : ℕ) : Dsys s n ◁ Dsys s (n + 1) := (iter s n).2.2
+theorem Dchain (s : Setup.{w}) (n : ℕ) : Dsys s n ◁ Dsys s (n + 1) := (iter s n).2.2
 
 /-- Every system in the tower has the same master `Δ = Γ`. -/
 theorem Dsys_master (s : Setup.{w}) (n : ℕ) : (Dsys s n).master = s.Γ.master := by
@@ -199,7 +199,7 @@ theorem Dsys_sub_colim (s : Setup.{w}) (n : ℕ) : Dsys s n ◁ colim s where
 /-! ### `T(𝒟)` and the relation `𝒟 ◁ T(𝒟)` -/
 
 /-- The carrier identification `(T.obj 𝒟).carrier = Tok`, from `MonotoneAt` of `T⁰({Γ}) ◁ 𝒟`. -/
-def colimCeq (s : Setup.{w}) : (s.T.obj ⟨s.Tok, colim s⟩).carrier = s.Tok :=
+theorem colimCeq (s : Setup.{w}) : (s.T.obj ⟨s.Tok, colim s⟩).carrier = s.Tok :=
   (s.hmono (Dsys_sub_colim s 0)).carrier_eq.trans (Dceq s 0)
 
 /-- `T(𝒟)`, the image of the colimit, as a system over `Tok` (via `colimCeq`). -/
@@ -250,7 +250,7 @@ theorem Tcolim_sub_colim (s : Setup.{w}) {X : Set s.Tok} (hX : (Tcolim s).mem X)
   rw [Set.mem_iUnion] at hmem
   obtain ⟨hD, hmemD⟩ := hmem
   obtain ⟨n, rfl⟩ := hD
-  simp only [targetFam, Set.mem_setOf_eq] at hmemD
+  simp only [targetFam, Set.mem_ofPred_eq] at hmemD
   -- conclude `X ∈ Tⁿ⁺¹({Γ}) ⊆ 𝒟`.
   refine ⟨n + 1, ?_⟩
   rw [Dsys_succ s n, mem_cast (Dceq s n)]

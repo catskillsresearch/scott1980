@@ -340,7 +340,7 @@ data), shifted by one and patched at `0` to enforce Scott's convention `X₀ = �
 theorem theorem_8_8_a {α : Type*} (D : NeighborhoodSystem α)
     [Countable {S : Set α // D.mem S}] :
     ∃ D' : NeighborhoodSystem ℚ, (D ≅ᴰ D') ∧ (D' ◁ U) := by
-  haveI : Nonempty {S : Set α // D.mem S} := ⟨⟨D.master, D.master_mem⟩⟩
+  have : Nonempty {S : Set α // D.mem S} := ⟨⟨D.master, D.master_mem⟩⟩
   obtain ⟨f, hf⟩ := exists_surjective_nat {S : Set α // D.mem S}
   set e : ℕ → Set α := fun n => if n = 0 then D.master else (f (n - 1)).1 with hedef
   have he0 : e 0 = D.master := if_pos rfl

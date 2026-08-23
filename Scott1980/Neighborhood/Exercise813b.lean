@@ -216,7 +216,7 @@ from. This is exactly `8.13`'s parenthetical: "the free Boolean algebra on `ℵ�
 (= the Lindenbaum algebra of propositional calculus)." -/
 theorem Lindenbaum.range_toSet : Set.range Lindenbaum.toSet = {X | GeneratedBy generator X} := by
   ext X
-  simp only [Set.mem_range, Set.mem_setOf_eq, generatedBy_iff_exists_evalSet]
+  simp only [Set.mem_range, Set.mem_ofPred_eq, generatedBy_iff_exists_evalSet]
   constructor
   · rintro ⟨x, rfl⟩
     induction x using Quotient.ind with

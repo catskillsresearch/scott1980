@@ -716,8 +716,8 @@ def tsigMapHom (A : Type) [DecidableEq A] {D E : StrictDomainObj.{0}} (f : Categ
 abbrev Tsig (A : Type) [DecidableEq A] : Endofunctor StrictDomainObj.{0} where
   obj := tsigObj A
   map := tsigMapHom A
-  map_id D := Subtype.ext sumMapSig_id
-  map_comp {D E F} g f := Subtype.ext (sumMapSig_comp g.1 f.1)
+  map_id _ := Subtype.ext sumMapSig_id
+  map_comp {_ _ _} g f := Subtype.ext (sumMapSig_comp g.1 f.1)
 
 @[simp] theorem Tsig_obj (A : Type) [DecidableEq A] (D : StrictDomainObj.{0}) :
     (Tsig A).obj D = tsigObj A D := rfl
@@ -1435,7 +1435,7 @@ def descAlgHom : AlgHom (Cnalg A) B where
   hom := descStrict B
   comm := by
     apply Subtype.ext
-    simp only [StrictDomainObj.comp_val, Tsig_map_val]
+    simp only [StrictDomainObj.comp_val]
     exact descComm B
 
 /-- **Uniqueness.** Any `Tsig`-algebra homomorphism out of `(Cₐ, i)` equals `descAlgHom`. -/

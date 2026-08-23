@@ -858,7 +858,7 @@ section Uniqueness
 variable {N : ScottSys} (hN : ([] : Str) ∈ N.sys.master)
 
 /-- The subdomain `Texpⁿ({Γ}) ◁ Exp` (Proposition 6.12's pair lives here). -/
-def expSub (n : ℕ) : (gTower (Texp N) n).sys ◁ (Exp N hN).sys :=
+theorem expSub (n : ℕ) : (gTower (Texp N) n).sys ◁ (Exp N hN).sys :=
   gTower_sub_colim (Texp N) (Texp_rooted hN) n
 
 /-- **`ρₙ = iₙ ∘ jₙ : Exp → Exp`**, the retraction onto `Texpⁿ({Γ})`. -/

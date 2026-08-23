@@ -190,7 +190,7 @@ effective presentation; what it does *not* yet supply is the recursive *decidabi
 index relations (see the module docstring). -/
 theorem inS_eq_range_denote : {X | InS X} = denote '' {e | (denote e).Nonempty} := by
   ext X
-  simp only [Set.mem_setOf_eq, Set.mem_image]
+  simp only [Set.mem_ofPred_eq, Set.mem_image]
   constructor
   · intro h
     obtain ⟨e, he⟩ := InS_exists_denote h

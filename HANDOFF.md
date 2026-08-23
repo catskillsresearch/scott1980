@@ -13365,3 +13365,18 @@ Pinned to the newest toolchain already downloaded (`elan toolchain list`:
   `exact`/`change` instead of `simpa` where types only matched after unfolding.
 
 **Command:** `lake build Scott1980`
+
+## 2026-08-23: Lean 4.33 deprecation / linter sweep
+
+`lake build Scott1980` is green with **zero** `warning:` / `error:` lines after a
+clean rebuild of the Scott1980 oleans.
+
+- Deprecated Set lemmas: `mem_setOf_eq` → `mem_ofPred_eq`, `mem_diff` →
+  `mem_sdiff`, `diff_*` → `sdiff_*`, plus `union_sdiff_distrib` /
+  `inter_union_sdiff`.
+- `push_neg` → `push Not`; `Mathlib.Data.Real.Archimedean` →
+  `Mathlib.Algebra.Order.Archimedean.Real.Basic`.
+- `haveI`/`letI` → `have`/`let`; `def` of `Prop`s → `theorem` (`Dceq`,
+  `Dchain`, `colimCeq`, `succChainDir`, `expSub`).
+- Unused `simp` args, unused binders, unused section `[Fintype σ]`
+  (`omit` in `Exercise722Decide`), and a dead `all_goals try omega`.

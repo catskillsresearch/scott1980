@@ -141,7 +141,7 @@ def toC (x : (reprSystem C hInter hne).Element) : Set τ := ⋃₀ famC C hInter
 
 theorem mem_toC (x : (reprSystem C hInter hne).Element) {t : τ} :
     t ∈ toC C hInter hne x ↔ ∃ F : Tok C, x.mem (nbhd C F.1) ∧ t ∈ Cl C F.1 := by
-  simp only [toC, famC, Set.mem_sUnion, Set.mem_setOf_eq]
+  simp only [toC, famC, Set.mem_sUnion, Set.mem_ofPred_eq]
   constructor
   · rintro ⟨Y, ⟨F, hF, rfl⟩, ht⟩
     exact ⟨F, hF, ht⟩

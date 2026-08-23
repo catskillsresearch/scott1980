@@ -460,7 +460,7 @@ theorem not_isCompactElt_pos {β : Type} {F : NeighborhoodSystem β}
   intro hcompact
   set S : Set (Set.Icc (0 : ℝ) 1) := {x | x.1 ∈ Set.Ico (0 : ℝ) t} with hSdef
   have hmem0 : (⟨0, le_refl 0, zero_le_one⟩ : Set.Icc (0 : ℝ) 1) ∈ S := ⟨le_refl 0, htpos⟩
-  haveI : Nonempty S := ⟨⟨_, hmem0⟩⟩
+  have : Nonempty S := ⟨⟨_, hmem0⟩⟩
   set fam : S → F.Element := fun x => g x.1 with hfamdef
   have hdir : ∀ i j : S, ∃ k : S, fam i ≤ fam k ∧ fam j ≤ fam k := by
     rintro ⟨x, hx⟩ ⟨y, hy⟩

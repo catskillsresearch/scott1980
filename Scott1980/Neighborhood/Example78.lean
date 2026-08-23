@@ -64,7 +64,7 @@ theorem nbhd_zero : nbhd 0 = Set.univ := by
 one: `nbhd n ∩ nbhd m = nbhd (n ||| m)` (bitwise OR of the excluded finite sets). -/
 theorem nbhd_inter (n m : ℕ) : nbhd n ∩ nbhd m = nbhd (myLor n m) := by
   ext k
-  simp only [nbhd, Set.mem_inter_iff, Set.mem_setOf_eq, myLor_eq_lor, Nat.testBit_lor,
+  simp only [nbhd, Set.mem_inter_iff, Set.mem_ofPred_eq, myLor_eq_lor, Nat.testBit_lor,
     Bool.or_eq_false_iff]
 
 /-- The enumeration `n ↦ nbhd n` is **one-one** (Scott's converse-ordered neighbourhoods are in
