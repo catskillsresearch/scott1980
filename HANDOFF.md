@@ -13395,3 +13395,11 @@ embeds as a subdomain of `𝒰` (`theorem_8_8 : D ⊴ U`), wrapping
 - `scripts/palomar_preflight.sh` green: types match, no `._proof_N`,
   axioms `⊆ {propext, Classical.choice, Quot.sound}`.
 - CI now runs the preflight. Challenge `sorry`s are the deliberate holes.
+
+## 2026-08-23: Palomar preflight sync from scott1972
+
+Copied the updated Comparator style notes and transitive-body dump from
+`scott1972`. Compare script now `#print`s every `definition_names` entry
+plus extras; preflight step title matches. Kept the axiom-free
+`#print axioms` parse (`element_le_refl` / `element_le_trans` have none).
+`scripts/palomar_preflight.sh` still green.
