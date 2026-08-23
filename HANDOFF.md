@@ -13447,3 +13447,12 @@ claim only the first sentence: yaml `project.name` is now
 `theorem_8_8` docstring, README table, PROVENANCE, Solution,
 `sources/README.md`, and the arxiv Palomar heading match. Library
 inventory rows for 8.8(b)/(c) are unchanged.
+
+## 2026-08-23: Palomar source `type` vocabulary
+
+`formalization.yaml` source types are now Palomar's closed set
+(`paper` for PRG-19, `other` for the author's write-up). `article` is
+a mechanical hard fail. Official
+`PalomarTemplate/scripts/validate-formalization.rb` reports no TEMPLATE
+values. Ordinary layout files present; Lean `v4.33.0` ≥ Palomar minimum
+`v4.28.0`.

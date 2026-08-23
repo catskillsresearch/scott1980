@@ -74,7 +74,7 @@ fidelity:
 sources:
   - title: "Lectures on a Mathematical Theory of Computation"
     authors: ["Dana S. Scott"]
-    type: "article"
+    type: "paper"
     location: "Technical Monograph PRG-19, Oxford University Computing Laboratory, Programming Research Group, May 1981. Theorem 8.8(a)."
     relationship: formalizes
     author_endorsement: not-contacted
@@ -89,7 +89,7 @@ sources:
 
   - title: "A Lean 4 Formalization of Scott's Lectures on a Mathematical Theory of Computation (PRG-19)"
     authors: ["Lars Warren Ericson"]
-    type: "article"
+    type: "other"
     relationship: other
     author_endorsement: participated
     note: >-
