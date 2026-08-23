@@ -2,7 +2,7 @@
 version: "v0.4"
 
 project:
-  name: "Scott 1981 — D ⊴ U (Theorem 8.8(a))"
+  name: "Scott 1981 — D ⊴ U (first sentence of Theorem 8.8)"
   description: >-
     A Lean 4 / mathlib formalization of Dana Scott's 1980 Oxford lectures,
     published May 1981 as PRG-19 Lectures on a Mathematical Theory of
@@ -10,7 +10,10 @@ project:
     Theorem 8.8: the neighbourhood system U over [0,1) ⊆ ℚ is universal, in
     the sense that every countable neighbourhood system D embeds as a
     subdomain (D ⊴ U). Challenge.lean fixes the neighbourhood-system
-    vocabulary, Scott's ⊴, and the concrete Definition 8.7 family U. The
+    vocabulary, Scott's ⊴, and the concrete Definition 8.7 family U. This
+    foundational universality result supplies a concrete host for all
+    countable domains; it is relevant to domain theory, denotational
+    semantics, mathematical logic, and formalized mathematics. The
     broader Lectures I–VIII development lives in Scott1980/Neighborhood/*
     and is not the advertised Comparator result. The informal account is
     arxiv.md; the working transcription is sources/PRG19.md. Lean was
@@ -24,9 +27,6 @@ project:
   responsible_maintainers:
     - "Lars Warren Ericson"
 
-repository:
-  role: substantive-development
-
 classification:
   arxiv: [cs.LO, math.LO]
   msc2020: ["68Q55", "06B35", "03B70"]
@@ -38,9 +38,10 @@ status:
     D ⊴ U, i.e. D ≅ D' for some subsystem D' ◁ U. That is Scott's first
     Theorem 8.8 sentence only. Challenge.lean locks the filter-element
     order (element_le), the Definition 8.7 membership predicate UMem, and
-    the concrete value of U. Challenge.lean also locks two concrete
-    countable examples that instantiate the claim: Example 1.5
-    (`P4_embeds`) and Exercise 7.22's system S (`Ssys_embeds`). The
+    the concrete value of U. Challenge.lean also locks two new formal
+    corollaries obtained by specializing the universal theorem: Example
+    1.5 (`P4_embeds`) and Exercise 7.22's system S (`Ssys_embeds`). Scott
+    defines those systems but does not separately state these embeddings. The
     broader book is formalized in the same library but is not part of
     the advertised Comparator result; Exercise 8.17 Part 2 remains a
     documented deferral. Additional Comparator theorem targets are
@@ -75,7 +76,7 @@ sources:
   - title: "Lectures on a Mathematical Theory of Computation"
     authors: ["Dana S. Scott"]
     type: "paper"
-    location: "Technical Monograph PRG-19, Oxford University Computing Laboratory, Programming Research Group, May 1981. Theorem 8.8(a)."
+    location: "Technical Monograph PRG-19, Oxford University Computing Laboratory, Programming Research Group, May 1981. First sentence of Theorem 8.8."
     relationship: formalizes
     author_endorsement: not-contacted
     note: >-
@@ -190,9 +191,9 @@ alignment:
   namespace: "Scott1980.Neighborhood"
   statements:
     - source: >-
-        sources/PRG19.md, Theorem 8.8(a): The system U is universal in
-        the sense that, for every countable neighbourhood system D, we
-        have D ⊴ U.
+        sources/PRG19.md, first sentence of Theorem 8.8: The system U is
+        universal in the sense that, for every countable neighbourhood
+        system D, we have D ⊴ U.
       lean: "theorem_8_8"
       module: "Challenge (statement), Theorem88a.lean (proof)"
       status: proved
@@ -231,10 +232,15 @@ alignment:
       lean: "P4_embeds"
       module: "Challenge (statement), PalomarExamples.lean"
       status: proved
-      note: "Compared instance of theorem_8_8."
+      note: >-
+        New formal corollary, not separately stated by Scott: applying
+        theorem_8_8 to Scott's finite Example 1.5 gives the embedding.
 
     - source: "Scott 1981, Exercise 7.22: the least-fixed-point family S over {0,1}*"
       lean: "Ssys_embeds"
       module: "Challenge (statement), PalomarExamples.lean"
       status: proved
-      note: "Compared instance of theorem_8_8. SExpr is shown, not locked."
+      note: >-
+        New formal corollary, not separately stated by Scott: countability
+        via SExpr lets theorem_8_8 embed Scott's system S into U. SExpr is
+        shown in Challenge.lean but is not Comparator-locked.

@@ -22,7 +22,7 @@ under that license; see `NOTICE` and `sources/README.md`.
 | `arxiv.md` | Formalization narrative and theorem inventory |
 | `sources/PRG19.md` | Transcribed source text (Scott PRG-19) |
 | `Scott1980/` | Sorry-free formalization of the lectures |
-| `Challenge.lean` | Palomar statement of record: Theorem 8.8(a), `D ⊴ U` |
+| `Challenge.lean` | Palomar statement of record: `D ⊴ U`, the first sentence of Theorem 8.8 |
 | `Solution.lean` | Palomar solution module: imports `Scott1980/*` proofs |
 | `comparator.json` | Comparator config for the compared theorem and definitions |
 | `formalization.yaml` | Palomar / formalization.yaml v0.4 metadata |

@@ -19,8 +19,8 @@ lectures alone, following the same Challenge / Solution pattern as
 and
 [`catskillsresearch/scott1972`](https://github.com/catskillsresearch/scott1972).
 
-The compared Palomar claim is **Theorem 8.8(a)** — Scott's first
-sentence: every countable neighbourhood system `D` embeds as a
+The compared Palomar claim is **the first sentence of Scott's unlettered
+Theorem 8.8**: every countable neighbourhood system `D` embeds as a
 subdomain of the universal domain `U` (`D ⊴ U`). The other two sentences
 of 8.8 are proved in the library (`theorem_8_8_b`, `theorem_8_8_c`) and
 are not Comparator targets. The Lectures I–VIII development lives in

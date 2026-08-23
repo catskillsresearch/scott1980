@@ -17,7 +17,8 @@ Concrete countable neighbourhood systems that instantiate `theorem_8_8`.
 
 namespace Scott1980.Neighborhood.Example15
 
-/-- **Example 1.5 embeds in `𝒰`.** The finite powerset system is countable, so Theorem 8.8(a) applies. -/
+/-- **New corollary for Example 1.5.** The finite powerset system is countable, so the first
+sentence of Theorem 8.8 applies. Scott does not separately state this embedding. -/
 theorem P4_embeds : neighborhoodSystem ⊴ U :=
   theorem_8_8 neighborhoodSystem
 
@@ -44,7 +45,8 @@ instance Ssys_countable : Countable {S : Set (List Bool) // Ssys.mem S} := by
   exact Countable.of_equiv ({S : Set (List Bool) // InS S})
     (Equiv.subtypeEquivRight fun _ => Ssys_mem.symm)
 
-/-- **Exercise 7.22's `S` embeds in `𝒰`.** Countability is `Ssys_countable` (via `SExpr`). -/
+/-- **New corollary for Exercise 7.22.** Countability is `Ssys_countable` (via `SExpr`), so the
+first sentence of Theorem 8.8 applies. Scott does not separately state this embedding. -/
 theorem Ssys_embeds : Ssys ⊴ U :=
   theorem_8_8 Ssys
 

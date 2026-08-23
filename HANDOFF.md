@@ -66,10 +66,11 @@ A session may begin after a context reset; chat memory is not durable, these fil
 4. Build with `lake build Domain` (filter output: `| grep -vE 'LEAN_PATH|trace:' | tail`).
 5. Follow `.cursor/rules/handoff-discipline.mdc` (choice discipline, axiom audits, and the
    end-of-item checklist that keeps this file + `arxiv.md` current).
-6. **Palomar compared claim** is `theorem_8_8 : D ⊴ U` (Scott's first
-   Theorem 8.8 sentence) plus two concrete instances: Example 1.5
-   `P4_embeds` and Exercise 7.22 `Ssys_embeds`. Not 8.8(b)/(c). Informal
-   surfaces must not say otherwise.
+6. **Palomar compared claim** is `theorem_8_8 : D ⊴ U` (the first
+   sentence of Scott's unlettered Theorem 8.8) plus two new formal
+   corollaries: Example 1.5 `P4_embeds` and Exercise 7.22 `Ssys_embeds`.
+   Scott does not separately state those embeddings. Informal surfaces
+   must not attribute the editorial labels 8.8(a)/(b)/(c) to Scott.
 7. **Exercise 7.22 (split inventory): COMPLETE.** grep `Exercise 7.22` in `arxiv.md`: rows
    **7.22a–h**, **7.22i(a)**, **7.22i(b)1(a–e)**, **7.22i(b)2–8**, the **7.22i(b)** umbrella,
    **7.22j**, **7.22k**, and **7.22l** are **all Pass**. `Ssys_cons_computable`/
@@ -13456,3 +13457,16 @@ a mechanical hard fail. Official
 `PalomarTemplate/scripts/validate-formalization.rb` reports no TEMPLATE
 values. Ordinary layout files present; Lean `v4.33.0` ≥ Palomar minimum
 `v4.28.0`.
+
+## 2026-08-23: corrected Palomar source nomenclature
+
+Editorial review found that Scott prints one unlettered, three-sentence
+Theorem 8.8; “8.8(a)” is this project's internal label, not Scott's.
+All Palomar-facing titles and source locations now say “first sentence
+of Theorem 8.8.” `Challenge.lean`, `formalization.yaml`, `Solution.lean`,
+README/PROVENANCE/source docs, `Theorem88a.lean`, and the top-level
+`arxiv.md` presentation were corrected. The two example embeddings are
+explicitly identified as new formal corollaries, not separately stated
+source claims. The YAML abstract now states the universality result's
+significance and audience. Full `scripts/palomar_preflight.sh` is green;
+the official Palomar YAML validator reports no TEMPLATE values.

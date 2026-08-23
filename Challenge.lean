@@ -13,7 +13,7 @@ import Mathlib.Algebra.Order.Ring.Rat
 import Mathlib.Data.Fin.Basic
 
 /-!
-# Scott 1981, Theorem 8.8(a): D ⊴ U
+# Scott 1981: D ⊴ U — first sentence of Theorem 8.8
 
 Ground truth for the wording is `sources/PRG19.md`. Theorem 8.8 there is:
 
@@ -34,11 +34,12 @@ This file imports only Mathlib. The proofs live in
 `Scott1980/Neighborhood/*` and are compared against this file by Comparator
 via `Solution.lean`.
 
-Two concrete countable systems instantiate the compared theorem:
+Two new formal corollaries instantiate the compared theorem:
 Example 1.5 (all nonempty subsets of `{0,1,2,3}`) and Exercise 7.22's
 least-fixed-point family `S` over `{0,1}*`. The embeddings
 `P4_embeds` and `Ssys_embeds` are compared; their proofs are
-`theorem_8_8` applied to those systems.
+`theorem_8_8` applied to those systems. Scott defines both systems but
+does not separately state these two embeddings.
 
 ## How to read this file
 
@@ -163,7 +164,7 @@ def U : NeighborhoodSystem ℚ where
   inter_mem := U_inter_mem
   sub_master := U_sub_master
 
-/-- **Theorem 8.8(a) (Scott 1981, PRG-19)** (`sources/PRG19.md`):
+/-- **First sentence of Theorem 8.8 (Scott 1981, PRG-19)** (`sources/PRG19.md`):
 *The system \(\mathcal{U}\) is universal in the sense that, for every countable
 neighbourhood system \(\mathcal{D}\), we have \(\mathcal{D} \trianglelefteq \mathcal{U}\).* -/
 theorem theorem_8_8.{u} {α : Type u} (D : NeighborhoodSystem α)

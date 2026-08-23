@@ -9,9 +9,9 @@ import Scott1980.Neighborhood.PalomarExamples
 # Solution to the Challenge
 
 The declaration `theorem_8_8` of `Challenge.lean`, proved in
-`Theorem88a.lean` from `theorem_8_8_a`. Wording is that of Theorem 8.8(a)
-in `sources/PRG19.md`: every countable neighbourhood system embeds as a
-subdomain of the universal domain `𝒰` (`D ⊴ U`). Importing the sorry-free
-development supplies the compared definitions with the same names and
-types as in the Challenge module.
+`Theorem88a.lean` from `theorem_8_8_a`. Wording is that of the first
+sentence of Theorem 8.8 in `sources/PRG19.md`: every countable
+neighbourhood system embeds as a subdomain of the universal domain `𝒰`
+(`D ⊴ U`). Importing the sorry-free development supplies the compared
+definitions with the same names and types as in the Challenge module.
 -/
