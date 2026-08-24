@@ -82,6 +82,7 @@ neighbourhoods are the cofinite sets `nbhd n`, with master `Δ = ℕ`. Closure u
 def PN : NeighborhoodSystem ℕ where
   mem Y := ∃ n, Y = nbhd n
   master := Set.univ
+  master_nonempty := Set.univ_nonempty
   master_mem := ⟨0, nbhd_zero.symm⟩
   inter_mem := by
     rintro X Y Z ⟨a, rfl⟩ ⟨b, rfl⟩ _ _

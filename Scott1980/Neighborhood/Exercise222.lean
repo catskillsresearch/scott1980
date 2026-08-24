@@ -113,6 +113,7 @@ exactly the `C(F)` for tokens `F`, the master is all of `Δ = C(∅)`. -/
 def reprSystem : NeighborhoodSystem (Tok C) where
   mem N := ∃ F : Tok C, N = nbhd C F.1
   master := Set.univ
+  master_nonempty := ⟨botTok C hne, Set.mem_univ _⟩
   master_mem := ⟨botTok C hne, (nbhd_empty C).symm⟩
   inter_mem := by
     rintro X Y Z ⟨F, rfl⟩ ⟨F', rfl⟩ ⟨F'', rfl⟩ hZsub

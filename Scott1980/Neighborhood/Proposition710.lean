@@ -141,6 +141,7 @@ theorem PDmem_inter {W₁ W₂ : Set (Set α)} (h₁ : V.PDmem W₁) (h₂ : V.P
 abbrev PowerDomain : NeighborhoodSystem (Set α) where
   mem := V.PDmem
   master := V.upSet V.master
+  master_nonempty := ⟨V.master, V.master_mem, subset_rfl⟩
   master_mem := V.PDmem_master
   inter_mem := fun h₁ h₂ _ _ => V.PDmem_inter h₁ h₂
   sub_master := by

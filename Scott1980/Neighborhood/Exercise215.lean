@@ -64,7 +64,8 @@ theorem subMaster_O : ∀ {X : Set (Fin 1)}, memO X → X ⊆ Set.univ := fun _ 
 
 /-- **Exercise 2.15 — the one-token system `𝒪 = {Δ, ∅}`.** -/
 def O : NeighborhoodSystem (Fin 1) :=
-  NeighborhoodSystem.ofNestedOrDisjoint memO Set.univ (Or.inl rfl) nestedOrDisjoint_O subMaster_O
+  NeighborhoodSystem.ofNestedOrDisjoint memO Set.univ Set.univ_nonempty
+    (Or.inl rfl) nestedOrDisjoint_O subMaster_O
 
 @[simp] theorem O_mem {X : Set (Fin 1)} : O.mem X ↔ memO X := Iff.rfl
 @[simp] theorem O_master : O.master = (Set.univ : Set (Fin 1)) := rfl

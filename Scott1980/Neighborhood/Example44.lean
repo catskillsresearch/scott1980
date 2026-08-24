@@ -105,7 +105,8 @@ theorem nestedOrDisjoint : NestedOrDisjoint memC := by
 /-- **Example 4.4 (Scott 1981, PRG-19).** The neighbourhood system `C` of finite or infinite binary
 sequences on `Δ = Σ*`. -/
 abbrev C : NeighborhoodSystem Str :=
-  NeighborhoodSystem.ofNestedOrDisjoint memC Set.univ (Or.inl ⟨[], cone_nil.symm⟩) nestedOrDisjoint
+  NeighborhoodSystem.ofNestedOrDisjoint memC Set.univ
+    ⟨[], Set.mem_univ _⟩ (Or.inl ⟨[], cone_nil.symm⟩) nestedOrDisjoint
     (fun _ => Set.subset_univ _)
 
 @[simp] theorem C_mem {X : Set Str} : C.mem X ↔ memC X := Iff.rfl

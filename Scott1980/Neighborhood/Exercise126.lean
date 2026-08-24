@@ -88,6 +88,7 @@ theorem IFamily_inter (F₁ F₂ : Finset A) :
 def ringSystem : NeighborhoodSystem (Finset A) where
   mem S := ∃ F, S = IFamily F
   master := IFamily ∅
+  master_nonempty := ⟨∅, by simp [IFamily]⟩
   master_mem := ⟨∅, rfl⟩
   inter_mem := by
     rintro X Y Z ⟨F₁, rfl⟩ ⟨F₂, rfl⟩ _ _

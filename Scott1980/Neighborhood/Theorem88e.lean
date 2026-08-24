@@ -356,6 +356,7 @@ code-driven (`Yc P n = UX (YseqCode P n)`), mirroring `Theorem88a.lean`'s `Dprim
 noncomputable def DprimeUCode : NeighborhoodSystem ℚ where
   mem Y := ∃ n, Y = Yc P n
   master := U.master
+  master_nonempty := U.master_nonempty
   master_mem := ⟨0, (Yc_zero_eq_master P).symm⟩
   sub_master := by rintro Y ⟨n, rfl⟩; exact Yc_subset_master P n
   inter_mem := by

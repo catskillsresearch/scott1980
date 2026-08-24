@@ -126,7 +126,8 @@ theorem nestedOrDisjoint : NestedOrDisjoint memC1 := by
 
 /-- **Exercise 4.25 (Scott 1981, PRG-19).** The unary sequence system `C₁` on `Δ = {1}* ≅ ℕ`. -/
 def C1 : NeighborhoodSystem ℕ :=
-  NeighborhoodSystem.ofNestedOrDisjoint memC1 Set.univ memC1_univ nestedOrDisjoint
+  NeighborhoodSystem.ofNestedOrDisjoint memC1 Set.univ Set.univ_nonempty
+    memC1_univ nestedOrDisjoint
     (fun _ => Set.subset_univ _)
 
 @[simp] theorem C1_mem {X : Set ℕ} : C1.mem X ↔ memC1 X := Iff.rfl

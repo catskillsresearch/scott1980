@@ -24,8 +24,8 @@ Ground truth for the wording is `sources/PRG19.md`. Theorem 8.8 there is:
 `𝒰` is Definition 8.7's neighbourhood system over `[0,1) ⊆ ℚ`: the non-empty
 finite unions of rational intervals `[r,s)`. Scott's `⊴` (the prose before
 Lemma 6.15) means *embeds as a subdomain*: `D ⊴ U` iff there is a `D'` with
-`D ≅ D'` and `D' ◁ U`. The compared theorem is **only that first sentence**
-of Theorem 8.8; the effective projection-pair sentence and the
+`D ≅ D'` and `D' ◁ U`. The principal sourced theorem compared here is
+**only that first sentence** of Theorem 8.8; the effective projection-pair sentence and the
 finitary-projection correspondence are `theorem_8_8_b` / `theorem_8_8_c` in
 the library and are not Comparator targets. The library proves the compared
 claim as `theorem_8_8` by assembling `theorem_8_8_a`.
@@ -34,7 +34,7 @@ This file imports only Mathlib. The proofs live in
 `Scott1980/Neighborhood/*` and are compared against this file by Comparator
 via `Solution.lean`.
 
-Two new formal corollaries instantiate the compared theorem:
+Comparator also selects two new formal corollaries that instantiate the principal theorem:
 Example 1.5 (all nonempty subsets of `{0,1,2,3}`) and Exercise 7.22's
 least-fixed-point family `S` over `{0,1}*`. The embeddings
 `P4_embeds` and `Ssys_embeds` are compared; their proofs are
@@ -51,10 +51,13 @@ development. `Solution.lean` imports the sorry-free library.
 namespace Scott1980.Neighborhood
 
 /-- **Definition 1.1 (Scott 1981, PRG-19).** A *neighbourhood system* over a
-token type `α`. -/
+token type `α`. The field `master_nonempty` records Scott's standing assumption, immediately
+before the numbered definition, that the master token set `Δ` is non-empty. -/
 structure NeighborhoodSystem (α : Type*) where
   mem : Set α → Prop
   master : Set α
+  /-- Scott's standing assumption `Δ ≠ ∅`. -/
+  master_nonempty : master.Nonempty
   master_mem : mem master
   inter_mem : ∀ {X Y Z : Set α}, mem X → mem Y → mem Z → Z ⊆ X ∩ Y → mem (X ∩ Y)
   sub_master : ∀ {X : Set α}, mem X → X ⊆ master
@@ -147,6 +150,10 @@ abbrev UMaster : Set ℚ := Set.Ico (0 : ℚ) 1
 theorem U_master_mem : UMem UMaster := by
   sorry
 
+/-- Scott's token set `[0,1)` is non-empty. -/
+theorem UMaster_nonempty : UMaster.Nonempty := by
+  exact ⟨0, by simp [UMaster]⟩
+
 /-- Intersection of two presentable sets is presentable. -/
 theorem U_inter_mem {X Y Z : Set ℚ} (hX : UMem X) (hY : UMem Y) (hZ : UMem Z)
     (hZsub : Z ⊆ X ∩ Y) : UMem (X ∩ Y) := by
@@ -160,6 +167,7 @@ theorem U_sub_master {X : Set ℚ} (hX : UMem X) : X ⊆ UMaster := by
 def U : NeighborhoodSystem ℚ where
   mem := UMem
   master := UMaster
+  master_nonempty := UMaster_nonempty
   master_mem := U_master_mem
   inter_mem := U_inter_mem
   sub_master := U_sub_master
@@ -179,6 +187,8 @@ abbrev Token := Fin 4
 def master : Set Token := Set.univ
 def P4Mem (X : Set Token) : Prop := X.Nonempty
 theorem P4_master_mem : P4Mem master := by sorry
+theorem P4_master_nonempty : master.Nonempty := by
+  exact ⟨0, Set.mem_univ 0⟩
 theorem P4_inter_mem {X Y Z : Set Token} (_hX : P4Mem X) (_hY : P4Mem Y)
     (hZ : P4Mem Z) (hZsub : Z ⊆ X ∩ Y) : P4Mem (X ∩ Y) := by sorry
 theorem P4_sub_master {X : Set Token} (_h : P4Mem X) : X ⊆ master := by sorry
@@ -186,6 +196,7 @@ theorem P4_sub_master {X : Set Token} (_h : P4Mem X) : X ⊆ master := by sorry
 def neighborhoodSystem : NeighborhoodSystem Token where
   mem := P4Mem
   master := master
+  master_nonempty := P4_master_nonempty
   master_mem := P4_master_mem
   inter_mem := P4_inter_mem
   sub_master := P4_sub_master
@@ -216,6 +227,8 @@ inductive InS : Set (List Bool) → Prop
   | inter {X Y : Set (List Bool)} : InS X → InS Y → (X ∩ Y).Nonempty → InS (X ∩ Y)
 
 theorem Ssys_master_mem : InS Set.univ := by sorry
+theorem Ssys_master_nonempty : (Set.univ : Set (List Bool)).Nonempty := by
+  exact ⟨[], Set.mem_univ []⟩
 theorem Ssys_sub_master {X : Set (List Bool)} (_h : InS X) : X ⊆ Set.univ := by
   sorry
 theorem Ssys_inter_mem {X Y Z : Set (List Bool)}
@@ -225,6 +238,7 @@ theorem Ssys_inter_mem {X Y Z : Set (List Bool)}
 def Ssys : NeighborhoodSystem (List Bool) where
   mem := InS
   master := Set.univ
+  master_nonempty := Ssys_master_nonempty
   master_mem := Ssys_master_mem
   inter_mem := Ssys_inter_mem
   sub_master := Ssys_sub_master

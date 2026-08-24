@@ -164,6 +164,7 @@ level `Tᴺ({Γ})`, whose own `inter_mem` finishes the job. -/
 def colim (s : Setup.{w}) : NeighborhoodSystem s.Tok where
   mem X := ∃ n, (Dsys s n).mem X
   master := s.Γ.master
+  master_nonempty := s.Γ.master_nonempty
   master_mem := ⟨0, s.Γ.master_mem⟩
   inter_mem := by
     rintro X Y Z ⟨n, hX⟩ ⟨m, hY⟩ ⟨p, hZ⟩ hsub

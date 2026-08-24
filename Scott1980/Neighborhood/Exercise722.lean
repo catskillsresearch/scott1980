@@ -155,6 +155,10 @@ theorem InS.nonempty {X : Set (List Bool)} (h : InS X) : X.Nonempty := by
 /-- `Σ` is a neighbourhood of `S`. -/
 theorem Ssys_master_mem : InS Set.univ := InS.univ
 
+/-- The token set `Σ = {0,1}*` is non-empty. -/
+theorem Ssys_master_nonempty : (Set.univ : Set (List Bool)).Nonempty := by
+  exact ⟨[], Set.mem_univ []⟩
+
 /-- Every member of `S` is a subset of `Σ`. -/
 theorem Ssys_sub_master {X : Set (List Bool)} (_h : InS X) : X ⊆ Set.univ :=
   Set.subset_univ _
@@ -170,6 +174,7 @@ Palomar can lock this value. -/
 def Ssys : NeighborhoodSystem (List Bool) where
   mem := InS
   master := Set.univ
+  master_nonempty := Ssys_master_nonempty
   master_mem := Ssys_master_mem
   inter_mem := Ssys_inter_mem
   sub_master := Ssys_sub_master

@@ -215,6 +215,7 @@ across to `Yidx e i ∩ Yidx e j = Yidx e m`. -/
 noncomputable def DprimeU : NeighborhoodSystem ℚ where
   mem Y := ∃ n, Y = Yidx e n
   master := U.master
+  master_nonempty := U.master_nonempty
   master_mem := ⟨0, (Yidx_zero D e hcover he0).symm⟩
   sub_master := by rintro Y ⟨n, rfl⟩; exact Yidx_subset_master e n
   inter_mem := by

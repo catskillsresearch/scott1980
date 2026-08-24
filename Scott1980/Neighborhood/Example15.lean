@@ -49,6 +49,10 @@ def P4Mem (X : Set Token) : Prop := X.Nonempty
 theorem P4_master_mem : P4Mem master := by
   rw [master]; exact Set.univ_nonempty
 
+/-- The master token set itself is non-empty. -/
+theorem P4_master_nonempty : master.Nonempty := by
+  exact ⟨0, Set.mem_univ 0⟩
+
 /-- A non-empty witness inside `X ∩ Y` shows the intersection is a neighbourhood. -/
 theorem P4_inter_mem {X Y Z : Set Token} (_hX : P4Mem X) (_hY : P4Mem Y)
     (hZ : P4Mem Z) (hZsub : Z ⊆ X ∩ Y) : P4Mem (X ∩ Y) :=
@@ -62,6 +66,7 @@ theorem P4_sub_master {X : Set Token} (_h : P4Mem X) : X ⊆ master :=
 def neighborhoodSystem : NeighborhoodSystem Token where
   mem := P4Mem
   master := master
+  master_nonempty := P4_master_nonempty
   master_mem := P4_master_mem
   inter_mem := P4_inter_mem
   sub_master := P4_sub_master

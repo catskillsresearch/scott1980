@@ -128,6 +128,7 @@ def funSpace (V₀ : NeighborhoodSystem α) (V₁ : NeighborhoodSystem β) :
   mem W := (∃ L : List (Set α × Set β), (∀ p ∈ L, V₀.mem p.1 ∧ V₁.mem p.2) ∧ W = stepFun L)
     ∧ W.Nonempty
   master := Set.univ
+  master_nonempty := ⟨constMap V₀ V₁.bot, Set.mem_univ _⟩
   master_mem := ⟨⟨[], by simp, stepFun_nil.symm⟩, ⟨constMap V₀ V₁.bot, Set.mem_univ _⟩⟩
   inter_mem := by
     rintro W W' Z ⟨⟨L, hL, rfl⟩, _⟩ ⟨⟨L', hL', rfl⟩, _⟩ ⟨_, hZne⟩ hZsub

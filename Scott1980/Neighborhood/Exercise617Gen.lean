@@ -111,7 +111,8 @@ theorem nestedOrDisjointN : NestedOrDisjoint (memCn (A := A)) := by
 
 /-- **The generic domain `Cₐ`** of finite-or-infinite `A`-sequences. -/
 abbrev Cn (A : Type) [DecidableEq A] : NeighborhoodSystem (Strn A) :=
-  NeighborhoodSystem.ofNestedOrDisjoint memCn Set.univ (Or.inl ⟨[], coneN_nil.symm⟩) nestedOrDisjointN
+  NeighborhoodSystem.ofNestedOrDisjoint memCn Set.univ
+    ⟨[], Set.mem_univ _⟩ (Or.inl ⟨[], coneN_nil.symm⟩) nestedOrDisjointN
     (fun _ => Set.subset_univ _)
 
 @[simp] theorem Cn_mem {X : Set (Strn A)} : (Cn A).mem X ↔ memCn X := Iff.rfl
@@ -348,6 +349,7 @@ def sumSig (A : Type) [DecidableEq A] (V : NeighborhoodSystem β)
     NeighborhoodSystem (SigTok A β) where
   mem W := W = masterSig V ∨ W = jU ∨ ∃ a X, V.mem X ∧ W = jc a X
   master := masterSig V
+  master_nonempty := ⟨none, none_mem_masterSig⟩
   master_mem := Or.inl rfl
   sub_master := by
     rintro W (rfl | rfl | ⟨a, X, hX, rfl⟩)

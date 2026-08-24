@@ -54,6 +54,7 @@ def R : NeighborhoodSystem ℚ :=
   NeighborhoodSystem.ofNestedOrDisjoint
     (mem := fun X => ∃ r : ℚ, 0 < r ∧ r ≤ 1 ∧ X = Set.Ico (0 : ℚ) r)
     (master := Set.Ico (0 : ℚ) 1)
+    (master_nonempty := ⟨0, by norm_num⟩)
     (master_mem := ⟨1, one_pos, le_refl 1, rfl⟩)
     (hnd := by
       rintro X Y ⟨r, hr0, hr1, rfl⟩ ⟨s, hs0, hs1, rfl⟩

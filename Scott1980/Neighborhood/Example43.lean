@@ -88,7 +88,7 @@ theorem nestedOrDisjoint : NestedOrDisjoint memN := by
 
 /-- **Example 4.3 (Scott 1981, PRG-19).** The natural-number neighbourhood system `N` on `Δ = ℕ`. -/
 abbrev N : NeighborhoodSystem ℕ :=
-  NeighborhoodSystem.ofNestedOrDisjoint memN Set.univ memN_univ nestedOrDisjoint
+  NeighborhoodSystem.ofNestedOrDisjoint memN Set.univ Set.univ_nonempty memN_univ nestedOrDisjoint
     (fun _ => Set.subset_univ _)
 
 @[simp] theorem N_mem {X : Set ℕ} : N.mem X ↔ memN X := Iff.rfl

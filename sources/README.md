@@ -9,7 +9,9 @@ terms.
 `PRG19.md` is the maintained working transcription of that monograph.
 Scott's wording remains Scott's copyright. Compared Palomar wording is
 checked against this file; the YAML `verification_status` records that
-the compared first sentence of Theorem 8.8 and Definition 8.7 passages
-have been checked.
+the principal compared first sentence of Theorem 8.8, Definition 8.7,
+Example 1.5, Exercise 7.22, and Scott's standing non-empty-`Δ`
+assumption before Definition 1.1 have been checked. The two selected
+example embeddings are new formal corollaries, not source quotations.
 
 Do not treat either file as redistributable under Apache-2.0.

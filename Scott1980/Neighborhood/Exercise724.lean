@@ -245,7 +245,8 @@ theorem L_nestedOrDisjoint : NestedOrDisjoint Lmem := by
 
 /-- **Exercise 7.24 — `L` is a neighbourhood system** on tokens `Γ`, master `Γ = nbhd []`. -/
 abbrev L : NeighborhoodSystem Gamma :=
-  NeighborhoodSystem.ofNestedOrDisjoint Lmem Set.univ (mem_nbhd []) L_nestedOrDisjoint
+  NeighborhoodSystem.ofNestedOrDisjoint Lmem Set.univ Set.univ_nonempty
+    (mem_nbhd []) L_nestedOrDisjoint
     (fun {X} _ => Set.subset_univ X)
 
 @[simp] theorem L_mem {X : Set Gamma} : L.mem X ↔ Lmem X := Iff.rfl

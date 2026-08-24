@@ -108,6 +108,10 @@ theorem U_master_mem : UMem UMaster :=
   ⟨⟨[(0, 1)], by rw [presentedIntervals_cons, presentedIntervals_nil, Set.union_empty]⟩,
     ⟨0, by norm_num⟩, subset_rfl⟩
 
+/-- Scott's token set `[0,1)` is non-empty. -/
+theorem UMaster_nonempty : UMaster.Nonempty := by
+  exact ⟨0, by simp [UMaster]⟩
+
 /-- Intersection of two presentable sets is presentable, via `combineIntervals`. -/
 theorem U_inter_mem {X Y Z : Set ℚ} (hX : UMem X) (hY : UMem Y) (hZ : UMem Z)
     (hZsub : Z ⊆ X ∩ Y) : UMem (X ∩ Y) := by
@@ -128,6 +132,7 @@ theorems so Palomar can lock this value without generated `._proof_N` constants.
 def U : NeighborhoodSystem ℚ where
   mem := UMem
   master := UMaster
+  master_nonempty := UMaster_nonempty
   master_mem := U_master_mem
   inter_mem := U_inter_mem
   sub_master := U_sub_master

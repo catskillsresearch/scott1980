@@ -105,6 +105,9 @@ theorem single_inter {n : ℕ} (X X' : Set α) :
 def iterSys (V : NeighborhoodSystem α) : NeighborhoodSystem (ℕ × α) where
   mem W := (∀ i, V.mem (fiber W i)) ∧ ∃ N, ∀ i, N ≤ i → fiber W i = V.master
   master := {p | p.2 ∈ V.master}
+  master_nonempty := by
+    obtain ⟨a, ha⟩ := V.master_nonempty
+    exact ⟨(0, a), ha⟩
   master_mem := ⟨fun _ => V.master_mem, 0, fun _ _ => rfl⟩
   inter_mem := by
     rintro W W' Z ⟨hWf, NW, hNW⟩ ⟨hW'f, NW', hNW'⟩ ⟨hZf, _⟩ hsub

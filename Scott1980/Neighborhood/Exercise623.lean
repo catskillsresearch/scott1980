@@ -136,6 +136,7 @@ def gColim (T : GExpr) (hT : T.RootedConst) : ScottSys where
   sys :=
     { mem := fun X => ∃ n, (gTower T n).sys.mem X
       master := gFix T
+      master_nonempty := (gTower T 0).sys.master_nonempty
       master_mem := ⟨0, (gTower T 0).sys.master_mem⟩
       inter_mem := by
         rintro X Y Z ⟨n, hX⟩ ⟨m, hY⟩ ⟨p, hZ⟩ hsub

@@ -71,6 +71,8 @@ A session may begin after a context reset; chat memory is not durable, these fil
    corollaries: Example 1.5 `P4_embeds` and Exercise 7.22 `Ssys_embeds`.
    Scott does not separately state those embeddings. Informal surfaces
    must not attribute the editorial labels 8.8(a)/(b)/(c) to Scott.
+   `NeighborhoodSystem.master_nonempty` now enforces Scott's standing
+   non-empty-token-set `Δ` assumption at the structure level.
 7. **Exercise 7.22 (split inventory): COMPLETE.** grep `Exercise 7.22` in `arxiv.md`: rows
    **7.22a–h**, **7.22i(a)**, **7.22i(b)1(a–e)**, **7.22i(b)2–8**, the **7.22i(b)** umbrella,
    **7.22j**, **7.22k**, and **7.22l** are **all Pass**. `Ssys_cons_computable`/
@@ -13470,3 +13472,28 @@ explicitly identified as new formal corollaries, not separately stated
 source claims. The YAML abstract now states the universality result's
 significance and audience. Full `scripts/palomar_preflight.sh` is green;
 the official Palomar YAML validator reports no TEMPLATE values.
+
+## 2026-08-24: Palomar v2 review feedback resolved
+
+Implemented both non-blocking findings from Palomar's accepted v1 review.
+
+- **Complete Comparator scope is public.** README, Challenge/Solution,
+  PROVENANCE, `arxiv.md`, source notes, and every relevant
+  `formalization.yaml` field now distinguish the principal sourced
+  `theorem_8_8` from the additionally compared new formal corollaries
+  `P4_embeds` and `Ssys_embeds`; 8.8's other two sentences remain
+  library-only.
+- **Scott's non-empty `Δ` assumption is structural.** Added
+  `NeighborhoodSystem.master_nonempty : master.Nonempty` in
+  `Basic.lean` and the independent Challenge copy. Migrated every
+  neighbourhood-system constructor across the library without adding
+  choice. Helper constructors now require a non-empty master; `npow`
+  requires `0 < n`; indexed products/smashes require a non-empty index
+  type.
+- Comparator now explicitly selects `UMaster_nonempty`,
+  `P4_master_nonempty`, and `Ssys_master_nonempty` (19 theorem targets,
+  13 definition targets).
+- Full `bash scripts/palomar_preflight.sh` passes: 3267-job build,
+  Challenge/Solution type and transitive-value comparison, zero Solution
+  `sorry`, and permitted-axiom audit. Official Palomar YAML validation
+  reports no TEMPLATE values; `git diff --check` is clean.

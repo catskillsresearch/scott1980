@@ -260,6 +260,9 @@ abbrev Dsharp (D : NeighborhoodSystem α) (hD : ∀ X, D.mem X → X.Nonempty) :
     NeighborhoodSystem (List Bool × α) where
   mem := MemS D
   master := Gamma D
+  master_nonempty := by
+    obtain ⟨a, ha⟩ := D.master_nonempty
+    exact ⟨([], a), ha⟩
   master_mem := MemS.gamma
   inter_mem := fun hX hY hZ hsub => memS_inter hD hX hY hZ hsub
   sub_master := memS_subset_gamma

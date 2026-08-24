@@ -398,6 +398,7 @@ a genuine Scott neighbourhood system whose two singletons are *inconsistent*. -/
 def Vshape : NeighborhoodSystem Bool where
   mem X := X = Set.univ ∨ X = {true} ∨ X = {false}
   master := Set.univ
+  master_nonempty := ⟨true, Set.mem_univ _⟩
   master_mem := Or.inl rfl
   sub_master _ := Set.subset_univ _
   inter_mem := by

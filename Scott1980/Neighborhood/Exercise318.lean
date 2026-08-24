@@ -158,6 +158,7 @@ def sum (V₀ : NeighborhoodSystem α) (V₁ : NeighborhoodSystem β)
     NeighborhoodSystem (Option (α ⊕ β)) where
   mem W := W = sumMaster V₀ V₁ ∨ (∃ X, V₀.mem X ∧ W = inj₀ X) ∨ (∃ Y, V₁.mem Y ∧ W = inj₁ Y)
   master := sumMaster V₀ V₁
+  master_nonempty := ⟨none, none_mem_sumMaster⟩
   master_mem := Or.inl rfl
   sub_master := by
     rintro W (rfl | ⟨X, hX, rfl⟩ | ⟨Y, hY, rfl⟩)

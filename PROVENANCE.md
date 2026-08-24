@@ -19,12 +19,17 @@ lectures alone, following the same Challenge / Solution pattern as
 and
 [`catskillsresearch/scott1972`](https://github.com/catskillsresearch/scott1972).
 
-The compared Palomar claim is **the first sentence of Scott's unlettered
-Theorem 8.8**: every countable neighbourhood system `D` embeds as a
-subdomain of the universal domain `U` (`D ⊴ U`). The other two sentences
-of 8.8 are proved in the library (`theorem_8_8_b`, `theorem_8_8_c`) and
-are not Comparator targets. The Lectures I–VIII development lives in
-`Scott1980/Neighborhood/*`; Exercise 8.17 Part 2 is a documented deferral.
+The principal sourced Palomar result is **the first sentence of Scott's
+unlettered Theorem 8.8**: every countable neighbourhood system `D` embeds
+as a subdomain of the universal domain `U` (`D ⊴ U`). Comparator also
+selects two new formal corollaries, `P4_embeds` for Scott's Example 1.5
+and `Ssys_embeds` for Exercise 7.22; Scott defines those systems but does
+not separately state the embeddings. The other two sentences of 8.8 are
+proved in the library (`theorem_8_8_b`, `theorem_8_8_c`) and are not
+Comparator targets. Scott's standing assumption that the master token
+set `Δ` is non-empty is enforced by `NeighborhoodSystem.master_nonempty`.
+The Lectures I–VIII development lives in `Scott1980/Neighborhood/*`;
+Exercise 8.17 Part 2 is a documented deferral.
 
 Palomar reviews and, if registered, preserves a pinned commit of *this*
 repository.
