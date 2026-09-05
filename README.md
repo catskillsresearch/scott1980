@@ -8,8 +8,10 @@ Lean 4 formalization of Dana Scott's **1980 Oxford lectures**, published May
 (neighborhood systems / filter domains). Author: Lars Warren Ericson.
 
 Standalone package — no dependency on the 1972 formalization. Part IV equivalence
-theorems live in [`scott_models`](../scott_models). This repo is packaged for
-[Palomar](https://palomar-registry.org/about) on its own (see `PROVENANCE.md`).
+theorems live in [`scott_models`](../scott_models). This repo is registered with
+[Palomar](https://palomar-registry.org/about) on its own as
+[PALOMAR-2026-08-24-000001](https://palomar-registry.org/entry?id=PALOMAR-2026-08-24-000001&version=2)
+(see `PROVENANCE.md`).
 The principal sourced Palomar result is the first sentence of Theorem 8.8
 (`theorem_8_8 : D ⊴ U`). Comparator also selects two new formal corollaries:
 Example 1.5's `P4_embeds` and Exercise 7.22's `Ssys_embeds`. Scott defines

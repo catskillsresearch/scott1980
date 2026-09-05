@@ -1,0 +1,274 @@
+<h1 id="category-theory-in-the-scott1980-lean-formalization">Category
+Theory in the Scott1980 Lean Formalization</h1>
+<p>Category theory appears in this repository mainly as Scott’s Lecture
+VI vocabulary and a few later functor/monad exercises — not as a general
+Mathlib category-theory development.</p>
+<h2 id="design-choice-bespoke-not-mathlib">Design choice: bespoke, not
+Mathlib</h2>
+<p>The core abstraction lives in <a
+href="../Scott1980/Neighborhood/Definition63.lean"><code>Scott1980/Neighborhood/Definition63.lean</code></a>.
+It defines a small self-contained layer:</p>
+<ul>
+<li><strong><code>Category</code></strong> — objects, <code>Hom</code>,
+<code>id</code>, <code>comp</code>, the three laws</li>
+<li><strong><code>Endofunctor</code></strong> — <code>obj</code>,
+<code>map</code>, identity/composition preservation</li>
+<li><strong><code>TAlgebra</code></strong>,
+<strong><code>AlgHom</code></strong>,
+<strong><code>IsInitial</code></strong></li>
+<li><strong><code>Iso</code></strong> (for Lambek-style results)</li>
+</ul>
+<p>The file explicitly explains why <strong>Mathlib’s
+<code>CategoryTheory</code> is not imported</strong>: Mathlib’s
+initial-algebra API would pull in <code>Classical.choice</code>, while
+this project’s Propositions 6.6–6.7 are proved choice-free. So the repo
+uses “a small amount of category theory” in Scott’s sense, implemented
+locally.</p>
+<h2 id="the-category-of-domains-scotts-running-example">1. The category
+of domains (Scott’s running example)</h2>
+<table>
+<colgroup>
+<col style="width: 19%" />
+<col style="width: 35%" />
+<col style="width: 45%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Role</th>
+<th>Lean type</th>
+<th>Scott source</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Objects</td>
+<td><code>DomainObj</code> (token type +
+<code>NeighborhoodSystem</code>)</td>
+<td>Lecture VI</td>
+</tr>
+<tr class="even">
+<td>Morphisms</td>
+<td><code>ApproximableMap</code></td>
+<td>Def 2.1</td>
+</tr>
+<tr class="odd">
+<td>Laws</td>
+<td><code>idMap_comp</code>, <code>comp_idMap</code>,
+<code>comp_assoc</code> (Theorem 2.5)</td>
+<td>Thm 2.5</td>
+</tr>
+</tbody>
+</table>
+<p>This is the concrete instance of Scott’s remark that neighbourhood
+systems and approximable maps “form quite an interesting category.”</p>
+<h2 id="lecture-vi-endofunctors-algebras-initial-algebras">2. Lecture
+VI: endofunctors, algebras, initial algebras</h2>
+<p>This is the main categorical spine, matching Scott’s Definitions
+6.3–6.5:</p>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 36%" />
+<col style="width: 38%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Concept</th>
+<th>Lean module</th>
+<th>Scott source</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Endofunctor</td>
+<td><code>Endofunctor DomainObj</code></td>
+<td>Def 6.3</td>
+</tr>
+<tr class="even">
+<td><code>T</code>-algebra + homomorphisms</td>
+<td><code>TAlgebra</code>, <code>AlgHom</code></td>
+<td>Def 6.4</td>
+</tr>
+<tr class="odd">
+<td>Initial algebra</td>
+<td><code>IsInitial</code></td>
+<td>Def 6.5</td>
+</tr>
+<tr class="even">
+<td>Unique iso of initials</td>
+<td><code>Proposition66.lean</code></td>
+<td>Prop 6.6</td>
+</tr>
+<tr class="odd">
+<td>Lambek’s lemma</td>
+<td><code>lambek</code> in <code>Proposition67.lean</code></td>
+<td>Prop 6.7</td>
+</tr>
+<tr class="even">
+<td>Continuous on maps</td>
+<td><code>ContinuousOnMaps</code> in <code>Definition68.lean</code></td>
+<td>Def 6.8</td>
+</tr>
+<tr class="odd">
+<td>Homomorphisms from fixed point</td>
+<td><code>Theorem69.lean</code></td>
+<td>Thm 6.9</td>
+</tr>
+<tr class="even">
+<td>Monotone/continuous on domains</td>
+<td><code>Definition613.lean</code></td>
+<td>Def 6.13</td>
+</tr>
+<tr class="odd">
+<td>Existence of initial algebra</td>
+<td><code>Theorem614.lean</code> (colimit <code>⋃ₙ Tⁿ({Γ})</code>)</td>
+<td>Thm 6.14</td>
+</tr>
+<tr class="even">
+<td>Initial algebra embeds in every solution</td>
+<td><code>Theorem616.lean</code></td>
+<td>Thm 6.16</td>
+</tr>
+</tbody>
+</table>
+<p>Theorem 6.14 is explicitly a <strong>colimit</strong> construction:
+iterate a functor from a generating system <code>Γ</code> and take the
+union.</p>
+<h2 id="cartesian-closed-category-exercise-3.23">3. Cartesian closed
+category (Exercise 3.23)</h2>
+<p><a
+href="../Scott1980/Neighborhood/Exercise323.lean"><code>Exercise323.lean</code></a>
+packages Scott’s “for category theorists” remark:</p>
+<ul>
+<li><strong>Terminal object:</strong> <code>unitSys</code> (Exercise
+3.15)</li>
+<li><strong>Products:</strong> <code>prod</code>, <code>proj₀</code>,
+<code>proj₁</code></li>
+<li><strong>Exponentials:</strong> <code>curryEquiv</code> from Theorem
+3.12</li>
+</ul>
+<p>So the category of domains and approximable maps is shown to be
+<strong>cartesian closed</strong>, with <code>(𝒟₀ → -)</code> as the
+right adjoint to <code>- × 𝒟₀</code>.</p>
+<h2 id="functorial-structure-on-domain-constructors">4. Functorial
+structure on domain constructors</h2>
+<p>Several files treat <code>×</code>, <code>+</code>, and
+<code>→</code> as <strong>functors on maps</strong>:</p>
+<table>
+<colgroup>
+<col style="width: 26%" />
+<col style="width: 32%" />
+<col style="width: 41%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Functor</th>
+<th>Module(s)</th>
+<th>Scott source</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Product <code>prodMap</code></td>
+<td><code>Exercise319.lean</code>, <code>Exercise320.lean</code></td>
+<td>Exercises 3.19–3.20</td>
+</tr>
+<tr class="even">
+<td>Sum <code>sumMap</code></td>
+<td><code>Exercise319Sum.lean</code></td>
+<td>Exercise 3.19 (sum)</td>
+</tr>
+<tr class="odd">
+<td>Exponential <code>expMap</code></td>
+<td><code>FunctionSpace.lean</code>, <code>Proposition810b.lean</code>,
+<code>Exercise819.lean</code></td>
+<td>Thm 3.12, Ex 8.19</td>
+</tr>
+</tbody>
+</table>
+<p>These are used heavily in Lecture VIII (Definition 8.9’s combinators
+on <code>𝒰</code>, Proposition 8.10’s projection-closure).</p>
+<h2 id="power-domain-as-functor-and-monad-lecture-vii">5. Power domain
+as functor and monad (Lecture VII)</h2>
+<ul>
+<li><strong>Exercise 7.19</strong> (<a
+href="../Scott1980/Neighborhood/Exercise719.lean"><code>Exercise719.lean</code></a>):
+<code>D ↦ ℙD</code> is a functor via <code>PFmap</code> /
+<code>ℙf</code>, with identity and composition laws.</li>
+<li><strong>Exercise 7.20</strong> (<a
+href="../Scott1980/Neighborhood/Exercise720.lean"><code>Exercise720.lean</code></a>):
+<code>union : ℙℙD → ℙD</code> is the monad multiplication
+<code>μ</code>; <code>↓ : D → ℙD</code> is the unit.</li>
+</ul>
+<p>So the Smyth power domain is treated categorically as a
+<strong>monad</strong>, not just a domain construction.</p>
+<h2 id="concrete-syntax-endofunctors-exercises-6.216.23">6. Concrete
+syntax endofunctors (Exercises 6.21–6.23)</h2>
+<p><a
+href="../Scott1980/Neighborhood/Exercise623.lean"><code>Exercise623.lean</code></a>
+is the big applied example:</p>
+<ul>
+<li><strong><code>GExpr</code></strong> — syntactic functor expressions
+(<code>N</code>, <code>X</code>, <code>+</code>, <code>×</code>)</li>
+<li><strong><code>gFunctor</code></strong> — every <code>GExpr</code> is
+an <code>Endofunctor</code> of the strict-map category
+<code>ScottSys</code></li>
+<li><strong><code>TexpF</code></strong> — the functor
+<code>T(X) = N ⊕ ((X×X) + (X×X))</code> from Exercise 6.23</li>
+<li><strong>Colimit tower</strong> <code>gColim T = ⋃ₙ Tⁿ({Γ})</code>
+and the solution domain <code>Exp</code></li>
+</ul>
+<p>Related files: <code>Exercise617.lean</code>,
+<code>Exercise617Gen.lean</code>, <code>Exercise622.lean</code>,
+<code>Exercise621.lean</code>, <code>Exercise619PartB.lean</code>.</p>
+<h2 id="other-categorical-uses">7. Other categorical uses</h2>
+<ul>
+<li><strong>Bottom functor <code>(·)_⊥</code></strong> — Exercise 6.26
+(<a
+href="../Scott1980/Neighborhood/Exercise626.lean"><code>Exercise626.lean</code></a>):
+strict functor on Scott’s category.</li>
+<li><strong>Functoriality of <code>⊴</code></strong> — Exercise 8.19 (<a
+href="../Scott1980/Neighborhood/Exercise819.lean"><code>Exercise819.lean</code></a>):
+covariant/contravariant functoriality of embedding in <code>prod</code>,
+<code>sum</code>, and <code>exp</code>.</li>
+<li><strong>Exercise 6.29 indexed products/sums</strong> —
+<code>iprod</code>, <code>iotimes</code> as categorical-style universal
+constructions over index types.</li>
+<li><strong>Definition 8.9 / Prop 8.10</strong> — universal-domain
+combinators built via <code>prodMap</code>, <code>sumMap</code>,
+<code>expMap</code> functor laws.</li>
+</ul>
+<h2 id="what-is-not-category-theory-but-often-adjacent">What is
+<em>not</em> category theory (but often adjacent)</h2>
+<p>Most of the repo uses <strong>order theory</strong>, not category
+theory:</p>
+<ul>
+<li><code>Element</code>, <code>element_le</code>,
+<code>OrderIso</code>, <code>DomainIso</code>, <code>⊴</code>,
+<code>◁</code></li>
+<li>Fixed-point theorems (Lecture IV) via approximable maps, not general
+limits/colimits</li>
+</ul>
+<p>These are Scott’s domain-theoretic tools; they overlap with
+categorical language (<code>Iso</code>, “universal”) but are not built
+on the <code>Category</code>/<code>Endofunctor</code> API.</p>
+<h2 id="summary-map">Summary map</h2>
+<p><img src="figures/category-theory-map.png" alt="Category theory summary map"
+     style="display: block; margin: 0 auto; width: 4.5in; height: auto;" /></p>
+<h2 id="bottom-line">Bottom line</h2>
+<p>Category theory here is concentrated in:</p>
+<ol type="1">
+<li><strong>Lecture VI</strong> — domain-equation machinery (functors,
+algebras, initial algebras, colimits)</li>
+<li><strong>Lecture III</strong> — cartesian-closed structure (Exercise
+3.23)</li>
+<li><strong>Domain constructors</strong> — functorial <code>×</code> /
+<code>+</code> / <code>→</code></li>
+<li><strong>Lecture VII</strong> — power-domain monad (Exercises
+7.19–7.20)</li>
+<li><strong>Exercises 6.21–6.23</strong> — <code>GExpr</code> syntax and
+concrete endofunctors</li>
+</ol>
+<p>There is no broad category-theory library and no Mathlib
+<code>CategoryTheory</code> import; it is Scott’s minimal categorical
+vocabulary, implemented choice-free for the flagship VI results.</p>

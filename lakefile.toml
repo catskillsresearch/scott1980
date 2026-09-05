@@ -22,3 +22,7 @@ name = "Challenge"
 
 [[lean_lib]]
 name = "Solution"
+
+# One-off email extract at repo root (not part of the default `lake build`).
+[[lean_lib]]
+name = "CATEGORY_THEORY_EXTRACT"
