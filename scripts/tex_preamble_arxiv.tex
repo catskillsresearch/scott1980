@@ -25,13 +25,12 @@
 \let\origtextunderscore\_
 \renewcommand{\_}{\origtextunderscore\allowbreak}
 
-% Long inlined Lean listings can exhaust pdfTeX main memory; build with
-% LuaLaTeX (see .latexmkrc).
+% Palomar-link appendix + short Lean snippets compile under pdfLaTeX (arXiv
+% AutoTeX). Every non-ASCII glyph in listings or prose must appear here.
 %
 % The listings are kept as real UTF-8 Lean source: every Lean operator is rendered
 % through a `literate` replacement to a proper LaTeX symbol, so the code displays with
-% its native notation (∀ ◇ □ ⟶ ⊢ φ ψ Γ …).  Every non-ASCII glyph that occurs in the
-% sources must appear in this table.
+% its native notation (∀ ◇ □ ⟶ ⊢ φ ψ Γ …).
 
 \lstdefinestyle{leanbox}{
   basicstyle=\footnotesize\ttfamily,

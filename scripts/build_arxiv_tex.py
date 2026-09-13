@@ -4,10 +4,11 @@ r"""Convert arxiv_with_code.md to arxiv.tex (PDF build).
 Pipeline:
   1. Drop the GitHub-only navigation preamble from ``arxiv_with_code.md``.
   2. Lift the `## Abstract` section into a LaTeX \begin{abstract}.
-  3. Demote Appendix Lean-file headings so each module is a ``\\subsection``
-     (scott1972 convention), then insert \\appendix before Complete Lean source.
+  3. Demote the Palomar-archive appendix heading, then insert \\appendix
+     before that section. Short Lean fragments in the narrative stay as
+     listings; library sources are not inlined.
   4. Strip manual section numbers so LaTeX does the numbering.
-  5. Replace fenced Lean/math/bash with \\lstinputlisting blocks; render mermaid to PDF.
+  5. Replace fenced Lean/math/bash with \\lstinputlisting blocks; render mermaid to PNG.
   6. Inject AI model-card acknowledgements; pandoc -> LaTeX; splice placeholders.
   7. Emit a single ``arxiv.tex`` for one-shot latexmk (LuaLaTeX locally).
 """
@@ -61,14 +62,17 @@ def find_chrome() -> str | None:
 def render_mermaid(code: str, idx: int) -> str:
     FIGURES_DIR.mkdir(parents=True, exist_ok=True)
     mmd_path = FIGURES_DIR / f"figure-{idx:03d}.mmd"
+    png_path = FIGURES_DIR / f"figure-{idx:03d}.png"
     pdf_path = FIGURES_DIR / f"figure-{idx:03d}.pdf"
     code_stripped = code.strip() + "\n"
+    if pdf_path.is_file():
+        pdf_path.unlink()
     if (
         mmd_path.is_file()
-        and pdf_path.is_file()
+        and png_path.is_file()
         and mmd_path.read_text(encoding="utf-8") == code_stripped
     ):
-        return pdf_path.relative_to(ROOT).as_posix()
+        return png_path.relative_to(ROOT).as_posix()
     mmd_path.write_text(code_stripped, encoding="utf-8")
 
     mmdc = shutil.which("mmdc")
@@ -81,14 +85,16 @@ def render_mermaid(code: str, idx: int) -> str:
     chrome = find_chrome()
     if chrome:
         env["PUPPETEER_EXECUTABLE_PATH"] = chrome
-    cmd = [mmdc, "-i", str(mmd_path), "-o", str(pdf_path), "--pdfFit", "-b", "transparent"]
+    # Raster PNG for arXiv (embedded PDF figures are rejected). Scale 3 keeps
+    # the diagrams sharp when included at text width.
+    cmd = [mmdc, "-i", str(mmd_path), "-o", str(png_path), "-b", "white", "-s", "3"]
     if PUPPETEER_CONFIG.is_file():
         cmd += ["-p", str(PUPPETEER_CONFIG)]
     proc = subprocess.run(cmd, env=env, capture_output=True, text=True, check=False)
-    if proc.returncode != 0 or not pdf_path.is_file():
+    if proc.returncode != 0 or not png_path.is_file():
         sys.stderr.write(proc.stdout + "\n" + proc.stderr + "\n")
         raise RuntimeError(f"mmdc failed to render figure {idx}")
-    return pdf_path.relative_to(ROOT).as_posix()
+    return png_path.relative_to(ROOT).as_posix()
 
 
 def extract_title() -> str:
@@ -104,7 +110,7 @@ GITHUB_INLINE_MATH = re.compile(r"\$`([^`\n]+?)`\$")
 HTML_COMMENT = re.compile(r"<!--.*?-->", re.DOTALL)
 FENCE_RE = re.compile(r"^```([^\n]*)\n(.*?)^```\s*$", re.MULTILINE | re.DOTALL)
 MANUAL_SECTION_NUM = re.compile(r"^(#{1,6})[ \t]+\d+(?:\.\d+)*\.?[ \t]+", re.MULTILINE)
-NARRATIVE_MARKER = "# Narrative + Lean source (from arxiv.md)"
+NARRATIVE_MARKER = "# Narrative (from arxiv.md)"
 # After normalize_appendix_headings: `### Scott1980/...File.lean` precedes each fence.
 LEAN_FILE_HEADING_RE = re.compile(
     r"^###\s+(Scott1980(?:\.lean|/[\w./-]+\.lean))\s*$"
@@ -139,6 +145,8 @@ def apply_prose_ascii_fallbacks(text: str) -> str:
         text = text.replace(src, dst)
     # Remaining COMBINING RIGHT ARROW ABOVE (e.g. 1⃗, 01⃗) after explicit σ⃗/w⃗ rules.
     text = re.sub(r"(.)\u20d7", r"\1-vec", text)
+    # Lean set-difference `X\Y` becomes a TeX control sequence (`\Y`). Use set minus.
+    text = re.sub(r"(?<=[A-Za-z0-9)])\\(?=[A-Za-z])", " ∖ ", text)
     return text
 
 
@@ -155,33 +163,24 @@ def strip_manual_section_numbers(text: str) -> str:
 
 
 def drop_github_nav(text: str) -> str:
-    idx = text.find(NARRATIVE_MARKER)
-    if idx == -1:
-        return text
-    return text[idx + len(NARRATIVE_MARKER) :].lstrip("\n")
+    for marker in (NARRATIVE_MARKER, "# Narrative + Lean source (from arxiv.md)"):
+        idx = text.find(marker)
+        if idx != -1:
+            return text[idx + len(marker) :].lstrip("\n")
+    return text
 
 
 def normalize_appendix_headings(text: str) -> str:
-    """Match scott1972 heading demotion so each Lean file becomes a ``\\subsection``.
-
-    ``# Appendix A: Complete Lean source`` → ``## Complete Lean source``
-    (pandoc shift-1 → ``\\section``).
-
-    ``## `Scott1980/...File.lean``` → ``### Scott1980/...File.lean``
-    (pandoc shift-1 → ``\\subsection``).
-
-    Also drop the redundant literal "Appendix X --" prefix from any Composer
-    ``## Appendix A/B -- ...`` headings if present.
-    """
+    """Demote the Palomar-archive appendix to a section heading."""
     text = re.sub(
-        r"^#\s+Appendix A: Complete Lean source\s*$",
-        "## Complete Lean source",
+        r"^##\s+Appendix\.\s+Lean sources in the Palomar archive\s*$",
+        "## Lean sources in the Palomar archive",
         text,
         flags=re.MULTILINE,
     )
     text = re.sub(
-        r"^##\s+`(Scott1980(?:\.lean|/[^`]+))`\s*$",
-        r"### \1",
+        r"^#\s+Appendix A: Complete Lean source\s*$",
+        "## Lean sources in the Palomar archive",
         text,
         flags=re.MULTILINE,
     )
@@ -194,11 +193,7 @@ def demote_inventory_headings(text: str) -> str:
     The chronological narrative has 300+ such headings; pdfLaTeX's subsubsection counter
     overflows at 255.
 
-    A blank line must follow the bold text: pandoc's markdown reader (unlike CommonMark)
-    does not let a bullet list interrupt a paragraph, so without it every immediately
-    following `* **Mathematical Target:**` / `* **Lean File:**` / `* **Proof Notes:**`
-    block renders as a run-on paragraph with literal `*` characters instead of a proper
-    itemized list.
+    A blank line must follow the bold text so the following prose is a new paragraph.
     """
     return re.sub(r"^#### (.+)$", r"**\1**\n", text, flags=re.MULTILINE)
 
@@ -416,7 +411,12 @@ def cleanup_pandoc_latex(latex: str) -> str:
     )
     latex = re.sub(
         r"\\section\{Appendix A: Complete Lean source\}",
-        r"\\section{Complete Lean source}",
+        r"\\section{Lean sources in the Palomar archive}",
+        latex,
+    )
+    latex = re.sub(
+        r"\\section\{Appendix\. Lean sources in the Palomar archive\}",
+        r"\\section{Lean sources in the Palomar archive}",
         latex,
     )
     latex = re.sub(r"\n{3,}", "\n\n", latex)
@@ -424,7 +424,7 @@ def cleanup_pandoc_latex(latex: str) -> str:
 
 
 def insert_appendix_command(latex: str) -> str:
-    marker = r"\section{Complete Lean source}"
+    marker = r"\section{Lean sources in the Palomar archive}"
     if marker not in latex:
         raise RuntimeError(f"missing {marker!r} in LaTeX output")
     return latex.replace(marker, r"\appendix" + "\n" + marker, 1)
@@ -517,6 +517,8 @@ def main() -> int:
     body = github_math_to_tex(body)
     body, placeholders = replace_fences(body)
     prune_stale_listings()
+    for stale_pdf in FIGURES_DIR.glob("*.pdf"):
+        stale_pdf.unlink()
 
     latex_body = pandoc_to_latex(body, shift=True)
     latex_body = inject_placeholders(latex_body, placeholders)
@@ -532,11 +534,11 @@ def main() -> int:
     document = build_document(preamble, title_page, latex_body)
     changed = write_if_changed(OUT, document)
     n_listings = sum(1 for p in LISTINGS_DIR.iterdir() if p.is_file()) if LISTINGS_DIR.is_dir() else 0
-    n_figures = sum(1 for p in FIGURES_DIR.glob("*.pdf"))
+    n_figures = sum(1 for p in FIGURES_DIR.glob("*.png"))
     note = "updated" if changed else "unchanged"
     print(
         f"wrote {OUT.relative_to(ROOT)} ({OUT.stat().st_size:,} bytes, "
-        f"full Lean appendix, {n_listings} listings, "
+        f"Palomar-archive appendix, {n_listings} listings, "
         f"{n_figures} mermaid figures, {note})"
     )
     return 0

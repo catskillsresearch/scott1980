@@ -1,3 +1,4 @@
-# Local PDF preview: LuaLaTeX handles UTF-8 Lean listings without pdfTeX memory limits.
-$pdf_mode = 4;
-$lualatex = 'lualatex -interaction=nonstopmode -halt-on-error %O %S';
+# arXiv AutoTeX uses pdfLaTeX. Local preview matches that (PNG figures,
+# Palomar-link appendix, short Lean snippets — no longer a pdfTeX memory hog).
+$pdf_mode = 1;
+$pdflatex = 'pdflatex -interaction=nonstopmode -halt-on-error %O %S';

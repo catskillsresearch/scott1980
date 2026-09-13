@@ -23,7 +23,7 @@ check_pdf_fonts_embedded() {
   if [[ -n "$bad" ]]; then
     echo "error: ${label} has non-embedded fonts:" >&2
     echo "$bad" | sed 's/^/  /' >&2
-    echo "  Rebuild with LuaLaTeX (see .latexmkrc)." >&2
+    echo "  Rebuild with pdfLaTeX (see .latexmkrc)." >&2
     return 1
   fi
   local count

@@ -18,6 +18,7 @@ appendix.pdf
 lean-listings/
 figures/
 dist/
+00README.json
 
 # Generated single-file library dump (scripts/flatten_to_proof.py; for LLM export)
 proof.lean
